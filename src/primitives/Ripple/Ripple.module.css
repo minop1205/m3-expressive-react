@@ -1,0 +1,76 @@
+/**
+ * MD3 state layer + press ripple. Spans its positioned parent and renders the
+ * on-color overlay for hover/pressed states. Color defaults to the inherited
+ * `currentColor` of the surface unless `--md-ripple-color` is set.
+ */
+.host {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  /* The tint color of the state layer / ripple. */
+  --_color: var(--md-ripple-color, currentColor);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hover / pressed flat state layer. */
+.stateLayer {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--_color);
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-short3, 150ms)
+    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.hovered {
+  opacity: var(--md-sys-state-hover-state-layer-opacity, 0.08);
+}
+
+/* Each press emits an expanding circle that fades on release. */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background-color: var(--_color);
+  opacity: var(--md-sys-state-pressed-state-layer-opacity, 0.12);
+  transform: scale(0);
+  transform-origin: center;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+.rippleEntering {
+  animation: md-ripple-enter var(--md-sys-motion-duration-long2, 500ms)
+    var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1)) forwards;
+}
+
+.rippleLeaving {
+  animation: md-ripple-leave var(--md-sys-motion-duration-short4, 200ms)
+    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) forwards;
+}
+
+@keyframes md-ripple-enter {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@keyframes md-ripple-leave {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stateLayer,
+  .rippleEntering,
+  .rippleLeaving {
+    transition: none;
+    animation-duration: 1ms;
+  }
+}

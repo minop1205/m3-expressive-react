@@ -1,0 +1,58 @@
+/**
+ * MD3 focus ring — faithful port of material-web's focus-ring animation.
+ * On appearance the outline plays a two-phase pulse: grow 0 → active-width
+ * (25% of duration), then shrink active-width → resting width (75%). The
+ * offset stays constant (animating it is what made the motion feel choppy).
+ */
+.ring {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  display: none;
+  box-sizing: border-box;
+
+  --_width: var(--md-focus-ring-width, 3px);
+  --_active-width: var(--md-focus-ring-active-width, 8px);
+  --_offset: var(--md-focus-ring-offset, 2px);
+  --_color: var(--md-focus-ring-color, var(--md-sys-color-secondary, #625b71));
+  --_duration: var(--md-focus-ring-duration, 600ms);
+}
+
+.visible {
+  display: flex;
+  outline: var(--_width) solid var(--_color);
+  outline-offset: var(--_offset);
+
+  animation-name: md-focus-ring-grow, md-focus-ring-shrink;
+  animation-delay: 0s, calc(var(--_duration) * 0.25);
+  animation-duration: calc(var(--_duration) * 0.25), calc(var(--_duration) * 0.75);
+  animation-timing-function: var(
+    --md-sys-motion-easing-emphasized,
+    cubic-bezier(0.2, 0, 0, 1)
+  );
+}
+
+@keyframes md-focus-ring-grow {
+  from {
+    outline-width: 0;
+  }
+  to {
+    outline-width: var(--_active-width);
+  }
+}
+
+@keyframes md-focus-ring-shrink {
+  from {
+    outline-width: var(--_active-width);
+  }
+  to {
+    outline-width: var(--_width);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .visible {
+    animation: none;
+  }
+}

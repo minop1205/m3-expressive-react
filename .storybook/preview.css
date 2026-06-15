@@ -1,0 +1,9 @@
+body {
+  margin: 0;
+  font-family:
+    Roboto,
+    system-ui,
+    -apple-system,
+    sans-serif;
+  color: var(--md-sys-color-on-background);
+}
