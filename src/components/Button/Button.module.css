@@ -209,7 +209,7 @@
   --_container-color: transparent;
   --_label-color: var(--md-sys-color-primary);
   --_state-color: var(--md-sys-color-primary);
-  --_outline-color: var(--md-sys-color-outline);
+  --_outline-color: var(--md-sys-color-outline-variant);
   --_outline-width: 1px;
 }
 
