@@ -1,0 +1,411 @@
+/**
+ * MD3 Switch. Track 52×32dp, handle slides via margin with overshoot easing.
+ * Handle sizes: 16dp (unselected), 24dp (selected / with-icon), 28dp (pressed).
+ * Structure and animations follow material-web (material-components/material-web).
+ * Token values from m3.material.io/components/switch/specs.
+ */
+
+/* =========================================================================== */
+/* Host                                                                        */
+/* =========================================================================== */
+.switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 52px;
+  height: 32px;
+  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.disabled {
+  cursor: default;
+}
+
+/* =========================================================================== */
+/* Input — visually hidden but accessible, also serves as touch target (48dp)  */
+/* =========================================================================== */
+.input {
+  appearance: none;
+  height: max(100%, 48px);
+  width: max(100%, 48px);
+  outline: none;
+  margin: 0;
+  position: absolute;
+  z-index: 1;
+  cursor: inherit;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* =========================================================================== */
+/* Track                                                                       */
+/* =========================================================================== */
+.track {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border-radius: inherit;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Track colors via ::before for independent opacity transitions */
+.track::before {
+  content: '';
+  display: flex;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  border-radius: inherit;
+  box-sizing: border-box;
+  transition-property: opacity, background-color;
+  transition-timing-function: linear;
+  transition-duration: 67ms;
+}
+
+/* -- Unselected track -- */
+.unselected .track::before {
+  background-color: var(--md-sys-color-surface-container-highest);
+  border: 2px solid var(--md-sys-color-outline);
+}
+
+/* -- Selected track -- */
+.selected .track::before {
+  background-color: var(--md-sys-color-primary);
+}
+
+/* -- Disabled track -- */
+.disabled .track::before {
+  transition: none;
+  opacity: 0.12;
+}
+
+.disabled.selected .track::before {
+  background-color: var(--md-sys-color-on-surface);
+  border-color: transparent;
+}
+
+.disabled.unselected .track::before {
+  background-color: var(--md-sys-color-surface-container-highest);
+  border-color: var(--md-sys-color-on-surface);
+}
+
+/* =========================================================================== */
+/* Handle container — positions handle via margin with overshoot easing        */
+/* =========================================================================== */
+.handleContainer {
+  display: flex;
+  place-content: center;
+  place-items: center;
+  position: relative;
+  /* Overshoot animation matching material-web */
+  transition: margin 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* margin = track-width - track-height = 52 - 32 = 20px */
+.selected .handleContainer {
+  margin-inline-start: 20px;
+}
+
+.unselected .handleContainer {
+  margin-inline-end: 20px;
+}
+
+.disabled .handleContainer {
+  transition: none;
+}
+
+/* =========================================================================== */
+/* Handle                                                                      */
+/* =========================================================================== */
+.handle {
+  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  height: 16px;
+  width: 16px;
+  transform-origin: center;
+  transition-property: height, width;
+  transition-duration: 250ms, 250ms;
+  transition-timing-function:
+    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  z-index: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Handle color via ::before for independent opacity/color transitions */
+.handle::before {
+  content: '';
+  display: flex;
+  inset: 0;
+  position: absolute;
+  border-radius: inherit;
+  box-sizing: border-box;
+  transition: background-color 67ms linear;
+}
+
+/* -- Unselected handle color -- */
+.unselected .handle::before {
+  background-color: var(--md-sys-color-outline);
+}
+
+/* -- Selected handle color -- */
+.selected .handle::before {
+  background-color: var(--md-sys-color-on-primary);
+}
+
+/* -- Selected handle: 24dp -- */
+.selected .handle {
+  height: 24px;
+  width: 24px;
+}
+
+/* -- With icon: 24dp -- */
+.handle.withIcon {
+  height: 24px;
+  width: 24px;
+}
+
+/* -- Pressed: 28dp with fast linear timing -- */
+.selected:not(.disabled):has(.input:active) .handle,
+.unselected:not(.disabled):has(.input:active) .handle {
+  height: 28px;
+  width: 28px;
+  transition-timing-function: linear;
+  transition-duration: 100ms;
+}
+
+/* -- Disabled handle -- */
+.disabled .handle,
+.disabled .handle::before {
+  transition: none;
+}
+
+.disabled.unselected .handle::before {
+  background-color: var(--md-sys-color-on-surface);
+  opacity: 0.38;
+}
+
+.disabled.selected .handle::before {
+  background-color: var(--md-sys-color-surface);
+  opacity: 1;
+}
+
+/* -- Hover handle color -- */
+.unselected:not(.disabled):has(.input:hover) .handle::before {
+  background-color: var(--md-sys-color-on-surface-variant);
+}
+
+.selected:not(.disabled):has(.input:hover) .handle::before {
+  background-color: var(--md-sys-color-primary-container);
+}
+
+/* =========================================================================== */
+/* State layer — 40dp circle centered on handle, CSS-driven via :has()         */
+/* The input steals pointer events (z-index:1), so Ripple can't listen to the  */
+/* handle-container. We detect hover/active on the input instead.              */
+/* =========================================================================== */
+.stateLayer {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-short3, 150ms)
+    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+/* Unselected: on-surface state layer */
+.unselected .stateLayer {
+  background-color: var(--md-sys-color-on-surface);
+}
+
+/* Selected: primary state layer */
+.selected .stateLayer {
+  background-color: var(--md-sys-color-primary);
+}
+
+/* Hover */
+.switch:not(.disabled):has(.input:hover) .stateLayer {
+  opacity: var(--md-sys-state-hover-state-layer-opacity, 0.08);
+}
+
+/* Pressed */
+.switch:not(.disabled):has(.input:active) .stateLayer {
+  opacity: var(--md-sys-state-pressed-state-layer-opacity, 0.12);
+}
+
+/* Disabled — no state layer */
+.disabled .stateLayer {
+  display: none;
+}
+
+/* =========================================================================== */
+/* Icons                                                                       */
+/* =========================================================================== */
+.icons {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.icon {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  fill: currentColor;
+  z-index: 1;
+  transition:
+    fill 67ms linear,
+    opacity 33ms linear,
+    transform 167ms var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  opacity: 0;
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+.disabled .icon {
+  transition: none;
+}
+
+/* Show selected icon when selected, unselected icon when unselected */
+.selected .iconOn,
+.unselected .iconOff {
+  opacity: 1;
+}
+
+/* Rotate selected icon out of view when handle has no icon class */
+.unselected .handle:not(.withIcon) .iconOn {
+  transform: rotate(-45deg);
+}
+
+/* -- Icon sizes and colors -- */
+.iconOn {
+  width: 16px;
+  height: 16px;
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.iconOff {
+  width: 16px;
+  height: 16px;
+  color: var(--md-sys-color-surface-container-highest);
+}
+
+/* Disabled icon colors */
+.disabled.selected .iconOn {
+  color: var(--md-sys-color-on-surface);
+  opacity: 0.38;
+}
+
+.disabled.unselected .iconOff {
+  color: var(--md-sys-color-surface-container-highest);
+  opacity: 0.38;
+}
+
+/* =========================================================================== */
+/* Focus ring — CSS-driven via :has() since input focus doesn't bubble to host */
+/* Matches FocusRing primitive styling (two-phase pulse animation).            */
+/* =========================================================================== */
+.focusRing {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  display: none;
+  box-sizing: border-box;
+
+  --_width: var(--md-focus-ring-width, 3px);
+  --_active-width: var(--md-focus-ring-active-width, 8px);
+  --_offset: var(--md-focus-ring-offset, 2px);
+  --_color: var(--md-focus-ring-color, var(--md-sys-color-secondary, #625b71));
+  --_duration: var(--md-focus-ring-duration, 600ms);
+}
+
+.switch:has(.input:focus-visible) .focusRing {
+  display: flex;
+  outline: var(--_width) solid var(--_color);
+  outline-offset: var(--_offset);
+  animation-name: md-focus-ring-grow, md-focus-ring-shrink;
+  animation-delay: 0s, calc(var(--_duration) * 0.25);
+  animation-duration: calc(var(--_duration) * 0.25), calc(var(--_duration) * 0.75);
+  animation-timing-function: var(
+    --md-sys-motion-easing-emphasized,
+    cubic-bezier(0.2, 0, 0, 1)
+  );
+}
+
+@keyframes md-focus-ring-grow {
+  from { outline-width: 0; }
+  to { outline-width: var(--_active-width); }
+}
+
+@keyframes md-focus-ring-shrink {
+  from { outline-width: var(--_active-width); }
+  to { outline-width: var(--_width); }
+}
+
+/* =========================================================================== */
+/* High contrast mode                                                          */
+/* =========================================================================== */
+@media (forced-colors: active) {
+  .selected .track::before {
+    background: ButtonText;
+    border-color: ButtonText;
+  }
+
+  .disabled .track::before {
+    border-color: GrayText;
+    opacity: 1;
+  }
+
+  .disabled.selected .track::before {
+    background: GrayText;
+  }
+
+  .unselected .handle::before {
+    background: ButtonText;
+  }
+
+  .disabled .handle::before {
+    opacity: 1;
+  }
+
+  .disabled.unselected .handle::before {
+    background: GrayText;
+  }
+}
+
+/* =========================================================================== */
+/* Reduced motion                                                              */
+/* =========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .handleContainer,
+  .handle,
+  .handle::before,
+  .track::before,
+  .icon {
+    transition: none;
+  }
+
+  .switch:has(.input:focus-visible) .focusRing {
+    animation: none;
+  }
+}
