@@ -6,4 +6,4 @@ storybook-static
 coverage
 *.tsbuildinfo
 .playwright-mcp
-.claude/settings.local.json
+.claude/
