@@ -1,11 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { fn } from '@storybook/test'
 import { Button } from './Button'
 
 const meta = {
   title: 'Components/Button',
   component: Button,
   parameters: { layout: 'centered' },
-  args: { children: 'Button', variant: 'filled', size: 'sm', shape: 'round' },
+  args: {
+    children: 'Button',
+    variant: 'filled',
+    size: 'sm',
+    shape: 'round',
+    onPress: fn(),
+  },
   argTypes: {
     variant: {
       control: 'inline-radio',
@@ -14,6 +21,7 @@ const meta = {
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
     shape: { control: 'inline-radio', options: ['round', 'square'] },
     disabled: { control: 'boolean' },
+    onPress: { action: 'onPress' },
   },
 } satisfies Meta<typeof Button>
 

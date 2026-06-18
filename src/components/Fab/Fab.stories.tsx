@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { fn } from '@storybook/test'
 import { Fab } from './Fab'
 
 const EditIcon = (
@@ -28,6 +29,7 @@ const meta = {
     'aria-label': 'Edit',
     color: 'primary-container',
     size: 'regular',
+    onPress: fn(),
   },
   argTypes: {
     color: {
@@ -44,6 +46,7 @@ const meta = {
     size: { control: 'inline-radio', options: ['regular', 'medium', 'large'] },
     disabled: { control: 'boolean' },
     icon: { control: false },
+    onPress: { action: 'onPress' },
   },
 } satisfies Meta<typeof Fab>
 

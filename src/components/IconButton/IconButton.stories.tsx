@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
+import { fn } from '@storybook/test'
 import { IconButton } from './IconButton'
 
 // Official Material Icons path data (viewBox 0 0 24 24, fill-based).
@@ -30,6 +31,8 @@ const meta = {
     size: 'sm',
     width: 'default',
     shape: 'round',
+    onPress: fn(),
+    onChange: fn(),
   },
   argTypes: {
     variant: { control: 'inline-radio', options: ['standard', 'filled', 'tonal', 'outlined'] },
@@ -40,6 +43,8 @@ const meta = {
     disabled: { control: 'boolean' },
     icon: { control: false },
     selectedIcon: { control: false },
+    onPress: { action: 'onPress' },
+    onChange: { action: 'onChange' },
   },
 } satisfies Meta<typeof IconButton>
 
@@ -81,23 +86,27 @@ export const Widths: Story = {
 }
 
 export const Toggle: Story = {
-  render: (args) => {
-    const Demo = () => {
-      const [on, setOn] = useState(false)
-      return (
-        <IconButton
-          {...args}
-          toggle
-          selected={on}
-          onChange={setOn}
-          icon={HeartOutline}
-          selectedIcon={Heart}
-          aria-label="Add to favorites"
-          selectedAriaLabel="Remove from favorites"
-        />
-      )
-    }
-    return <Demo />
+  render: ({ onChange: onChangeProp, ...args }) => {
+    const [on, setOn] = useState(false)
+    const handleChange = useCallback(
+      (next: boolean) => {
+        setOn(next)
+        onChangeProp?.(next)
+      },
+      [onChangeProp],
+    )
+    return (
+      <IconButton
+        {...args}
+        toggle
+        selected={on}
+        onChange={handleChange}
+        icon={HeartOutline}
+        selectedIcon={Heart}
+        aria-label="Add to favorites"
+        selectedAriaLabel="Remove from favorites"
+      />
+    )
   },
   args: { variant: 'filled', size: 'md' },
 }
