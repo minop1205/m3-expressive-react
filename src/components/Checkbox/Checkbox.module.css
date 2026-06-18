@@ -1,0 +1,342 @@
+/**
+ * MD3 Checkbox. Container 18×18dp, corner-radius 2dp.
+ * State layer 40dp, touch target 48dp.
+ * Token values from m3.material.io/components/checkbox/specs.
+ * Animation patterns from material-web (material-components/material-web).
+ */
+
+/* =========================================================================== */
+/* Host                                                                        */
+/* =========================================================================== */
+.checkbox {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 2px;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.disabled {
+  cursor: default;
+}
+
+/* =========================================================================== */
+/* Input — visually hidden but accessible, also serves as touch target (48dp)  */
+/* =========================================================================== */
+.input {
+  appearance: none;
+  width: 48px;
+  height: 48px;
+  outline: none;
+  margin: 0;
+  position: absolute;
+  z-index: 1;
+  cursor: inherit;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* =========================================================================== */
+/* Container (outline + background + icon)                                     */
+/* =========================================================================== */
+.container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* Outline — visible when unchecked */
+.outline {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid var(--md-sys-color-on-surface-variant);
+  box-sizing: border-box;
+  transition: opacity 50ms linear, border-color 50ms linear;
+}
+
+.checked .outline,
+.indeterminate .outline {
+  opacity: 0;
+}
+
+/* Background — visible when checked/indeterminate */
+.background {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--md-sys-color-primary);
+  transition:
+    opacity 50ms linear,
+    transform 350ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+.unchecked .background {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.checked .background,
+.indeterminate .background {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* =========================================================================== */
+/* Icon (checkmark / indeterminate dash)                                       */
+/* =========================================================================== */
+.icon {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  z-index: 1;
+}
+
+.mark {
+  stroke: var(--md-sys-color-on-primary);
+  fill: none;
+  transition: opacity 50ms linear;
+}
+
+/* Indeterminate dash uses fill instead of stroke */
+.indeterminate .mark {
+  fill: var(--md-sys-color-on-primary);
+  stroke: none;
+}
+
+.unchecked .mark {
+  opacity: 0;
+}
+
+.checked .mark,
+.indeterminate .mark {
+  opacity: 1;
+}
+
+/* Checkmark stroke animation */
+.checked .mark {
+  stroke-dasharray: 29.78;
+  stroke-dashoffset: 0;
+  animation: checkmark-draw 350ms cubic-bezier(0.05, 0.7, 0.1, 1);
+}
+
+@keyframes checkmark-draw {
+  from {
+    stroke-dashoffset: 29.78;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* =========================================================================== */
+/* Error state                                                                 */
+/* =========================================================================== */
+.error .outline {
+  border-color: var(--md-sys-color-error);
+}
+
+.error.checked .background,
+.error.indeterminate .background {
+  background-color: var(--md-sys-color-error);
+}
+
+.error .mark {
+  stroke: var(--md-sys-color-on-error);
+}
+
+.error.indeterminate .mark {
+  fill: var(--md-sys-color-on-error);
+}
+
+/* =========================================================================== */
+/* Disabled state                                                              */
+/* =========================================================================== */
+.disabled .outline {
+  border-color: var(--md-sys-color-on-surface);
+  opacity: 0.38;
+  transition: none;
+}
+
+.disabled .background {
+  transition: none;
+}
+
+.disabled.checked .outline,
+.disabled.indeterminate .outline {
+  opacity: 0;
+}
+
+.disabled.checked .background,
+.disabled.indeterminate .background {
+  background-color: var(--md-sys-color-on-surface);
+  opacity: 0.38;
+}
+
+.disabled .mark {
+  transition: none;
+}
+
+.disabled.checked .mark {
+  stroke: var(--md-sys-color-surface);
+  animation: none;
+}
+
+.disabled.indeterminate .mark {
+  fill: var(--md-sys-color-surface);
+}
+
+/* =========================================================================== */
+/* Hover colors                                                                */
+/* =========================================================================== */
+.unchecked:not(.disabled):not(.error):has(.input:hover) .outline {
+  border-color: var(--md-sys-color-on-surface);
+}
+
+/* =========================================================================== */
+/* State layer — 40dp circle, CSS-driven via :has()                            */
+/* =========================================================================== */
+.stateLayer {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-short3, 150ms)
+    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+/* Unchecked: on-surface state layer */
+.unchecked .stateLayer {
+  background-color: var(--md-sys-color-on-surface);
+}
+
+/* Checked / indeterminate: primary state layer */
+.checked .stateLayer,
+.indeterminate .stateLayer {
+  background-color: var(--md-sys-color-primary);
+}
+
+/* Error: error state layer */
+.error .stateLayer {
+  background-color: var(--md-sys-color-error);
+}
+
+/* Hover */
+.checkbox:not(.disabled):has(.input:hover) .stateLayer {
+  opacity: var(--md-sys-state-hover-state-layer-opacity, 0.08);
+}
+
+/* Pressed */
+.checkbox:not(.disabled):has(.input:active) .stateLayer {
+  opacity: var(--md-sys-state-pressed-state-layer-opacity, 0.12);
+}
+
+/* Disabled — no state layer */
+.disabled .stateLayer {
+  display: none;
+}
+
+/* =========================================================================== */
+/* Focus ring                                                                  */
+/* =========================================================================== */
+.focusRing {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  display: none;
+  box-sizing: border-box;
+
+  --_width: var(--md-focus-ring-width, 3px);
+  --_active-width: var(--md-focus-ring-active-width, 8px);
+  --_offset: var(--md-focus-ring-offset, 2px);
+  --_color: var(--md-focus-ring-color, var(--md-sys-color-secondary, #625b71));
+  --_duration: var(--md-focus-ring-duration, 600ms);
+}
+
+.checkbox:has(.input:focus-visible) .focusRing {
+  display: flex;
+  outline: var(--_width) solid var(--_color);
+  outline-offset: var(--_offset);
+  animation-name: md-focus-ring-grow, md-focus-ring-shrink;
+  animation-delay: 0s, calc(var(--_duration) * 0.25);
+  animation-duration: calc(var(--_duration) * 0.25), calc(var(--_duration) * 0.75);
+  animation-timing-function: var(
+    --md-sys-motion-easing-emphasized,
+    cubic-bezier(0.2, 0, 0, 1)
+  );
+}
+
+@keyframes md-focus-ring-grow {
+  from { outline-width: 0; }
+  to { outline-width: var(--_active-width); }
+}
+
+@keyframes md-focus-ring-shrink {
+  from { outline-width: var(--_active-width); }
+  to { outline-width: var(--_width); }
+}
+
+/* =========================================================================== */
+/* High contrast mode                                                          */
+/* =========================================================================== */
+@media (forced-colors: active) {
+  .outline {
+    border-color: CanvasText;
+  }
+
+  .checked .background,
+  .indeterminate .background {
+    background: CanvasText;
+  }
+
+  .mark {
+    stroke: Canvas;
+  }
+
+  .indeterminate .mark {
+    fill: Canvas;
+  }
+
+  .disabled .outline {
+    border-color: GrayText;
+  }
+
+  .disabled.checked .background,
+  .disabled.indeterminate .background {
+    background: GrayText;
+  }
+}
+
+/* =========================================================================== */
+/* Reduced motion                                                              */
+/* =========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .outline,
+  .background,
+  .mark,
+  .stateLayer {
+    transition: none;
+  }
+
+  .checked .mark {
+    animation: none;
+  }
+
+  .checkbox:has(.input:focus-visible) .focusRing {
+    animation: none;
+  }
+}
