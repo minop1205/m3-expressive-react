@@ -1,0 +1,192 @@
+/**
+ * MD3 FAB. 3 sizes (regular / medium / large), 6 color styles, optional
+ * label for Extended FAB. Elevation level 3 at rest, level 4 on hover.
+ * Values: m3.material.io/components/floating-action-button/specs
+ */
+
+.fab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  appearance: none;
+  margin: 0;
+  border: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+  gap: 12px;
+
+  height: var(--_height);
+  min-width: var(--_min-width);
+  padding-inline: var(--_pad-inline);
+
+  /* Default color = primary-container */
+  --_container: var(--md-sys-color-primary-container);
+  --_content: var(--md-sys-color-on-primary-container);
+  --_state-color: var(--md-sys-color-on-primary-container);
+
+  --_elevation: var(--md-fab-container-elevation, var(--md-sys-elevation-shadow-level3));
+  --_elevation-hover: var(--md-fab-hover-container-elevation, var(--md-sys-elevation-shadow-level4));
+
+  border-radius: var(--_shape);
+  background-color: var(--_container);
+  color: var(--_content);
+  box-shadow: var(--_elevation);
+
+  --md-ripple-color: var(--_state-color);
+  --md-focus-ring-color: var(--md-sys-color-secondary);
+
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+
+  transition:
+    box-shadow var(--md-sys-motion-duration-short3, 150ms)
+      var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    border-radius var(--md-sys-motion-duration-medium1, 250ms)
+      cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Elevation                                                                   */
+/* --------------------------------------------------------------------------- */
+.fab:hover {
+  box-shadow: var(--_elevation-hover);
+}
+
+.fab:active,
+.fab[data-pressed] {
+  box-shadow: var(--_elevation);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Sizes                                                                       */
+/* --------------------------------------------------------------------------- */
+.fab[data-size='regular'] {
+  --_height: 56px;
+  --_min-width: 56px;
+  --_icon-size: 24px;
+  --_pad-inline: 16px;
+  --_shape: var(--md-sys-shape-corner-large);
+  --_shape-pressed: var(--md-sys-shape-corner-medium);
+}
+.fab[data-size='medium'] {
+  --_height: 80px;
+  --_min-width: 80px;
+  --_icon-size: 28px;
+  --_pad-inline: 26px;
+  --_shape: var(--md-sys-shape-corner-large-increased);
+  --_shape-pressed: var(--md-sys-shape-corner-large);
+}
+.fab[data-size='large'] {
+  --_height: 96px;
+  --_min-width: 96px;
+  --_icon-size: 36px;
+  --_pad-inline: 30px;
+  --_shape: var(--md-sys-shape-corner-extra-large);
+  --_shape-pressed: var(--md-sys-shape-corner-large);
+}
+
+/* Extended FAB: horizontal padding widens, min-width removes square constraint */
+.fab[data-extended] {
+  --_pad-inline: 16px;
+  --_min-width: auto;
+  padding-inline-start: 16px;
+  padding-inline-end: 20px;
+}
+
+/* Extended with no icon — equal padding */
+.fab[data-extended]:not(:has(.icon svg, .icon img)) {
+  padding-inline-start: 24px;
+  padding-inline-end: 24px;
+}
+
+/* Shape morph on press */
+.fab[data-pressed] {
+  border-radius: var(--_shape-pressed);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Color styles                                                                */
+/* --------------------------------------------------------------------------- */
+.fab[data-color='secondary-container'] {
+  --_container: var(--md-sys-color-secondary-container);
+  --_content: var(--md-sys-color-on-secondary-container);
+  --_state-color: var(--md-sys-color-on-secondary-container);
+}
+.fab[data-color='tertiary-container'] {
+  --_container: var(--md-sys-color-tertiary-container);
+  --_content: var(--md-sys-color-on-tertiary-container);
+  --_state-color: var(--md-sys-color-on-tertiary-container);
+}
+.fab[data-color='primary'] {
+  --_container: var(--md-sys-color-primary);
+  --_content: var(--md-sys-color-on-primary);
+  --_state-color: var(--md-sys-color-on-primary);
+}
+.fab[data-color='secondary'] {
+  --_container: var(--md-sys-color-secondary);
+  --_content: var(--md-sys-color-on-secondary);
+  --_state-color: var(--md-sys-color-on-secondary);
+}
+.fab[data-color='tertiary'] {
+  --_container: var(--md-sys-color-tertiary);
+  --_content: var(--md-sys-color-on-tertiary);
+  --_state-color: var(--md-sys-color-on-tertiary);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Icon                                                                        */
+/* --------------------------------------------------------------------------- */
+.icon {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+  font-size: var(--_icon-size);
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.icon svg,
+.icon img {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+/* --------------------------------------------------------------------------- */
+/* Label (Extended FAB)                                                        */
+/* --------------------------------------------------------------------------- */
+.label {
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------- */
+/* Disabled                                                                    */
+/* --------------------------------------------------------------------------- */
+.fab:disabled {
+  cursor: default;
+  pointer-events: none;
+  --_container: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  --_content: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  --_state-color: transparent;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fab {
+    transition: none;
+  }
+}
