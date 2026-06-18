@@ -64,6 +64,13 @@ Reference tokens → System tokens (--md-sys-*) → Component tokens (--_*)
 - Every component must have an axe a11y test
 - Use `userEvent.setup({ pointerEventsCheck: 0 })` for disabled button click tests
 
+### Visual Regression Testing (Chromatic)
+
+- Chromatic runs against every Storybook story automatically
+- Run locally: `npm run chromatic` (requires `CHROMATIC_PROJECT_TOKEN`)
+- CI: set `CHROMATIC_PROJECT_TOKEN` as a repository secret
+- Every new component story doubles as a visual regression test — no extra config needed
+
 ## Commands
 
 ```bash
@@ -71,6 +78,7 @@ npm run dev        # Storybook dev server
 npm test           # Vitest (all tests)
 npm run build      # Library build (dist/)
 npm run typecheck  # tsc --noEmit
+npm run chromatic  # Visual regression (needs CHROMATIC_PROJECT_TOKEN)
 ```
 
-All four must pass before committing.
+`dev`, `test`, `build`, `typecheck` must pass before committing.
