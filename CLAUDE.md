@@ -6,9 +6,10 @@ conventions that every contributor (human or AI) must follow.
 ## Spec Priority
 
 1. **m3.material.io** — the highest-priority source of truth for MD3 design specs
-2. **material-web** (GitHub) — secondary reference only; it may diverge from the
-   latest m3.material.io specs
-3. When specs conflict, always follow m3.material.io
+2. **material-web** (GitHub) — secondary reference for implementation patterns
+3. **Material 3 Design Kit** (Figma) — tertiary reference; covers variants not
+   documented on m3.material.io (e.g. vertical Divider inset)
+4. When specs conflict, follow the higher-priority source
 
 ### Verifying specs with Playwright MCP
 

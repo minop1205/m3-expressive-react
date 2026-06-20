@@ -1,0 +1,49 @@
+/* =========================================================================== */
+/* Divider — Material Design 3                                                */
+/* =========================================================================== */
+
+.divider {
+  --_color: var(--md-sys-color-outline-variant, #cac4d0);
+  --_thickness: 1px;
+  --_inset: 16px;
+
+  border: none;
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+/* --- Horizontal ---------------------------------------------------------- */
+.divider[data-orientation='horizontal'] {
+  width: 100%;
+  height: var(--_thickness);
+  background-color: var(--_color);
+}
+
+.divider[data-orientation='horizontal'][data-variant='inset'] {
+  margin-inline-start: var(--_inset);
+  width: calc(100% - var(--_inset));
+}
+
+.divider[data-orientation='horizontal'][data-variant='middle-inset'] {
+  margin-inline-start: var(--_inset);
+  margin-inline-end: var(--_inset);
+  width: calc(100% - var(--_inset) * 2);
+}
+
+/* --- Vertical ------------------------------------------------------------ */
+/* Inset variants per Material 3 Design Kit (Figma) */
+.divider[data-orientation='vertical'] {
+  width: var(--_thickness);
+  align-self: stretch;
+  background-color: var(--_color);
+}
+
+.divider[data-orientation='vertical'][data-variant='inset'] {
+  margin-block-start: var(--_inset);
+}
+
+.divider[data-orientation='vertical'][data-variant='middle-inset'] {
+  margin-block-start: var(--_inset);
+  margin-block-end: var(--_inset);
+}
