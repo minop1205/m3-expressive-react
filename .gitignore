@@ -7,3 +7,5 @@ coverage
 *.tsbuildinfo
 .playwright-mcp
 .claude/
+.env
+.env.*
