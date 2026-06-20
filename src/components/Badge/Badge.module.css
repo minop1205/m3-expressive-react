@@ -1,0 +1,81 @@
+/* =========================================================================== */
+/* Badge — Material Design 3                                                  */
+/* Small (dot) & Large (label) variants                                       */
+/* =========================================================================== */
+
+/* --- Private tokens ------------------------------------------------------ */
+.badge {
+  --_color: var(--md-sys-color-error, #b3261e);
+  --_label-color: var(--md-sys-color-on-error, #ffffff);
+  --_small-size: 6px;
+  --_large-height: 16px;
+  --_large-shape: 8px;
+  --_large-padding: 4px;
+  --_large-offset-bottom: 14px;
+  --_large-offset-start: 12px;
+  --_easing: var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.anchor {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+/* --- Base badge ---------------------------------------------------------- */
+.badge {
+  position: absolute;
+  box-sizing: border-box;
+  background-color: var(--_color);
+  pointer-events: none;
+  z-index: 1;
+
+  /* Hidden by default; .visible triggers scale-in */
+  transform: scale(0);
+  transition: transform 150ms var(--_easing);
+}
+
+.visible {
+  transform: scale(1);
+}
+
+/* --- Small (dot) --------------------------------------------------------- */
+/* Dot top = icon top, dot trailing edge = icon trailing edge */
+.small {
+  width: var(--_small-size);
+  height: var(--_small-size);
+  border-radius: calc(var(--_small-size) / 2);
+  top: 0;
+  inset-inline-end: 0;
+}
+
+/* --- Large (label) ------------------------------------------------------- */
+/* Badge bottom = icon top + 14dp, badge leading edge = icon trailing edge − 12dp */
+.large {
+  height: var(--_large-height);
+  min-width: var(--_large-height);
+  border-radius: var(--_large-shape);
+  padding-inline: var(--_large-padding);
+
+  /* Label Small typescale */
+  font-family: var(--md-sys-typescale-label-small-font, Roboto, system-ui, sans-serif);
+  font-size: var(--md-sys-typescale-label-small-size, 0.6875rem);
+  line-height: var(--md-sys-typescale-label-small-line-height, 1rem);
+  font-weight: var(--md-sys-typescale-label-small-weight, 500);
+  letter-spacing: var(--md-sys-typescale-label-small-tracking, 0.03125rem);
+  color: var(--_label-color);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+
+  /* top = bottom offset − height */
+  top: calc(var(--_large-offset-bottom) - var(--_large-height));
+  /* Leading edge offset from trailing edge of icon */
+  inset-inline-start: calc(100% - var(--_large-offset-start));
+  transform-origin: left center;
+}
