@@ -82,3 +82,18 @@ npm run chromatic  # Visual regression (needs CHROMATIC_PROJECT_TOKEN)
 ```
 
 `dev`, `test`, `build`, `typecheck` must pass before committing.
+
+## Commit Messages
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/).
+A `commit-msg` hook (commitlint) enforces this automatically.
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+Allowed types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.

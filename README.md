@@ -49,6 +49,11 @@ npm test         # Vitest
 npm run build    # library build (dist/)
 ```
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+This project uses [Conventional Commits](https://www.conventionalcommits.org/).
+
 ## Tech stack
 
 | Concern    | Choice                                       |
