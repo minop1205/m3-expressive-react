@@ -21,6 +21,15 @@ browser_navigate → https://m3.material.io/components/{component}/specs
 browser_run_code_unsafe → extract page.evaluate(() => document.body.innerText)
 ```
 
+### Verifying specs with Figma MCP
+
+The Material 3 Design Kit (Figma) can be accessed via the Figma MCP server
+(`figma@claude-plugins-official` plugin, installed at user scope). Use Figma MCP
+tools to read component specs when m3.material.io does not cover a variant
+(e.g. vertical Divider inset).
+
+File key and component node IDs are listed in [`docs/figma-design-kit.md`](docs/figma-design-kit.md).
+
 ### Known spec differences (m3.material.io vs material-web)
 
 | Token / property             | m3.material.io      | material-web |
