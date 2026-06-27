@@ -234,6 +234,7 @@
 
 .circularTrack {
   stroke: var(--_track-color);
+  stroke-linecap: round;
 }
 
 .circularIndicator {
@@ -246,45 +247,207 @@
 
 .circular[data-indeterminate] .circularLayer {
   transform-origin: center;
-  animation: circular-rotate 1.4s linear infinite;
 }
 
 .circular[data-indeterminate] .circularIndicator {
-  stroke-dasharray: 0.18 0.82;
-  animation: circular-dash 1.4s var(--_easing) infinite;
+  stroke-dasharray: 0.25 0.75;
+  animation: circular-indeterminate-active 6.183s linear infinite;
   transition: none;
 }
 
-@keyframes circular-rotate {
-  to {
-    transform: rotate(360deg);
+.circular[data-indeterminate] .circularTrack {
+  animation: circular-indeterminate-track-4 6.183s linear infinite;
+}
+
+.circular[data-indeterminate][data-thickness='8'] .circularTrack {
+  animation-name: circular-indeterminate-track-8;
+}
+
+@keyframes circular-indeterminate-active {
+  0% {
+    stroke-dasharray: 0.25 0.75;
+    stroke-dashoffset: -0.361;
+  }
+  8.1% {
+    stroke-dasharray: 0.181 0.819;
+    stroke-dashoffset: -0.644;
+  }
+  16.2% {
+    stroke-dasharray: 0.15 0.85;
+    stroke-dashoffset: -0.886;
+  }
+  24.3% {
+    stroke-dasharray: 0.275 0.725;
+    stroke-dashoffset: -1.292;
+  }
+  32.3% {
+    stroke-dasharray: 0.525 0.475;
+    stroke-dashoffset: -1.606;
+  }
+  40.4% {
+    stroke-dasharray: 0.714 0.286;
+    stroke-dashoffset: -1.853;
+  }
+  48.5% {
+    stroke-dasharray: 0.803 0.197;
+    stroke-dashoffset: -2.269;
+  }
+  56.6% {
+    stroke-dasharray: 0.786 0.214;
+    stroke-dashoffset: -2.589;
+  }
+  64.7% {
+    stroke-dasharray: 0.85 0.15;
+    stroke-dashoffset: -2.836;
+  }
+  72.8% {
+    stroke-dasharray: 0.8 0.2;
+    stroke-dashoffset: -3.025;
+  }
+  80.9% {
+    stroke-dasharray: 0.422 0.578;
+    stroke-dashoffset: -3.564;
+  }
+  88.9% {
+    stroke-dasharray: 0.25 0.75;
+    stroke-dashoffset: -3.822;
+  }
+  97% {
+    stroke-dasharray: 0.244 0.756;
+    stroke-dashoffset: -4.225;
+  }
+  100% {
+    stroke-dasharray: 0.25 0.75;
+    stroke-dashoffset: -4.361;
   }
 }
 
-@keyframes circular-dash {
+@keyframes circular-indeterminate-track-4 {
   0% {
-    stroke-dasharray: 0.02 0.98;
-    stroke-dashoffset: 0;
+    stroke-dasharray: 0.634251 0.365749;
+    stroke-dashoffset: -0.668875;
   }
-  50% {
-    stroke-dasharray: 0.72 0.28;
-    stroke-dashoffset: -0.18;
+  8.1% {
+    stroke-dasharray: 0.703251 0.296749;
+    stroke-dashoffset: -0.882875;
+  }
+  16.2% {
+    stroke-dasharray: 0.734251 0.265749;
+    stroke-dashoffset: -1.093875;
+  }
+  24.3% {
+    stroke-dasharray: 0.609251 0.390749;
+    stroke-dashoffset: -1.624875;
+  }
+  32.3% {
+    stroke-dasharray: 0.359251 0.640749;
+    stroke-dashoffset: -2.188875;
+  }
+  40.4% {
+    stroke-dasharray: 0.170251 0.829749;
+    stroke-dashoffset: -2.624875;
+  }
+  48.5% {
+    stroke-dasharray: 0.081251 0.918749;
+    stroke-dashoffset: -3.129875;
+  }
+  56.6% {
+    stroke-dasharray: 0.098251 0.901749;
+    stroke-dashoffset: -3.432875;
+  }
+  64.7% {
+    stroke-dasharray: 0.034251 0.965749;
+    stroke-dashoffset: -3.743875;
+  }
+  72.8% {
+    stroke-dasharray: 0.084251 0.915749;
+    stroke-dashoffset: -3.882875;
+  }
+  80.9% {
+    stroke-dasharray: 0.462251 0.537749;
+    stroke-dashoffset: -4.043875;
+  }
+  88.9% {
+    stroke-dasharray: 0.634251 0.365749;
+    stroke-dashoffset: -4.129875;
+  }
+  97% {
+    stroke-dasharray: 0.640251 0.359749;
+    stroke-dashoffset: -4.526875;
   }
   100% {
-    stroke-dasharray: 0.02 0.98;
-    stroke-dashoffset: -1;
+    stroke-dasharray: 0.634251 0.365749;
+    stroke-dashoffset: -4.668875;
+  }
+}
+
+@keyframes circular-indeterminate-track-8 {
+  0% {
+    stroke-dasharray: 0.559014 0.440986;
+    stroke-dashoffset: -0.706493;
+  }
+  8.1% {
+    stroke-dasharray: 0.628014 0.371986;
+    stroke-dashoffset: -0.920493;
+  }
+  16.2% {
+    stroke-dasharray: 0.659014 0.340986;
+    stroke-dashoffset: -1.131493;
+  }
+  24.3% {
+    stroke-dasharray: 0.534014 0.465986;
+    stroke-dashoffset: -1.662493;
+  }
+  32.3% {
+    stroke-dasharray: 0.284014 0.715986;
+    stroke-dashoffset: -2.226493;
+  }
+  40.4% {
+    stroke-dasharray: 0.095014 0.904986;
+    stroke-dashoffset: -2.662493;
+  }
+  48.5% {
+    stroke-dasharray: 0.006014 0.993986;
+    stroke-dashoffset: -3.167493;
+  }
+  56.6% {
+    stroke-dasharray: 0.023014 0.976986;
+    stroke-dashoffset: -3.470493;
+  }
+  64.7% {
+    stroke-dasharray: 0 1;
+    stroke-dashoffset: -3.781493;
+  }
+  72.8% {
+    stroke-dasharray: 0.009014 0.990986;
+    stroke-dashoffset: -3.920493;
+  }
+  80.9% {
+    stroke-dasharray: 0.387014 0.612986;
+    stroke-dashoffset: -4.081493;
+  }
+  88.9% {
+    stroke-dasharray: 0.559014 0.440986;
+    stroke-dashoffset: -4.167493;
+  }
+  97% {
+    stroke-dasharray: 0.565014 0.434986;
+    stroke-dashoffset: -4.564493;
+  }
+  100% {
+    stroke-dasharray: 0.559014 0.440986;
+    stroke-dashoffset: -4.706493;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .linearIndicator,
-  .linearGap,
   .circularIndicator {
     transition-duration: 0ms;
   }
 
   .linearIndeterminateSegment,
-  .circular[data-indeterminate] .circularLayer,
+  .circular[data-indeterminate] .circularTrack,
   .circular[data-indeterminate] .circularIndicator {
     animation-duration: 6s;
   }

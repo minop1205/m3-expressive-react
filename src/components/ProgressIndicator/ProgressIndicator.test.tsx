@@ -103,6 +103,34 @@ describe('CircularProgressIndicator', () => {
     expect(progressbar).toHaveAttribute('height', '24')
   })
 
+  it('renders the determinate track as a gapped arc', () => {
+    const { container } = render(<CircularProgressIndicator value={0.5} />)
+    const track = container.querySelector('[class*="circularTrack"]')
+    expect(track).toHaveAttribute('stroke-dasharray')
+    expect(track).toHaveAttribute('stroke-dashoffset')
+
+    const radius = (48 - 4) / 2
+    const circumference = 2 * Math.PI * radius
+    const gap = (4 + 4) / circumference
+    const [trackLength] = track
+      ?.getAttribute('stroke-dasharray')
+      ?.split(' ')
+      .map(Number) ?? [0]
+
+    expect(trackLength).toBeCloseTo(1 - 0.5 - gap * 2, 4)
+    expect(Number(track?.getAttribute('stroke-dashoffset'))).toBeCloseTo(
+      -(0.5 + gap),
+      4,
+    )
+  })
+
+  it('hides the determinate track when there is no remaining arc after gaps', () => {
+    const { container } = render(<CircularProgressIndicator value={1} />)
+    expect(
+      container.querySelector('[class*="circularTrack"]'),
+    ).not.toBeInTheDocument()
+  })
+
   it('clamps value to the supported range', () => {
     render(<CircularProgressIndicator value={-1} />)
     expect(screen.getByRole('progressbar')).toHaveAttribute(

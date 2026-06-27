@@ -16,9 +16,37 @@ export interface CircularProgressIndicatorProps
 
 const VIEWBOX_SIZE = 48
 const CENTER = VIEWBOX_SIZE / 2
+const GAP = 4
 
 function clampProgress(value: number) {
   return Math.min(1, Math.max(0, value))
+}
+
+function getTrackArc(
+  progress: number,
+  radius: number,
+  strokeWidth: CircularProgressIndicatorThickness,
+) {
+  if (progress <= 0) {
+    return { dasharray: '1 0', dashoffset: 0 }
+  }
+
+  if (progress >= 1) {
+    return null
+  }
+
+  const circumference = 2 * Math.PI * radius
+  const gap = (GAP + strokeWidth) / circumference
+  const trackLength = Math.max(0, 1 - progress - gap * 2)
+
+  if (trackLength <= 0) {
+    return null
+  }
+
+  return {
+    dasharray: `${trackLength} ${1 - trackLength}`,
+    dashoffset: -(progress + gap),
+  }
 }
 
 export const CircularProgressIndicator = forwardRef<
@@ -30,11 +58,19 @@ export const CircularProgressIndicator = forwardRef<
 ) {
   const indeterminate = value == null
   const progress = indeterminate ? undefined : clampProgress(value)
+  const determinateProgress = progress ?? 0
   const radius = (VIEWBOX_SIZE - thickness) / 2
+  const trackArc = indeterminate
+    ? undefined
+    : getTrackArc(determinateProgress, radius, thickness)
+  const circumference = 2 * Math.PI * radius
+  const visualGap = (GAP + thickness) / circumference
   const indicatorStyle = {
     ...style,
     '--_progress': progress ?? 0,
     '--_remaining-progress': 1 - (progress ?? 0),
+    '--_circular-gap': visualGap,
+    '--_circular-gap-pair': visualGap * 2,
   } as CSSProperties
 
   return (
@@ -53,15 +89,19 @@ export const CircularProgressIndicator = forwardRef<
       width={size}
       height={size}
     >
-      <circle
-        className={styles.circularTrack}
-        cx={CENTER}
-        cy={CENTER}
-        r={radius}
-        strokeWidth={thickness}
-        pathLength={1}
-      />
       <g className={styles.circularLayer}>
+        {(indeterminate || trackArc) && (
+          <circle
+            className={styles.circularTrack}
+            cx={CENTER}
+            cy={CENTER}
+            r={radius}
+            strokeWidth={thickness}
+            pathLength={1}
+            strokeDasharray={trackArc?.dasharray}
+            strokeDashoffset={trackArc?.dashoffset}
+          />
+        )}
         <circle
           className={styles.circularIndicator}
           cx={CENTER}
