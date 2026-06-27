@@ -89,7 +89,10 @@ export const CircularProgressIndicator = forwardRef<
       width={size}
       height={size}
     >
-      <g className={styles.circularLayer}>
+      <g
+        key={indeterminate ? `indeterminate-${thickness}` : 'determinate'}
+        className={styles.circularLayer}
+      >
         {(indeterminate || trackArc) && (
           <circle
             className={styles.circularTrack}

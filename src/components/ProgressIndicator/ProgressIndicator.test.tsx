@@ -145,6 +145,17 @@ describe('CircularProgressIndicator', () => {
     expect(ref.current).toBeInstanceOf(SVGSVGElement)
   })
 
+  it('restarts indeterminate animation when thickness changes', () => {
+    const { container, rerender } = render(
+      <CircularProgressIndicator aria-label="Loading" thickness={4} />,
+    )
+    const layer = container.querySelector('[class*="circularLayer"]')
+
+    rerender(<CircularProgressIndicator aria-label="Loading" thickness={8} />)
+
+    expect(container.querySelector('[class*="circularLayer"]')).not.toBe(layer)
+  })
+
   it('has no axe violations', async () => {
     const { container } = render(
       <CircularProgressIndicator value={0.5} aria-label="Loading" />,
