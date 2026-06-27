@@ -235,6 +235,9 @@
 .circularTrack {
   stroke: var(--_track-color);
   stroke-linecap: round;
+  transition:
+    stroke-dasharray var(--_duration) var(--_easing),
+    stroke-dashoffset var(--_duration) var(--_easing);
 }
 
 .circularIndicator {
@@ -257,6 +260,7 @@
 
 .circular[data-indeterminate] .circularTrack {
   animation: circular-indeterminate-track-4 6.183s linear infinite;
+  transition: none;
 }
 
 .circular[data-indeterminate][data-thickness='8'] .circularTrack {
