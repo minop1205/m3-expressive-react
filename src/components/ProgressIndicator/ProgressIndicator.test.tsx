@@ -52,6 +52,17 @@ describe('LinearProgressIndicator', () => {
     )
   })
 
+  it('renders a wavy determinate indicator', () => {
+    const { container } = render(
+      <LinearProgressIndicator value={0.3} shape="wavy" />,
+    )
+    expect(screen.getByRole('progressbar')).toHaveAttribute(
+      'data-shape',
+      'wavy',
+    )
+    expect(container.querySelector('[class*="linearWavyPath"]')).toBeInTheDocument()
+  })
+
   it('forwards ref', () => {
     const ref = createRef<HTMLDivElement>()
     render(<LinearProgressIndicator ref={ref} value={0} />)

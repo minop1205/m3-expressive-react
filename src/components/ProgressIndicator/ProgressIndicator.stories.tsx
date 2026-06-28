@@ -14,6 +14,10 @@ const meta = {
       control: 'inline-radio',
       options: [4, 8],
     },
+    shape: {
+      control: 'inline-radio',
+      options: ['flat', 'wavy'],
+    },
   },
 } satisfies Meta<typeof LinearProgressIndicator>
 
@@ -42,6 +46,15 @@ export const LinearIndeterminate: LinearStory = {
 
 export const LinearThick: LinearStory = {
   args: { value: 0.65, thickness: 8 },
+  render: (args) => (
+    <div style={{ width: 360 }}>
+      <LinearProgressIndicator {...args} aria-label="Loading" />
+    </div>
+  ),
+}
+
+export const LinearWavyDeterminate: LinearStory = {
+  args: { value: 0.3, shape: 'wavy' },
   render: (args) => (
     <div style={{ width: 360 }}>
       <LinearProgressIndicator {...args} aria-label="Loading" />

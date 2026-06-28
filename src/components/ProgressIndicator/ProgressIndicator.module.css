@@ -17,6 +17,7 @@
 
 .linear {
   --_thickness: 4px;
+  --_wavy-amplitude: 3px;
   --_gap-size: 4px;
   --_stop-size: 4px;
 
@@ -33,8 +34,13 @@
   --_thickness: 8px;
 }
 
+.linear[data-shape='wavy'] {
+  height: calc(var(--_thickness) + var(--_wavy-amplitude) * 2);
+}
+
 .linearTrack,
 .linearIndicator,
+.linearWavyIndicator,
 .linearStop,
 .linearIndeterminate,
 .linearIndeterminateSegment {
@@ -43,22 +49,47 @@
 }
 
 .linearTrack {
-  inset-block: 0;
+  top: 50%;
   inset-inline-start: var(--_track-start, 0);
   inset-inline-end: 0;
+  height: var(--_thickness);
   background-color: var(--_track-color);
   border-radius: inherit;
+  transform: translateY(-50%);
   transition: inset-inline-start var(--_duration) var(--_easing);
 }
 
 .linearIndicator {
-  inset-block: 0;
+  top: 50%;
   inset-inline-start: 0;
   width: var(--_progress);
   max-width: 100%;
+  height: var(--_thickness);
   background-color: var(--_active-color);
   border-radius: inherit;
+  transform: translateY(-50%);
   transition: width var(--_duration) var(--_easing);
+}
+
+.linearWavyIndicator {
+  inset-block: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
+  overflow: visible;
+}
+
+.linearWavySvg {
+  display: block;
+  overflow: visible;
+}
+
+.linearWavyPath {
+  fill: none;
+  stroke: var(--_active-color);
+  stroke-linecap: round;
+  animation: linear-wavy-flow 1s linear infinite;
+  transform-box: view-box;
+  will-change: stroke-dashoffset, transform;
 }
 
 .linearStop {
@@ -212,6 +243,17 @@
   100% {
     width: 0;
     inset-inline-start: 100%;
+  }
+}
+
+@keyframes linear-wavy-flow {
+  from {
+    stroke-dashoffset: 0;
+    transform: translateX(0);
+  }
+  to {
+    stroke-dashoffset: -40px;
+    transform: translateX(-40px);
   }
 }
 
@@ -451,6 +493,7 @@
   }
 
   .linearIndeterminateSegment,
+  .linearWavyPath,
   .circular[data-indeterminate] .circularTrack,
   .circular[data-indeterminate] .circularIndicator {
     animation-duration: 6s;

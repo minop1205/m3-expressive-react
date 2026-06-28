@@ -2,6 +2,7 @@ export { LinearProgressIndicator } from './LinearProgressIndicator'
 export type {
   LinearProgressIndicatorProps,
   LinearProgressIndicatorThickness,
+  ProgressIndicatorShape,
 } from './LinearProgressIndicator'
 
 export { CircularProgressIndicator } from './CircularProgressIndicator'
