@@ -74,20 +74,60 @@ function getWavyHeight(thickness: LinearProgressIndicatorThickness) {
   return thickness + WAVY_AMPLITUDE * 2
 }
 
-function getWavyY(x: number, centerY: number, amplitude: number, phase: number) {
-  return (
-    centerY +
-    Math.sin(((x + phase) / WAVY_WAVELENGTH) * Math.PI * 2) * amplitude
-  )
+type Point = {
+  x: number
+  y: number
 }
 
-function getWavySlope(x: number, amplitude: number, phase: number) {
-  return (
-    Math.cos(((x + phase) / WAVY_WAVELENGTH) * Math.PI * 2) *
-    amplitude *
-    (Math.PI * 2) /
-    WAVY_WAVELENGTH
-  )
+function getQuadraticPoint(p0: Point, p1: Point, p2: Point, time: number) {
+  const inverseTime = 1 - time
+
+  return {
+    x:
+      inverseTime * inverseTime * p0.x +
+      2 * inverseTime * time * p1.x +
+      time * time * p2.x,
+    y:
+      inverseTime * inverseTime * p0.y +
+      2 * inverseTime * time * p1.y +
+      time * time * p2.y,
+  }
+}
+
+function getQuadraticDerivative(
+  p0: Point,
+  p1: Point,
+  p2: Point,
+  time: number,
+) {
+  const inverseTime = 1 - time
+
+  return {
+    x: 2 * (inverseTime * (p1.x - p0.x) + time * (p2.x - p1.x)),
+    y: 2 * (inverseTime * (p1.y - p0.y) + time * (p2.y - p1.y)),
+  }
+}
+
+function getQuadraticSubcurve(
+  p0: Point,
+  p1: Point,
+  p2: Point,
+  startTime: number,
+  endTime: number,
+) {
+  const q0 = getQuadraticPoint(p0, p1, p2, startTime)
+  const q2 = getQuadraticPoint(p0, p1, p2, endTime)
+  const derivative = getQuadraticDerivative(p0, p1, p2, startTime)
+  const timeScale = endTime - startTime
+
+  return {
+    start: q0,
+    control: {
+      x: q0.x + (derivative.x * timeScale) / 2,
+      y: q0.y + (derivative.y * timeScale) / 2,
+    },
+    end: q2,
+  }
 }
 
 function getWavySegmentPath({
@@ -109,35 +149,38 @@ function getWavySegmentPath({
     return ''
   }
 
-  const step = 8
-  let x = startX
-  let y = getWavyY(
-    startX,
-    centerY,
-    amplitude,
-    phase,
-  )
-  let path = `M ${startX.toFixed(2)} ${y.toFixed(2)}`
+  const halfWavelength = WAVY_WAVELENGTH / 2
+  const controlOffsetY = amplitude * 2
+  const firstSegmentIndex = Math.floor((startX + phase) / halfWavelength)
+  let segmentIndex = firstSegmentIndex
+  let path = ''
 
-  while (x < pathEndX) {
-    const nextX = Math.min(x + step, pathEndX)
-    const nextY = getWavyY(
-      nextX,
-      centerY,
-      amplitude,
-      phase,
-    )
-    const dx = nextX - x
-    const control1X = x + dx / 3
-    const control1Y =
-      y + getWavySlope(x, amplitude, phase) * (dx / 3)
-    const control2X = nextX - dx / 3
-    const control2Y =
-      nextY - getWavySlope(nextX, amplitude, phase) * (dx / 3)
+  while (segmentIndex * halfWavelength - phase < pathEndX) {
+    const segmentStartX = segmentIndex * halfWavelength - phase
+    const segmentEndX = segmentStartX + halfWavelength
+    const visibleStartX = Math.max(startX, segmentStartX)
+    const visibleEndX = Math.min(pathEndX, segmentEndX)
 
-    path += ` C ${control1X.toFixed(2)} ${control1Y.toFixed(2)} ${control2X.toFixed(2)} ${control2Y.toFixed(2)} ${nextX.toFixed(2)} ${nextY.toFixed(2)}`
-    x = nextX
-    y = nextY
+    if (visibleEndX > visibleStartX) {
+      const direction = segmentIndex % 2 === 0 ? 1 : -1
+      const p0 = { x: segmentStartX, y: centerY }
+      const p1 = {
+        x: segmentStartX + halfWavelength / 2,
+        y: centerY + controlOffsetY * direction,
+      }
+      const p2 = { x: segmentEndX, y: centerY }
+      const startTime = (visibleStartX - segmentStartX) / halfWavelength
+      const endTime = (visibleEndX - segmentStartX) / halfWavelength
+      const curve = getQuadraticSubcurve(p0, p1, p2, startTime, endTime)
+
+      if (!path) {
+        path = `M ${curve.start.x.toFixed(2)} ${curve.start.y.toFixed(2)}`
+      }
+
+      path += ` Q ${curve.control.x.toFixed(2)} ${curve.control.y.toFixed(2)} ${curve.end.x.toFixed(2)} ${curve.end.y.toFixed(2)}`
+    }
+
+    segmentIndex += 1
   }
 
   return path
