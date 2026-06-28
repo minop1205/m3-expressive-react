@@ -59,6 +59,10 @@
   transition: inset-inline-start var(--_duration) var(--_easing);
 }
 
+.linear[data-shape='wavy'] .linearTrack {
+  transition: none;
+}
+
 .linearIndicator {
   top: 50%;
   inset-inline-start: 0;
@@ -87,9 +91,7 @@
   fill: none;
   stroke: var(--_active-color);
   stroke-linecap: round;
-  animation: linear-wavy-flow 1s linear infinite;
-  transform-box: view-box;
-  will-change: stroke-dashoffset, transform;
+  stroke-linejoin: round;
 }
 
 .linearStop {
@@ -243,17 +245,6 @@
   100% {
     width: 0;
     inset-inline-start: 100%;
-  }
-}
-
-@keyframes linear-wavy-flow {
-  from {
-    stroke-dashoffset: 0;
-    transform: translateX(0);
-  }
-  to {
-    stroke-dashoffset: -40px;
-    transform: translateX(-40px);
   }
 }
 
@@ -493,7 +484,6 @@
   }
 
   .linearIndeterminateSegment,
-  .linearWavyPath,
   .circular[data-indeterminate] .circularTrack,
   .circular[data-indeterminate] .circularIndicator {
     animation-duration: 6s;

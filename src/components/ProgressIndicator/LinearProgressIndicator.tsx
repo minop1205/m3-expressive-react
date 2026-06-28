@@ -2,7 +2,6 @@ import {
   forwardRef,
   useEffect,
   useImperativeHandle,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -28,41 +27,120 @@ function clampProgress(value: number) {
   return Math.min(1, Math.max(0, value))
 }
 
+function cubicBezier(
+  progress: number,
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+) {
+  const sampleCurveX = (time: number) =>
+    ((1 - 3 * x2 + 3 * x1) * time + (3 * x2 - 6 * x1)) * time * time +
+    3 * x1 * time
+  const sampleCurveY = (time: number) =>
+    ((1 - 3 * y2 + 3 * y1) * time + (3 * y2 - 6 * y1)) * time * time +
+    3 * y1 * time
+  const sampleCurveDerivativeX = (time: number) =>
+    (3 * (1 - 3 * x2 + 3 * x1) * time + 2 * (3 * x2 - 6 * x1)) *
+      time +
+    3 * x1
+
+  let time = progress
+
+  for (let i = 0; i < 4; i += 1) {
+    const currentX = sampleCurveX(time) - progress
+    const currentSlope = sampleCurveDerivativeX(time)
+
+    if (Math.abs(currentX) < 0.001 || currentSlope === 0) {
+      break
+    }
+
+    time -= currentX / currentSlope
+  }
+
+  return sampleCurveY(Math.min(1, Math.max(0, time)))
+}
+
+function standardEasing(progress: number) {
+  return cubicBezier(progress, 0.2, 0, 0, 1)
+}
+
 const WAVY_AMPLITUDE = 3
 const WAVY_WAVELENGTH = 40
+const WAVY_SPEED_PER_MS = WAVY_WAVELENGTH / 1000
+const PROGRESS_TRANSITION_DURATION_MS = 600
 
 function getWavyHeight(thickness: LinearProgressIndicatorThickness) {
   return thickness + WAVY_AMPLITUDE * 2
 }
 
-function getFullWavyPath(
-  width: number,
-  thickness: LinearProgressIndicatorThickness,
-) {
-  const centerY = getWavyHeight(thickness) / 2
-  const halfWavelength = WAVY_WAVELENGTH / 2
-  const fullWidth = Math.max(width, 1) + WAVY_WAVELENGTH * 2
-  let anchorX = halfWavelength
-  let controlX = halfWavelength / 2
-  let controlY = centerY + WAVY_AMPLITUDE * 2
-  let path = `M 0 ${centerY}`
+function getWavyY(x: number, centerY: number, amplitude: number, phase: number) {
+  return (
+    centerY +
+    Math.sin(((x + phase) / WAVY_WAVELENGTH) * Math.PI * 2) * amplitude
+  )
+}
 
-  while (anchorX <= fullWidth + halfWavelength) {
-    path += ` Q ${controlX.toFixed(2)} ${controlY.toFixed(2)} ${anchorX.toFixed(2)} ${centerY}`
-    anchorX += halfWavelength
-    controlX += halfWavelength
-    controlY = centerY * 2 - controlY
+function getWavySlope(x: number, amplitude: number, phase: number) {
+  return (
+    Math.cos(((x + phase) / WAVY_WAVELENGTH) * Math.PI * 2) *
+    amplitude *
+    (Math.PI * 2) /
+    WAVY_WAVELENGTH
+  )
+}
+
+function getWavySegmentPath({
+  amplitude,
+  endX,
+  phase,
+  thickness,
+}: {
+  amplitude: number
+  endX: number
+  phase: number
+  thickness: LinearProgressIndicatorThickness
+}) {
+  const centerY = getWavyHeight(thickness) / 2
+  const startX = thickness / 2
+  const pathEndX = endX - thickness / 2
+
+  if (pathEndX <= startX) {
+    return ''
+  }
+
+  const step = 8
+  let x = startX
+  let y = getWavyY(
+    startX,
+    centerY,
+    amplitude,
+    phase,
+  )
+  let path = `M ${startX.toFixed(2)} ${y.toFixed(2)}`
+
+  while (x < pathEndX) {
+    const nextX = Math.min(x + step, pathEndX)
+    const nextY = getWavyY(
+      nextX,
+      centerY,
+      amplitude,
+      phase,
+    )
+    const dx = nextX - x
+    const control1X = x + dx / 3
+    const control1Y =
+      y + getWavySlope(x, amplitude, phase) * (dx / 3)
+    const control2X = nextX - dx / 3
+    const control2Y =
+      nextY - getWavySlope(nextX, amplitude, phase) * (dx / 3)
+
+    path += ` C ${control1X.toFixed(2)} ${control1Y.toFixed(2)} ${control2X.toFixed(2)} ${control2Y.toFixed(2)} ${nextX.toFixed(2)} ${nextY.toFixed(2)}`
+    x = nextX
+    y = nextY
   }
 
   return path
-}
-
-function getWavyAmplitudeScale(progress: number) {
-  if (progress <= 0.1 || progress >= 0.95) {
-    return 0
-  }
-
-  return 1
 }
 
 export const LinearProgressIndicator = forwardRef<
@@ -74,27 +152,31 @@ export const LinearProgressIndicator = forwardRef<
 ) {
   const rootRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(0)
+  const [wavyPhase, setWavyPhase] = useState(0)
   const indeterminate = value == null
   const wavy = shape === 'wavy'
   const progress = indeterminate ? undefined : clampProgress(value)
   const determinateProgress = progress ?? 0
+  const [wavyVisualProgress, setWavyVisualProgress] =
+    useState(determinateProgress)
+  const wavyVisualProgressRef = useRef(determinateProgress)
+  const displayProgress = wavy ? wavyVisualProgress : determinateProgress
+  const wavyActiveVisible =
+    wavy && (determinateProgress > 0 || wavyVisualProgress > 0.001)
   const wavyHeight = getWavyHeight(thickness)
-  const wavyAmplitudeScale = getWavyAmplitudeScale(determinateProgress)
-  const wavyCapInset = thickness / 2
-  const wavyGapSize = 4 + wavyCapInset
-  const wavyProgressWidth = width * determinateProgress
+  const wavyProgressWidth = width * displayProgress
   const wavyTrackStart = `${Math.min(
     width,
-    Math.max(wavyProgressWidth, thickness) + wavyGapSize,
+    Math.max(wavyProgressWidth, thickness) + 4,
   )}px`
-  const fullWavyWidth = Math.max(width, 1) + WAVY_WAVELENGTH * 2
-  const wavyVisibleWidth = Math.max(0, wavyProgressWidth - thickness)
-  const fullWavyPath = useMemo(
-    () => getFullWavyPath(width, thickness),
-    [thickness, width],
-  )
+  const wavyPath = getWavySegmentPath({
+    amplitude: WAVY_AMPLITUDE,
+    endX: wavyProgressWidth,
+    phase: wavyPhase,
+    thickness,
+  })
   const trackStart =
-    wavy && determinateProgress > 0 && determinateProgress < 1
+    wavy && displayProgress > 0 && displayProgress < 1
       ? wavyTrackStart
       : determinateProgress > 0 && determinateProgress < 1
       ? `calc(${determinateProgress * 100}% + 4px)`
@@ -121,6 +203,84 @@ export const LinearProgressIndicator = forwardRef<
       observer.disconnect()
     }
   }, [])
+
+  useEffect(() => {
+    if (!wavy || indeterminate) {
+      wavyVisualProgressRef.current = determinateProgress
+      setWavyVisualProgress(determinateProgress)
+      return
+    }
+
+    const from = wavyVisualProgressRef.current
+    const to = determinateProgress
+
+    if (Math.abs(from - to) < 0.001) {
+      wavyVisualProgressRef.current = to
+      setWavyVisualProgress(to)
+      return
+    }
+
+    let animationFrame = 0
+    let startTime: number | undefined
+
+    const tick = (time: number) => {
+      if (startTime == null) {
+        startTime = time
+      }
+
+      const elapsed = time - startTime
+      const progressTime = Math.min(
+        1,
+        elapsed / PROGRESS_TRANSITION_DURATION_MS,
+      )
+      const easedProgress = standardEasing(progressTime)
+      const nextProgress = from + (to - from) * easedProgress
+      wavyVisualProgressRef.current = nextProgress
+      setWavyVisualProgress(nextProgress)
+
+      if (progressTime < 1) {
+        animationFrame = requestAnimationFrame(tick)
+      }
+    }
+
+    animationFrame = requestAnimationFrame(tick)
+
+    return () => {
+      cancelAnimationFrame(animationFrame)
+    }
+  }, [determinateProgress, indeterminate, wavy])
+
+  useEffect(() => {
+    if (!wavy || indeterminate || !wavyActiveVisible) {
+      setWavyPhase(0)
+      return
+    }
+
+    let animationFrame = 0
+    let previousTime: number | undefined
+
+    const tick = (time: number) => {
+      if (previousTime == null) {
+        previousTime = time
+      }
+
+      const delta = time - previousTime
+      previousTime = time
+      setWavyPhase((currentPhase) => {
+        const nextPhase = currentPhase + delta * WAVY_SPEED_PER_MS
+        return nextPhase >= WAVY_WAVELENGTH
+          ? nextPhase % WAVY_WAVELENGTH
+          : nextPhase
+      })
+      animationFrame = requestAnimationFrame(tick)
+    }
+
+    animationFrame = requestAnimationFrame(tick)
+
+    return () => {
+      cancelAnimationFrame(animationFrame)
+    }
+  }, [indeterminate, wavy, wavyActiveVisible])
 
   return (
     <div
@@ -149,7 +309,7 @@ export const LinearProgressIndicator = forwardRef<
         </span>
       ) : (
         <>
-          {determinateProgress > 0 && wavy && (
+          {wavyActiveVisible && (
             <span className={styles.linearWavyIndicator} aria-hidden="true">
               <svg
                 className={styles.linearWavySvg}
@@ -158,23 +318,12 @@ export const LinearProgressIndicator = forwardRef<
                 viewBox={`0 0 ${Math.max(width, 1)} ${wavyHeight}`}
                 preserveAspectRatio="none"
               >
-                <g
-                  className={styles.linearWavyAmplitude}
-                  transform={`translate(0 ${((1 - wavyAmplitudeScale) * wavyHeight) / 2}) scale(1 ${wavyAmplitudeScale})`}
-                >
-                  <g className={styles.linearWavyPhase}>
-                    <g transform={`translate(${wavyCapInset} 0)`}>
-                      <path
-                        className={styles.linearWavyPath}
-                        d={fullWavyPath}
-                        pathLength={fullWavyWidth}
-                        strokeWidth={thickness}
-                        strokeDasharray={`${wavyVisibleWidth} ${fullWavyWidth}`}
-                        vectorEffect="non-scaling-stroke"
-                      />
-                    </g>
-                  </g>
-                </g>
+                <path
+                  className={styles.linearWavyPath}
+                  d={wavyPath}
+                  strokeWidth={thickness}
+                  vectorEffect="non-scaling-stroke"
+                />
               </svg>
             </span>
           )}
