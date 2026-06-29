@@ -65,13 +65,26 @@ function standardEasing(progress: number) {
   return cubicBezier(progress, 0.2, 0, 0, 1)
 }
 
+function emphasizedAccelerateEasing(progress: number) {
+  return cubicBezier(progress, 0.3, 0, 0.8, 0.15)
+}
+
 const WAVY_AMPLITUDE = 3
 const WAVY_WAVELENGTH = 40
 const WAVY_SPEED_PER_MS = WAVY_WAVELENGTH / 1000
 const PROGRESS_TRANSITION_DURATION_MS = 600
+const AMPLITUDE_TRANSITION_DURATION_MS = 500
 
 function getWavyHeight(thickness: LinearProgressIndicatorThickness) {
   return thickness + WAVY_AMPLITUDE * 2
+}
+
+function getWavyTargetAmplitude(progress: number) {
+  if (progress <= 0.1 || progress >= 0.95) {
+    return 0
+  }
+
+  return WAVY_AMPLITUDE
 }
 
 type Point = {
@@ -204,6 +217,11 @@ export const LinearProgressIndicator = forwardRef<
     useState(determinateProgress)
   const wavyVisualProgressRef = useRef(determinateProgress)
   const displayProgress = wavy ? wavyVisualProgress : determinateProgress
+  const targetWavyAmplitude = getWavyTargetAmplitude(displayProgress)
+  const [wavyAmplitude, setWavyAmplitude] = useState(() =>
+    getWavyTargetAmplitude(determinateProgress),
+  )
+  const wavyAmplitudeRef = useRef(wavyAmplitude)
   const wavyActiveVisible =
     wavy && (determinateProgress > 0 || wavyVisualProgress > 0.001)
   const wavyHeight = getWavyHeight(thickness)
@@ -213,7 +231,7 @@ export const LinearProgressIndicator = forwardRef<
     Math.max(wavyProgressWidth, thickness) + 4,
   )}px`
   const wavyPath = getWavySegmentPath({
-    amplitude: WAVY_AMPLITUDE,
+    amplitude: wavyAmplitude,
     endX: wavyProgressWidth,
     phase: wavyPhase,
     thickness,
@@ -292,6 +310,54 @@ export const LinearProgressIndicator = forwardRef<
       cancelAnimationFrame(animationFrame)
     }
   }, [determinateProgress, indeterminate, wavy])
+
+  useEffect(() => {
+    if (!wavy || indeterminate) {
+      wavyAmplitudeRef.current = targetWavyAmplitude
+      setWavyAmplitude(targetWavyAmplitude)
+      return
+    }
+
+    const from = wavyAmplitudeRef.current
+    const to = targetWavyAmplitude
+
+    if (Math.abs(from - to) < 0.001) {
+      wavyAmplitudeRef.current = to
+      setWavyAmplitude(to)
+      return
+    }
+
+    const easing =
+      from < to ? standardEasing : emphasizedAccelerateEasing
+    let animationFrame = 0
+    let startTime: number | undefined
+
+    const tick = (time: number) => {
+      if (startTime == null) {
+        startTime = time
+      }
+
+      const elapsed = time - startTime
+      const progressTime = Math.min(
+        1,
+        elapsed / AMPLITUDE_TRANSITION_DURATION_MS,
+      )
+      const easedProgress = easing(progressTime)
+      const nextAmplitude = from + (to - from) * easedProgress
+      wavyAmplitudeRef.current = nextAmplitude
+      setWavyAmplitude(nextAmplitude)
+
+      if (progressTime < 1) {
+        animationFrame = requestAnimationFrame(tick)
+      }
+    }
+
+    animationFrame = requestAnimationFrame(tick)
+
+    return () => {
+      cancelAnimationFrame(animationFrame)
+    }
+  }, [indeterminate, targetWavyAmplitude, wavy])
 
   useEffect(() => {
     if (!wavy || indeterminate || !wavyActiveVisible) {
