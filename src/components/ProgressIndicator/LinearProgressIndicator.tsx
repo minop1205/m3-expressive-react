@@ -74,6 +74,15 @@ const WAVY_WAVELENGTH = 40
 const WAVY_SPEED_PER_MS = WAVY_WAVELENGTH / 1000
 const PROGRESS_TRANSITION_DURATION_MS = 600
 const AMPLITUDE_TRANSITION_DURATION_MS = 500
+const LINEAR_INDETERMINATE_DURATION_MS = 1750
+const FIRST_LINE_HEAD_DURATION_MS = 1000
+const FIRST_LINE_TAIL_DURATION_MS = 1000
+const SECOND_LINE_HEAD_DURATION_MS = 850
+const SECOND_LINE_TAIL_DURATION_MS = 850
+const FIRST_LINE_HEAD_DELAY_MS = 0
+const FIRST_LINE_TAIL_DELAY_MS = 250
+const SECOND_LINE_HEAD_DELAY_MS = 650
+const SECOND_LINE_TAIL_DELAY_MS = 900
 
 function getWavyHeight(thickness: LinearProgressIndicatorThickness) {
   return thickness + WAVY_AMPLITUDE * 2
@@ -90,6 +99,105 @@ function getWavyTargetAmplitude(progress: number) {
 type Point = {
   x: number
   y: number
+}
+
+type LinearIndeterminateSegment = {
+  key: string
+  start: number
+  end: number
+}
+
+function getDelayedIndeterminateProgress(
+  cycleTime: number,
+  delay: number,
+  duration: number,
+) {
+  if (cycleTime <= delay) {
+    return 0
+  }
+
+  if (cycleTime >= delay + duration) {
+    return 1
+  }
+
+  return emphasizedAccelerateEasing((cycleTime - delay) / duration)
+}
+
+function getLinearIndeterminateSegments(cycleTime: number, gapFraction: number) {
+  const firstHead = getDelayedIndeterminateProgress(
+    cycleTime,
+    FIRST_LINE_HEAD_DELAY_MS,
+    FIRST_LINE_HEAD_DURATION_MS,
+  )
+  const firstTail = getDelayedIndeterminateProgress(
+    cycleTime,
+    FIRST_LINE_TAIL_DELAY_MS,
+    FIRST_LINE_TAIL_DURATION_MS,
+  )
+  const secondHead = getDelayedIndeterminateProgress(
+    cycleTime,
+    SECOND_LINE_HEAD_DELAY_MS,
+    SECOND_LINE_HEAD_DURATION_MS,
+  )
+  const secondTail = getDelayedIndeterminateProgress(
+    cycleTime,
+    SECOND_LINE_TAIL_DELAY_MS,
+    SECOND_LINE_TAIL_DURATION_MS,
+  )
+  const activeSegments: LinearIndeterminateSegment[] = []
+  const trackSegments: LinearIndeterminateSegment[] = []
+
+  if (firstHead < 1 - gapFraction) {
+    trackSegments.push({
+      key: 'track-before-first',
+      start: firstHead > 0 ? firstHead + gapFraction : 0,
+      end: 1,
+    })
+  }
+
+  if (firstHead - firstTail > 0) {
+    activeSegments.push({
+      key: 'active-first',
+      start: firstTail,
+      end: firstHead,
+    })
+  }
+
+  if (firstTail > gapFraction) {
+    trackSegments.push({
+      key: 'track-between',
+      start: secondHead > 0 ? secondHead + gapFraction : 0,
+      end: firstTail < 1 ? firstTail - gapFraction : 1,
+    })
+  }
+
+  if (secondHead - secondTail > 0) {
+    activeSegments.push({
+      key: 'active-second',
+      start: secondTail,
+      end: secondHead,
+    })
+  }
+
+  if (secondTail > gapFraction) {
+    trackSegments.push({
+      key: 'track-after-second',
+      start: 0,
+      end: secondTail < 1 ? secondTail - gapFraction : 1,
+    })
+  }
+
+  return {
+    activeSegments,
+    trackSegments: trackSegments.filter(({ start, end }) => end > start),
+  }
+}
+
+function getSegmentStyle({ start, end }: LinearIndeterminateSegment) {
+  return {
+    insetInlineStart: `${Math.max(0, Math.min(1, start)) * 100}%`,
+    width: `${Math.max(0, Math.min(1, end) - Math.max(0, start)) * 100}%`,
+  } as CSSProperties
 }
 
 function getQuadraticPoint(p0: Point, p1: Point, p2: Point, time: number) {
@@ -209,6 +317,7 @@ export const LinearProgressIndicator = forwardRef<
   const rootRef = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState(0)
   const [wavyPhase, setWavyPhase] = useState(0)
+  const [indeterminateCycleTime, setIndeterminateCycleTime] = useState(0)
   const indeterminate = value == null
   const wavy = shape === 'wavy'
   const progress = indeterminate ? undefined : clampProgress(value)
@@ -236,6 +345,11 @@ export const LinearProgressIndicator = forwardRef<
     phase: wavyPhase,
     thickness,
   })
+  const indeterminateGapFraction = width > 0 ? 4 / width : 0
+  const indeterminateSegments = getLinearIndeterminateSegments(
+    indeterminateCycleTime,
+    indeterminateGapFraction,
+  )
   const trackStart =
     wavy && displayProgress > 0 && displayProgress < 1
       ? wavyTrackStart
@@ -391,6 +505,33 @@ export const LinearProgressIndicator = forwardRef<
     }
   }, [indeterminate, wavy, wavyActiveVisible])
 
+  useEffect(() => {
+    if (!indeterminate) {
+      setIndeterminateCycleTime(0)
+      return
+    }
+
+    let animationFrame = 0
+    let startTime: number | undefined
+
+    const tick = (time: number) => {
+      if (startTime == null) {
+        startTime = time
+      }
+
+      setIndeterminateCycleTime(
+        (time - startTime) % LINEAR_INDETERMINATE_DURATION_MS,
+      )
+      animationFrame = requestAnimationFrame(tick)
+    }
+
+    animationFrame = requestAnimationFrame(tick)
+
+    return () => {
+      cancelAnimationFrame(animationFrame)
+    }
+  }, [indeterminate])
+
   return (
     <div
       ref={rootRef}
@@ -405,19 +546,26 @@ export const LinearProgressIndicator = forwardRef<
       className={clsx(styles.linear, className)}
       style={progressStyle}
     >
-      <span className={styles.linearTrack} aria-hidden="true" />
       {indeterminate ? (
         <span className={styles.linearIndeterminate} aria-hidden="true">
-          <span className={styles.linearIndeterminateSegment} />
-          <span
-            className={clsx(
-              styles.linearIndeterminateSegment,
-              styles.linearIndeterminateSegmentIncoming,
-            )}
-          />
+          {indeterminateSegments.trackSegments.map((segment) => (
+            <span
+              key={segment.key}
+              className={styles.linearIndeterminateTrackSegment}
+              style={getSegmentStyle(segment)}
+            />
+          ))}
+          {indeterminateSegments.activeSegments.map((segment) => (
+            <span
+              key={segment.key}
+              className={styles.linearIndeterminateSegment}
+              style={getSegmentStyle(segment)}
+            />
+          ))}
         </span>
       ) : (
         <>
+          <span className={styles.linearTrack} aria-hidden="true" />
           {wavyActiveVisible && (
             <span className={styles.linearWavyIndicator} aria-hidden="true">
               <svg
