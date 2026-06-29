@@ -70,8 +70,10 @@ function emphasizedAccelerateEasing(progress: number) {
 }
 
 const WAVY_AMPLITUDE = 3
-const WAVY_WAVELENGTH = 40
-const WAVY_SPEED_PER_MS = WAVY_WAVELENGTH / 1000
+const WAVY_DETERMINATE_WAVELENGTH = 40
+const WAVY_INDETERMINATE_WAVELENGTH = 20
+const WAVY_DETERMINATE_SPEED_PER_MS = WAVY_DETERMINATE_WAVELENGTH / 1000
+const WAVY_INDETERMINATE_SPEED_PER_MS = WAVY_INDETERMINATE_WAVELENGTH / 1000
 const PROGRESS_TRANSITION_DURATION_MS = 600
 const AMPLITUDE_TRANSITION_DURATION_MS = 500
 const LINEAR_INDETERMINATE_DURATION_MS = 1750
@@ -255,22 +257,26 @@ function getWavySegmentPath({
   amplitude,
   endX,
   phase,
+  startX: startXInput,
   thickness,
+  wavelength,
 }: {
   amplitude: number
   endX: number
   phase: number
+  startX?: number
   thickness: LinearProgressIndicatorThickness
+  wavelength: number
 }) {
   const centerY = getWavyHeight(thickness) / 2
-  const startX = thickness / 2
+  const startX = Math.max(thickness / 2, startXInput ?? thickness / 2)
   const pathEndX = endX - thickness / 2
 
   if (pathEndX <= startX) {
     return ''
   }
 
-  const halfWavelength = WAVY_WAVELENGTH / 2
+  const halfWavelength = wavelength / 2
   const controlOffsetY = amplitude * 2
   const firstSegmentIndex = Math.floor((startX + phase) / halfWavelength)
   let segmentIndex = firstSegmentIndex
@@ -344,12 +350,29 @@ export const LinearProgressIndicator = forwardRef<
     endX: wavyProgressWidth,
     phase: wavyPhase,
     thickness,
+    wavelength: WAVY_DETERMINATE_WAVELENGTH,
   })
   const indeterminateGapFraction = width > 0 ? 4 / width : 0
   const indeterminateSegments = getLinearIndeterminateSegments(
     indeterminateCycleTime,
     indeterminateGapFraction,
   )
+  const indeterminateWavySegments =
+    wavy && indeterminate
+      ? indeterminateSegments.activeSegments
+          .map((segment) => ({
+            ...segment,
+            path: getWavySegmentPath({
+              amplitude: WAVY_AMPLITUDE,
+              endX: segment.end * width,
+              phase: wavyPhase,
+              startX: segment.start * width,
+              thickness,
+              wavelength: WAVY_INDETERMINATE_WAVELENGTH,
+            }),
+          }))
+          .filter(({ path }) => path.length > 0)
+      : []
   const trackStart =
     wavy && displayProgress > 0 && displayProgress < 1
       ? wavyTrackStart
@@ -474,7 +497,7 @@ export const LinearProgressIndicator = forwardRef<
   }, [indeterminate, targetWavyAmplitude, wavy])
 
   useEffect(() => {
-    if (!wavy || indeterminate || !wavyActiveVisible) {
+    if (!wavy || (!indeterminate && !wavyActiveVisible)) {
       setWavyPhase(0)
       return
     }
@@ -490,9 +513,17 @@ export const LinearProgressIndicator = forwardRef<
       const delta = time - previousTime
       previousTime = time
       setWavyPhase((currentPhase) => {
-        const nextPhase = currentPhase + delta * WAVY_SPEED_PER_MS
-        return nextPhase >= WAVY_WAVELENGTH
-          ? nextPhase % WAVY_WAVELENGTH
+        const wavelength = indeterminate
+          ? WAVY_INDETERMINATE_WAVELENGTH
+          : WAVY_DETERMINATE_WAVELENGTH
+        const nextPhase =
+          currentPhase +
+          delta *
+            (indeterminate
+              ? WAVY_INDETERMINATE_SPEED_PER_MS
+              : WAVY_DETERMINATE_SPEED_PER_MS)
+        return nextPhase >= wavelength
+          ? nextPhase % wavelength
           : nextPhase
       })
       animationFrame = requestAnimationFrame(tick)
@@ -555,13 +586,33 @@ export const LinearProgressIndicator = forwardRef<
               style={getSegmentStyle(segment)}
             />
           ))}
-          {indeterminateSegments.activeSegments.map((segment) => (
-            <span
-              key={segment.key}
-              className={styles.linearIndeterminateSegment}
-              style={getSegmentStyle(segment)}
-            />
-          ))}
+          {wavy ? (
+            <svg
+              className={styles.linearWavySvg}
+              width="100%"
+              height={wavyHeight}
+              viewBox={`0 0 ${Math.max(width, 1)} ${wavyHeight}`}
+              preserveAspectRatio="none"
+            >
+              {indeterminateWavySegments.map((segment) => (
+                <path
+                  key={segment.key}
+                  className={styles.linearWavyPath}
+                  d={segment.path}
+                  strokeWidth={thickness}
+                  vectorEffect="non-scaling-stroke"
+                />
+              ))}
+            </svg>
+          ) : (
+            indeterminateSegments.activeSegments.map((segment) => (
+              <span
+                key={segment.key}
+                className={styles.linearIndeterminateSegment}
+                style={getSegmentStyle(segment)}
+              />
+            ))
+          )}
         </span>
       ) : (
         <>

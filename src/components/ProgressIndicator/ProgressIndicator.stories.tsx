@@ -62,6 +62,15 @@ export const LinearWavyDeterminate: LinearStory = {
   ),
 }
 
+export const LinearWavyIndeterminate: LinearStory = {
+  args: { shape: 'wavy' },
+  render: (args) => (
+    <div style={{ width: 360 }}>
+      <LinearProgressIndicator {...args} aria-label="Loading" />
+    </div>
+  ),
+}
+
 export const CircularDeterminate: CircularStory = {
   args: { value: 0.7 },
   argTypes: {
