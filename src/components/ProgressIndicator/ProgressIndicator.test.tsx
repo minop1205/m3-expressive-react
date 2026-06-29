@@ -146,6 +146,17 @@ describe('CircularProgressIndicator', () => {
     )
   })
 
+  it('renders a wavy determinate indicator', () => {
+    const { container } = render(
+      <CircularProgressIndicator value={0.5} shape="wavy" />,
+    )
+    expect(screen.getByRole('progressbar')).toHaveAttribute(
+      'data-shape',
+      'wavy',
+    )
+    expect(container.querySelector('path[class*="circularIndicator"]')).toBeInTheDocument()
+  })
+
   it('hides the determinate track when there is no remaining arc after gaps', () => {
     const { container } = render(<CircularProgressIndicator value={1} />)
     expect(

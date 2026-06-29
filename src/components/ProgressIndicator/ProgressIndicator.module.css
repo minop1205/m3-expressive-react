@@ -164,6 +164,16 @@
   transition: stroke-dasharray var(--_duration) var(--_easing);
 }
 
+.circular[data-shape='wavy']:not([data-indeterminate]) .circularIndicator {
+  stroke-dasharray: none;
+  transform: none;
+  transition: none;
+}
+
+.circular[data-shape='wavy']:not([data-indeterminate]) .circularTrack {
+  transition: none;
+}
+
 .circular[data-indeterminate] .circularLayer {
   transform-origin: center;
 }
