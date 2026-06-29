@@ -142,15 +142,20 @@
 }
 
 .circularTrack,
+.circularWavyTrack,
 .circularIndicator {
   fill: none;
   transform: rotate(-90deg);
   transform-origin: center;
 }
 
-.circularTrack {
+.circularTrack,
+.circularWavyTrack {
   stroke: var(--_track-color);
   stroke-linecap: round;
+}
+
+.circularTrack {
   transition:
     stroke-dasharray var(--_duration) var(--_easing),
     stroke-dashoffset var(--_duration) var(--_easing);
@@ -172,6 +177,14 @@
 
 .circular[data-shape='wavy']:not([data-indeterminate]) .circularTrack {
   transition: none;
+}
+
+.circular[data-shape='wavy'] .circularWavyTrack,
+.circular[data-shape='wavy'][data-indeterminate] .circularIndicator {
+  stroke-dasharray: none;
+  transform: none;
+  transition: none;
+  animation: none;
 }
 
 .circular[data-indeterminate] .circularLayer {

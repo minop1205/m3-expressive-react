@@ -28,9 +28,14 @@ const CENTER = VIEWBOX_SIZE / 2
 const GAP = 4
 const WAVY_AMPLITUDE = 1.6
 const WAVY_WAVELENGTH = 15
-const WAVY_SPEED_PER_MS = WAVY_WAVELENGTH / 1000
 const PROGRESS_TRANSITION_DURATION_MS = 600
 const AMPLITUDE_TRANSITION_DURATION_MS = 500
+const INDETERMINATE_DURATION_MS = 6000
+const INDETERMINATE_MIN_PROGRESS = 0.1
+const INDETERMINATE_MAX_PROGRESS = 0.87
+const ADDITIONAL_ROTATION_DELAY_MS = 1500
+const ADDITIONAL_ROTATION_DURATION_MS = 1500
+const MIN_CIRCULAR_VERTEX_COUNT = 5
 
 function cubicBezier(
   progress: number,
@@ -72,6 +77,10 @@ function standardEasing(progress: number) {
 
 function emphasizedAccelerateEasing(progress: number) {
   return cubicBezier(progress, 0.3, 0, 0.8, 0.15)
+}
+
+function emphasizedDecelerateEasing(progress: number) {
+  return cubicBezier(progress, 0.05, 0.7, 0.1, 1)
 }
 
 function clampProgress(value: number) {
@@ -120,6 +129,25 @@ function polarToPoint(radius: number, angle: number) {
   }
 }
 
+function rotatePoint(point: { x: number; y: number }, angle: number) {
+  const x = point.x - CENTER
+  const y = point.y - CENTER
+  const cos = Math.cos(angle)
+  const sin = Math.sin(angle)
+
+  return {
+    x: CENTER + x * cos - y * sin,
+    y: CENTER + x * sin + y * cos,
+  }
+}
+
+function getCircularVertexCount(radius: number) {
+  return Math.max(
+    MIN_CIRCULAR_VERTEX_COUNT,
+    Math.round((2 * Math.PI * radius) / WAVY_WAVELENGTH),
+  )
+}
+
 function getCircularWavyPath(
   progress: number,
   radius: number,
@@ -130,24 +158,116 @@ function getCircularWavyPath(
     return ''
   }
 
-  const startAngle = -Math.PI / 2
-  const endAngle = startAngle + Math.PI * 2 * progress
   const circumference = 2 * Math.PI * radius
-  const cycles = circumference / WAVY_WAVELENGTH
-  const steps = Math.max(8, Math.ceil(progress * cycles * 8))
+  const vertexCount = getCircularVertexCount(radius)
+  const sampleCount = vertexCount * 24
+  const samples: Array<{ x: number; y: number; distance: number }> = []
+  let totalLength = 0
+
+  for (let index = 0; index <= sampleCount; index += 1) {
+    const fraction = index / sampleCount
+    const angle = -Math.PI / 2 + Math.PI * 2 * fraction
+    const wave = Math.cos(fraction * vertexCount * Math.PI * 2)
+    const point = polarToPoint(radius + wave * amplitude, angle)
+
+    if (index > 0) {
+      const previous = samples[index - 1]
+      totalLength += Math.hypot(point.x - previous.x, point.y - previous.y)
+    }
+
+    samples.push({ ...point, distance: totalLength })
+  }
+
+  const phaseDistance = (phase / circumference) * totalLength
+  const rotation = -(phase / circumference) * Math.PI * 2
+  const segmentLength = progress * totalLength
+  const steps = Math.max(8, Math.ceil(progress * vertexCount * 10))
   let path = ''
 
   for (let index = 0; index <= steps; index += 1) {
     const fraction = index / steps
-    const angle = startAngle + (endAngle - startAngle) * fraction
-    const arcLength = circumference * progress * fraction
-    const wave = Math.sin(((arcLength + phase) / WAVY_WAVELENGTH) * Math.PI * 2)
-    const point = polarToPoint(radius + wave * amplitude, angle)
+    const distance = (phaseDistance + segmentLength * fraction) % totalLength
+    let sampleIndex = 1
+
+    while (
+      sampleIndex < samples.length - 1 &&
+      samples[sampleIndex].distance < distance
+    ) {
+      sampleIndex += 1
+    }
+
+    const previous = samples[sampleIndex - 1]
+    const next = samples[sampleIndex]
+    const span = next.distance - previous.distance || 1
+    const sampleFraction = (distance - previous.distance) / span
+    const point = rotatePoint(
+      {
+        x: previous.x + (next.x - previous.x) * sampleFraction,
+        y: previous.y + (next.y - previous.y) * sampleFraction,
+      },
+      rotation,
+    )
 
     path += `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(3)} ${point.y.toFixed(3)} `
   }
 
   return path.trim()
+}
+
+function getCircularArcPath(startProgress: number, endProgress: number, radius: number) {
+  if (endProgress <= startProgress) {
+    return ''
+  }
+
+  const startAngle = -Math.PI / 2 + Math.PI * 2 * startProgress
+  const endAngle = -Math.PI / 2 + Math.PI * 2 * endProgress
+  const steps = Math.max(4, Math.ceil((endProgress - startProgress) * 48))
+  let path = ''
+
+  for (let index = 0; index <= steps; index += 1) {
+    const fraction = index / steps
+    const angle = startAngle + (endAngle - startAngle) * fraction
+    const point = polarToPoint(radius, angle)
+
+    path += `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(3)} ${point.y.toFixed(3)} `
+  }
+
+  return path.trim()
+}
+
+function getIndeterminateSweep(cycleTime: number) {
+  if (cycleTime <= INDETERMINATE_DURATION_MS / 2) {
+    return (
+      INDETERMINATE_MIN_PROGRESS +
+      (INDETERMINATE_MAX_PROGRESS - INDETERMINATE_MIN_PROGRESS) *
+        standardEasing(cycleTime / (INDETERMINATE_DURATION_MS / 2))
+    )
+  }
+
+  return (
+    INDETERMINATE_MAX_PROGRESS -
+    (INDETERMINATE_MAX_PROGRESS - INDETERMINATE_MIN_PROGRESS) *
+      standardEasing(
+        (cycleTime - INDETERMINATE_DURATION_MS / 2) /
+          (INDETERMINATE_DURATION_MS / 2),
+      )
+  )
+}
+
+function getAdditionalRotation(cycleTime: number) {
+  const step = Math.floor(cycleTime / ADDITIONAL_ROTATION_DELAY_MS)
+  const stepTime = cycleTime - step * ADDITIONAL_ROTATION_DELAY_MS
+  const baseRotation = step * 90
+
+  if (stepTime >= ADDITIONAL_ROTATION_DURATION_MS) {
+    return baseRotation + 90
+  }
+
+  return (
+    baseRotation +
+    90 *
+      emphasizedDecelerateEasing(stepTime / ADDITIONAL_ROTATION_DURATION_MS)
+  )
 }
 
 export const CircularProgressIndicator = forwardRef<
@@ -166,6 +286,7 @@ export const CircularProgressIndicator = forwardRef<
   ref,
 ) {
   const [wavyPhase, setWavyPhase] = useState(0)
+  const [indeterminateCycleTime, setIndeterminateCycleTime] = useState(0)
   const indeterminate = value == null
   const wavy = shape === 'wavy'
   const progress = indeterminate ? undefined : clampProgress(value)
@@ -178,6 +299,9 @@ export const CircularProgressIndicator = forwardRef<
     getWavyTargetAmplitude(determinateProgress),
   )
   const radius = (VIEWBOX_SIZE - thickness) / 2
+  const circumference = 2 * Math.PI * radius
+  const wavyVertexCount = getCircularVertexCount(radius)
+  const wavyActualWavelength = circumference / wavyVertexCount
   const wavyPath = wavy
     ? getCircularWavyPath(
         displayProgress,
@@ -189,8 +313,28 @@ export const CircularProgressIndicator = forwardRef<
   const trackArc = indeterminate
     ? undefined
     : getTrackArc(displayProgress, radius, thickness)
-  const circumference = 2 * Math.PI * radius
   const visualGap = (GAP + thickness) / circumference
+  const indeterminateSweep = getIndeterminateSweep(indeterminateCycleTime)
+  const indeterminateRotation =
+    (1080 * indeterminateCycleTime) / INDETERMINATE_DURATION_MS +
+    getAdditionalRotation(indeterminateCycleTime)
+  const indeterminateWavyPath =
+    wavy && indeterminate
+      ? getCircularWavyPath(
+          indeterminateSweep,
+          radius,
+          wavyPhase,
+          WAVY_AMPLITUDE,
+        )
+      : ''
+  const indeterminateWavyTrackPath =
+    wavy && indeterminate
+      ? getCircularArcPath(
+          Math.min(1, indeterminateSweep + visualGap),
+          Math.max(0, 1 - visualGap),
+          radius,
+        )
+      : ''
   const indicatorStyle = {
     ...style,
     '--_progress': progress ?? 0,
@@ -288,7 +432,7 @@ export const CircularProgressIndicator = forwardRef<
   }, [indeterminate, targetWavyAmplitude, wavy])
 
   useEffect(() => {
-    if (!wavy || indeterminate || determinateProgress <= 0) {
+    if (!wavy || (!indeterminate && determinateProgress <= 0)) {
       setWavyPhase(0)
       return
     }
@@ -304,9 +448,9 @@ export const CircularProgressIndicator = forwardRef<
       const delta = time - previousTime
       previousTime = time
       setWavyPhase((currentPhase) => {
-        const nextPhase = currentPhase + delta * WAVY_SPEED_PER_MS
-        return nextPhase >= WAVY_WAVELENGTH
-          ? nextPhase % WAVY_WAVELENGTH
+        const nextPhase = currentPhase + (delta * wavyActualWavelength) / 1000
+        return nextPhase >= circumference
+          ? nextPhase % circumference
           : nextPhase
       })
       animationFrame = requestAnimationFrame(tick)
@@ -317,7 +461,40 @@ export const CircularProgressIndicator = forwardRef<
     return () => {
       cancelAnimationFrame(animationFrame)
     }
-  }, [determinateProgress, indeterminate, wavy])
+  }, [
+    circumference,
+    determinateProgress,
+    indeterminate,
+    wavy,
+    wavyActualWavelength,
+  ])
+
+  useEffect(() => {
+    if (!indeterminate || !wavy) {
+      setIndeterminateCycleTime(0)
+      return
+    }
+
+    let animationFrame = 0
+    let startTime: number | undefined
+
+    const tick = (time: number) => {
+      if (startTime == null) {
+        startTime = time
+      }
+
+      setIndeterminateCycleTime(
+        (time - startTime) % INDETERMINATE_DURATION_MS,
+      )
+      animationFrame = requestAnimationFrame(tick)
+    }
+
+    animationFrame = requestAnimationFrame(tick)
+
+    return () => {
+      cancelAnimationFrame(animationFrame)
+    }
+  }, [indeterminate, wavy])
 
   return (
     <svg
@@ -340,7 +517,27 @@ export const CircularProgressIndicator = forwardRef<
         key={indeterminate ? `indeterminate-${thickness}` : 'determinate'}
         className={styles.circularLayer}
       >
-        {(indeterminate || trackArc) && (
+        {wavy && indeterminate ? (
+          <g
+            style={{
+              transform: `rotate(${indeterminateRotation}deg)`,
+              transformOrigin: 'center',
+            }}
+          >
+            {indeterminateWavyTrackPath && (
+              <path
+                className={styles.circularWavyTrack}
+                d={indeterminateWavyTrackPath}
+                strokeWidth={thickness}
+              />
+            )}
+            <path
+              className={styles.circularIndicator}
+              d={indeterminateWavyPath}
+              strokeWidth={thickness}
+            />
+          </g>
+        ) : (indeterminate || trackArc) && (
           <circle
             className={styles.circularTrack}
             cx={CENTER}
@@ -352,7 +549,7 @@ export const CircularProgressIndicator = forwardRef<
             strokeDashoffset={trackArc?.dashoffset}
           />
         )}
-        {wavy && !indeterminate ? (
+        {wavy && indeterminate ? null : wavy && !indeterminate ? (
           <path
             className={styles.circularIndicator}
             d={wavyPath}

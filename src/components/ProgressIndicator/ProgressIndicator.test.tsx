@@ -189,6 +189,18 @@ describe('CircularProgressIndicator', () => {
     expect(container.querySelector('[class*="circularLayer"]')).not.toBe(layer)
   })
 
+  it('renders a wavy indeterminate indicator', () => {
+    const { container } = render(
+      <CircularProgressIndicator shape="wavy" aria-label="Loading" />,
+    )
+    expect(screen.getByRole('progressbar')).toHaveAttribute(
+      'data-shape',
+      'wavy',
+    )
+    expect(container.querySelector('[class*="circularWavyTrack"]')).toBeInTheDocument()
+    expect(container.querySelector('path[class*="circularIndicator"]')).toBeInTheDocument()
+  })
+
   it('has no axe violations', async () => {
     const { container } = render(
       <CircularProgressIndicator value={0.5} aria-label="Loading" />,

@@ -96,6 +96,11 @@ export const CircularIndeterminate: CircularStory = {
   render: (args) => <CircularProgressIndicator {...args} aria-label="Loading" />,
 }
 
+export const CircularWavyIndeterminate: CircularStory = {
+  args: { shape: 'wavy' },
+  render: (args) => <CircularProgressIndicator {...args} aria-label="Loading" />,
+}
+
 export const CircularSmall: CircularStory = {
   args: { value: 0.45, size: 24 },
   render: (args) => <CircularProgressIndicator {...args} aria-label="Loading" />,
