@@ -1,6 +1,7 @@
 export * from './Button'
 export * from './Card'
 export * from './IconButton'
+export * from './List'
 export * from './Fab'
 export * from './Switch'
 export * from './Checkbox'
