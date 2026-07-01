@@ -24,18 +24,18 @@
   padding-inline: var(--_pad);
 
   /* Defaults (= standard / non-toggle neutral appearance). */
-  --_container: transparent;
+  --_container-color: transparent;
   --_icon-color: var(--md-sys-color-on-surface-variant);
-  --_state-color: var(--md-sys-color-on-surface-variant);
+  --_state-layer-color: var(--md-sys-color-on-surface-variant);
   --_outline-width: 0;
   --_outline-color: transparent;
 
   border: var(--_outline-width) solid var(--_outline-color);
   border-radius: var(--_shape-round);
-  background-color: var(--_container);
+  background-color: var(--_container-color);
   color: var(--_icon-color);
 
-  --md-ripple-color: var(--_state-color);
+  --md-ripple-color: var(--_state-layer-color);
   --md-focus-ring-color: var(--md-sys-color-secondary);
 
   transition:
@@ -86,7 +86,8 @@
 .iconButton[data-shape-state='square'] {
   border-radius: var(--_shape-square);
 }
-.iconButton[data-shape-state='pressed'] {
+/* Press wins over the resting/selected shape (higher specificity + last). */
+.iconButton:active:not(:disabled) {
   border-radius: var(--_shape-pressed);
 }
 
@@ -161,19 +162,19 @@
 /* Variants — base appearance = non-toggle resting                             */
 /* --------------------------------------------------------------------------- */
 .iconButton[data-variant='filled'] {
-  --_container: var(--md-sys-color-primary);
+  --_container-color: var(--md-sys-color-primary);
   --_icon-color: var(--md-sys-color-on-primary);
-  --_state-color: var(--md-sys-color-on-primary);
+  --_state-layer-color: var(--md-sys-color-on-primary);
 }
 .iconButton[data-variant='tonal'] {
-  --_container: var(--md-sys-color-secondary-container);
+  --_container-color: var(--md-sys-color-secondary-container);
   --_icon-color: var(--md-sys-color-on-secondary-container);
-  --_state-color: var(--md-sys-color-on-secondary-container);
+  --_state-layer-color: var(--md-sys-color-on-secondary-container);
 }
 .iconButton[data-variant='outlined'] {
-  --_container: transparent;
+  --_container-color: transparent;
   --_icon-color: var(--md-sys-color-on-surface-variant);
-  --_state-color: var(--md-sys-color-on-surface-variant);
+  --_state-layer-color: var(--md-sys-color-on-surface-variant);
   --_outline-color: var(--md-sys-color-outline-variant);
   --_outline-width: 1px;
 }
@@ -189,25 +190,25 @@
 /* --------------------------------------------------------------------------- */
 /* Filled — unselected uses a neutral surface fill. */
 .iconButton[data-variant='filled'][data-selected='false'] {
-  --_container: var(--md-sys-color-surface-container-highest);
+  --_container-color: var(--md-sys-color-surface-container-highest);
   --_icon-color: var(--md-sys-color-primary);
-  --_state-color: var(--md-sys-color-on-surface-variant);
+  --_state-layer-color: var(--md-sys-color-on-surface-variant);
 }
 
 /* Selected appearances. */
 .iconButton[data-variant='standard'][data-selected='true'] {
   --_icon-color: var(--md-sys-color-primary);
-  --_state-color: var(--md-sys-color-primary);
+  --_state-layer-color: var(--md-sys-color-primary);
 }
 .iconButton[data-variant='tonal'][data-selected='true'] {
-  --_container: var(--md-sys-color-secondary);
+  --_container-color: var(--md-sys-color-secondary);
   --_icon-color: var(--md-sys-color-on-secondary);
-  --_state-color: var(--md-sys-color-on-secondary);
+  --_state-layer-color: var(--md-sys-color-on-secondary);
 }
 .iconButton[data-variant='outlined'][data-selected='true'] {
-  --_container: var(--md-sys-color-inverse-surface);
+  --_container-color: var(--md-sys-color-inverse-surface);
   --_icon-color: var(--md-sys-color-inverse-on-surface);
-  --_state-color: var(--md-sys-color-inverse-on-surface);
+  --_state-layer-color: var(--md-sys-color-inverse-on-surface);
   --_outline-width: 0;
 }
 
@@ -218,17 +219,17 @@
   cursor: default;
   pointer-events: none;
   --_icon-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
-  --_state-color: transparent;
+  --_state-layer-color: transparent;
 }
 .iconButton[data-variant='filled']:disabled,
 .iconButton[data-variant='tonal']:disabled {
-  --_container: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  --_container-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
 }
 .iconButton[data-variant='outlined']:disabled {
   --_outline-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
 }
 .iconButton[data-variant='outlined'][data-selected='true']:disabled {
-  --_container: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  --_container-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
   --_outline-width: 0;
 }
 

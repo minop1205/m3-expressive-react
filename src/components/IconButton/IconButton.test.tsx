@@ -29,12 +29,12 @@ describe('IconButton', () => {
     expect(screen.getByRole('button')).not.toHaveAttribute('aria-pressed')
   })
 
-  it('fires onPress when activated', async () => {
+  it('fires onClick when activated', async () => {
     const user = userEvent.setup()
-    const onPress = vi.fn()
-    render(<IconButton icon={Icon} aria-label="x" onPress={onPress} />)
+    const onClick = vi.fn()
+    render(<IconButton icon={Icon} aria-label="x" onClick={onClick} />)
     await user.click(screen.getByRole('button'))
-    expect(onPress).toHaveBeenCalledTimes(1)
+    expect(onClick).toHaveBeenCalledTimes(1)
   })
 
   it('toggles selection and exposes aria-pressed (uncontrolled)', async () => {

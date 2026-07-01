@@ -31,7 +31,7 @@ const meta = {
     size: 'sm',
     width: 'default',
     shape: 'round',
-    onPress: fn(),
+    onClick: fn(),
     onChange: fn(),
   },
   argTypes: {
@@ -43,7 +43,7 @@ const meta = {
     disabled: { control: 'boolean' },
     icon: { control: false },
     selectedIcon: { control: false },
-    onPress: { action: 'onPress' },
+    onClick: { action: 'onClick' },
     onChange: { action: 'onChange' },
   },
 } satisfies Meta<typeof IconButton>
