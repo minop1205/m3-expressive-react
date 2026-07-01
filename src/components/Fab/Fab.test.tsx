@@ -23,12 +23,12 @@ describe('Fab', () => {
     expect(btn).toHaveAttribute('data-size', 'large')
   })
 
-  it('fires onPress when activated', async () => {
+  it('fires onClick when activated', async () => {
     const user = userEvent.setup()
-    const onPress = vi.fn()
-    render(<Fab icon={Icon} aria-label="x" onPress={onPress} />)
+    const onClick = vi.fn()
+    render(<Fab icon={Icon} aria-label="x" onClick={onClick} />)
     await user.click(screen.getByRole('button'))
-    expect(onPress).toHaveBeenCalledTimes(1)
+    expect(onClick).toHaveBeenCalledTimes(1)
   })
 
   it('renders as Extended FAB with a label', () => {
@@ -40,10 +40,10 @@ describe('Fab', () => {
 
   it('does not fire when disabled', async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 })
-    const onPress = vi.fn()
-    render(<Fab icon={Icon} aria-label="x" disabled onPress={onPress} />)
+    const onClick = vi.fn()
+    render(<Fab icon={Icon} aria-label="x" disabled onClick={onClick} />)
     await user.click(screen.getByRole('button'))
-    expect(onPress).not.toHaveBeenCalled()
+    expect(onClick).not.toHaveBeenCalled()
   })
 
   it('forwards a ref', () => {

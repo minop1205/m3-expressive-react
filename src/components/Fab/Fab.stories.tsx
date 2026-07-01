@@ -29,7 +29,7 @@ const meta = {
     'aria-label': 'Edit',
     color: 'primary-container',
     size: 'regular',
-    onPress: fn(),
+    onClick: fn(),
   },
   argTypes: {
     color: {
@@ -43,10 +43,13 @@ const meta = {
         'tertiary',
       ],
     },
-    size: { control: 'inline-radio', options: ['regular', 'medium', 'large'] },
+    size: {
+      control: 'inline-radio',
+      options: ['small', 'regular', 'medium', 'large'],
+    },
     disabled: { control: 'boolean' },
     icon: { control: false },
-    onPress: { action: 'onPress' },
+    onClick: { action: 'onClick' },
   },
 } satisfies Meta<typeof Fab>
 
@@ -58,6 +61,7 @@ export const Playground: Story = {}
 export const Sizes: Story = {
   render: (args) => (
     <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+      <Fab {...args} size="small" aria-label="Small" />
       <Fab {...args} size="regular" aria-label="Regular" />
       <Fab {...args} size="medium" aria-label="Medium" />
       <Fab {...args} size="large" aria-label="Large" />
