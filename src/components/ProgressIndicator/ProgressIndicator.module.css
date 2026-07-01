@@ -4,7 +4,7 @@
 
 .linear,
 .circular {
-  --_active-color: var(--md-sys-color-primary, #6750a4);
+  --_active-indicator-color: var(--md-sys-color-primary, #6750a4);
   --_track-color: var(--md-sys-color-secondary-container, #e8def8);
   --_surface-color: var(--md-sys-color-surface, #fffbfe);
   --_duration: var(--md-sys-motion-duration-medium4, 600ms);
@@ -70,7 +70,7 @@
   width: var(--_progress);
   max-width: 100%;
   height: var(--_thickness);
-  background-color: var(--_active-color);
+  background-color: var(--_active-indicator-color);
   border-radius: inherit;
   transform: translateY(-50%);
   transition: width var(--_duration) var(--_easing);
@@ -90,7 +90,7 @@
 
 .linearWavyPath {
   fill: none;
-  stroke: var(--_active-color);
+  stroke: var(--_active-indicator-color);
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -100,7 +100,7 @@
   top: 50%;
   width: var(--_stop-size);
   height: var(--_stop-size);
-  background-color: var(--_active-color);
+  background-color: var(--_active-indicator-color);
   border-radius: var(--md-sys-shape-corner-full, 9999px);
   transform: translateY(-50%);
 }
@@ -128,7 +128,7 @@
 }
 
 .linearIndeterminateSegment {
-  background-color: var(--_active-color);
+  background-color: var(--_active-indicator-color);
 }
 
 /* --------------------------------------------------------------------------
@@ -162,7 +162,7 @@
 }
 
 .circularIndicator {
-  stroke: var(--_active-color);
+  stroke: var(--_active-indicator-color);
   stroke-linecap: round;
   stroke-dasharray: var(--_progress) var(--_remaining-progress);
   stroke-dashoffset: 0;
