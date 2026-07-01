@@ -94,7 +94,8 @@
 /* =========================================================================== */
 /* Hover colors                                                                */
 /* =========================================================================== */
-.radio:not(.checked):not(.disabled):has(.input:hover) .outer {
+.radio:not(.checked):not(.disabled):has(.input:hover) .outer,
+.radio:not(.checked):not(.disabled):has(.input:active) .outer {
   stroke: var(--md-sys-color-on-surface);
 }
 

@@ -32,7 +32,8 @@
 }
 
 /* --- Vertical ------------------------------------------------------------ */
-/* Inset variants per Material 3 Design Kit (Figma) */
+/* Inset variants are a library convenience; Compose HorizontalDivider /
+   VerticalDivider are full-bleed (thickness 1dp, outline-variant). */
 .divider[data-orientation='vertical'] {
   width: var(--_thickness);
   align-self: stretch;

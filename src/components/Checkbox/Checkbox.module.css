@@ -200,7 +200,8 @@
 /* =========================================================================== */
 /* Hover colors                                                                */
 /* =========================================================================== */
-.unchecked:not(.disabled):not(.error):has(.input:hover) .outline {
+.unchecked:not(.disabled):not(.error):has(.input:hover) .outline,
+.unchecked:not(.disabled):not(.error):has(.input:active) .outline {
   border-color: var(--md-sys-color-on-surface);
 }
 

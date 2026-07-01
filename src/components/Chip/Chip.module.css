@@ -205,6 +205,18 @@
   color: color-mix(in srgb, var(--md-sys-color-on-surface, #1d1b20) 38%, transparent);
 }
 
+/* Input chip: unselected leading icon stays neutral until interacted (Compose
+   InputChipTokens — Primary only on hover/focus/pressed). */
+.input:not(.selected):not(.disabled) .leadingIcon {
+  color: var(--md-sys-color-on-surface-variant, #49454f);
+}
+
+.input:not(.selected):not(.disabled):has(.action:hover) .leadingIcon,
+.input:not(.selected):not(.disabled):has(.action:focus-visible) .leadingIcon,
+.input:not(.selected):not(.disabled):has(.action:active) .leadingIcon {
+  color: var(--md-sys-color-primary, #6750a4);
+}
+
 /* =========================================================================== */
 /* Trailing action (remove button) — 24dp circle (4/3 × icon-size)            */
 /* Ripple/FocusRing inherit from the button, so the button itself must be the  */
