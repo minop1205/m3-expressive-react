@@ -5,8 +5,8 @@
 
 /* --- Private tokens ------------------------------------------------------ */
 .badge {
-  --_color: var(--md-sys-color-error, #b3261e);
-  --_label-color: var(--md-sys-color-on-error, #ffffff);
+  --_container-color: var(--md-sys-color-error, #b3261e);
+  --_label-text-color: var(--md-sys-color-on-error, #ffffff);
   --_small-size: 6px;
   --_large-height: 16px;
   --_large-shape: 8px;
@@ -28,7 +28,7 @@
 .badge {
   position: absolute;
   box-sizing: border-box;
-  background-color: var(--_color);
+  background-color: var(--_container-color);
   pointer-events: none;
   z-index: 1;
 
@@ -65,7 +65,7 @@
   line-height: var(--md-sys-typescale-label-small-line-height, 1rem);
   font-weight: var(--md-sys-typescale-label-small-weight, 500);
   letter-spacing: var(--md-sys-typescale-label-small-tracking, 0.03125rem);
-  color: var(--_label-color);
+  color: var(--_label-text-color);
 
   display: inline-flex;
   align-items: center;

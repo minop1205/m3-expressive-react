@@ -15,7 +15,7 @@
   --_icon-size: 18px;
   --_outline-color: var(--md-sys-color-outline-variant, #cac4d0);
   --_outline-width: 1px;
-  --_label-color: var(--md-sys-color-on-surface-variant, #49454f);
+  --_label-text-color: var(--md-sys-color-on-surface-variant, #49454f);
   --_leading-icon-color: var(--md-sys-color-primary, #6750a4);
   --_trailing-icon-color: var(--md-sys-color-on-surface-variant, #49454f);
   --_container-color: transparent;
@@ -147,7 +147,7 @@
   font-weight: var(--md-sys-typescale-label-large-weight, 500);
   line-height: var(--md-sys-typescale-label-large-line-height, 1.25rem);
   letter-spacing: var(--md-sys-typescale-label-large-tracking, 0.1px);
-  color: var(--_label-color);
+  color: var(--_label-text-color);
   white-space: nowrap;
   user-select: none;
 }
