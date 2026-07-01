@@ -11,7 +11,7 @@ const meta = {
     variant: 'filled',
     size: 'sm',
     shape: 'round',
-    onPress: fn(),
+    onClick: fn(),
   },
   argTypes: {
     variant: {
@@ -21,7 +21,7 @@ const meta = {
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
     shape: { control: 'inline-radio', options: ['round', 'square'] },
     disabled: { control: 'boolean' },
-    onPress: { action: 'onPress' },
+    onClick: { action: 'onClick' },
   },
 } satisfies Meta<typeof Button>
 
@@ -61,7 +61,7 @@ export const Sizes: Story = {
 }
 
 export const WithIcon: Story = {
-  args: { icon: PlusIcon, children: 'Add item' },
+  args: { startIcon: PlusIcon, children: 'Add item' },
 }
 
 export const Shapes: Story = {

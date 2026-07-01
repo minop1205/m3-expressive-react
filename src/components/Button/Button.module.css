@@ -36,7 +36,7 @@
   font-weight: var(--_font-weight);
   letter-spacing: var(--_tracking);
 
-  color: var(--_label-color);
+  color: var(--_label-text-color);
   background-color: var(--_container-color);
   box-shadow: var(--_shadow, none);
 
@@ -48,7 +48,7 @@
   border-radius: var(--_shape-round);
 
   /* Drives Ripple + FocusRing tint. */
-  --md-ripple-color: var(--_state-color);
+  --md-ripple-color: var(--_state-layer-color);
   --md-focus-ring-color: var(--md-sys-color-secondary);
 
   /* Spring-like overshoot on the shape morph for the Expressive "squish". */
@@ -74,7 +74,7 @@
   border-radius: var(--_shape-square);
 }
 
-.button[data-pressed='true'] {
+.button:active:not(:disabled) {
   border-radius: var(--_shape-pressed);
 }
 
@@ -183,32 +183,32 @@
 /* --------------------------------------------------------------------------- */
 .button[data-variant='filled'] {
   --_container-color: var(--md-sys-color-primary);
-  --_label-color: var(--md-sys-color-on-primary);
-  --_state-color: var(--md-sys-color-on-primary);
+  --_label-text-color: var(--md-sys-color-on-primary);
+  --_state-layer-color: var(--md-sys-color-on-primary);
   --_shadow: var(--md-sys-elevation-shadow-level0);
   --_shadow-hover: var(--md-sys-elevation-shadow-level1);
 }
 
 .button[data-variant='tonal'] {
   --_container-color: var(--md-sys-color-secondary-container);
-  --_label-color: var(--md-sys-color-on-secondary-container);
-  --_state-color: var(--md-sys-color-on-secondary-container);
+  --_label-text-color: var(--md-sys-color-on-secondary-container);
+  --_state-layer-color: var(--md-sys-color-on-secondary-container);
   --_shadow: var(--md-sys-elevation-shadow-level0);
   --_shadow-hover: var(--md-sys-elevation-shadow-level1);
 }
 
 .button[data-variant='elevated'] {
   --_container-color: var(--md-sys-color-surface-container-low);
-  --_label-color: var(--md-sys-color-primary);
-  --_state-color: var(--md-sys-color-primary);
+  --_label-text-color: var(--md-sys-color-primary);
+  --_state-layer-color: var(--md-sys-color-primary);
   --_shadow: var(--md-sys-elevation-shadow-level1);
   --_shadow-hover: var(--md-sys-elevation-shadow-level2);
 }
 
 .button[data-variant='outlined'] {
   --_container-color: transparent;
-  --_label-color: var(--md-sys-color-primary);
-  --_state-color: var(--md-sys-color-primary);
+  --_label-text-color: var(--md-sys-color-primary);
+  --_state-layer-color: var(--md-sys-color-primary);
   --_outline-color: var(--md-sys-color-outline-variant);
   --_outline-width: 1px;
 }
@@ -222,8 +222,8 @@
 
 .button[data-variant='text'] {
   --_container-color: transparent;
-  --_label-color: var(--md-sys-color-primary);
-  --_state-color: var(--md-sys-color-primary);
+  --_label-text-color: var(--md-sys-color-primary);
+  --_state-layer-color: var(--md-sys-color-primary);
 }
 
 /* Text button has tighter padding. */
@@ -244,8 +244,8 @@
   cursor: default;
   pointer-events: none;
   box-shadow: none;
-  --_label-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
-  --_state-color: transparent;
+  --_label-text-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  --_state-layer-color: transparent;
 }
 
 .button[data-variant='filled']:disabled,

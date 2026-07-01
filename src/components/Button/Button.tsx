@@ -1,10 +1,4 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
-import {
-  useButton,
-  useObjectRef,
-  mergeProps,
-  type PressEvent,
-} from 'react-aria'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
@@ -27,63 +21,55 @@ export interface ButtonProps
   /** Resting shape; both shapes morph to a tighter corner while pressed. @default 'round' */
   shape?: ButtonShape
   /** Leading icon (decorative). */
-  icon?: ReactNode
+  startIcon?: ReactNode
   /** Trailing icon (decorative). */
-  trailingIcon?: ReactNode
-  /** react-aria press handler (fires for pointer, keyboard, and touch). */
-  onPress?: (event: PressEvent) => void
+  endIcon?: ReactNode
   children?: ReactNode
 }
 
 /**
  * Material Design 3 (Expressive) Button.
  *
- * Press handling is normalized via react-aria across pointer/keyboard/touch;
- * the MD3 state layer, press ripple, and focus ring come from the shared
- * primitives. On press the corner morphs to a tighter shape (Expressive).
+ * A native `<button>` — activation, keyboard, and `onClick` are standard DOM
+ * behavior (MUI-idiomatic). The MD3 state layer, press ripple, and focus ring
+ * come from the shared primitives; the corner morphs to a tighter shape while
+ * pressed via CSS `:active` (Expressive).
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   {
     variant = 'filled',
     size = 'sm',
     shape = 'round',
-    icon,
-    trailingIcon,
+    startIcon,
+    endIcon,
     disabled = false,
     type = 'button',
     className,
     children,
-    onPress,
     ...rest
   },
-  forwardedRef,
+  ref,
 ) {
-  const ref = useObjectRef(forwardedRef)
-  const { buttonProps, isPressed } = useButton(
-    { elementType: 'button', isDisabled: disabled, onPress, type },
-    ref,
-  )
-
   return (
     <button
       ref={ref}
-      {...mergeProps(buttonProps, rest)}
+      {...rest}
+      type={type}
       disabled={disabled}
       data-variant={variant}
       data-size={size}
       data-shape={shape}
-      data-pressed={isPressed || undefined}
       className={clsx(styles.button, className)}
     >
-      {icon != null && (
+      {startIcon != null && (
         <span className={styles.icon} aria-hidden="true">
-          {icon}
+          {startIcon}
         </span>
       )}
       {children != null && <span className={styles.label}>{children}</span>}
-      {trailingIcon != null && (
+      {endIcon != null && (
         <span className={styles.icon} aria-hidden="true">
-          {trailingIcon}
+          {endIcon}
         </span>
       )}
       {!disabled && <Ripple />}
