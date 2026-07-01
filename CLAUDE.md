@@ -6,10 +6,14 @@ conventions that every contributor (human or AI) must follow.
 ## Spec Priority
 
 1. **m3.material.io** — the highest-priority source of truth for MD3 design specs
-2. **material-web** (GitHub) — secondary reference for implementation patterns
-3. **Material 3 Design Kit** (Figma) — tertiary reference; covers variants not
-   documented on m3.material.io (e.g. vertical Divider inset)
-4. When specs conflict, follow the higher-priority source
+2. **Jetpack Compose — `androidx.compose.material3`** — the primary reference for
+   component hierarchy, implementation details, defaults, and which components /
+   variants exist. See [Referencing Jetpack Compose](#referencing-jetpack-compose).
+   (https://developer.android.com/reference/kotlin/androidx/compose/material3/package-summary)
+3. **material-web** (https://material-web.dev) — the official MD3 web implementation,
+   but currently in maintenance mode and without Expressive support. Use it only as a
+   secondary reference when polishing a Compose-based implementation.
+4. When specs conflict, follow the higher-priority source.
 
 ### Verifying specs with Playwright MCP
 
@@ -21,22 +25,48 @@ browser_navigate → https://m3.material.io/components/{component}/specs
 browser_run_code_unsafe → extract page.evaluate(() => document.body.innerText)
 ```
 
-### Verifying specs with Figma MCP
+### Referencing Jetpack Compose
 
-The Material 3 Design Kit (Figma) can be accessed via the Figma MCP server
-(`figma@claude-plugins-official` plugin, installed at user scope). Use Figma MCP
-tools to read component specs when m3.material.io does not cover a variant
-(e.g. vertical Divider inset).
+Component hierarchy, implementation details, defaults, tokens, and which
+components / variants exist are taken first from Compose.
 
-File key and component node IDs are listed in [`docs/figma-design-kit.md`](docs/figma-design-kit.md).
+- API / behavior overview: the
+  [`androidx.compose.material3` package summary](https://developer.android.com/reference/kotlin/androidx/compose/material3/package-summary).
+- Source of truth for exact defaults, constants, easing, and token mappings: the
+  AndroidX source on GitHub, `androidx-main` branch, under
+  `compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/`
+  (component `.kt` files and the `tokens/` objects such as `FilledButtonTokens`,
+  `SwitchTokens`, `MotionTokens`). Fetch the raw `.kt` files to read precise
+  values rather than relying on memory.
 
-### Known spec differences (m3.material.io vs material-web)
+### Known spec differences
 
-| Token / property             | m3.material.io      | material-web |
-| ---------------------------- | ------------------- | ------------ |
-| Outlined variant border color | `outline-variant`  | `outline`    |
+| Token / property               | m3.material.io / spec      | Compose (`androidx.compose.material3`) |
+| ------------------------------ | -------------------------- | -------------------------------------- |
+| Outlined variant border color  | `outline-variant`          | `outline` (material-web)               |
+| State-layer opacity (focus)    | `0.12`                     | `0.10` (`StateTokens.FocusStateLayerOpacity`) |
+| State-layer opacity (pressed)  | `0.12`                     | `0.10` (`StateTokens.PressedStateLayerOpacity`) |
 
-This applies to Button, IconButton, and likely other outlined components.
+We follow the Compose values: hover `0.08` / focus `0.10` / pressed `0.10` /
+dragged `0.16`. The outlined-border-color row applies to Button, IconButton, and
+likely other outlined components.
+
+## API Design Policy
+
+This library targets **Web / React application developers (MUI users)**. Compose is
+the reference for *what* to build, but the *public API* is Web-idiomatic.
+
+- **Single component per MD3 component, selected by a `variant` prop** (MUI-style) —
+  e.g. `<Button variant="outlined">`, `<Chip variant="assist">`. Do **not** split
+  each variant into its own component the way Compose does (`OutlinedButton`, etc.).
+- **Public props follow Web / MUI idioms**: `onClick`, `children`, `startIcon` /
+  `endIcon`, `disabled`, `size`, `color`, standard HTML attributes, and
+  controlled/uncontrolled patterns. **Avoid Compose-only prop shapes** such as
+  `colors` / `elevation` / `contentPadding` objects or `onPress`. react-aria hooks
+  (`useButton`, `useSwitch`, …) may be used internally, but the exposed handler is
+  `onClick`.
+- **Compose governs behavior, appearance, defaults, tokens, and which
+  components / variants exist — NOT the public prop shape.**
 
 ## Architecture
 
@@ -54,6 +84,9 @@ Reference tokens → System tokens (--md-sys-*) → Component tokens (--_*)
 
 - CSS Modules (`.module.css`) for all component styles
 - Private vars `--_*` set per variant/size via `data-*` attribute selectors
+- Name component tokens after Compose's `part.property` structure —
+  `--_container-color`, `--_label-text-color`, `--_container-shape`,
+  `--_state-layer-color`, etc. (the `md.comp.*` layer)
 - System tokens referenced as `var(--md-sys-*, <fallback>)`
 - Shape morph: use `calc(var(--_height) / 2)` for round (not `9999px`)
 - Spring-like easing: `cubic-bezier(0.34, 1.4, 0.5, 1)` for border-radius transitions
@@ -67,6 +100,8 @@ Reference tokens → System tokens (--md-sys-*) → Component tokens (--_*)
 - Controlled + uncontrolled patterns for stateful props (e.g. toggle `selected`)
 - Shape state resolved in JS → single `data-shape-state` attribute for clean CSS precedence
 - 48dp minimum touch target via `::before` pseudo-element
+- Storybook `title` is flat — `Components/<Name>` (no per-variant hierarchy; each
+  component's variants/sizes/states are exercised within its own stories)
 
 ## Testing
 
