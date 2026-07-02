@@ -27,6 +27,22 @@ describe('Dialog', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
+  it('renders a full-screen dialog with a close button and header title', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    render(
+      <Dialog open fullScreen onClose={onClose} title="Settings" actions={<button>Save</button>}>
+        Body content
+      </Dialog>,
+    )
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveAttribute('data-full-screen', 'true')
+    expect(dialog).toHaveAccessibleName('Settings')
+    expect(screen.getByText('Body content')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Close' }))
+    expect(onClose).toHaveBeenCalled()
+  })
+
   it('forwards a ref', () => {
     const ref = createRef<HTMLDivElement>()
     render(<Dialog ref={ref} open title="T">x</Dialog>)

@@ -113,6 +113,98 @@
   margin-top: 24px;
 }
 
+/* --------------------------------------------------------------------------- */
+/* Full-screen dialog                                                          */
+/* --------------------------------------------------------------------------- */
+.root[data-full-screen] {
+  padding: 0;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.dialog[data-full-screen] {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  max-height: none;
+  height: 100%;
+  padding: 0;
+  border-radius: 0;
+  background-color: var(--md-sys-color-surface);
+  box-shadow: none;
+  transform: translateY(24px);
+}
+
+.root[data-full-screen][data-open] .dialog {
+  transform: translateY(0);
+}
+
+.fsHeader {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 56px;
+  padding-inline: 4px 16px;
+  flex-shrink: 0;
+  color: var(--md-sys-color-on-surface);
+}
+
+.fsClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+  color: var(--md-sys-color-on-surface);
+}
+
+.fsClose:hover {
+  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+}
+
+.fsClose:focus-visible {
+  outline: 2px solid var(--md-sys-color-secondary);
+}
+
+.fsClose svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.fsTitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-sys-typescale-title-large-font);
+  font-size: var(--md-sys-typescale-title-large-size);
+  font-weight: var(--md-sys-typescale-title-large-weight);
+  line-height: var(--md-sys-typescale-title-large-line-height);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fsActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.fsBody {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 8px 24px 24px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .scrim,
   .dialog {

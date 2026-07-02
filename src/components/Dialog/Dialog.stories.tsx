@@ -47,6 +47,30 @@ const AlertIcon = (
   </svg>
 )
 
+export const FullScreen: Story = {
+  render: () => {
+    const [open, setOpen] = useState(false)
+    return (
+      <div style={{ padding: 24 }}>
+        <Button onClick={() => setOpen(true)}>Open full-screen</Button>
+        <Dialog
+          open={open}
+          fullScreen
+          onClose={() => setOpen(false)}
+          title="New event"
+          actions={
+            <Button variant="text" onClick={() => setOpen(false)}>
+              Save
+            </Button>
+          }
+        >
+          <p>Full-screen dialog content goes here.</p>
+        </Dialog>
+      </div>
+    )
+  },
+}
+
 export const WithIcon: Story = {
   render: () => {
     const [open, setOpen] = useState(false)
