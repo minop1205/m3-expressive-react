@@ -10,9 +10,12 @@ import clsx from 'clsx'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import styles from './NavigationBar.module.css'
 
+export type NavigationItemLayout = 'vertical' | 'horizontal'
+
 interface NavContextValue {
   value: string
   onChange: (value: string) => void
+  layout: NavigationItemLayout
 }
 
 const NavContext = createContext<NavContextValue | null>(null)
@@ -23,6 +26,8 @@ export interface NavigationBarProps
   value: string
   /** Fires with the newly selected destination value. */
   onChange: (value: string) => void
+  /** Item layout: icon over label (`vertical`) or beside it (`horizontal`, flexible). @default 'vertical' */
+  itemLayout?: NavigationItemLayout
   children?: ReactNode
 }
 
@@ -35,10 +40,18 @@ export interface NavigationBarProps
  * Compose NavigationBarTokens.
  */
 export const NavigationBar = forwardRef<HTMLElement, NavigationBarProps>(
-  function NavigationBar({ value, onChange, className, children, ...rest }, ref) {
+  function NavigationBar(
+    { value, onChange, itemLayout = 'vertical', className, children, ...rest },
+    ref,
+  ) {
     return (
-      <NavContext.Provider value={{ value, onChange }}>
-        <nav ref={ref} {...rest} className={clsx(styles.bar, className)}>
+      <NavContext.Provider value={{ value, onChange, layout: itemLayout }}>
+        <nav
+          ref={ref}
+          {...rest}
+          data-layout={itemLayout}
+          className={clsx(styles.bar, className)}
+        >
           {children}
         </nav>
       </NavContext.Provider>
@@ -67,6 +80,7 @@ export const NavigationBarItem = forwardRef<HTMLButtonElement, NavigationBarItem
     const ctx = useContext(NavContext)
     if (!ctx) throw new Error('NavigationBarItem must be used within <NavigationBar>')
     const selected = ctx.value === value
+    const horizontal = ctx.layout === 'horizontal'
 
     return (
       <button
@@ -87,8 +101,9 @@ export const NavigationBarItem = forwardRef<HTMLButtonElement, NavigationBarItem
             {icon}
           </span>
           {badge != null && <span className={styles.badge}>{badge}</span>}
+          {horizontal && label != null && <span className={styles.label}>{label}</span>}
         </span>
-        {label != null && <span className={styles.label}>{label}</span>}
+        {!horizontal && label != null && <span className={styles.label}>{label}</span>}
         {!disabled && <FocusRing />}
       </button>
     )

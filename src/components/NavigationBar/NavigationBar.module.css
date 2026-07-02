@@ -44,6 +44,29 @@
   --_label-color: var(--md-sys-color-secondary);
 }
 
+/* Horizontal (flexible) layout: the pill wraps icon + label side by side. */
+.bar[data-layout='horizontal'] {
+  height: 64px;
+}
+
+.bar[data-layout='horizontal'] .item {
+  flex-direction: row;
+}
+
+.bar[data-layout='horizontal'] .indicator {
+  width: auto;
+  min-width: 56px;
+  height: 40px;
+  gap: 8px;
+  padding-inline: 16px;
+}
+
+.bar[data-layout='horizontal'] .label {
+  position: relative;
+  z-index: 2;
+  color: var(--_icon-color);
+}
+
 .item:disabled {
   cursor: default;
   pointer-events: none;

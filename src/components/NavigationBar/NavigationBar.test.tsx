@@ -37,6 +37,16 @@ describe('NavigationBar', () => {
     expect(screen.getByText('2')).toBeInTheDocument()
   })
 
+  it('supports the horizontal (flexible) item layout', () => {
+    render(
+      <NavigationBar value="a" onChange={() => {}} itemLayout="horizontal" aria-label="P">
+        <NavigationBarItem value="a" icon={Icon} label="Alpha" />
+      </NavigationBar>,
+    )
+    expect(screen.getByRole('navigation')).toHaveAttribute('data-layout', 'horizontal')
+    expect(screen.getByRole('button', { name: /Alpha/ })).toBeInTheDocument()
+  })
+
   it('forwards a ref', () => {
     const ref = createRef<HTMLElement>()
     render(
