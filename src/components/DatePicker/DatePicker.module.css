@@ -120,6 +120,7 @@
 }
 
 .day {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -153,6 +154,34 @@
 .day[data-selected] {
   background-color: var(--md-sys-color-primary);
   color: var(--md-sys-color-on-primary);
+}
+
+/* Range highlight — a SecondaryContainer band connecting the endpoints. */
+.day[data-in-range] {
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.day[data-in-range]::before,
+.day[data-range-start]::before,
+.day[data-range-end]::before {
+  content: '';
+  position: absolute;
+  inset: 0 -4px;
+  z-index: -1;
+  background-color: var(--md-sys-color-secondary-container);
+}
+
+.day[data-range-start]::before {
+  inset-inline-start: 50%;
+}
+
+.day[data-range-end]::before {
+  inset-inline-end: 50%;
+}
+
+/* A single selected endpoint (no other end yet) shows no band. */
+.day[data-range-start][data-range-end]::before {
+  display: none;
 }
 
 .day:disabled {

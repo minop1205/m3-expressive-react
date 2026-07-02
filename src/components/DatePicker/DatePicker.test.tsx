@@ -34,6 +34,25 @@ describe('DatePicker', () => {
     expect(screen.getByText('August 2024')).toBeInTheDocument()
   })
 
+  it('selects a start then end in range mode and highlights the span', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<DatePicker range value={[new Date(2024, 6, 1), null]} onChange={onChange} />)
+    // First selecting the end (after the existing start) completes the range.
+    await user.click(screen.getByRole('button', { name: '10' }))
+    expect(onChange).toHaveBeenCalledWith([expect.any(Date), expect.any(Date)])
+    const [start, end] = onChange.mock.calls[0][0]
+    expect(start.getDate()).toBe(1)
+    expect(end.getDate()).toBe(10)
+  })
+
+  it('marks in-range days when both ends are set', () => {
+    render(<DatePicker range value={[new Date(2024, 6, 1), new Date(2024, 6, 10)]} />)
+    expect(screen.getByRole('button', { name: '5' })).toHaveAttribute('data-in-range', 'true')
+    expect(screen.getByRole('button', { name: '1' })).toHaveAttribute('data-selected', 'true')
+    expect(screen.getByRole('button', { name: '10' })).toHaveAttribute('data-selected', 'true')
+  })
+
   it('forwards a ref', () => {
     const ref = createRef<HTMLDivElement>()
     render(<DatePicker ref={ref} />)
