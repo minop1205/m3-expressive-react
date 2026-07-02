@@ -52,6 +52,11 @@ describe('Card', () => {
     expect(onClick).not.toHaveBeenCalled()
   })
 
+  it('applies the dragged state', () => {
+    const { container } = render(<Card dragged>x</Card>)
+    expect(container.firstChild).toHaveAttribute('data-dragged', 'true')
+  })
+
   it('forwards a ref', () => {
     const ref = createRef<HTMLDivElement>()
     render(<Card ref={ref}>x</Card>)

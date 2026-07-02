@@ -61,6 +61,16 @@
 }
 /* Outlined interactive stays at Level0 on hover (Compose). */
 
+/* Dragged (drag-and-drop): raised elevation per Compose card dragged tokens. */
+.card[data-dragged] {
+  --_elevation: var(--md-sys-elevation-shadow-level3);
+  cursor: grabbing;
+}
+
+.card[data-dragged][data-variant='elevated'] {
+  --_elevation: var(--md-sys-elevation-shadow-level4);
+}
+
 /* --------------------------------------------------------------------------- */
 /* Disabled                                                                    */
 /* --------------------------------------------------------------------------- */

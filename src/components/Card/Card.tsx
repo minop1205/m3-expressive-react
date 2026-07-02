@@ -16,6 +16,8 @@ export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   variant?: CardVariant
   /** Disable interaction and dim the card (only meaningful when `onClick` is set). */
   disabled?: boolean
+  /** Apply the MD3 dragged appearance (raised elevation) — for drag-and-drop. */
+  dragged?: boolean
   children?: ReactNode
 }
 
@@ -31,6 +33,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
   {
     variant = 'filled',
     disabled = false,
+    dragged = false,
     onClick,
     onKeyDown,
     className,
@@ -63,6 +66,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
       data-variant={variant}
       data-interactive={interactive || undefined}
       data-disabled={disabled || undefined}
+      data-dragged={dragged || undefined}
       role={interactive ? role ?? 'button' : role}
       tabIndex={interactive && !disabled ? tabIndex ?? 0 : tabIndex}
       aria-disabled={interactive && disabled ? true : undefined}

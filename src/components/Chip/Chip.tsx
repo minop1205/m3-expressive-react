@@ -34,6 +34,8 @@ export interface ChipProps
   onRemove?: () => void
   /** Whether to show a leading checkmark when selected (filter chip). @default true */
   showSelectedIcon?: boolean
+  /** Apply the MD3 dragged appearance (state layer + elevation) — for drag-and-drop. */
+  dragged?: boolean
 }
 
 /**
@@ -64,6 +66,7 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(
       onRemove,
       showSelectedIcon = true,
       disabled = false,
+      dragged = false,
       className,
       onClick,
       ...rest
@@ -161,6 +164,7 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(
           elevated && styles.elevated,
           selected && styles.selected,
           disabled && styles.disabled,
+          dragged && styles.dragged,
           hasLeadingIcon && styles.hasLeadingIcon,
           hasTrailingAction && styles.hasTrailingAction,
           className,

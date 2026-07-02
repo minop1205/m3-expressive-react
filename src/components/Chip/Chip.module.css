@@ -75,6 +75,25 @@
   background-color: var(--md-sys-color-secondary-container, #e8def8);
 }
 
+/* Dragged (drag-and-drop): level-4 elevation + 0.16 state layer per MD3. */
+.dragged {
+  cursor: grabbing;
+}
+
+.dragged::before {
+  box-shadow: var(--md-sys-elevation-shadow-level4);
+}
+
+.dragged .action::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--_label-text-color);
+  opacity: var(--md-sys-state-dragged-state-layer-opacity, 0.16);
+  pointer-events: none;
+}
+
 .selected.disabled::before {
   background-color: color-mix(in srgb, var(--md-sys-color-on-surface, #1d1b20) 12%, transparent);
 }

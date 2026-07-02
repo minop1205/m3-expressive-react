@@ -128,6 +128,11 @@ describe('Chip', () => {
     })
   })
 
+  it('applies the dragged state', () => {
+    const { container } = render(<Chip label="Tag" dragged />)
+    expect(container.querySelector('[class*="dragged"]')).toBeInTheDocument()
+  })
+
   it('has no axe violations (assist)', async () => {
     const { container } = render(<Chip label="Tag" />)
     expect(await axe(container)).toHaveNoViolations()
