@@ -58,6 +58,29 @@
   color: var(--md-sys-color-on-primary-container);
 }
 
+/* Editable field (input mode). */
+.fieldInput {
+  box-sizing: border-box;
+  width: 96px;
+  height: 80px;
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-small, 8px);
+  background-color: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
+  text-align: center;
+  outline: none;
+  font-family: var(--md-sys-typescale-display-large-font);
+  font-size: var(--md-sys-typescale-display-large-size);
+  font-weight: var(--md-sys-typescale-display-large-weight);
+  line-height: var(--md-sys-typescale-display-large-line-height);
+}
+
+.fieldInput:focus {
+  border: 2px solid var(--md-sys-color-primary);
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
 .field:focus-visible {
   outline: 2px solid var(--md-sys-color-primary);
   outline-offset: 2px;
@@ -164,6 +187,44 @@
 .number[data-selected] {
   background-color: var(--md-sys-color-primary);
   color: var(--md-sys-color-on-primary);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Actions (dial/keyboard toggle)                                              */
+/* --------------------------------------------------------------------------- */
+.actions {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+}
+
+.modeToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.modeToggle:hover {
+  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+}
+
+.modeToggle:focus-visible {
+  outline: 2px solid var(--md-sys-color-secondary);
+}
+
+.modeToggle svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
 }
 
 .number:focus-visible {

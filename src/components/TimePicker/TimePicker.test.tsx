@@ -1,5 +1,5 @@
 import { createRef } from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
@@ -36,6 +36,36 @@ describe('TimePicker', () => {
     render(<TimePicker value={{ hour: 10, minute: 0 }} onChange={onChange} />)
     await user.click(screen.getByRole('button', { name: 'PM' }))
     expect(onChange).toHaveBeenCalledWith({ hour: 22, minute: 0 })
+  })
+
+  it('toggles between dial and input mode', async () => {
+    const user = userEvent.setup()
+    render(<TimePicker value={{ hour: 10, minute: 0 }} />)
+    // Dial mode: hour is a button.
+    expect(screen.getByRole('button', { name: 'Hour' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Switch to keyboard input' }))
+    // Input mode: hour is a textbox, dial numbers gone.
+    expect(screen.getByRole('textbox', { name: 'Hour' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '3' })).not.toBeInTheDocument()
+  })
+
+  it('edits the time via input fields', () => {
+    const onChange = vi.fn()
+    render(<TimePicker mode="input" value={{ hour: 10, minute: 0 }} onChange={onChange} />)
+    fireEvent.change(screen.getByRole('textbox', { name: 'Minute' }), {
+      target: { value: '45' },
+    })
+    expect(onChange).toHaveBeenCalledWith({ hour: 10, minute: 45 })
+  })
+
+  it('clamps typed hour to 1–12', () => {
+    const onChange = vi.fn()
+    render(<TimePicker mode="input" value={{ hour: 10, minute: 0 }} onChange={onChange} />)
+    fireEvent.change(screen.getByRole('textbox', { name: 'Hour' }), {
+      target: { value: '20' },
+    })
+    // Clamped to 12h max; 12 AM = midnight (hour 0).
+    expect(onChange).toHaveBeenCalledWith({ hour: 0, minute: 0 })
   })
 
   it('forwards a ref', () => {
