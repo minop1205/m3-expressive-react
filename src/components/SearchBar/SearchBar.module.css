@@ -1,0 +1,81 @@
+/**
+ * MD3 Search bar. Values from androidx.compose.material3 SearchBarTokens:
+ * 56dp SurfaceContainerHigh stadium (28dp radius), 360–720dp width; OnSurface
+ * BodyLarge input, OnSurfaceVariant placeholder, OnSurface leading icon,
+ * OnSurfaceVariant trailing icon, 24dp icons, 16dp icon insets, elevation 0.
+ */
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 720px;
+  height: 56px;
+  padding-inline: 16px;
+  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  background-color: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+}
+
+.leading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  color: var(--md-sys-color-on-surface);
+}
+
+.trailing {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.leading svg,
+.trailing svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-sys-typescale-body-large-font);
+  font-size: var(--md-sys-typescale-body-large-size);
+  font-weight: var(--md-sys-typescale-body-large-weight);
+  line-height: var(--md-sys-typescale-body-large-line-height);
+  letter-spacing: var(--md-sys-typescale-body-large-tracking);
+}
+
+.input::placeholder {
+  color: var(--md-sys-color-on-surface-variant);
+  opacity: 1;
+}
+
+/* Hide the native search clear/decoration for a clean MD3 look. */
+.input::-webkit-search-decoration,
+.input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.bar[data-disabled] {
+  opacity: 0.38;
+}
+
+.bar[data-disabled] .input {
+  pointer-events: none;
+}

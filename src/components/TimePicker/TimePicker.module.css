@@ -1,0 +1,177 @@
+/**
+ * MD3 Time picker. Values from androidx.compose.material3 TimePickerTokens:
+ * SurfaceContainerHigh surface, 28dp corners, elevation 3. Time fields 96×80,
+ * CornerSmall (8dp): active PrimaryContainer / OnPrimaryContainer, inactive
+ * SurfaceContainerHighest / OnSurface, DisplayLarge. AM/PM toggle selected
+ * TertiaryContainer / OnTertiaryContainer, Outline 1dp. Clock dial 256dp
+ * SurfaceContainerHighest, Primary selector; selected number OnPrimary.
+ */
+
+.picker {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+  box-sizing: border-box;
+  padding: 24px;
+  border-radius: var(--md-sys-shape-corner-extra-large, 28px);
+  background-color: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  box-shadow: var(--md-sys-elevation-shadow-level3);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Fields row                                                                  */
+/* --------------------------------------------------------------------------- */
+.fields {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.timeFields {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 80px;
+  border: none;
+  border-radius: var(--md-sys-shape-corner-small, 8px);
+  background-color: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
+  cursor: pointer;
+  outline: none;
+  font-family: var(--md-sys-typescale-display-large-font);
+  font-size: var(--md-sys-typescale-display-large-size);
+  font-weight: var(--md-sys-typescale-display-large-weight);
+  line-height: var(--md-sys-typescale-display-large-line-height);
+}
+
+.field[data-active] {
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.field:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+.separator {
+  display: inline-flex;
+  align-items: center;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-sys-typescale-display-large-font);
+  font-size: var(--md-sys-typescale-display-large-size);
+  line-height: var(--md-sys-typescale-display-large-line-height);
+}
+
+.period {
+  display: inline-flex;
+  flex-direction: column;
+  width: 52px;
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-small, 8px);
+  overflow: hidden;
+}
+
+.periodButton {
+  flex: 1 1 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-title-medium-font);
+  font-size: var(--md-sys-typescale-title-medium-size);
+  font-weight: var(--md-sys-typescale-title-medium-weight);
+}
+
+.periodButton + .periodButton {
+  border-top: 1px solid var(--md-sys-color-outline);
+}
+
+.periodButton[data-selected] {
+  background-color: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+}
+
+.periodButton:focus-visible {
+  outline: 2px solid var(--md-sys-color-secondary);
+  outline-offset: -2px;
+}
+
+/* --------------------------------------------------------------------------- */
+/* Clock dial                                                                  */
+/* --------------------------------------------------------------------------- */
+.dial {
+  position: relative;
+  border-radius: 50%;
+  background-color: var(--md-sys-color-surface-container-highest);
+}
+
+.center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--md-sys-color-primary);
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
+.hand {
+  position: absolute;
+  left: 50%;
+  top: calc(50% - 100px);
+  width: 2px;
+  height: 100px;
+  background-color: var(--md-sys-color-primary);
+  transform-origin: 50% 100%;
+  z-index: 1;
+  transition: transform var(--md-sys-motion-duration-short4, 200ms)
+    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.number {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-sys-typescale-body-large-font);
+  font-size: var(--md-sys-typescale-body-large-size);
+}
+
+.number[data-selected] {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+.number:focus-visible {
+  outline: 2px solid var(--md-sys-color-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hand {
+    transition: none;
+  }
+}
