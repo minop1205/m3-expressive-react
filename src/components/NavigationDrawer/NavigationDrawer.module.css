@@ -1,0 +1,161 @@
+/**
+ * MD3 Navigation drawer. Values from androidx.compose.material3
+ * NavigationDrawerTokens: 360dp width; modal SurfaceContainerLow / standard
+ * Surface; 16dp rounded trailing edge; Scrim @ 0.32 (modal). Items = 56dp full
+ * pills: active SecondaryContainer / OnSecondaryContainer, inactive transparent
+ * / OnSurfaceVariant, LabelLarge, 24dp icon, 12dp side padding.
+ */
+
+.drawer {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 360px;
+  max-width: 100%;
+  height: 100%;
+  padding: 12px;
+  gap: 4px;
+  overflow-y: auto;
+  background-color: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  border-start-end-radius: 16px;
+  border-end-end-radius: 16px;
+}
+
+.drawer[data-variant='modal'] {
+  background-color: var(--md-sys-color-surface-container-low);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Modal overlay                                                               */
+/* --------------------------------------------------------------------------- */
+.modalRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.modalRoot[data-open] {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  background-color: color-mix(in srgb, var(--md-sys-color-scrim, #000) 32%, transparent);
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-medium2, 300ms)
+    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.modalRoot[data-open] .scrim {
+  opacity: 1;
+}
+
+.modalRoot .drawer {
+  position: relative;
+  transform: translateX(-100%);
+  transition: transform var(--md-sys-motion-duration-medium4, 400ms)
+    var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1));
+}
+
+.modalRoot[data-open] .drawer {
+  transform: translateX(0);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Item                                                                        */
+/* --------------------------------------------------------------------------- */
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 56px;
+  padding-inline: 16px 24px;
+  border: none;
+  border-radius: 28px;
+  background-color: var(--_container-color, transparent);
+  color: var(--_content-color);
+  cursor: pointer;
+  outline: none;
+  text-align: start;
+  -webkit-tap-highlight-color: transparent;
+
+  --_content-color: var(--md-sys-color-on-surface-variant);
+  --md-focus-ring-color: var(--md-sys-color-secondary);
+}
+
+.item[data-selected] {
+  --_container-color: var(--md-sys-color-secondary-container);
+  --_content-color: var(--md-sys-color-on-secondary-container);
+}
+
+.item:hover:not(:disabled)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--_content-color);
+  opacity: var(--md-sys-state-hover-state-layer-opacity, 0.08);
+}
+
+.item:disabled {
+  cursor: default;
+  pointer-events: none;
+  --_content-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  color: var(--_content-color);
+  z-index: 1;
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+.label {
+  flex: 1 1 auto;
+  min-width: 0;
+  z-index: 1;
+  color: var(--_content-color);
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge {
+  flex-shrink: 0;
+  z-index: 1;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrim,
+  .modalRoot .drawer {
+    transition: none;
+  }
+}
