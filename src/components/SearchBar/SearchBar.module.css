@@ -5,6 +5,12 @@
  * OnSurfaceVariant trailing icon, 24dp icons, 16dp icon insets, elevation 0.
  */
 
+.wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 720px;
+}
+
 .bar {
   display: flex;
   align-items: center;
@@ -12,12 +18,39 @@
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  max-width: 720px;
   height: 56px;
   padding-inline: 16px;
   border-radius: var(--md-sys-shape-corner-full, 9999px);
   background-color: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface);
+}
+
+/* Expanded search view (docked results dropdown). */
+.view {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: none;
+  border-radius: 12px;
+  background-color: var(--md-sys-color-surface-container-high);
+  box-shadow: var(--md-sys-elevation-shadow-level3);
+  overflow: hidden;
+}
+
+.view[data-open] {
+  display: block;
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--md-sys-color-outline);
+}
+
+.results {
+  max-height: 320px;
+  overflow-y: auto;
 }
 
 .leading {

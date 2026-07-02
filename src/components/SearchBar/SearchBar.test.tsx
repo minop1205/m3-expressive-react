@@ -31,6 +31,24 @@ describe('SearchBar', () => {
     expect(onSearch).toHaveBeenCalledWith('cats')
   })
 
+  it('opens the search view on focus and closes on Escape', async () => {
+    const user = userEvent.setup()
+    render(
+      <SearchBar aria-label="Search">
+        <ul>
+          <li>Result one</li>
+        </ul>
+      </SearchBar>,
+    )
+    const input = screen.getByRole('searchbox')
+    expect(input).toHaveAttribute('aria-expanded', 'false')
+    await user.click(input)
+    expect(input).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('Result one')).toBeVisible()
+    await user.keyboard('{Escape}')
+    expect(input).toHaveAttribute('aria-expanded', 'false')
+  })
+
   it('forwards a ref to the input', () => {
     const ref = createRef<HTMLInputElement>()
     render(<SearchBar ref={ref} aria-label="Search" />)

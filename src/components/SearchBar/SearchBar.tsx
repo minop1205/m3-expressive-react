@@ -1,5 +1,7 @@
 import {
   forwardRef,
+  useEffect,
+  useRef,
   useState,
   type ChangeEvent,
   type InputHTMLAttributes,
@@ -10,7 +12,7 @@ import clsx from 'clsx'
 import styles from './SearchBar.module.css'
 
 export interface SearchBarProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'type'> {
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'type' | 'children'> {
   /** Controlled query value. */
   value?: string
   /** Uncontrolled initial value. */
@@ -23,6 +25,12 @@ export interface SearchBarProps
   leadingIcon?: ReactNode
   /** Trailing icon / control. */
   trailingIcon?: ReactNode
+  /** Suggestion / result content shown in the expanded search view. */
+  children?: ReactNode
+  /** Controlled expanded (search-view) state. */
+  expanded?: boolean
+  /** Notified when the expanded state should change. */
+  onExpandedChange?: (expanded: boolean) => void
 }
 
 const SearchGlyph = (
@@ -32,12 +40,13 @@ const SearchGlyph = (
 )
 
 /**
- * Material Design 3 Search bar (docked input field).
+ * Material Design 3 Search bar (docked field + search view).
  *
  * 56dp SurfaceContainerHigh stadium field; OnSurface BodyLarge input,
- * OnSurfaceVariant placeholder, OnSurface leading (search) icon,
- * OnSurfaceVariant trailing icon, 16dp icon insets — per Compose SearchBarTokens
- * (runtime elevation 0).
+ * OnSurfaceVariant placeholder, OnSurface leading icon — per Compose
+ * SearchBarTokens. Providing `children` (results) turns it into a docked search
+ * view: a dropdown under the input (Outline divider) that opens on focus and
+ * closes on Escape / outside click.
  */
 export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
   function SearchBar(
@@ -48,9 +57,13 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       onSearch,
       leadingIcon,
       trailingIcon,
+      children,
+      expanded,
+      onExpandedChange,
       placeholder = 'Search',
       disabled = false,
       onKeyDown,
+      onFocus,
       className,
       ...rest
     },
@@ -60,6 +73,29 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
     const [internal, setInternal] = useState(defaultValue ?? '')
     const current = isControlled ? value : internal
 
+    const hasView = children != null
+    const expandControlled = expanded !== undefined
+    const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
+    const open = hasView && (expandControlled ? expanded : uncontrolledOpen)
+    const wrapperRef = useRef<HTMLDivElement>(null)
+
+    const setOpen = (next: boolean) => {
+      if (!expandControlled) setUncontrolledOpen(next)
+      onExpandedChange?.(next)
+    }
+
+    useEffect(() => {
+      if (!open) return
+      const onDown = (e: globalThis.MouseEvent) => {
+        if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+          setOpen(false)
+        }
+      }
+      document.addEventListener('mousedown', onDown)
+      return () => document.removeEventListener('mousedown', onDown)
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open])
+
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
       if (!isControlled) setInternal(event.target.value)
       onChange?.(event.target.value, event)
@@ -68,29 +104,44 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
       onKeyDown?.(event)
       if (event.key === 'Enter') onSearch?.(current)
+      if (event.key === 'Escape' && open) setOpen(false)
     }
 
     return (
       <div
+        ref={wrapperRef}
         role="search"
         data-disabled={disabled || undefined}
-        className={clsx(styles.bar, className)}
+        className={clsx(styles.wrapper, className)}
       >
-        <span className={styles.leading} aria-hidden="true">
-          {leadingIcon ?? SearchGlyph}
-        </span>
-        <input
-          ref={ref}
-          {...rest}
-          type="search"
-          className={styles.input}
-          value={current}
-          placeholder={placeholder}
-          disabled={disabled}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-        />
-        {trailingIcon != null && <span className={styles.trailing}>{trailingIcon}</span>}
+        <div className={styles.bar}>
+          <span className={styles.leading} aria-hidden="true">
+            {leadingIcon ?? SearchGlyph}
+          </span>
+          <input
+            ref={ref}
+            {...rest}
+            type="search"
+            className={styles.input}
+            value={current}
+            placeholder={placeholder}
+            disabled={disabled}
+            aria-expanded={hasView ? Boolean(open) : undefined}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onFocus={(event) => {
+              onFocus?.(event)
+              if (hasView) setOpen(true)
+            }}
+          />
+          {trailingIcon != null && <span className={styles.trailing}>{trailingIcon}</span>}
+        </div>
+        {hasView && (
+          <div className={styles.view} data-open={open || undefined}>
+            <div className={styles.divider} />
+            <div className={styles.results}>{children}</div>
+          </div>
+        )}
       </div>
     )
   },

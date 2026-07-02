@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { fn } from '@storybook/test'
+import { List, ListItem } from '../List'
 import { SearchBar } from './SearchBar'
 
 const MicIcon = (
@@ -27,4 +28,18 @@ export const Default: Story = {}
 
 export const WithTrailingIcon: Story = {
   args: { trailingIcon: MicIcon },
+}
+
+export const SearchView: Story = {
+  render: (args) => (
+    <div style={{ maxWidth: 720 }}>
+      <SearchBar {...args} aria-label="Search">
+        <List>
+          <ListItem headline="Recent: Material Design" onClick={() => {}} />
+          <ListItem headline="Recent: Components" onClick={() => {}} />
+          <ListItem headline="Recent: Tokens" onClick={() => {}} />
+        </List>
+      </SearchBar>
+    </div>
+  ),
 }
