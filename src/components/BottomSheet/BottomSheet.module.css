@@ -1,0 +1,86 @@
+/**
+ * MD3 Modal bottom sheet. Values from androidx.compose.material3
+ * SheetBottomTokens: SurfaceContainerLow container, CornerExtraLargeTop (28dp),
+ * elevation Level1, max-width 640dp; drag handle OnSurfaceVariant 32×4 pill with
+ * 22dp vertical padding; Scrim @ 0.32.
+ */
+
+.root {
+  position: fixed;
+  inset: 0;
+  z-index: 24;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.root[data-open] {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  background-color: color-mix(in srgb, var(--md-sys-color-scrim, #000) 32%, transparent);
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-medium2, 300ms)
+    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.root[data-open] .scrim {
+  opacity: 1;
+}
+
+.sheet {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 640px;
+  max-height: calc(100% - 56px);
+  overflow: hidden;
+  border-start-start-radius: var(--md-sys-shape-corner-extra-large, 28px);
+  border-start-end-radius: var(--md-sys-shape-corner-extra-large, 28px);
+  background-color: var(--md-sys-color-surface-container-low);
+  color: var(--md-sys-color-on-surface);
+  box-shadow: var(--md-sys-elevation-shadow-level1);
+
+  transform: translateY(100%);
+  transition: transform var(--md-sys-motion-duration-medium4, 400ms)
+    var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1));
+}
+
+.root[data-open] .sheet {
+  transform: translateY(0);
+}
+
+.dragHandleRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: 22px;
+  flex-shrink: 0;
+}
+
+.dragHandle {
+  width: 32px;
+  height: 4px;
+  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  background-color: var(--md-sys-color-on-surface-variant);
+}
+
+.content {
+  overflow-y: auto;
+  padding: 0 16px 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrim,
+  .sheet {
+    transition: none;
+  }
+}
