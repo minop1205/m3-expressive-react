@@ -14,6 +14,20 @@
   box-shadow: inset 0 -1px 0 0 var(--md-sys-color-outline-variant);
 }
 
+/* Scrollable tabs: content-width tabs that scroll horizontally. */
+.tabs[data-scrollable] {
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs[data-scrollable]::-webkit-scrollbar {
+  display: none;
+}
+
+.tabs[data-scrollable] .tab {
+  flex: 0 0 auto;
+}
+
 /* --------------------------------------------------------------------------- */
 /* Tab                                                                         */
 /* --------------------------------------------------------------------------- */

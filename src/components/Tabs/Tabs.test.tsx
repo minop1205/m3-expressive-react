@@ -59,6 +59,16 @@ describe('Tabs', () => {
     expect(screen.getByRole('tablist')).toHaveAttribute('data-variant', 'secondary')
   })
 
+  it('supports scrollable tabs', () => {
+    render(
+      <Tabs value="a" onChange={() => {}} scrollable aria-label="S">
+        <Tab value="a" label="Alpha" />
+        <Tab value="b" label="Beta" />
+      </Tabs>,
+    )
+    expect(screen.getByRole('tablist')).toHaveAttribute('data-scrollable', 'true')
+  })
+
   it('forwards a ref', () => {
     const ref = createRef<HTMLDivElement>()
     render(

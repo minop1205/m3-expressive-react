@@ -29,6 +29,8 @@ export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChang
   onChange: (value: string) => void
   /** Indicator style. @default 'primary' */
   variant?: TabsVariant
+  /** Scrollable tabs size to content and scroll horizontally instead of filling. */
+  scrollable?: boolean
   children?: ReactNode
 }
 
@@ -41,7 +43,16 @@ export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChang
  * Primary/SecondaryNavigationTabTokens. Arrow keys move between tabs.
  */
 export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
-  { value, onChange, variant = 'primary', className, children, onKeyDown, ...rest },
+  {
+    value,
+    onChange,
+    variant = 'primary',
+    scrollable = false,
+    className,
+    children,
+    onKeyDown,
+    ...rest
+  },
   ref,
 ) {
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -68,6 +79,7 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
         {...rest}
         role="tablist"
         data-variant={variant}
+        data-scrollable={scrollable || undefined}
         onKeyDown={handleKeyDown}
         className={clsx(styles.tabs, className)}
       >
