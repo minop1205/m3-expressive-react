@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { fn } from '@storybook/test'
 import { Button } from './Button'
@@ -71,6 +72,29 @@ export const Shapes: Story = {
       <Button {...args} shape="square">Square</Button>
     </div>
   ),
+  args: { size: 'md' },
+}
+
+export const Toggle: Story = {
+  render: (args) => {
+    const [selected, setSelected] = useState(false)
+    return (
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        {(['elevated', 'filled', 'tonal', 'outlined'] as const).map((variant) => (
+          <Button
+            key={variant}
+            {...args}
+            variant={variant}
+            toggle
+            selected={selected}
+            onChange={setSelected}
+          >
+            {variant}
+          </Button>
+        ))}
+      </div>
+    )
+  },
   args: { size: 'md' },
 }
 

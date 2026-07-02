@@ -62,6 +62,35 @@ describe('Button', () => {
     expect(onClick).not.toHaveBeenCalled()
   })
 
+  it('is not a toggle by default (no aria-pressed)', () => {
+    render(<Button>Plain</Button>)
+    expect(screen.getByRole('button')).not.toHaveAttribute('aria-pressed')
+  })
+
+  it('toggles selection and exposes aria-pressed (uncontrolled)', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <Button toggle onChange={onChange}>
+        Bold
+      </Button>,
+    )
+    const btn = screen.getByRole('button', { pressed: false })
+    await user.click(btn)
+    expect(screen.getByRole('button', { pressed: true })).toBeInTheDocument()
+    expect(onChange).toHaveBeenCalledWith(true)
+  })
+
+  it('respects a controlled selected value', () => {
+    render(
+      <Button toggle selected>
+        On
+      </Button>,
+    )
+    expect(screen.getByRole('button')).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button')).toHaveAttribute('data-selected', 'true')
+  })
+
   it('forwards a ref to the underlying button', () => {
     const ref = { current: null as HTMLButtonElement | null }
     render(<Button ref={ref}>Ref</Button>)
