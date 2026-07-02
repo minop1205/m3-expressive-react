@@ -1,0 +1,129 @@
+/**
+ * MD3 Tabs. Values from androidx.compose.material3 Primary/SecondaryNavigationTab
+ * tokens: Surface row, TitleSmall labels, 24dp icons, 48dp (label) / 72dp
+ * (icon+label) height, 16dp horizontal padding, 3dp indicator. Primary =
+ * Primary active + content-width rounded pill; secondary = OnSurface active +
+ * full-width square line. Bottom divider OutlineVariant 1dp.
+ */
+
+.tabs {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  background-color: var(--md-sys-color-surface);
+  box-shadow: inset 0 -1px 0 0 var(--md-sys-color-outline-variant);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Tab                                                                         */
+/* --------------------------------------------------------------------------- */
+.tab {
+  position: relative;
+  display: inline-flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  box-sizing: border-box;
+  min-height: 48px;
+  min-width: 90px;
+  margin: 0;
+  padding: 0 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+
+  color: var(--_content-color);
+  font-family: var(--md-sys-typescale-title-small-font);
+  font-size: var(--md-sys-typescale-title-small-size);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+  line-height: var(--md-sys-typescale-title-small-line-height);
+  letter-spacing: var(--md-sys-typescale-title-small-tracking);
+
+  --_content-color: var(--md-sys-color-on-surface-variant);
+  --md-focus-ring-color: var(--md-sys-color-secondary);
+}
+
+.tab[data-with-icon] {
+  min-height: 72px;
+  padding-block: 8px;
+}
+
+/* Inactive → active content colors per variant. */
+.tabs[data-variant='primary'] .tab[data-selected] {
+  --_content-color: var(--md-sys-color-primary);
+}
+
+.tabs[data-variant='secondary'] .tab[data-selected] {
+  --_content-color: var(--md-sys-color-on-surface);
+}
+
+.tabs[data-variant='primary'] .tab {
+  --md-ripple-color: var(--md-sys-color-primary);
+}
+
+.tabs[data-variant='secondary'] .tab {
+  --md-ripple-color: var(--md-sys-color-on-surface);
+}
+
+.tab:disabled {
+  cursor: default;
+  pointer-events: none;
+  --_content-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+.icon,
+.label {
+  position: relative;
+  z-index: 1;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--_content-color);
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+.label {
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------- */
+/* Active indicator                                                            */
+/* --------------------------------------------------------------------------- */
+.indicator {
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  background-color: var(--md-sys-color-primary);
+  opacity: 0;
+  z-index: 1;
+}
+
+.tab[data-selected] .indicator {
+  opacity: 1;
+}
+
+/* Primary — content-width rounded pill (inset by the horizontal padding). */
+.tabs[data-variant='primary'] .indicator {
+  inset-inline: 16px;
+  border-start-start-radius: 3px;
+  border-start-end-radius: 3px;
+}
+
+/* Secondary — full-width square line. */
+.tabs[data-variant='secondary'] .indicator {
+  inset-inline: 0;
+}
