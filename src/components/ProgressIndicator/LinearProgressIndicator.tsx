@@ -10,7 +10,8 @@ import {
 import clsx from 'clsx'
 import styles from './ProgressIndicator.module.css'
 
-export type LinearProgressIndicatorThickness = 4 | 8
+/** Track thickness in dp. The two baseline values are 4 and 8, but any number is accepted. */
+export type LinearProgressIndicatorThickness = number
 export type ProgressIndicatorShape = 'flat' | 'wavy'
 
 export interface LinearProgressIndicatorProps
@@ -381,6 +382,7 @@ export const LinearProgressIndicator = forwardRef<
       : `${determinateProgress * 100}%`
   const progressStyle = {
     ...style,
+    '--_thickness': `${thickness}px`,
     '--_progress': `${(progress ?? 0) * 100}%`,
     '--_track-start': indeterminate ? '0px' : trackStart,
   } as CSSProperties

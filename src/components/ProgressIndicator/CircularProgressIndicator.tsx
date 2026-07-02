@@ -9,7 +9,8 @@ import clsx from 'clsx'
 import styles from './ProgressIndicator.module.css'
 import type { ProgressIndicatorShape } from './LinearProgressIndicator'
 
-export type CircularProgressIndicatorThickness = 4 | 8
+/** Stroke thickness in dp. The two baseline values are 4 and 8, but any number is accepted. */
+export type CircularProgressIndicatorThickness = number
 
 export interface CircularProgressIndicatorProps
   extends Omit<SVGAttributes<SVGSVGElement>, 'role'> {

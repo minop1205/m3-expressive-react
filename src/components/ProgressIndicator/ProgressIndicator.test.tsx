@@ -52,6 +52,13 @@ describe('LinearProgressIndicator', () => {
     )
   })
 
+  it('accepts an arbitrary (configurable) thickness', () => {
+    render(<LinearProgressIndicator value={0.5} thickness={12} />)
+    const bar = screen.getByRole('progressbar')
+    expect(bar).toHaveAttribute('data-thickness', '12')
+    expect(bar.style.getPropertyValue('--_thickness')).toBe('12px')
+  })
+
   it('renders a wavy determinate indicator', () => {
     const { container } = render(
       <LinearProgressIndicator value={0.3} shape="wavy" />,
