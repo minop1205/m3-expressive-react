@@ -1,0 +1,100 @@
+/**
+ * MD3 Segmented Buttons. Values from androidx.compose.material3
+ * OutlinedSegmentedButtonTokens: 40dp height, stadium (CornerFull, 20dp outer),
+ * Outline 1dp border, segments overlap borders by 1dp. Selected =
+ * SecondaryContainer / OnSecondaryContainer + 18dp check; unselected =
+ * transparent / OnSurface. Label = LabelLarge, min-width 58dp, padding 12dp.
+ */
+
+.group {
+  display: inline-flex;
+  height: 40px;
+  isolation: isolate;
+}
+
+.segment {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  min-width: 58px;
+  height: 100%;
+  margin: 0;
+  padding-inline: 12px;
+  border: 1px solid var(--md-sys-color-outline);
+  background-color: transparent;
+  color: var(--md-sys-color-on-surface);
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+
+  --md-ripple-color: var(--md-sys-color-on-surface);
+  --md-focus-ring-color: var(--md-sys-color-secondary);
+}
+
+/* Overlap adjacent borders (1dp shared line). */
+.segment:not(:first-child) {
+  margin-inline-start: -1px;
+}
+
+/* Outer corners are fully rounded (stadium). */
+.segment:first-child {
+  border-start-start-radius: 20px;
+  border-end-start-radius: 20px;
+}
+
+.segment:last-child {
+  border-start-end-radius: 20px;
+  border-end-end-radius: 20px;
+}
+
+/* Selected fill + raised so its border wins over neighbors. */
+.segment[data-selected] {
+  z-index: 1;
+  background-color: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  --md-ripple-color: var(--md-sys-color-on-secondary-container);
+}
+
+.segment:focus-visible {
+  z-index: 2;
+}
+
+.segment:disabled {
+  cursor: default;
+  pointer-events: none;
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  border-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+}
+
+.icon,
+.label {
+  position: relative;
+  z-index: 1;
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+.label {
+  white-space: nowrap;
+}
