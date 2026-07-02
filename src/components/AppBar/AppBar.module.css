@@ -1,0 +1,134 @@
+/**
+ * MD3 App bars. Values from androidx.compose.material3 AppBar tokens:
+ * Top app bar — Surface container; small/center 64dp, medium 112dp, large
+ * 152dp; title TitleLarge / HeadlineSmall / HeadlineMedium, OnSurface; nav icon
+ * OnSurface, action icons OnSurfaceVariant; 4dp bar padding, 16dp title inset.
+ * Bottom app bar — SurfaceContainer, 80dp, OnSurfaceVariant icons.
+ */
+
+/* --------------------------------------------------------------------------- */
+/* Top app bar                                                                 */
+/* --------------------------------------------------------------------------- */
+.topBar {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  background-color: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 64px;
+  padding-inline: 4px;
+}
+
+.nav {
+  display: inline-flex;
+  align-items: center;
+  color: var(--md-sys-color-on-surface);
+}
+
+.actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.nav :where(svg, img),
+.actions :where(svg, img) {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+/* Single-row title (small / center). */
+.title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding-inline: 12px;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-sys-typescale-title-large-font);
+  font-size: var(--md-sys-typescale-title-large-size);
+  font-weight: var(--md-sys-typescale-title-large-weight);
+  line-height: var(--md-sys-typescale-title-large-line-height);
+  letter-spacing: var(--md-sys-typescale-title-large-tracking);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topBar[data-variant='center'] .title {
+  text-align: center;
+}
+
+/* Second-row title (medium / large). */
+.titleLarge {
+  margin: 0;
+  padding: 0 16px 20px;
+  color: var(--md-sys-color-on-surface);
+}
+
+.topBar[data-variant='medium'] {
+  /* row 64 + title area 48 = 112dp */
+}
+
+.topBar[data-variant='medium'] .titleLarge {
+  font-family: var(--md-sys-typescale-headline-small-font);
+  font-size: var(--md-sys-typescale-headline-small-size);
+  font-weight: var(--md-sys-typescale-headline-small-weight);
+  line-height: var(--md-sys-typescale-headline-small-line-height);
+  letter-spacing: var(--md-sys-typescale-headline-small-tracking);
+}
+
+.topBar[data-variant='large'] .titleLarge {
+  padding-bottom: 28px;
+  font-family: var(--md-sys-typescale-headline-medium-font);
+  font-size: var(--md-sys-typescale-headline-medium-size);
+  font-weight: var(--md-sys-typescale-headline-medium-weight);
+  line-height: var(--md-sys-typescale-headline-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-headline-medium-tracking);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Bottom app bar                                                              */
+/* --------------------------------------------------------------------------- */
+.bottomBar {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: 80px;
+  padding-inline: 4px 16px;
+  background-color: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.bottomActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 auto;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.bottomActions :where(svg, img) {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.fabSlot {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
