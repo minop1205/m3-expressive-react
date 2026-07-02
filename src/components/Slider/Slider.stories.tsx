@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { fn } from '@storybook/test'
-import { Slider } from './Slider'
+import { Slider, type SliderValue, type SliderSize } from './Slider'
 
 const meta = {
   title: 'Components/Slider',
@@ -9,9 +9,9 @@ const meta = {
   parameters: { layout: 'padded' },
   args: { defaultValue: 40, onChange: fn() },
   argTypes: {
-    min: { control: 'number' },
-    max: { control: 'number' },
-    step: { control: 'number' },
+    size: { control: 'inline-radio', options: ['xs', 's', 'm', 'l', 'xl'] },
+    orientation: { control: 'inline-radio', options: ['horizontal', 'vertical'] },
+    centered: { control: 'boolean' },
     showTicks: { control: 'boolean' },
     showValueLabel: { control: 'boolean' },
     disabled: { control: 'boolean' },
@@ -28,32 +28,56 @@ type Story = StoryObj<typeof meta>
 
 export const Continuous: Story = {}
 
-export const WithValueLabel: Story = {
-  args: { showValueLabel: true, defaultValue: 60 },
+export const Sizes: Story = {
+  render: (args) => (
+    <div style={{ display: 'grid', gap: 28, width: 320 }}>
+      {(['xs', 's', 'm', 'l', 'xl'] as SliderSize[]).map((size) => (
+        <Slider key={size} {...args} size={size} defaultValue={60} aria-label={size} />
+      ))}
+    </div>
+  ),
+}
+
+export const Range: Story = {
+  render: (args) => {
+    const [value, setValue] = useState<SliderValue>([20, 70])
+    return (
+      <div style={{ width: 320 }}>
+        <Slider {...args} value={value} onChange={setValue} showValueLabel aria-label="Price range" />
+        <p>{Array.isArray(value) ? `${value[0]} – ${value[1]}` : value}</p>
+      </div>
+    )
+  },
+}
+
+export const Centered: Story = {
+  args: { centered: true, defaultValue: 70, showValueLabel: true },
 }
 
 export const Stepped: Story = {
   args: { step: 10, showTicks: true, showValueLabel: true, defaultValue: 50 },
 }
 
-export const Disabled: Story = {
-  args: { disabled: true, defaultValue: 30 },
+export const WithInsetIcon: Story = {
+  args: {
+    size: 'l',
+    defaultValue: 60,
+    insetIcon: (
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path d="M3 9v6h4l5 5V4L7 9zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4" />
+      </svg>
+    ),
+  },
 }
 
-export const Controlled: Story = {
-  render: (args) => {
-    const [value, setValue] = useState(25)
-    return (
-      <div style={{ width: 320 }}>
-        <Slider
-          {...args}
-          value={value}
-          onChange={(v) => setValue(v)}
-          showValueLabel
-          aria-label="Controlled"
-        />
-        <p>Value: {value}</p>
-      </div>
-    )
-  },
+export const Vertical: Story = {
+  render: (args) => (
+    <div style={{ height: 240 }}>
+      <Slider {...args} orientation="vertical" defaultValue={60} aria-label="Vertical" />
+    </div>
+  ),
+}
+
+export const Disabled: Story = {
+  args: { disabled: true, defaultValue: 30 },
 }

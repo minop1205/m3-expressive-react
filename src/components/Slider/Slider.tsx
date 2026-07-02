@@ -3,26 +3,40 @@ import {
   useState,
   type ChangeEvent,
   type CSSProperties,
-  type InputHTMLAttributes,
+  type HTMLAttributes,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
 import styles from './Slider.module.css'
 
+export type SliderSize = 'xs' | 's' | 'm' | 'l' | 'xl'
+export type SliderOrientation = 'horizontal' | 'vertical'
+
+/** A single value, or a `[start, end]` pair for a range slider. */
+export type SliderValue = number | [number, number]
+
 export interface SliderProps
   extends Omit<
-    InputHTMLAttributes<HTMLInputElement>,
-    'onChange' | 'value' | 'defaultValue' | 'type' | 'min' | 'max' | 'step'
+    HTMLAttributes<HTMLSpanElement>,
+    'onChange' | 'defaultValue'
   > {
-  /** Controlled value. */
-  value?: number
-  /** Uncontrolled initial value. @default min */
-  defaultValue?: number
+  /** Controlled value (`number`, or `[start, end]` for range). */
+  value?: SliderValue
+  /** Uncontrolled initial value. @default min (or `[min, max]` for range) */
+  defaultValue?: SliderValue
   min?: number
   max?: number
   step?: number
-  /** Fires with the new numeric value. */
-  onChange?: (value: number, event: ChangeEvent<HTMLInputElement>) => void
+  /** Fires with the new value (same shape as `value`). */
+  onChange?: (value: SliderValue, event: ChangeEvent<HTMLInputElement>) => void
+  /** Expressive size (track thickness / handle height). @default 'xs' */
+  size?: SliderSize
+  /** Orientation. @default 'horizontal' */
+  orientation?: SliderOrientation
+  /** Draw the active track from the center outward. @default false */
+  centered?: boolean
+  /** Icon shown inside the handle (sizes m/l/xl only). */
+  insetIcon?: ReactNode
   /** Render tick marks at each step. @default false */
   showTicks?: boolean
   /** Show the value-indicator bubble on hover / focus / drag. @default false */
@@ -32,15 +46,38 @@ export interface SliderProps
   disabled?: boolean
 }
 
+/** Per-size measurements (m3.material.io slider measurements). */
+const SIZES: Record<SliderSize, { track: number; handle: number; corner: number; icon: number }> = {
+  xs: { track: 16, handle: 44, corner: 8, icon: 0 },
+  s: { track: 24, handle: 44, corner: 8, icon: 0 },
+  m: { track: 40, handle: 52, corner: 12, icon: 24 },
+  l: { track: 56, handle: 68, corner: 16, icon: 24 },
+  xl: { track: 96, handle: 108, corner: 28, icon: 32 },
+}
+
+/** Clear gap (px) between the active track and a handle: half-handle (2) + 6dp. */
+const GAP = 8
+
+function clamp(v: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, v))
+}
+/** `calc(<frac>*100% <op> <gap>px)` for positioning along the main axis. */
+function pos(frac: number, gap = 0) {
+  const g = gap === 0 ? '' : gap > 0 ? ` + ${gap}px` : ` - ${-gap}px`
+  return `calc(${frac} * 100%${g})`
+}
+
 /**
  * Material Design 3 (Expressive) Slider.
  *
- * Built on a native `<input type="range">` (accessible, keyboard, form-ready)
- * overlaid on custom MD3 visuals: a 16dp track (active Primary, inactive
- * SecondaryContainer), a 4×44dp pill handle with a 6dp gap from the track, and
- * a track stop indicator. Optional tick marks and a value-indicator bubble.
+ * Native `<input type="range">`(s) overlaid on MD3 visuals: five sizes (XS–XL,
+ * track 16–96dp / handle 44–108dp), single or **range** (`[start, end]`),
+ * **centered** (active from the midpoint), **vertical** orientation, optional
+ * tick marks, value-indicator bubble, and an **inset icon** in the handle
+ * (m/l/xl). Handle Primary, active track Primary, inactive SecondaryContainer;
+ * disabled active 38% / inactive 12% — per m3.material.io & Compose SliderTokens.
  */
-export const Slider = forwardRef<HTMLInputElement, SliderProps>(function Slider(
+export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
   {
     value,
     defaultValue,
@@ -48,74 +85,178 @@ export const Slider = forwardRef<HTMLInputElement, SliderProps>(function Slider(
     max = 100,
     step = 1,
     onChange,
+    size = 'xs',
+    orientation = 'horizontal',
+    centered = false,
+    insetIcon,
     showTicks = false,
     showValueLabel = false,
     valueLabelFormat,
     disabled = false,
     className,
     style,
+    'aria-label': ariaLabel,
+    'aria-labelledby': ariaLabelledby,
     ...rest
   },
   ref,
 ) {
+  const rangeInit = Array.isArray(value ?? defaultValue)
   const isControlled = value !== undefined
-  const [internal, setInternal] = useState(defaultValue ?? min)
+  const [internal, setInternal] = useState<SliderValue>(
+    defaultValue ?? (rangeInit ? [min, max] : min),
+  )
   const current = isControlled ? value : internal
-  const clamped = Math.min(max, Math.max(min, current))
-  const fraction = max > min ? (clamped - min) / (max - min) : 0
+  const values = Array.isArray(current) ? current : [current]
+  const isRange = values.length === 2
+  const span = max > min ? max - min : 1
 
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const next = Number(event.target.value)
-    if (!isControlled) setInternal(next)
-    onChange?.(next, event)
+  const clamped = values.map((v) => clamp(v, min, max))
+  const fractions = clamped.map((v) => (v - min) / span)
+
+  const commit = (next: number, index: number, event: ChangeEvent<HTMLInputElement>) => {
+    let out: SliderValue
+    if (isRange) {
+      const pair: [number, number] = [clamped[0], clamped[1]]
+      pair[index] = next
+      // Keep start <= end.
+      if (pair[0] > pair[1]) pair[index] = index === 0 ? pair[1] : pair[0]
+      out = pair
+    } else {
+      out = next
+    }
+    if (!isControlled) setInternal(out)
+    onChange?.(out, event)
   }
 
-  const tickCount =
-    showTicks && step > 0 ? Math.floor((max - min) / step) : 0
+  // Active interval [a, b] along the main axis, and which ends touch a handle.
+  let a: number
+  let b: number
+  let gapAtA: boolean
+  let gapAtB: boolean
+  if (isRange) {
+    a = Math.min(fractions[0], fractions[1])
+    b = Math.max(fractions[0], fractions[1])
+    gapAtA = true
+    gapAtB = true
+  } else if (centered) {
+    a = Math.min(0.5, fractions[0])
+    b = Math.max(0.5, fractions[0])
+    gapAtA = fractions[0] < 0.5
+    gapAtB = fractions[0] > 0.5
+  } else {
+    a = 0
+    b = fractions[0]
+    gapAtA = false
+    gapAtB = true
+  }
+
+  const tickCount = showTicks && step > 0 ? Math.floor(span / step) : 0
   const ticks =
     tickCount > 0 && tickCount <= 100
       ? Array.from({ length: tickCount + 1 }, (_, i) => i / tickCount)
       : []
 
-  const labelText = valueLabelFormat ? valueLabelFormat(clamped) : clamped
+  const s = SIZES[size]
+  const rootStyle = {
+    ...style,
+    '--_track': `${s.track}px`,
+    '--_handle': `${s.handle}px`,
+    '--_corner': `${s.corner}px`,
+    '--_icon': `${s.icon}px`,
+  } as CSSProperties
 
   return (
     <span
-      className={clsx(styles.slider, className)}
+      ref={ref}
+      {...rest}
+      data-size={size}
+      data-orientation={orientation}
+      data-range={isRange || undefined}
       data-disabled={disabled || undefined}
-      style={{ ...style, '--_fraction': fraction } as CSSProperties}
+      role={isRange ? 'group' : undefined}
+      aria-label={isRange ? ariaLabel : undefined}
+      aria-labelledby={isRange ? ariaLabelledby : undefined}
+      className={clsx(styles.slider, className)}
+      style={rootStyle}
     >
       <span className={styles.track} aria-hidden="true">
-        <span className={styles.inactive} />
-        <span className={styles.active} />
+        {/* Inactive track (full), then the active segment on top with gaps. */}
+        <span className={styles.inactive} style={mainSeg(0, a, false, gapAtA)} />
+        {b < 1 && (
+          <span className={styles.inactive} style={mainSeg(b, 1, gapAtB, false)} />
+        )}
+        <span
+          className={styles.active}
+          style={mainSeg(a, b, gapAtA, gapAtB)}
+        />
         {ticks.map((t) => (
           <span
             key={t}
             className={styles.tick}
-            data-active={t <= fraction || undefined}
-            style={{ insetInlineStart: `${t * 100}%` }}
+            data-active={t >= a && t <= b ? true : undefined}
+            style={{ '--_p': pos(t) } as CSSProperties}
           />
         ))}
-        {fraction < 1 && <span className={styles.stop} />}
+        {!isRange && !centered && fractions[0] < 1 && (
+          <span className={styles.stop} />
+        )}
+        {insetIcon != null && s.icon > 0 && (
+          <span className={styles.insetIcon} aria-hidden="true">
+            {insetIcon}
+          </span>
+        )}
       </span>
-      <span className={styles.thumb} aria-hidden="true" />
-      {showValueLabel && (
-        <span className={styles.valueLabel} aria-hidden="true">
-          {labelText}
-        </span>
-      )}
-      <input
-        ref={ref}
-        {...rest}
-        type="range"
-        className={styles.input}
-        min={min}
-        max={max}
-        step={step}
-        value={clamped}
-        disabled={disabled}
-        onChange={handleChange}
-      />
+
+      {fractions.map((f, i) => (
+        <span
+          key={i}
+          className={styles.thumb}
+          aria-hidden="true"
+          style={{ '--_p': pos(f) } as CSSProperties}
+        />
+      ))}
+
+      {showValueLabel &&
+        fractions.map((f, i) => (
+          <span
+            key={i}
+            className={styles.valueLabel}
+            aria-hidden="true"
+            style={{ '--_p': pos(f) } as CSSProperties}
+          >
+            {valueLabelFormat ? valueLabelFormat(clamped[i]) : clamped[i]}
+          </span>
+        ))}
+
+      {values.map((_, i) => (
+        <input
+          key={i}
+          type="range"
+          className={styles.input}
+          min={min}
+          max={max}
+          step={step}
+          value={clamped[i]}
+          disabled={disabled}
+          aria-label={isRange ? (i === 0 ? 'Minimum' : 'Maximum') : ariaLabel}
+          aria-labelledby={isRange ? undefined : ariaLabelledby}
+          onChange={(event) => commit(Number(event.target.value), i, event)}
+        />
+      ))}
     </span>
   )
 })
+
+/** Build a main-axis segment style from fractions + per-end gaps. */
+function mainSeg(
+  start: number,
+  end: number,
+  gapStart: boolean,
+  gapEnd: boolean,
+): CSSProperties {
+  return {
+    '--_s': pos(start, gapStart ? GAP : 0),
+    '--_e': pos(end, gapEnd ? -GAP : 0),
+  } as CSSProperties
+}
