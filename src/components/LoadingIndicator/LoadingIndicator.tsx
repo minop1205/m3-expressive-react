@@ -212,7 +212,7 @@ export const LoadingIndicator = forwardRef<SVGSVGElement, LoadingIndicatorProps>
         {variant === 'contained' && (
           <circle className={styles.container} cx={CENTER} cy={CENTER} r={CENTER} />
         )}
-        <g className={styles.shapeGroup} style={{ transform: `rotate(${frame.rot}deg)` }}>
+        <g transform={`rotate(${frame.rot} ${CENTER} ${CENTER})`}>
           <path className={styles.shape} d={frame.d} />
         </g>
       </svg>

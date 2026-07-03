@@ -20,9 +20,5 @@
   fill: var(--_shape-color);
 }
 
-/* Rotation is applied inline (per-frame) via `transform: rotate(...)`; keep the
-   pivot at the shape's center as it morphs. */
-.shapeGroup {
-  transform-box: fill-box;
-  transform-origin: center;
-}
+/* Rotation is applied per-frame via the SVG `transform="rotate(a cx cy)"`
+   attribute, pivoting on the viewBox center (= each shape's centroid). */
