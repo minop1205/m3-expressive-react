@@ -74,7 +74,7 @@ const MORPH_MS = 300
 const GLOBAL_ROTATION_MS = 4666
 // Subtle "centrifugal" scale pulse: normal size at rest, growing slightly mid-
 // morph (while it spins) and returning to 1 by the next hold.
-const SCALE_PULSE = 0.07
+const SCALE_PULSE = 0.1
 // Analytic underdamped spring step-response for the morph (dampingRatio 0.6),
 // giving the Expressive ease-in + overshoot; effectively settled within
 // MORPH_MS.
