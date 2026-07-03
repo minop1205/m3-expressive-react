@@ -1,8 +1,9 @@
 /**
  * MD3 (Expressive) Loading indicator. 48dp container, 38dp morphing active
  * shape. Uncontained = Primary shape; contained = OnPrimaryContainer shape on a
- * PrimaryContainer circle. Values from Compose LoadingIndicatorTokens; the
- * shape morph runs in JS, the spin here in CSS (~global rotation + morph kicks).
+ * PrimaryContainer circle. Values from Compose LoadingIndicatorTokens. The shape
+ * morph and rotation are driven in JS (spring: damping 0.6 / stiffness 200) —
+ * this file only wires colors and the rotation pivot.
  */
 
 .svg {
@@ -19,23 +20,9 @@
   fill: var(--_shape-color);
 }
 
-.spin {
+/* Rotation is applied inline (per-frame) via `transform: rotate(...)`; keep the
+   pivot at the shape's center as it morphs. */
+.shapeGroup {
   transform-box: fill-box;
   transform-origin: center;
-  animation: md-loading-spin 2000ms linear infinite;
-}
-
-@keyframes md-loading-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .spin {
-    animation-duration: 6000ms;
-  }
 }
