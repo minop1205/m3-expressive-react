@@ -25,199 +25,56 @@ export interface LoadingIndicatorProps
 }
 
 /* ===========================================================================
-   Shape geometry — reconstructed from androidx.compose.material3 MaterialShapes
-   (RoundedPolygon.star / customPolygon definitions). Each shape is built as a
-   dense rounded outline, centered on its bounding box, then resampled at a
-   fixed count of equal-angle points so shapes share a common center and a
-   1:1 point correspondence for smooth vertex-interpolated morphing.
+   Shape geometry — the seven Loading indicator shapes traced directly from the
+   official Material 3 Design Kit (Figma) `Loading indicator` component vectors
+   (`fillGeometry`). Each shape is sampled at SAMPLES equal-angle radii from the
+   shape-container center, so all shapes share a common center and a 1:1 point
+   correspondence for smooth vertex-interpolated morphing. Radii are in units of
+   the 38dp shape-container radius (= 1), preserving the shapes' relative sizes.
    =========================================================================== */
 
-const SAMPLES = 96
+const SAMPLES = 128
 const VIEWBOX = 48
 const CENTER = VIEWBOX / 2
-const ACTIVE_RADIUS = 19 // 38dp active shape inside the 48dp container
+const ACTIVE_RADIUS = 19 // 38dp shape container inside the 48dp indicator
 
 type P = [number, number]
-type Vert = { p: P; round: number }
 
-function rotate([x, y]: P, a: number): P {
-  const c = Math.cos(a)
-  const s = Math.sin(a)
-  return [x * c - y * s, x * s + y * c]
+const FIGMA_RADII: Record<string, number[]> = {
+  softBurst: [0.7147,0.7227,0.7549,0.8007,0.8464,0.8895,0.906,0.9019,0.8745,0.8277,0.7817,0.7359,0.7147,0.7118,0.7251,0.7643,0.8087,0.8531,0.8894,0.8993,0.8903,0.8559,0.8111,0.7663,0.7241,0.7072,0.7068,0.7226,0.7634,0.8073,0.8511,0.8855,0.8947,0.8855,0.8511,0.8073,0.7634,0.7226,0.7068,0.7072,0.7241,0.7663,0.8111,0.8559,0.8903,0.8993,0.8894,0.8531,0.8087,0.7643,0.7251,0.7118,0.7147,0.7359,0.7817,0.8277,0.8745,0.9019,0.906,0.8895,0.8464,0.8007,0.7549,0.7227,0.7147,0.7227,0.7549,0.8007,0.8464,0.8895,0.906,0.9019,0.8745,0.8277,0.7817,0.7359,0.7147,0.7118,0.7251,0.7643,0.8087,0.8531,0.8894,0.8993,0.8903,0.8559,0.8111,0.7663,0.7241,0.7072,0.7068,0.7226,0.7634,0.8073,0.8511,0.8855,0.8947,0.8855,0.8511,0.8073,0.7634,0.7226,0.7068,0.7072,0.7241,0.7663,0.8111,0.8559,0.8903,0.8993,0.8894,0.8531,0.8087,0.7643,0.7251,0.7118,0.7147,0.7359,0.7817,0.8277,0.8745,0.9019,0.906,0.8895,0.8464,0.8007,0.7549,0.7227],
+  cookie9: [0.8808,0.8923,0.899,0.9011,0.8987,0.8915,0.8796,0.8628,0.8417,0.8263,0.8195,0.8205,0.8293,0.8466,0.8642,0.8771,0.8853,0.889,0.8883,0.8832,0.8737,0.8593,0.8402,0.8219,0.8121,0.8101,0.8156,0.8293,0.8488,0.8645,0.8754,0.882,0.8842,0.882,0.8754,0.8645,0.8488,0.8293,0.8156,0.8101,0.8121,0.8219,0.8402,0.8593,0.8737,0.8832,0.8883,0.889,0.8853,0.8771,0.8642,0.8466,0.8293,0.8205,0.8195,0.8263,0.8417,0.8628,0.8796,0.8915,0.8987,0.9011,0.899,0.8923,0.8808,0.8644,0.8455,0.8344,0.8315,0.8364,0.85,0.8711,0.889,0.9017,0.9095,0.9125,0.9107,0.9043,0.8929,0.8765,0.8569,0.8446,0.8408,0.845,0.8578,0.8786,0.8962,0.9088,0.9162,0.919,0.9168,0.9099,0.898,0.881,0.8608,0.8482,0.8441,0.8482,0.8608,0.881,0.898,0.9099,0.9168,0.9189,0.9162,0.9088,0.8962,0.8786,0.8578,0.845,0.8408,0.8446,0.8569,0.8765,0.8929,0.9043,0.9107,0.9125,0.9095,0.9017,0.889,0.8711,0.85,0.8364,0.8315,0.8344,0.8455,0.8644],
+  pentagon: [0.8603,0.8755,0.8912,0.9039,0.9109,0.9134,0.9116,0.9054,0.8949,0.8787,0.859,0.8397,0.8223,0.8099,0.8015,0.7932,0.7848,0.7765,0.7681,0.7671,0.7716,0.776,0.7804,0.7849,0.7893,0.7964,0.809,0.8234,0.8386,0.8523,0.8614,0.8667,0.8684,0.8667,0.8614,0.8523,0.8386,0.8234,0.809,0.7964,0.7893,0.7849,0.7804,0.776,0.7716,0.7671,0.7681,0.7765,0.7848,0.7932,0.8015,0.8099,0.8223,0.8397,0.859,0.8787,0.8949,0.9054,0.9116,0.9134,0.9109,0.9039,0.8912,0.8755,0.8603,0.8468,0.8386,0.8331,0.8277,0.8223,0.8168,0.8119,0.8189,0.826,0.8331,0.8401,0.8472,0.8577,0.8732,0.8906,0.908,0.9214,0.9291,0.9323,0.9312,0.9258,0.9159,0.9004,0.8829,0.8663,0.8518,0.8438,0.8373,0.8308,0.8243,0.8179,0.8114,0.8179,0.8243,0.8308,0.8373,0.8438,0.8518,0.8663,0.8829,0.9004,0.9159,0.9258,0.9312,0.9323,0.9291,0.9214,0.908,0.8906,0.8732,0.8577,0.8472,0.8401,0.8331,0.826,0.8189,0.8119,0.8168,0.8223,0.8277,0.8331,0.8386,0.8468],
+  pill: [0.7804,0.774,0.7673,0.7604,0.7533,0.746,0.7385,0.7309,0.7232,0.7153,0.7075,0.6996,0.6966,0.6966,0.6966,0.6966,0.6966,0.6966,0.6966,0.6966,0.6966,0.6996,0.7075,0.7153,0.7232,0.7309,0.7385,0.746,0.7533,0.7604,0.7673,0.774,0.7804,0.7865,0.7924,0.7981,0.8033,0.8082,0.8128,0.8171,0.8209,0.8242,0.8272,0.8297,0.8318,0.8333,0.8344,0.8351,0.8353,0.8351,0.8344,0.8333,0.8318,0.8297,0.8272,0.8242,0.8209,0.817,0.8128,0.8082,0.8033,0.7981,0.7924,0.7865,0.7804,0.774,0.7673,0.7604,0.7533,0.746,0.7385,0.7309,0.7232,0.7153,0.7075,0.6996,0.6966,0.6966,0.6966,0.6966,0.6966,0.6966,0.6966,0.6966,0.6966,0.6996,0.7075,0.7153,0.7232,0.7309,0.7385,0.746,0.7533,0.7604,0.7673,0.774,0.7804,0.7865,0.7924,0.7981,0.8033,0.8082,0.8128,0.817,0.8209,0.8242,0.8272,0.8297,0.8318,0.8333,0.8344,0.8351,0.8353,0.8351,0.8344,0.8333,0.8318,0.8297,0.8272,0.8242,0.8209,0.8171,0.8128,0.8082,0.8033,0.7981,0.7924,0.7865],
+  sunny: [0.8947,0.8889,0.8692,0.8422,0.8196,0.799,0.7784,0.7619,0.7558,0.7619,0.7784,0.799,0.8196,0.8422,0.8692,0.8889,0.8947,0.8889,0.8692,0.8422,0.8196,0.799,0.7784,0.7619,0.7558,0.7619,0.7784,0.799,0.8196,0.8422,0.8692,0.8889,0.8947,0.8889,0.8692,0.8422,0.8196,0.799,0.7784,0.7619,0.7558,0.7619,0.7784,0.799,0.8196,0.8422,0.8692,0.8889,0.8947,0.8889,0.8692,0.8422,0.8196,0.799,0.7784,0.7619,0.7558,0.7619,0.7784,0.799,0.8196,0.8422,0.8692,0.8889,0.8947,0.8889,0.8692,0.8422,0.8196,0.799,0.7784,0.7619,0.7558,0.7619,0.7784,0.799,0.8196,0.8422,0.8692,0.8889,0.8947,0.8889,0.8692,0.8422,0.8196,0.799,0.7784,0.7619,0.7558,0.7619,0.7784,0.799,0.8196,0.8422,0.8692,0.8889,0.8947,0.8889,0.8692,0.8422,0.8196,0.799,0.7784,0.7619,0.7558,0.7619,0.7784,0.799,0.8196,0.8422,0.8692,0.8889,0.8947,0.8889,0.8692,0.8422,0.8196,0.799,0.7784,0.7619,0.7558,0.7619,0.7784,0.799,0.8196,0.8422,0.8692,0.8889],
+  cookie4: [0.65,0.6521,0.6587,0.6703,0.6877,0.7129,0.7404,0.7683,0.7931,0.8149,0.8334,0.8489,0.8613,0.8708,0.8775,0.8815,0.8828,0.8815,0.8775,0.8708,0.8613,0.8489,0.8334,0.8149,0.7931,0.7683,0.7404,0.7129,0.6877,0.6703,0.6587,0.6521,0.65,0.6521,0.6587,0.6703,0.6877,0.7129,0.7404,0.7683,0.7931,0.8149,0.8334,0.8489,0.8613,0.8708,0.8775,0.8815,0.8828,0.8815,0.8775,0.8708,0.8613,0.8489,0.8334,0.8149,0.7931,0.7683,0.7404,0.7129,0.6877,0.6703,0.6587,0.6521,0.65,0.6521,0.6587,0.6703,0.6877,0.7129,0.7404,0.7683,0.7931,0.8149,0.8334,0.8489,0.8613,0.8708,0.8775,0.8815,0.8828,0.8815,0.8775,0.8708,0.8613,0.8489,0.8334,0.8149,0.7931,0.7683,0.7404,0.7129,0.6877,0.6703,0.6587,0.6521,0.65,0.6521,0.6587,0.6703,0.6877,0.7129,0.7404,0.7683,0.7931,0.8149,0.8334,0.8489,0.8613,0.8708,0.8775,0.8815,0.8828,0.8815,0.8775,0.8708,0.8613,0.8489,0.8334,0.8149,0.7931,0.7683,0.7404,0.7129,0.6877,0.6703,0.6587,0.6521],
+  oval: [0.7195,0.7055,0.6922,0.6803,0.6687,0.6588,0.6492,0.641,0.6334,0.6268,0.6214,0.6161,0.6128,0.6095,0.6074,0.6063,0.6052,0.6063,0.6074,0.6095,0.6128,0.6161,0.6214,0.6268,0.6334,0.641,0.6492,0.6588,0.6687,0.6803,0.6922,0.7055,0.7195,0.7344,0.7502,0.7666,0.7838,0.8013,0.8191,0.837,0.8545,0.8713,0.8871,0.9014,0.9139,0.9242,0.9317,0.9364,0.9381,0.9364,0.9317,0.9242,0.9139,0.9014,0.8871,0.8713,0.8544,0.837,0.8191,0.8013,0.7838,0.7666,0.7502,0.7344,0.7195,0.7055,0.6922,0.6803,0.6687,0.6588,0.6492,0.641,0.6334,0.6268,0.6214,0.6161,0.6128,0.6095,0.6074,0.6063,0.6052,0.6063,0.6074,0.6095,0.6128,0.6161,0.6214,0.6268,0.6334,0.641,0.6492,0.6588,0.6687,0.6803,0.6922,0.7055,0.7195,0.7344,0.7502,0.7666,0.7838,0.8013,0.8191,0.837,0.8544,0.8713,0.8871,0.9014,0.9139,0.9242,0.9317,0.9364,0.9381,0.9364,0.9317,0.9242,0.9139,0.9014,0.8871,0.8713,0.8545,0.837,0.8191,0.8013,0.7838,0.7666,0.7502,0.7344],
+  // A plain circle for the determinate morph (Circle → SoftBurst), sized to sit
+  // between the shapes' extents.
+  circle: Array.from({ length: SAMPLES }, () => 0.88),
 }
 
-/** RoundedPolygon.star(n, innerRadius, rounding): 2n alternating outer/inner vertices. */
-function starVerts(n: number, inner: number, round: number, phase = 0): Vert[] {
-  const v: Vert[] = []
-  for (let i = 0; i < n; i += 1) {
-    v.push({ p: rotate([1, 0], phase + (2 * Math.PI * i) / n), round })
-    v.push({ p: rotate([inner, 0], phase + (2 * Math.PI * (i + 0.5)) / n), round })
-  }
-  return v
-}
-
-/** customPolygon: repeat `points` `reps` times, rotating each block by i*360/reps. */
-function customVerts(points: Vert[], reps: number): Vert[] {
-  const v: Vert[] = []
-  for (let i = 0; i < reps; i += 1) {
-    const a = (2 * Math.PI * i) / reps
-    for (const pt of points) v.push({ p: rotate(pt.p, a), round: pt.round })
-  }
-  return v
-}
-
-const SHAPE_VERTS: Record<string, Vert[]> = {
-  // 8-point cookie, inner 0.8, gentle rounding.
-  sunny: starVerts(8, 0.8, 0.15),
-  // 9-point cookie, inner 0.8, heavy rounding, rotated -90°.
-  cookie9: starVerts(9, 0.8, 0.5, -Math.PI / 2),
-  // 10-fold soft burst: outer ≈0.55 / inner ≈0.38 (from customPolygon points).
-  softBurst: customVerts(
-    [
-      { p: [-0.307, -0.223], round: 0.053 },
-      { p: [-0.324, -0.445], round: 0.053 },
-    ],
-    10,
-  ),
-  // 4-lobed cookie: a rounded square with gently scooped (concave) sides.
-  cookie4: customVerts(
-    [
-      { p: [0.7, 0.7], round: 0.42 },
-      { p: [0, 0.5], round: 0.5 },
-    ],
-    4,
-  ),
-  // Convex pentagon, apex up.
-  pentagon: [
-    { p: [0, -0.509], round: 0.172 },
-    { p: [0.53, -0.135], round: 0.164 },
-    { p: [0.328, 0.47], round: 0.169 },
-    { p: [-0.328, 0.47], round: 0.169 },
-    { p: [-0.53, -0.135], round: 0.164 },
-  ],
-}
-
-function quad(a: P, b: P, c: P, t: number): P {
-  const u = 1 - t
-  return [u * u * a[0] + 2 * u * t * b[0] + t * t * c[0], u * u * a[1] + 2 * u * t * b[1] + t * t * c[1]]
-}
-
-/** Dense rounded outline from vertices, rounding each corner with a quad bezier. */
-function roundedOutline(verts: Vert[]): P[] {
-  const n = verts.length
-  const inP: P[] = []
-  const outP: P[] = []
-  for (let i = 0; i < n; i += 1) {
-    const V = verts[i].p
-    const A = verts[(i - 1 + n) % n].p
-    const B = verts[(i + 1) % n].p
-    const f = Math.min(0.5, Math.max(0, verts[i].round * 0.5))
-    inP[i] = [V[0] + f * (A[0] - V[0]), V[1] + f * (A[1] - V[1])]
-    outP[i] = [V[0] + f * (B[0] - V[0]), V[1] + f * (B[1] - V[1])]
-  }
-  const out: P[] = []
-  for (let i = 0; i < n; i += 1) {
-    for (let s = 0; s <= 10; s += 1) out.push(quad(inP[i], verts[i].p, outP[i], s / 10))
-    const j = (i + 1) % n
-    for (let s = 1; s < 4; s += 1) {
-      const t = s / 4
-      out.push([outP[i][0] + (inP[j][0] - outP[i][0]) * t, outP[i][1] + (inP[j][1] - outP[i][1]) * t])
-    }
-  }
-  return out
-}
-
-function ellipseOutline(a: number, b: number, rot: number, m = 240): P[] {
-  const out: P[] = []
-  for (let i = 0; i < m; i += 1) out.push(rotate([Math.cos((2 * Math.PI * i) / m) * a, Math.sin((2 * Math.PI * i) / m) * b], rot))
-  return out
-}
-
-/** Stadium (capsule) outline: straight half-length `s`, radius `w`. */
-function capsuleOutline(s: number, w: number, m = 240): P[] {
-  const out: P[] = []
-  for (let i = 0; i < m; i += 1) {
-    const t = (i / m) * 2 * Math.PI
-    // Right cap on [-90°,90°], left cap on [90°,270°]; straight sides connect them.
-    if (t <= Math.PI / 2 || t >= (3 * Math.PI) / 2) out.push([s + w * Math.cos(t), w * Math.sin(t)])
-    else out.push([-s + w * Math.cos(t), w * Math.sin(t)])
-  }
-  return out
-}
-
-const DENSE: Record<string, P[]> = {
-  softBurst: roundedOutline(SHAPE_VERTS.softBurst),
-  cookie9: roundedOutline(SHAPE_VERTS.cookie9),
-  pentagon: roundedOutline(SHAPE_VERTS.pentagon),
-  pill: capsuleOutline(0.6, 0.4),
-  sunny: roundedOutline(SHAPE_VERTS.sunny),
-  cookie4: roundedOutline(SHAPE_VERTS.cookie4),
-  oval: ellipseOutline(1, 0.64, -Math.PI / 4),
-  circle: ellipseOutline(1, 1, 0),
-}
-
-/** Center a dense outline on its bounding box, then sample K equal-angle points
- *  (ray-cast radius), normalized so the max extent is 1 — shared center + 1:1
- *  point correspondence for morphing. */
-function toUnit(dense: P[]): P[] {
-  let minX = Infinity
-  let maxX = -Infinity
-  let minY = Infinity
-  let maxY = -Infinity
-  for (const [x, y] of dense) {
-    minX = Math.min(minX, x)
-    maxX = Math.max(maxX, x)
-    minY = Math.min(minY, y)
-    maxY = Math.max(maxY, y)
-  }
-  const cx = (minX + maxX) / 2
-  const cy = (minY + maxY) / 2
-  const ar = dense
-    .map(([x, y]) => ({ a: Math.atan2(y - cy, x - cx), r: Math.hypot(x - cx, y - cy) }))
-    .sort((p, q) => p.a - q.a)
-
-  const radiusAt = (th: number) => {
-    for (let i = 0; i < ar.length; i += 1) {
-      const cur = ar[i]
-      const nxt = ar[(i + 1) % ar.length]
-      let a1 = nxt.a
-      if (a1 < cur.a) a1 += 2 * Math.PI
-      let t = th
-      if (t < cur.a) t += 2 * Math.PI
-      if (t >= cur.a && t <= a1) {
-        const f = a1 === cur.a ? 0 : (t - cur.a) / (a1 - cur.a)
-        return cur.r + (nxt.r - cur.r) * f
-      }
-    }
-    return ar[0].r
-  }
-
-  const pts: P[] = []
-  let maxr = 0
-  for (let k = 0; k < SAMPLES; k += 1) {
+/** Radii → points on the unit circle (θ matches the sampling used to trace). */
+function radiiToPoints(r: number[]): P[] {
+  return r.map((rv, k) => {
     const th = -Math.PI + (2 * Math.PI * k) / SAMPLES
-    const r = radiusAt(th)
-    maxr = Math.max(maxr, r)
-    pts.push([Math.cos(th) * r, Math.sin(th) * r])
-  }
-  return pts.map(([x, y]) => [x / maxr, y / maxr] as P)
+    return [Math.cos(th) * rv, Math.sin(th) * rv]
+  })
 }
 
 const UNIT: Record<string, P[]> = Object.fromEntries(
-  Object.keys(DENSE).map((name) => [name, toUnit(DENSE[name])]),
+  Object.keys(FIGMA_RADII).map((name) => [name, radiiToPoints(FIGMA_RADII[name])]),
 )
 
 const SEQUENCE = ['softBurst', 'cookie9', 'pentagon', 'pill', 'sunny', 'cookie4', 'oval']
-// Cadence measured from the reference (~0.6–0.67s/shape): hold ~350ms then a
-// ~300ms springy morph. Each step also kicks the rotation by 90°, over a
-// linear global rotation.
+// Cadence measured from the m3.material.io reference (~0.6–0.67s/shape): hold
+// ~350ms then a ~300ms springy morph. Each step also kicks the rotation by 90°,
+// over a linear global rotation.
 const HOLD_MS = 350
 const MORPH_MS = 300
 const GLOBAL_ROTATION_MS = 4666
 // Analytic underdamped spring step-response for the morph (dampingRatio 0.6),
 // giving the Expressive ease-in + overshoot; effectively settled within
-// MORPH_MS. Replaces an open-ended physics integrator, which over-settled and
-// stretched each morph well past the reference cadence.
+// MORPH_MS.
 const SPRING_ZETA = 0.6
 const SPRING_WN = 16.7
 const SPRING_WD = SPRING_WN * Math.sqrt(1 - SPRING_ZETA * SPRING_ZETA)
@@ -246,14 +103,13 @@ function clampProgress(v: number) {
 /**
  * Material Design 3 (Expressive) Loading indicator.
  *
- * A 48dp indicator whose 38dp active shape morphs through the seven
- * `MaterialShapes` (SoftBurst → Cookie9 → Pentagon → Pill → Sunny → Cookie4 →
- * Oval) while spinning — per Compose LoadingIndicator. Shapes are reconstructed
- * from the MaterialShapes geometry and centered; the morph + per-step 90° kick
- * run on a spring (damping 0.6, stiffness 200) over a linear global rotation,
- * for the Expressive ease-in/overshoot feel. `contained` puts the
- * OnPrimaryContainer shape on a PrimaryContainer circle; `value` gives the
- * determinate form (Circle → SoftBurst).
+ * A 48dp indicator whose 38dp active shape morphs through the seven Material
+ * shapes (SoftBurst → Cookie9 → Pentagon → Pill → Sunny → Cookie4 → Oval) while
+ * spinning. The shapes are traced from the official Material 3 Design Kit
+ * vectors; the morph + per-step 90° kick run on a spring (dampingRatio 0.6) over
+ * a linear global rotation, with cadence measured from the m3.material.io
+ * reference. `contained` puts the OnPrimaryContainer shape on a PrimaryContainer
+ * circle; `value` gives the determinate form (Circle → SoftBurst).
  */
 export const LoadingIndicator = forwardRef<SVGSVGElement, LoadingIndicatorProps>(
   function LoadingIndicator(
@@ -356,10 +212,7 @@ export const LoadingIndicator = forwardRef<SVGSVGElement, LoadingIndicatorProps>
         {variant === 'contained' && (
           <circle className={styles.container} cx={CENTER} cy={CENTER} r={CENTER} />
         )}
-        <g
-          className={styles.shapeGroup}
-          style={{ transform: `rotate(${frame.rot}deg)` }}
-        >
+        <g className={styles.shapeGroup} style={{ transform: `rotate(${frame.rot}deg)` }}>
           <path className={styles.shape} d={frame.d} />
         </g>
       </svg>
