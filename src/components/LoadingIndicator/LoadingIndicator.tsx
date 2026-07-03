@@ -208,12 +208,26 @@ const UNIT: Record<string, P[]> = Object.fromEntries(
 )
 
 const SEQUENCE = ['softBurst', 'cookie9', 'pentagon', 'pill', 'sunny', 'cookie4', 'oval']
-const HOLD_MS = 650
+// Cadence measured from the reference (~0.6–0.67s/shape): hold ~350ms then a
+// ~300ms springy morph. Each step also kicks the rotation by 90°, over a
+// linear global rotation.
+const HOLD_MS = 350
+const MORPH_MS = 300
 const GLOBAL_ROTATION_MS = 4666
-// Compose morph spring: dampingRatio 0.6, stiffness 200 (StiffnessLow).
-const SPRING_STIFFNESS = 200
-const SPRING_DAMPING = 0.6
-const OMEGA = Math.sqrt(SPRING_STIFFNESS)
+// Analytic underdamped spring step-response for the morph (dampingRatio 0.6),
+// giving the Expressive ease-in + overshoot; effectively settled within
+// MORPH_MS. Replaces an open-ended physics integrator, which over-settled and
+// stretched each morph well past the reference cadence.
+const SPRING_ZETA = 0.6
+const SPRING_WN = 16.7
+const SPRING_WD = SPRING_WN * Math.sqrt(1 - SPRING_ZETA * SPRING_ZETA)
+function springStep(te: number) {
+  return (
+    1 -
+    Math.exp(-SPRING_ZETA * SPRING_WN * te) *
+      (Math.cos(SPRING_WD * te) + ((SPRING_ZETA * SPRING_WN) / SPRING_WD) * Math.sin(SPRING_WD * te))
+  )
+}
 
 function lerpPts(a: P[], b: P[], t: number): P[] {
   return a.map(([ax, ay], i) => [ax + (b[i][0] - ax) * t, ay + (b[i][1] - ay) * t])
@@ -272,10 +286,8 @@ export const LoadingIndicator = forwardRef<SVGSVGElement, LoadingIndicatorProps>
       let startTime: number | undefined
       let prevTime: number | undefined
       let idx = 0
-      let prog = 0
-      let vel = 0
       let mode: 'hold' | 'morph' = 'hold'
-      let holdElapsed = 0
+      let elapsed = 0 // ms spent in the current phase
       let rotAccum = 0
 
       const tick = (t: number) => {
@@ -284,33 +296,32 @@ export const LoadingIndicator = forwardRef<SVGSVGElement, LoadingIndicatorProps>
         const dt = Math.min(0.05, (t - prevTime) / 1000)
         prevTime = t
 
+        let x = 0 // morph progress (spring), overshoots past 1
         if (mode === 'hold') {
-          holdElapsed += dt * 1000
-          if (holdElapsed >= HOLD_MS) {
+          elapsed += dt * 1000
+          if (elapsed >= HOLD_MS) {
             mode = 'morph'
-            prog = 0
-            vel = 0
+            elapsed = 0
           }
         } else {
-          // Under-damped spring toward 1 (overshoots → Expressive feel).
-          const acc = -OMEGA * OMEGA * (prog - 1) - 2 * SPRING_DAMPING * OMEGA * vel
-          vel += acc * dt
-          prog += vel * dt
-          if (Math.abs(prog - 1) < 0.002 && Math.abs(vel) < 0.02) {
+          elapsed += dt * 1000
+          x = springStep(elapsed / 1000)
+          if (elapsed >= MORPH_MS) {
             idx = (idx + 1) % SEQUENCE.length
             rotAccum = (rotAccum + 90) % 360
-            prog = 0
-            vel = 0
             mode = 'hold'
-            holdElapsed = 0
+            elapsed = 0
+            x = 0
           }
         }
 
         const global = (((t - startTime) / GLOBAL_ROTATION_MS) * 360) % 360
-        const shapeT = Math.min(1, Math.max(0, prog))
+        const shapeT = Math.min(1, Math.max(0, x))
         const a = UNIT[SEQUENCE[idx]]
         const b = UNIT[SEQUENCE[(idx + 1) % SEQUENCE.length]]
-        setFrame({ d: toPath(lerpPts(a, b, shapeT)), rot: global + rotAccum + prog * 90 })
+        // Shape eases to the target (clamped); rotation keeps the spring
+        // overshoot for the Expressive kick.
+        setFrame({ d: toPath(lerpPts(a, b, shapeT)), rot: global + rotAccum + x * 90 })
         raf = requestAnimationFrame(tick)
       }
       raf = requestAnimationFrame(tick)
