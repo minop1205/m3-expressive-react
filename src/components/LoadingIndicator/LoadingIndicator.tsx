@@ -72,6 +72,9 @@ const SEQUENCE = ['softBurst', 'cookie9', 'pentagon', 'pill', 'sunny', 'cookie4'
 const HOLD_MS = 350
 const MORPH_MS = 300
 const GLOBAL_ROTATION_MS = 4666
+// Subtle "centrifugal" scale pulse: normal size at rest, growing slightly mid-
+// morph (while it spins) and returning to 1 by the next hold.
+const SCALE_PULSE = 0.07
 // Analytic underdamped spring step-response for the morph (dampingRatio 0.6),
 // giving the Expressive ease-in + overshoot; effectively settled within
 // MORPH_MS.
@@ -121,20 +124,20 @@ export const LoadingIndicator = forwardRef<SVGSVGElement, LoadingIndicatorProps>
 
     const [frame, setFrame] = useState(() =>
       indeterminate
-        ? { d: toPath(UNIT[SEQUENCE[0]]), rot: 0 }
-        : { d: toPath(lerpPts(UNIT.circle, UNIT.softBurst, progress)), rot: progress * 90 },
+        ? { d: toPath(UNIT[SEQUENCE[0]]), rot: 0, scale: 1 }
+        : { d: toPath(lerpPts(UNIT.circle, UNIT.softBurst, progress)), rot: progress * 90, scale: 1 },
     )
 
     useEffect(() => {
       if (!indeterminate) {
-        setFrame({ d: toPath(lerpPts(UNIT.circle, UNIT.softBurst, progress)), rot: progress * 90 })
+        setFrame({ d: toPath(lerpPts(UNIT.circle, UNIT.softBurst, progress)), rot: progress * 90, scale: 1 })
         return
       }
       const reduce =
         typeof window !== 'undefined' &&
         window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
       if (reduce) {
-        setFrame({ d: toPath(UNIT[SEQUENCE[0]]), rot: 0 })
+        setFrame({ d: toPath(UNIT[SEQUENCE[0]]), rot: 0, scale: 1 })
         return
       }
 
@@ -153,6 +156,7 @@ export const LoadingIndicator = forwardRef<SVGSVGElement, LoadingIndicatorProps>
         prevTime = t
 
         let x = 0 // morph progress (spring), overshoots past 1
+        let pulse = 0 // 0 at holds, 1 mid-morph
         if (mode === 'hold') {
           elapsed += dt * 1000
           if (elapsed >= HOLD_MS) {
@@ -162,12 +166,14 @@ export const LoadingIndicator = forwardRef<SVGSVGElement, LoadingIndicatorProps>
         } else {
           elapsed += dt * 1000
           x = springStep(elapsed / 1000)
+          pulse = Math.sin(Math.PI * Math.min(1, elapsed / MORPH_MS))
           if (elapsed >= MORPH_MS) {
             idx = (idx + 1) % SEQUENCE.length
             rotAccum = (rotAccum + 90) % 360
             mode = 'hold'
             elapsed = 0
             x = 0
+            pulse = 0
           }
         }
 
@@ -176,8 +182,9 @@ export const LoadingIndicator = forwardRef<SVGSVGElement, LoadingIndicatorProps>
         const a = UNIT[SEQUENCE[idx]]
         const b = UNIT[SEQUENCE[(idx + 1) % SEQUENCE.length]]
         // Shape eases to the target (clamped); rotation keeps the spring
-        // overshoot for the Expressive kick.
-        setFrame({ d: toPath(lerpPts(a, b, shapeT)), rot: global + rotAccum + x * 90 })
+        // overshoot for the Expressive kick; a slight scale pulse mid-morph
+        // reads as centrifugal growth.
+        setFrame({ d: toPath(lerpPts(a, b, shapeT)), rot: global + rotAccum + x * 90, scale: 1 + SCALE_PULSE * pulse })
         raf = requestAnimationFrame(tick)
       }
       raf = requestAnimationFrame(tick)
@@ -212,7 +219,9 @@ export const LoadingIndicator = forwardRef<SVGSVGElement, LoadingIndicatorProps>
         {variant === 'contained' && (
           <circle className={styles.container} cx={CENTER} cy={CENTER} r={CENTER} />
         )}
-        <g transform={`rotate(${frame.rot} ${CENTER} ${CENTER})`}>
+        <g
+          transform={`translate(${CENTER} ${CENTER}) rotate(${frame.rot}) scale(${frame.scale}) translate(${-CENTER} ${-CENTER})`}
+        >
           <path className={styles.shape} d={frame.d} />
         </g>
       </svg>
