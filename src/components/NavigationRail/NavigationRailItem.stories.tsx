@@ -24,7 +24,6 @@ const RailBox = forwardRef<HTMLDivElement, { t?: number; style?: CSSProperties; 
         style={{
           boxSizing: 'border-box',
           width: 'calc(96px + 124px * var(--_t, 0))',
-          paddingInline: 'calc(20px * var(--_t, 0))',
           paddingBlock: 12,
           background: 'var(--md-sys-color-surface)',
           ...(t != null ? ({ '--_t': t } as CSSProperties) : {}),

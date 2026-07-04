@@ -27,14 +27,17 @@
   --_icon-color: var(--md-sys-color-on-surface-variant);
   --_label-color: var(--md-sys-color-on-surface-variant);
 
-  /* Active-indicator pill geometry, interpolated from --_t. */
-  --_pill-left: calc((50% - 28px) * (1 - var(--_t, 0)));
+  /* Active-indicator pill. Constant 20px side insets so its LEFT EDGE stays
+     fixed across the whole morph (collapsed 56×32 centered ≡ 20px insets on the
+     96px item; expanded grows rightward only). Height 32 → 56. */
+  --_pill-left: 20px;
   --_pill-top: 0px;
-  --_pill-w: calc(56px + (100% - 56px) * var(--_t, 0));
+  --_pill-w: calc(100% - 40px);
   --_pill-h: calc(32px + 24px * var(--_t, 0));
   --_pill-r: calc(var(--_pill-h) / 2);
-  /* Icon: centered-top (collapsed) → leading-center (expanded). */
-  --_icon-left: calc((50% - 12px) * (1 - var(--_t, 0)) + 16px * var(--_t, 0));
+  /* Icon left is constant too: collapsed centered (96−24)/2 = 36 ≡ expanded
+     leading position. Only its vertical position moves (top → center). */
+  --_icon-left: 36px;
   --_icon-top: calc(4px + 12px * var(--_t, 0));
 }
 
@@ -139,8 +142,8 @@
   color: var(--_label-color);
   white-space: nowrap;
   pointer-events: none;
-  /* centered-below (t=0) → beside the icon, icon width 24 + 8 gap (t=1) */
-  left: calc(50% * (1 - var(--_t, 0)) + (var(--_icon-left) + 32px) * var(--_t, 0));
+  /* centered-below (t=0) → beside the icon at 36 + 24 + 8 = 68px (t=1) */
+  left: calc(50% * (1 - var(--_t, 0)) + 68px * var(--_t, 0));
   /* vertical center: below the icon (t=0) → the icon's center (t=1) */
   top: calc(44px - 16px * var(--_t, 0));
   transform: translate(calc(-50% * (1 - var(--_t, 0))), -50%);

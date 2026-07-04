@@ -10,14 +10,15 @@
   flex-direction: column;
   box-sizing: border-box;
   height: 100%;
-  /* 96dp (collapsed) → 220dp (expanded) */
+  /* 96dp (collapsed) → 220dp (expanded). No inline padding: items span the full
+     width and position their pill/icon at fixed x (see NavigationRailItem). */
   width: calc(96px + 124px * var(--_t, 0));
   padding-block: 44px 8px;
-  padding-inline: calc(20px * var(--_t, 0));
   background-color: var(--md-sys-color-surface);
 }
 
-/* Header (menu button / FAB) pinned to the top. */
+/* Header (menu button / FAB) pinned to the top; left edge aligns with the item
+   pill (20dp inset) when expanded. */
 .header {
   display: flex;
   flex-direction: column;
@@ -28,6 +29,7 @@
 
 .rail[data-variant='expanded'] .header {
   align-items: flex-start;
+  padding-inline-start: 20px;
 }
 
 .items {
