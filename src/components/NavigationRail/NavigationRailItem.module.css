@@ -153,8 +153,8 @@
   font-weight: var(--md-sys-typescale-label-medium-weight);
   line-height: var(--md-sys-typescale-label-medium-line-height);
   letter-spacing: var(--md-sys-typescale-label-medium-tracking);
-  /* fades out by t ≈ 0.35 */
-  opacity: calc(1 - var(--_t, 0) * 2.8);
+  /* 60fps: gone almost immediately — fades out over t ≈ [0, 0.15] */
+  opacity: calc(1 - var(--_t, 0) * 6.7);
 }
 
 .labelExpanded {
@@ -162,15 +162,15 @@
   left: 68px;
   /* aligned to the icon's vertical center (icon-top + 12) */
   top: calc(16px + 12px * var(--_t, 0));
-  /* slides left→right into place: −16px at appear (t≈0.45) → 0 at t=1 */
-  transform: translate(calc((var(--_t, 0) - 1) * 28px), -50%);
+  /* slides left→right into place: −11px at appear (t≈0.77) → 0 at t=1 */
+  transform: translate(calc((var(--_t, 0) - 1) * 48px), -50%);
   font-family: var(--md-sys-typescale-label-large-font);
   font-size: var(--md-sys-typescale-label-large-size);
   font-weight: var(--md-sys-typescale-label-large-weight);
   line-height: var(--md-sys-typescale-label-large-line-height);
   letter-spacing: var(--md-sys-typescale-label-large-tracking);
-  /* fades in from t ≈ 0.45 */
-  opacity: calc(var(--_t, 0) * 2.2 - 1);
+  /* 60fps: appears late — fades in over t ≈ [0.77, 0.95] */
+  opacity: calc((var(--_t, 0) - 0.77) * 5.5);
 }
 
 /* Focus ring traces the morphing pill (not the full item box). */
