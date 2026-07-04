@@ -1,45 +1,74 @@
 /**
- * MD3 Navigation rail. Values from androidx.compose.material3 NavigationRail
- * tokens: 80dp Surface column; active-indicator 56×32 SecondaryContainer pill;
- * active icon OnSecondaryContainer, active label Secondary; inactive
- * OnSurfaceVariant; 24dp icons, LabelMedium; 40dp top space, 8dp header gap.
+ * MD3 (Expressive) Navigation rail — Compose WideNavigationRail tokens.
+ * Collapsed: 96dp Surface column, icon-over-label, 56×32 SecondaryContainer
+ * pill, LabelMedium. Expanded: 220–360dp, icon beside label in a full-width
+ * (56dp tall) pill, LabelLarge. Active icon OnSecondaryContainer, active label
+ * Secondary; inactive OnSurfaceVariant. Icons 24dp. Collapse↔expand is a
+ * spring-like width/layout transition.
  */
 
 .rail {
   display: flex;
   flex-direction: column;
-  align-items: center;
   box-sizing: border-box;
-  width: 80px;
   height: 100%;
-  padding-block: 40px 8px;
+  padding-block: 44px 8px;
   background-color: var(--md-sys-color-surface);
+  transition: width 350ms var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
 }
 
+.rail[data-variant='collapsed'] {
+  width: 96px;
+  align-items: center;
+}
+
+.rail[data-variant='expanded'] {
+  width: 220px;
+  align-items: stretch;
+  padding-inline: 20px;
+}
+
+/* Header (menu button / FAB) pinned to the top. */
 .header {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  margin-bottom: 8px;
+  gap: 8px;
+  margin-bottom: 40px;
+}
+
+.rail[data-variant='expanded'] .header {
+  align-items: flex-start;
 }
 
 .items {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
+  gap: 4px;
   width: 100%;
+}
+
+.rail[data-variant='collapsed'] .items {
+  align-items: center;
+}
+
+.rail[data-variant='expanded'] .items {
+  gap: 0;
+}
+
+/* Arrangement of destinations below the header. */
+.rail[data-arrangement='center'] .items {
+  flex: 1;
+  justify-content: center;
+}
+.rail[data-arrangement='bottom'] .items {
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .item {
   position: relative;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  width: 100%;
-  padding-block: 4px;
+  display: flex;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -49,6 +78,26 @@
   --_icon-color: var(--md-sys-color-on-surface-variant);
   --_label-color: var(--md-sys-color-on-surface-variant);
   --md-focus-ring-color: var(--md-sys-color-secondary);
+}
+
+.rail[data-variant='collapsed'] .item {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 64px;
+  padding-block: 4px;
+}
+
+.rail[data-variant='expanded'] .item {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 56px;
+  padding-inline: 16px;
+  border-radius: 28px;
 }
 
 .item[data-selected] {
@@ -63,53 +112,72 @@
   --_label-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
 }
 
+/* Active-indicator pill. Collapsed: a 56×32 pill around the icon. Expanded: the
+   whole item row is the pill, so the collapsed pill collapses to the icon box. */
 .indicator {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 32px;
-  border-radius: 16px;
   color: var(--_icon-color);
 }
 
-.indicator::before {
+.rail[data-variant='collapsed'] .indicator {
+  width: 56px;
+  height: 32px;
+  border-radius: 16px;
+}
+
+.rail[data-variant='expanded'] .indicator {
+  gap: 8px;
+  flex: 1;
+}
+
+/* Active background — hosted on the indicator (collapsed) or the item (expanded). */
+.rail[data-variant='collapsed'] .indicator::before,
+.rail[data-variant='expanded'] .item::before {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   background-color: var(--md-sys-color-secondary-container);
   opacity: 0;
-  transform: scaleX(0.3);
+  z-index: 0;
   transition:
     opacity 100ms var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
     transform 200ms var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1));
-  z-index: 0;
 }
 
-.item[data-selected] .indicator::before {
+.rail[data-variant='collapsed'] .indicator::before {
+  transform: scaleX(0.3);
+}
+
+.rail[data-variant='collapsed'] .item[data-selected] .indicator::before,
+.rail[data-variant='expanded'] .item[data-selected]::before {
   opacity: 1;
   transform: scaleX(1);
 }
 
-.indicator::after {
+/* State layer — same host as the active background. */
+.rail[data-variant='collapsed'] .indicator::after,
+.rail[data-variant='expanded'] .item::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background-color: var(--_icon-color);
+  background-color: var(--md-sys-color-on-secondary-container);
   opacity: 0;
+  z-index: 1;
   transition: opacity var(--md-sys-motion-duration-short3, 150ms)
     var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
-  z-index: 1;
 }
 
-.item:hover:not(:disabled) .indicator::after {
+.rail[data-variant='collapsed'] .item:hover:not(:disabled) .indicator::after,
+.rail[data-variant='expanded'] .item:hover:not(:disabled)::after {
   opacity: var(--md-sys-state-hover-state-layer-opacity, 0.08);
 }
-
-.item:active:not(:disabled) .indicator::after {
+.rail[data-variant='collapsed'] .item:active:not(:disabled) .indicator::after,
+.rail[data-variant='expanded'] .item:active:not(:disabled)::after {
   opacity: var(--md-sys-state-pressed-state-layer-opacity, 0.1);
 }
 
@@ -119,6 +187,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   width: 24px;
   height: 24px;
   color: var(--_icon-color);
@@ -147,19 +216,43 @@
   text-align: center;
 }
 
+/* Expanded: badge sits at the top-right of the leading icon. */
+.rail[data-variant='expanded'] .badge {
+  inset-inline-start: 15px;
+  top: -3px;
+}
+
 .label {
+  position: relative;
+  z-index: 2;
   color: var(--_label-color);
+  white-space: nowrap;
+}
+
+.rail[data-variant='collapsed'] .label {
   font-family: var(--md-sys-typescale-label-medium-font);
   font-size: var(--md-sys-typescale-label-medium-size);
   font-weight: var(--md-sys-typescale-label-medium-weight);
   line-height: var(--md-sys-typescale-label-medium-line-height);
   letter-spacing: var(--md-sys-typescale-label-medium-tracking);
-  white-space: nowrap;
+}
+
+.rail[data-variant='expanded'] .label {
+  flex: 1;
+  text-align: start;
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .rail,
   .indicator::before,
-  .indicator::after {
+  .indicator::after,
+  .item::before,
+  .item::after {
     transition: none;
   }
 }

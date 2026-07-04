@@ -9,4 +9,4 @@ coverage
 .claude/
 .env
 .env.*
-src/components/LoadingIndicator/*.mp4
+src/components/**/*.mp4
