@@ -56,7 +56,16 @@ export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailIt
           {icon}
           {badge != null && <span className={styles.badge}>{badge}</span>}
         </span>
-        {label != null && <span className={styles.label}>{label}</span>}
+        {label != null && (
+          <>
+            {/* Collapsed label fades out below the icon; the expanded label fades
+                in beside it while sliding slightly left→right into place. */}
+            <span className={styles.labelCollapsed}>{label}</span>
+            <span className={styles.labelExpanded} aria-hidden="true">
+              {label}
+            </span>
+          </>
+        )}
         {!disabled && <FocusRing className={styles.focus} />}
       </button>
     )
