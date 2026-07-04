@@ -1,6 +1,9 @@
 import {
   forwardRef,
+  useCallback,
   useContext,
+  useLayoutEffect,
+  useRef,
   type ButtonHTMLAttributes,
   type ReactNode,
 } from 'react'
@@ -23,11 +26,13 @@ export interface NavigationRailItemProps
 /**
  * A destination inside a `NavigationRail`.
  *
- * Its layout is a single stable DOM whose pill, icon and label are absolutely
- * positioned and interpolated from the inherited `--_t` morph value (0 =
- * collapsed icon-over-label with a 56×32 pill, 1 = expanded icon+label in a
- * full-width 56dp pill). Because every value is a `calc()` of `--_t`, the
- * spring driving `--_t` produces a continuous morph with no reflow.
+ * The whole row is the (full-width) click target; the active indicator is a
+ * pill that hugs its content — a 56×32 pill around the icon when collapsed,
+ * growing to wrap icon + label when expanded. Layout is a single stable DOM
+ * whose pill, icon and label are absolutely positioned and interpolated from
+ * the inherited `--_t` morph value (0 = collapsed, 1 = expanded), so the tween
+ * driving `--_t` produces a continuous morph with no reflow. The label's
+ * natural width is measured into `--_label-w` so the pill can hug it.
  */
 export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailItemProps>(
   function NavigationRailItem(
@@ -37,9 +42,33 @@ export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailIt
     const ctx = useContext(RailContext)
     const selected = ctx ? ctx.value === value : !!selectedProp
 
+    const buttonRef = useRef<HTMLButtonElement | null>(null)
+    const labelRef = useRef<HTMLSpanElement>(null)
+    const setButtonRef = useCallback(
+      (node: HTMLButtonElement | null) => {
+        buttonRef.current = node
+        if (typeof ref === 'function') ref(node)
+        else if (ref) ref.current = node
+      },
+      [ref],
+    )
+
+    // Measure the label's natural width so the expanded pill can hug it.
+    useLayoutEffect(() => {
+      const el = labelRef.current
+      const btn = buttonRef.current
+      if (!el || !btn) return
+      const measure = () => btn.style.setProperty('--_label-w', `${el.offsetWidth}px`)
+      measure()
+      if (typeof ResizeObserver === 'undefined') return
+      const ro = new ResizeObserver(measure)
+      ro.observe(el)
+      return () => ro.disconnect()
+    }, [label])
+
     return (
       <button
-        ref={ref}
+        ref={setButtonRef}
         {...rest}
         type="button"
         disabled={disabled}
@@ -61,7 +90,7 @@ export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailIt
             {/* Collapsed label fades out below the icon; the expanded label fades
                 in beside it while sliding slightly left→right into place. */}
             <span className={styles.labelCollapsed}>{label}</span>
-            <span className={styles.labelExpanded} aria-hidden="true">
+            <span ref={labelRef} className={styles.labelExpanded} aria-hidden="true">
               {label}
             </span>
           </>
