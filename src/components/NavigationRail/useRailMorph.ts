@@ -10,7 +10,9 @@ import { useEffect, useRef, type RefObject } from 'react'
 export function useRailMorph(
   expanded: boolean,
   ref: RefObject<HTMLElement | null>,
-  { stiffness = 320, damping = 30 }: { stiffness?: number; damping?: number } = {},
+  // Slightly overdamped (ζ ≈ 1.07) → monotonic, no overshoot and no settling
+  // jitter, matching the reference.
+  { stiffness = 280, damping = 36 }: { stiffness?: number; damping?: number } = {},
 ) {
   const t = useRef(expanded ? 1 : 0)
   const vel = useRef(0)
