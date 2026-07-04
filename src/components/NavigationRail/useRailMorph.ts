@@ -32,13 +32,17 @@ export function useRailMorph(expanded: boolean, ref: RefObject<HTMLElement | nul
   // Keep the resting value correct on first paint.
   useEffect(() => {
     ref.current?.style.setProperty('--_t', String(t.current))
-  }, [ref])
+    ref.current?.style.setProperty('--_slide', expanded ? '1' : '0')
+  }, [ref, expanded])
 
   useEffect(() => {
     const target = expanded ? 1 : 0
     const from = t.current
     const dist = target - from
     if (Math.abs(dist) < 1e-4) return
+
+    // The label only slides while expanding; collapsing is a plain cross-fade.
+    ref.current?.style.setProperty('--_slide', expanded ? '1' : '0')
 
     const reduce =
       typeof window !== 'undefined' &&

@@ -162,8 +162,9 @@
   left: 68px;
   /* aligned to the icon's vertical center (icon-top + 12) */
   top: calc(16px + 12px * var(--_t, 0));
-  /* slides left→right into place: −11px at appear (t≈0.77) → 0 at t=1 */
-  transform: translate(calc((var(--_t, 0) - 1) * 48px), -50%);
+  /* slides left→right into place on expand only (−11px at t≈0.77 → 0 at t=1);
+     collapsing sets --_slide:0 so the label just cross-fades, no slide. */
+  transform: translate(calc((var(--_t, 0) - 1) * var(--_slide, 1) * 48px), -50%);
   font-family: var(--md-sys-typescale-label-large-font);
   font-size: var(--md-sys-typescale-label-large-size);
   font-weight: var(--md-sys-typescale-label-large-weight);
