@@ -44,7 +44,9 @@ interface Args {
 
 const meta: Meta<Args> = {
   title: 'Components/NavigationRailItem',
-  parameters: { layout: 'centered' },
+  // Left-aligned (not centered) so expanding grows rightward only — makes the
+  // morph easy to inspect, and matches the rail's real left-edge placement.
+  parameters: { layout: 'padded' },
   argTypes: {
     t: { control: { type: 'range', min: 0, max: 1, step: 0.01 }, name: 'morph t (0=collapsed, 1=expanded)' },
     selected: { control: 'boolean' },

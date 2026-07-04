@@ -129,44 +129,28 @@
   text-align: center;
 }
 
-/* Two labels that cross-fade: the collapsed one (below the icon) fades out over
-   the first part of the morph, the expanded one (beside the icon) fades in over
-   the last part — with a brief gap where neither shows. */
-.labelCollapsed,
-.labelExpanded {
+/* Single label — Compose `AnimatedNavigationItem`: it slides from below-center
+   (collapsed) to beside the icon (expanded) while its alpha follows
+   `4·(t−0.5)²` (1 at both ends, 0 at the midpoint), so it disappears mid-morph
+   and reappears at its new position. */
+.label {
   position: absolute;
   z-index: 2;
   color: var(--_label-color);
   white-space: nowrap;
   pointer-events: none;
-}
-
-.labelCollapsed {
-  left: 50%;
-  top: 38px;
-  transform: translateX(-50%);
-  font-family: var(--md-sys-typescale-label-medium-font);
-  font-size: var(--md-sys-typescale-label-medium-size);
-  font-weight: var(--md-sys-typescale-label-medium-weight);
-  line-height: var(--md-sys-typescale-label-medium-line-height);
-  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
-  /* opacity 1 → 0 by t ≈ 0.4 */
-  opacity: calc(1 - var(--_t, 0) * 2.5);
-}
-
-.labelExpanded {
-  /* follows the icon (icon width 24 + 8 gap) so the gap is constant as the
-     icon slides in, and aligns to the icon's vertical center (icon-top + 12) */
-  left: calc(var(--_icon-left) + 32px);
-  top: calc(16px + 12px * var(--_t, 0));
-  transform: translateY(-50%);
+  /* centered-below (t=0) → beside the icon, icon width 24 + 8 gap (t=1) */
+  left: calc(50% * (1 - var(--_t, 0)) + (var(--_icon-left) + 32px) * var(--_t, 0));
+  /* vertical center: below the icon (t=0) → the icon's center (t=1) */
+  top: calc(44px - 16px * var(--_t, 0));
+  transform: translate(calc(-50% * (1 - var(--_t, 0))), -50%);
+  opacity: calc(4 * (var(--_t, 0) - 0.5) * (var(--_t, 0) - 0.5));
+  /* LabelMedium → LabelLarge (font change is hidden at the invisible midpoint) */
   font-family: var(--md-sys-typescale-label-large-font);
-  font-size: var(--md-sys-typescale-label-large-size);
   font-weight: var(--md-sys-typescale-label-large-weight);
-  line-height: var(--md-sys-typescale-label-large-line-height);
-  letter-spacing: var(--md-sys-typescale-label-large-tracking);
-  /* opacity 0 → 1 from t ≈ 0.6 */
-  opacity: calc(var(--_t, 0) * 2.5 - 1.5);
+  font-size: calc(12px + 2px * var(--_t, 0));
+  line-height: calc(16px + 4px * var(--_t, 0));
+  letter-spacing: calc(0.5px - 0.4px * var(--_t, 0));
 }
 
 /* Focus ring traces the morphing pill (not the full item box). */
