@@ -1,25 +1,21 @@
 import {
-  createContext,
   forwardRef,
-  useContext,
-  type ButtonHTMLAttributes,
+  useCallback,
+  useRef,
   type HTMLAttributes,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
-import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import {
+  RailContext,
+  type NavigationRailArrangement,
+  type NavigationRailVariant,
+} from './NavigationRailContext'
+import { useRailMorph } from './useRailMorph'
 import styles from './NavigationRail.module.css'
 
-export type NavigationRailVariant = 'collapsed' | 'expanded'
-export type NavigationRailArrangement = 'top' | 'center' | 'bottom'
-
-interface RailContextValue {
-  value: string
-  onChange: (value: string) => void
-  variant: NavigationRailVariant
-}
-
-const RailContext = createContext<RailContextValue | null>(null)
+export type { NavigationRailVariant, NavigationRailArrangement } from './NavigationRailContext'
+export { NavigationRailItem, type NavigationRailItemProps } from './NavigationRailItem'
 
 export interface NavigationRailProps
   extends Omit<HTMLAttributes<HTMLElement>, 'onChange'> {
@@ -28,8 +24,8 @@ export interface NavigationRailProps
   /** Fires with the newly selected destination value. */
   onChange: (value: string) => void
   /**
-   * `collapsed` (96dp, icon-over-label) or `expanded` (220dp+, icon beside label
-   * in a full-width pill). @default 'collapsed'
+   * `collapsed` (96dp, icon-over-label) or `expanded` (220dp, icon beside label
+   * in a full-width pill). The change is a spring morph. @default 'collapsed'
    */
   variant?: NavigationRailVariant
   /** Vertical placement of the destinations below the header. @default 'top' */
@@ -41,23 +37,35 @@ export interface NavigationRailProps
 
 /**
  * Material Design 3 (Expressive) Navigation rail — the Compose
- * `WideNavigationRail` with `collapsed` / `expanded` variants.
- *
- * Collapsed is a 96dp Surface column of icon-over-label destinations with a
- * 56×32 SecondaryContainer pill on the active item. Expanded grows to 220–360dp
- * and lays each destination out as icon + label in a full-width pill. Active
- * icon is OnSecondaryContainer, active label Secondary; inactive items are
- * OnSurfaceVariant. An optional `header` (menu button, FAB) is pinned at the top.
+ * `WideNavigationRail` with `collapsed` / `expanded` variants that morph on a
+ * spring. Collapsed is a 96dp Surface column of icon-over-label destinations
+ * with a 56×32 SecondaryContainer pill on the active item; expanded grows to
+ * 220dp and lays each destination out as icon + label in a full-width pill.
+ * The whole transition (width, item spacing, and every item's icon/label/pill)
+ * is interpolated from a single spring value. An optional `header` (menu button,
+ * FAB) is pinned at the top.
  */
 export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
   function NavigationRail(
     { value, onChange, variant = 'collapsed', arrangement = 'top', header, className, children, ...rest },
     ref,
   ) {
+    const innerRef = useRef<HTMLElement | null>(null)
+    useRailMorph(variant === 'expanded', innerRef)
+
+    const setRefs = useCallback(
+      (node: HTMLElement | null) => {
+        innerRef.current = node
+        if (typeof ref === 'function') ref(node)
+        else if (ref) ref.current = node
+      },
+      [ref],
+    )
+
     return (
-      <RailContext.Provider value={{ value, onChange, variant }}>
+      <RailContext.Provider value={{ value, onChange }}>
         <nav
-          ref={ref}
+          ref={setRefs}
           {...rest}
           data-variant={variant}
           data-arrangement={arrangement}
@@ -67,53 +75,6 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
           <div className={styles.items}>{children}</div>
         </nav>
       </RailContext.Provider>
-    )
-  },
-)
-
-export interface NavigationRailItemProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'value'> {
-  value: string
-  icon: ReactNode
-  label?: ReactNode
-  badge?: ReactNode
-}
-
-/** A destination inside a `NavigationRail`. */
-export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailItemProps>(
-  function NavigationRailItem(
-    { value, icon, label, badge, disabled = false, className, onClick, ...rest },
-    ref,
-  ) {
-    const ctx = useContext(RailContext)
-    if (!ctx) throw new Error('NavigationRailItem must be used within <NavigationRail>')
-    const selected = ctx.value === value
-    const expanded = ctx.variant === 'expanded'
-
-    return (
-      <button
-        ref={ref}
-        {...rest}
-        type="button"
-        disabled={disabled}
-        aria-current={selected ? 'page' : undefined}
-        data-selected={selected || undefined}
-        className={clsx(styles.item, className)}
-        onClick={(event) => {
-          onClick?.(event)
-          ctx.onChange(value)
-        }}
-      >
-        <span className={styles.indicator}>
-          <span className={styles.icon} aria-hidden="true">
-            {icon}
-          </span>
-          {badge != null && <span className={styles.badge}>{badge}</span>}
-          {expanded && label != null && <span className={styles.label}>{label}</span>}
-        </span>
-        {!expanded && label != null && <span className={styles.label}>{label}</span>}
-        {!disabled && <FocusRing />}
-      </button>
     )
   },
 )
