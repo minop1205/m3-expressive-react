@@ -19,6 +19,7 @@
      pad) = 48 + label height (the label wraps, so `--_label-h` is measured).
      Expanded height = 56. Per Figma: 6dp top/bottom padding, 0 horizontal. */
   height: calc((48px + var(--_label-h, 16px)) * (1 - var(--_t, 0)) + 56px * var(--_t, 0));
+  padding: 0; /* reset the native <button> UA padding (1px 6px) */
   border: none;
   background: transparent;
   cursor: pointer;
