@@ -1,13 +1,8 @@
 import React, { useCallback, useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { fn } from '@storybook/test'
+import Close from '@material-symbols/svg-400/outlined/close.svg?react'
 import { Switch } from './Switch'
-
-const CloseIcon = (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-  </svg>
-)
 
 const meta = {
   title: 'Components/Switch',
@@ -66,7 +61,7 @@ export const WithIcons: Story = {
         selected={selected}
         onChange={handleChange}
         icons
-        unselectedIcon={CloseIcon}
+        unselectedIcon={<Close />}
       />
     )
   },
@@ -88,7 +83,7 @@ export const WithIconsBothStates: Story = {
         selected={selected}
         onChange={handleChange}
         icons
-        unselectedIcon={CloseIcon}
+        unselectedIcon={<Close />}
       />
     )
   },

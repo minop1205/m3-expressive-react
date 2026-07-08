@@ -1,5 +1,6 @@
 import { forwardRef, useState, type HTMLAttributes } from 'react'
 import clsx from 'clsx'
+import { ChevronLeftIcon, ChevronRightIcon } from '../../internal/icons'
 import styles from './DatePicker.module.css'
 
 /** `[start, end]` — either may be null while selecting. */
@@ -23,16 +24,6 @@ export interface DatePickerProps
   locale?: string
 }
 
-const PrevIcon = (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-  </svg>
-)
-const NextIcon = (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z" />
-  </svg>
-)
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
@@ -187,7 +178,7 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
               aria-label="Previous month"
               onClick={() => changeMonth(-1)}
             >
-              {PrevIcon}
+              <ChevronLeftIcon />
             </button>
             <button
               type="button"
@@ -195,7 +186,7 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
               aria-label="Next month"
               onClick={() => changeMonth(1)}
             >
-              {NextIcon}
+              <ChevronRightIcon />
             </button>
           </div>
         </div>

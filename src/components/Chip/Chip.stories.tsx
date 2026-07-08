@@ -2,12 +2,7 @@ import { useCallback, useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { fn } from '@storybook/test'
 import { Chip } from './Chip'
-
-const CalendarIcon = (
-  <svg viewBox="0 0 18 18" fill="currentColor">
-    <path d="M14.25 2.25h-.75V.75h-1.5v1.5h-6V.75h-1.5v1.5H3.75c-.825 0-1.5.675-1.5 1.5v10.5c0 .825.675 1.5 1.5 1.5h10.5c.825 0 1.5-.675 1.5-1.5V3.75c0-.825-.675-1.5-1.5-1.5zm0 12H3.75V6h10.5v8.25z" />
-  </svg>
-)
+import CalendarIcon from '@material-symbols/svg-400/outlined/calendar_today.svg?react'
 
 const meta = {
   title: 'Components/Chip',
@@ -46,7 +41,7 @@ export const Assist: Story = {
 }
 
 export const AssistWithIcon: Story = {
-  args: { variant: 'assist', label: 'Add to calendar', icon: CalendarIcon },
+  args: { variant: 'assist', label: 'Add to calendar', icon: <CalendarIcon /> },
 }
 
 export const AssistElevated: Story = {

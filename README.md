@@ -40,6 +40,25 @@ export function App() {
 }
 ```
 
+## Icons
+
+The library is **icon-agnostic**: every icon prop (`icon`, `startIcon`,
+`endIcon`, …) takes a `ReactNode`, so you pass icons from whatever icon set you
+like — no icon package is bundled or required.
+
+For Material Design 3 we recommend **[Material Symbols](https://fonts.google.com/icons)**.
+Using the SVG package + [`vite-plugin-svgr`](https://github.com/pd4d10/vite-plugin-svgr):
+
+```tsx
+import Search from '@material-symbols/svg-400/outlined/search.svg?react'
+import { IconButton } from 'md3-react'
+
+;<IconButton icon={<Search />} aria-label="Search" />
+```
+
+Icons inherit color via `currentColor` and are sized by the component. This
+repo's Storybook stories use Material Symbols the same way.
+
 ## Development
 
 ```bash

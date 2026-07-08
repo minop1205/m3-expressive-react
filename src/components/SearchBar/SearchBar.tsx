@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
+import { SearchIcon } from '../../internal/icons'
 import styles from './SearchBar.module.css'
 
 export interface SearchBarProps
@@ -33,11 +34,6 @@ export interface SearchBarProps
   onExpandedChange?: (expanded: boolean) => void
 }
 
-const SearchGlyph = (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 5L20.49 19zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14" />
-  </svg>
-)
 
 /**
  * Material Design 3 Search bar (docked field + search view).
@@ -116,7 +112,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       >
         <div className={styles.bar}>
           <span className={styles.leading} aria-hidden="true">
-            {leadingIcon ?? SearchGlyph}
+            {leadingIcon ?? <SearchIcon />}
           </span>
           <input
             ref={ref}

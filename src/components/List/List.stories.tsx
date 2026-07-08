@@ -1,18 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { fn } from '@storybook/test'
+import Star from '@material-symbols/svg-400/outlined/star.svg?react'
+import ChevronRight from '@material-symbols/svg-400/outlined/chevron_right.svg?react'
 import { List, ListItem } from './List'
-
-const StarIcon = (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-  </svg>
-)
-
-const ChevronIcon = (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
-  </svg>
-)
 
 const meta = {
   title: 'Components/List',
@@ -42,13 +32,13 @@ export const WithLeadingAndTrailing: Story = {
   render: () => (
     <List style={{ width: 360 }}>
       <ListItem
-        leading={StarIcon}
+        leading={<Star />}
         headline="Starred"
         supportingText="With leading icon and trailing metadata"
         trailingSupportingText="100+"
-        trailing={ChevronIcon}
+        trailing={<ChevronRight />}
       />
-      <ListItem leading={StarIcon} headline="Another item" trailing={ChevronIcon} />
+      <ListItem leading={<Star />} headline="Another item" trailing={<ChevronRight />} />
     </List>
   ),
 }

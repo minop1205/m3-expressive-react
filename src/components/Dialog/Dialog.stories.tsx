@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { Button } from '../Button'
 import { Dialog } from './Dialog'
+import AlertIcon from '@material-symbols/svg-400/outlined/warning.svg?react'
 
 const meta = {
   title: 'Components/Dialog',
@@ -41,12 +42,6 @@ export const Basic: Story = {
   },
 }
 
-const AlertIcon = (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M1 21h22L12 2zm12-3h-2v-2h2zm0-4h-2v-4h2z" />
-  </svg>
-)
-
 export const FullScreen: Story = {
   render: () => {
     const [open, setOpen] = useState(false)
@@ -80,7 +75,7 @@ export const WithIcon: Story = {
         <Dialog
           open={open}
           onClose={() => setOpen(false)}
-          icon={AlertIcon}
+          icon={<AlertIcon />}
           title="Discard draft?"
           actions={
             <>

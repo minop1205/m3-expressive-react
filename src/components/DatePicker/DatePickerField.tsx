@@ -8,6 +8,7 @@ import {
 import clsx from 'clsx'
 import { TextField } from '../TextField'
 import { DatePicker } from './DatePicker'
+import { CalendarIcon } from '../../internal/icons'
 import styles from './DatePickerField.module.css'
 
 export interface DatePickerFieldProps {
@@ -29,11 +30,6 @@ export interface DatePickerFieldProps {
   className?: string
 }
 
-const CalendarIcon = (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2m0 16H5V10h14zm0-12H5V6h14z" />
-  </svg>
-)
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
@@ -126,7 +122,7 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
               disabled={disabled}
               onClick={() => setOpen((o) => !o)}
             >
-              {CalendarIcon}
+              <CalendarIcon />
             </button>
           }
         />

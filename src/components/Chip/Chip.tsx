@@ -10,6 +10,7 @@ import {
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import { CheckIcon, CloseIcon } from '../../internal/icons'
 import styles from './Chip.module.css'
 
 export type ChipVariant = 'assist' | 'filter' | 'input' | 'suggestion'
@@ -213,18 +214,3 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(
   },
 )
 
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 18 18" fill="currentColor" width="18" height="18">
-      <path d="M6.75 12.15 3.6 9l-1.05 1.05L6.75 14.25l9-9-1.05-1.05z" />
-    </svg>
-  )
-}
-
-function CloseIcon() {
-  return (
-    <svg viewBox="0 0 18 18" fill="currentColor" width="18" height="18">
-      <path d="M14.25 4.8075L13.1925 3.75L9 7.9425L4.8075 3.75L3.75 4.8075L7.9425 9L3.75 13.1925L4.8075 14.25L9 10.0575L13.1925 14.25L14.25 13.1925L10.0575 9Z" />
-    </svg>
-  )
-}

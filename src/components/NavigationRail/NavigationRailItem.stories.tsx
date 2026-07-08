@@ -1,15 +1,9 @@
 import { forwardRef, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
+import Inbox from '@material-symbols/svg-400/outlined/inbox.svg?react'
+import Outbox from '@material-symbols/svg-400/outlined/outbox.svg?react'
 import { NavigationRailItem } from './NavigationRailItem'
 import { useRailMorph } from './useRailMorph'
-
-const icon = (d: string) => (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d={d} />
-  </svg>
-)
-const Inbox = icon('M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m0 12h-4c0 1.66-1.35 3-3 3s-3-1.34-3-3H5V5h14z')
-const Outbox = icon('M19 3H4.99C3.89 3 3 3.9 3 5v14c0 1.1.89 2 1.99 2H19c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2m0 12h-4c0 1.66-1.35 3-3 3s-3-1.34-3-3H4.99V5H19zm-3-4h-2V8h-4v3H8l4 4z')
 
 /**
  * The item lives inside a container whose width/padding track the same `--_t`
@@ -60,8 +54,8 @@ type Story = StoryObj<Args>
 export const Playground: Story = {
   render: ({ t, selected }) => (
     <RailBox t={t}>
-      <NavigationRailItem value="inbox" icon={Inbox} label="Inbox" selected={selected} />
-      <NavigationRailItem value="outbox" icon={Outbox} label="Outbox" badge="3" />
+      <NavigationRailItem value="inbox" icon={<Inbox />} label="Inbox" selected={selected} />
+      <NavigationRailItem value="outbox" icon={<Outbox />} label="Outbox" badge="3" />
     </RailBox>
   ),
 }
@@ -78,8 +72,8 @@ export const Morph: Story = {
           {expanded ? 'Collapse' : 'Expand'}
         </button>
         <RailBox ref={ref} style={{ minHeight: 160 }}>
-          <NavigationRailItem value="inbox" icon={Inbox} label="Inbox" selected />
-          <NavigationRailItem value="outbox" icon={Outbox} label="Outbox" badge="3" />
+          <NavigationRailItem value="inbox" icon={<Inbox />} label="Inbox" selected />
+          <NavigationRailItem value="outbox" icon={<Outbox />} label="Outbox" badge="3" />
         </RailBox>
       </div>
     )

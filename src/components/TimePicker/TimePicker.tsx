@@ -6,6 +6,7 @@ import {
   type HTMLAttributes,
 } from 'react'
 import clsx from 'clsx'
+import { KeyboardIcon, ScheduleIcon } from '../../internal/icons'
 import styles from './TimePicker.module.css'
 
 export interface TimeValue {
@@ -41,16 +42,6 @@ function pointFor(index: number, count: number): CSSProperties {
   }
 }
 
-const KeyboardIcon = (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M20 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-9 3h2v2h-2zm0 3h2v2h-2zM8 8h2v2H8zm0 3h2v2H8zm-1 2H5v-2h2zm0-3H5V8h2zm9 7H8v-2h8zm0-4h-2v-2h2zm0-3h-2V8h2zm3 3h-2v-2h2zm0-3h-2V8h2z" />
-  </svg>
-)
-const ClockIcon = (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16m.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
-  </svg>
-)
 
 /**
  * Material Design 3 Time picker (dial + input).
@@ -220,7 +211,7 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
             aria-label={isInput ? 'Switch to dial' : 'Switch to keyboard input'}
             onClick={() => setViewMode(isInput ? 'dial' : 'input')}
           >
-            {isInput ? ClockIcon : KeyboardIcon}
+            {isInput ? <ScheduleIcon /> : <KeyboardIcon />}
           </button>
         </div>
       </div>

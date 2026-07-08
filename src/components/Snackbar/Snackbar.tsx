@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
+import { CloseIcon } from '../../internal/icons'
 import styles from './Snackbar.module.css'
 
 export interface SnackbarAction {
@@ -22,11 +23,6 @@ export interface SnackbarProps extends HTMLAttributes<HTMLDivElement> {
   onDismiss?: () => void
 }
 
-const CloseIcon = (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-  </svg>
-)
 
 /**
  * Material Design 3 Snackbar (the visual bar).
@@ -70,7 +66,7 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
             aria-label="Dismiss"
             onClick={onDismiss}
           >
-            {CloseIcon}
+            <CloseIcon />
           </button>
         )}
       </div>

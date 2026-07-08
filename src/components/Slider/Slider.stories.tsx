@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { fn } from '@storybook/test'
 import { Slider, type SliderValue, type SliderSize } from './Slider'
+import VolumeIcon from '@material-symbols/svg-400/outlined/volume_up.svg?react'
 
 const meta = {
   title: 'Components/Slider',
@@ -62,11 +63,7 @@ export const WithInsetIcon: Story = {
   args: {
     size: 'l',
     defaultValue: 60,
-    insetIcon: (
-      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path d="M3 9v6h4l5 5V4L7 9zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4" />
-      </svg>
-    ),
+    insetIcon: <VolumeIcon />,
   },
 }
 

@@ -6,6 +6,7 @@ import {
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import { CheckIcon } from '../../internal/icons'
 import styles from './SegmentedButton.module.css'
 
 export interface SegmentedButtonOption {
@@ -31,11 +32,6 @@ export interface SegmentedButtonsProps
   showSelectedCheck?: boolean
 }
 
-const CheckIcon = (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
-  </svg>
-)
 
 /**
  * Material Design 3 Segmented Buttons (single- or multi-select).
@@ -84,7 +80,7 @@ export const SegmentedButtons = forwardRef<HTMLDivElement, SegmentedButtonsProps
           const selected = isSelected(option.value)
           const segDisabled = disabled || option.disabled
           const showCheck = selected && showSelectedCheck
-          const leading = showCheck ? CheckIcon : option.icon
+          const leading = showCheck ? <CheckIcon /> : option.icon
 
           return (
             <button

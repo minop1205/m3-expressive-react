@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { fn } from '@storybook/test'
+import Add from '@material-symbols/svg-400/outlined/add.svg?react'
 import { Button } from './Button'
 
 const meta = {
@@ -31,12 +32,6 @@ type Story = StoryObj<typeof meta>
 
 export const Playground: Story = {}
 
-const PlusIcon = (
-  <svg viewBox="0 0 24 24" fill="currentColor">
-    <path d="M11 13H5v-2h6V5h2v6h6v2h-6v6h-2z" />
-  </svg>
-)
-
 export const Variants: Story = {
   render: (args) => (
     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -62,7 +57,7 @@ export const Sizes: Story = {
 }
 
 export const WithIcon: Story = {
-  args: { startIcon: PlusIcon, children: 'Add item' },
+  args: { startIcon: <Add />, children: 'Add item' },
 }
 
 export const Shapes: Story = {
