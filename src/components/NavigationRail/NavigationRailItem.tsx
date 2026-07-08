@@ -43,7 +43,8 @@ export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailIt
     const selected = ctx ? ctx.value === value : !!selectedProp
 
     const buttonRef = useRef<HTMLButtonElement | null>(null)
-    const labelRef = useRef<HTMLSpanElement>(null)
+    const labelExpRef = useRef<HTMLSpanElement>(null)
+    const labelColRef = useRef<HTMLSpanElement>(null)
     const setButtonRef = useCallback(
       (node: HTMLButtonElement | null) => {
         buttonRef.current = node
@@ -53,16 +54,21 @@ export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailIt
       [ref],
     )
 
-    // Measure the label's natural width so the expanded pill can hug it.
+    // Measure the expanded label's natural width (so the expanded pill can hug
+    // it) and the collapsed label's wrapped height (so the item can grow for
+    // multi-line labels).
     useLayoutEffect(() => {
-      const el = labelRef.current
       const btn = buttonRef.current
-      if (!el || !btn) return
-      const measure = () => btn.style.setProperty('--_label-w', `${el.offsetWidth}px`)
+      if (!btn) return
+      const measure = () => {
+        if (labelExpRef.current) btn.style.setProperty('--_label-w', `${labelExpRef.current.offsetWidth}px`)
+        if (labelColRef.current) btn.style.setProperty('--_label-h', `${labelColRef.current.offsetHeight}px`)
+      }
       measure()
       if (typeof ResizeObserver === 'undefined') return
       const ro = new ResizeObserver(measure)
-      ro.observe(el)
+      if (labelExpRef.current) ro.observe(labelExpRef.current)
+      if (labelColRef.current) ro.observe(labelColRef.current)
       return () => ro.disconnect()
     }, [label])
 
@@ -89,8 +95,10 @@ export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailIt
           <>
             {/* Collapsed label fades out below the icon; the expanded label fades
                 in beside it while sliding slightly left→right into place. */}
-            <span className={styles.labelCollapsed}>{label}</span>
-            <span ref={labelRef} className={styles.labelExpanded} aria-hidden="true">
+            <span ref={labelColRef} className={styles.labelCollapsed}>
+              {label}
+            </span>
+            <span ref={labelExpRef} className={styles.labelExpanded} aria-hidden="true">
               {label}
             </span>
           </>

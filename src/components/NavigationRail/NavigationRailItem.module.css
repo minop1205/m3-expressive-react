@@ -15,8 +15,10 @@
   display: block;
   box-sizing: border-box;
   width: 100%;
-  /* item height 64dp (collapsed) → 56dp (expanded) */
-  height: calc(64px - 8px * var(--_t, 0));
+  /* Collapsed height = 6 (top pad) + 32 (pill) + 4 (gap) + label + 6 (bottom
+     pad) = 48 + label height (the label wraps, so `--_label-h` is measured).
+     Expanded height = 56. Per Figma: 6dp top/bottom padding, 0 horizontal. */
+  height: calc((48px + var(--_label-h, 16px)) * (1 - var(--_t, 0)) + 56px * var(--_t, 0));
   border: none;
   background: transparent;
   cursor: pointer;
@@ -32,14 +34,16 @@
      16 + icon 24 + gap 8 + label + trailing 16), so it wraps icon + label when
      expanded. Height 32 → 56. `--_label-w` is measured per item in JS. */
   --_pill-left: 20px;
-  --_pill-top: 0px;
+  /* 6dp top padding collapsed → 0 expanded (pill fills the 56dp item). */
+  --_pill-top: calc(6px * (1 - var(--_t, 0)));
   --_pill-w: calc(56px + (8px + var(--_label-w, 56px)) * var(--_t, 0));
   --_pill-h: calc(32px + 24px * var(--_t, 0));
   --_pill-r: calc(var(--_pill-h) / 2);
   /* Icon left is constant too: collapsed centered (96−24)/2 = 36 ≡ expanded
-     leading position. Only its vertical position moves (top → center). */
+     leading position. Vertically it sits centered in the pill: 6+(32−24)/2 = 10
+     collapsed → (56−24)/2 = 16 expanded. */
   --_icon-left: 36px;
-  --_icon-top: calc(4px + 12px * var(--_t, 0));
+  --_icon-top: calc(10px + 6px * var(--_t, 0));
 }
 
 .item[data-selected] {
@@ -141,16 +145,21 @@
   position: absolute;
   z-index: 2;
   color: var(--_label-color);
-  white-space: nowrap;
   pointer-events: none;
 }
 
 .labelCollapsed {
   /* centered on the icon (constant x=48), NOT 50% of the shrinking item — else
-     it drifts right→left as the rail collapses. */
+     it drifts right→left as the rail collapses. Anchored by its top (below the
+     pill) so it can grow downward when the text wraps. */
   left: 48px;
-  top: 44px;
-  transform: translate(-50%, -50%);
+  top: 42px;
+  transform: translateX(-50%);
+  /* Per Figma: label wraps at the container width (96dp, no horizontal pad). */
+  max-width: 96px;
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-align: center;
   font-family: var(--md-sys-typescale-label-medium-font);
   font-size: var(--md-sys-typescale-label-medium-size);
   font-weight: var(--md-sys-typescale-label-medium-weight);
@@ -163,8 +172,9 @@
 .labelExpanded {
   /* beside the icon (icon-left 36 + 24 + 8 = 68) */
   left: 68px;
-  /* aligned to the icon's vertical center (icon-top + 12) */
-  top: calc(16px + 12px * var(--_t, 0));
+  /* aligned to the icon's vertical center (icon-top 10..16 + 12) */
+  top: calc(22px + 6px * var(--_t, 0));
+  white-space: nowrap;
   /* slides left→right into place on expand only (−11px at t≈0.77 → 0 at t=1);
      collapsing sets --_slide:0 so the label just cross-fades, no slide. */
   transform: translate(calc((var(--_t, 0) - 1) * var(--_slide, 1) * 48px), -50%);
