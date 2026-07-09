@@ -67,7 +67,7 @@ export interface NavigationBarItemProps
   icon: ReactNode
   /** The item label. */
   label?: ReactNode
-  /** Optional badge shown on the icon. */
+  /** Badge on the icon: content (e.g. `"3"`) for a large badge, `true` for a small dot. */
   badge?: ReactNode
 }
 
@@ -100,7 +100,13 @@ export const NavigationBarItem = forwardRef<HTMLButtonElement, NavigationBarItem
           <span className={styles.icon} aria-hidden="true">
             {icon}
           </span>
-          {badge != null && <span className={styles.badge}>{badge}</span>}
+          {badge != null &&
+            badge !== false &&
+            (badge === true ? (
+              <span className={styles.badgeDot} />
+            ) : (
+              <span className={styles.badge}>{badge}</span>
+            ))}
           {horizontal && label != null && <span className={styles.label}>{label}</span>}
         </span>
         {!horizontal && label != null && <span className={styles.label}>{label}</span>}

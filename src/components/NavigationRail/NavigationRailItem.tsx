@@ -19,6 +19,7 @@ export interface NavigationRailItemProps
   value: string
   icon: ReactNode
   label?: ReactNode
+  /** Badge on the icon: content (e.g. `"3"`) for a large badge, `true` for a small dot. */
   badge?: ReactNode
   /** Selected state when used standalone (outside a `NavigationRail`). */
   selected?: boolean
@@ -102,7 +103,13 @@ export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailIt
         <span className={styles.shape} aria-hidden="true" />
         <span className={styles.icon} aria-hidden="true">
           {icon}
-          {badge != null && <span className={styles.badge}>{badge}</span>}
+          {badge != null &&
+            badge !== false &&
+            (badge === true ? (
+              <span className={styles.badgeDot} />
+            ) : (
+              <span className={styles.badge}>{badge}</span>
+            ))}
         </span>
         {label != null && (
           <>

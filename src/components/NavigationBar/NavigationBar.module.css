@@ -143,12 +143,18 @@
   fill: currentColor;
 }
 
+/* Compose BadgedBox placement relative to the centered 24dp icon (icon left =
+   50% − 12px, icon top = 4px in the 32dp indicator): the large badge overlaps
+   the icon top by 14dp (top = 4 + 14 − 16 = 2px) with its leading edge at
+   icon-width − 12dp (= 50%); the 6dp dot sits at the icon's top-end corner. */
 .badge {
   position: absolute;
   top: 2px;
-  inset-inline-start: calc(50% + 6px);
+  inset-inline-start: 50%;
   z-index: 3;
-  min-width: 6px;
+  box-sizing: border-box;
+  /* BadgeTokens.LargeSize (16dp) minimum — a single digit is a circle */
+  min-width: 16px;
   height: 16px;
   padding-inline: 4px;
   border-radius: 8px;
@@ -158,6 +164,17 @@
   font-size: var(--md-sys-typescale-label-small-size);
   line-height: 16px;
   text-align: center;
+}
+
+.badgeDot {
+  position: absolute;
+  top: 4px;
+  inset-inline-start: calc(50% + 6px);
+  z-index: 3;
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background-color: var(--md-sys-color-error);
 }
 
 .label {

@@ -59,6 +59,16 @@ describe('NavigationRailItem (standalone)', () => {
     expect(item.style.getPropertyValue('--_slide')).toBe('0')
   })
 
+  it('renders a large badge with content and a dot badge for `true`', () => {
+    const { container, rerender } = render(
+      <NavigationRailItem value="a" icon={Icon} label="Alpha" badge="3" />,
+    )
+    expect(screen.getByText('3')).toBeInTheDocument()
+    expect(container.querySelector('[class*="badgeDot"]')).not.toBeInTheDocument()
+    rerender(<NavigationRailItem value="a" icon={Icon} label="Alpha" badge />)
+    expect(container.querySelector('[class*="badgeDot"]')).toBeInTheDocument()
+  })
+
   it('does not set an inline --_t when expanded is omitted (inherits from container)', () => {
     render(<NavigationRailItem value="a" icon={Icon} label="Alpha" />)
     const item = screen.getByRole('button', { name: /Alpha/ })

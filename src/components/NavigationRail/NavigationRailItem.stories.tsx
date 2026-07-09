@@ -34,12 +34,13 @@ interface Args {
   t: number
   label: string
   badge: string
+  badgeDot: boolean
   selected: boolean
   disabled: boolean
 }
 
-/** Map the `badge` text control to the `badge` prop. */
-const badgeProp = ({ badge }: Args) => badge || undefined
+/** Map the `badge` text / `badgeDot` controls to the `badge` prop. */
+const badgeProp = ({ badge, badgeDot }: Args) => (badgeDot ? true : badge || undefined)
 
 const meta: Meta<Args> = {
   title: 'Components/NavigationRailItem',
@@ -51,10 +52,11 @@ const meta: Meta<Args> = {
     t: { control: { type: 'range', min: 0, max: 1, step: 0.01 }, name: 'morph t (0=collapsed, 1=expanded)' },
     label: { control: 'text' },
     badge: { control: 'text' },
+    badgeDot: { control: 'boolean', name: 'badge: small dot (overrides text)' },
     selected: { control: 'boolean' },
     disabled: { control: 'boolean' },
   },
-  args: { expanded: false, t: 0, label: 'Inbox', badge: '', selected: true, disabled: false },
+  args: { expanded: false, t: 0, label: 'Inbox', badge: '', badgeDot: false, selected: true, disabled: false },
 }
 
 export default meta

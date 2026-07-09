@@ -30,7 +30,7 @@ function Items() {
     <>
       <NavigationRailItem value="inbox" icon={<Inbox />} label="Inbox" />
       <NavigationRailItem value="outbox" icon={<Outbox />} label="Outbox" badge="3" />
-      <NavigationRailItem value="favorites" icon={<Favorite />} label="Favorites" />
+      <NavigationRailItem value="favorites" icon={<Favorite />} label="Favorites" badge />
       <NavigationRailItem value="trash" icon={<Delete />} label="Trash" />
     </>
   )
