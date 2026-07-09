@@ -114,6 +114,34 @@
   padding-inline-end: 24px;
 }
 
+/* Morphing Extended FAB (`expanded` prop): keeps the per-size square padding,
+   so at --_ext: 0 it is exactly the icon-only FAB; the label row (gap + label
+   + trailing padding) carries the rest of the extended width and scales with
+   the spring-driven --_ext (may overshoot slightly past 1). */
+.fab[data-morph] {
+  gap: 0;
+}
+
+.labelWrap {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  justify-content: flex-start;
+  overflow: hidden;
+  width: calc(var(--_ext, 1) * var(--_label-total, 0px));
+  opacity: var(--_label-o, 1);
+}
+
+/* Regular size: 16 (pad) + 24 (icon) + 12 (gap) + label + 4 + 16 (pad) —
+   the extended 16/20 paddings and 12dp icon–label gap from the spec. */
+.labelInner {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: max-content;
+  padding-inline-start: 12px;
+  padding-inline-end: 4px;
+}
+
 /* Shape morph on press */
 .fab:active:not(:disabled) {
   border-radius: var(--_shape-pressed);

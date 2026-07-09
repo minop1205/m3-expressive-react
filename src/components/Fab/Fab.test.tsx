@@ -61,4 +61,23 @@ describe('Fab', () => {
     const { container } = render(<Fab icon={Icon} label="Create" />)
     expect(await axe(container)).toHaveNoViolations()
   })
+
+  it('morphs from the expanded prop, keeping the accessible name', () => {
+    const { rerender } = render(<Fab icon={Icon} label="Create" expanded={false} />)
+    const btn = screen.getByRole('button', { name: 'Create' })
+    expect(btn).toHaveAttribute('data-morph', 'true')
+    expect(btn).not.toHaveAttribute('data-extended')
+    expect(btn.style.getPropertyValue('--_ext')).toBe('0')
+    expect(btn.style.getPropertyValue('--_label-o')).toBe('0')
+    rerender(<Fab icon={Icon} label="Create" expanded />)
+    // The springs animate toward 1; the collapsed name must stay readable.
+    expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument()
+  })
+
+  it('stays a static Extended FAB when expanded is omitted', () => {
+    render(<Fab icon={Icon} label="Create" />)
+    const btn = screen.getByRole('button', { name: 'Create' })
+    expect(btn).toHaveAttribute('data-extended', 'true')
+    expect(btn.style.getPropertyValue('--_ext')).toBe('')
+  })
 })

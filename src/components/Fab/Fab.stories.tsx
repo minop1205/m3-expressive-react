@@ -77,6 +77,18 @@ export const Extended: Story = {
   ),
 }
 
+/**
+ * Toggle `expanded` to morph between the icon-only FAB and the Extended FAB —
+ * the label row springs open (FastSpatial, slight overshoot) and collapses
+ * (DefaultSpatial) while the label cross-fades, per Compose
+ * `ExtendedFloatingActionButton(expanded=)`.
+ */
+export const Morph: Story = {
+  render: (args) => <Fab {...args} icon={<EditIcon />} label="Compose" />,
+  args: { expanded: false },
+  argTypes: { expanded: { control: 'boolean' } },
+}
+
 export const Disabled: Story = {
   render: (args) => (
     <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
