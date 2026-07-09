@@ -10,6 +10,7 @@ import {
 import clsx from 'clsx'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { RailContext } from './NavigationRailContext'
+import { useRailMorph } from './useRailMorph'
 import styles from './NavigationRailItem.module.css'
 
 export interface NavigationRailItemProps
@@ -21,6 +22,13 @@ export interface NavigationRailItemProps
   badge?: ReactNode
   /** Selected state when used standalone (outside a `NavigationRail`). */
   selected?: boolean
+  /**
+   * Layout when used standalone (outside a `NavigationRail`): `false` =
+   * collapsed (icon over label), `true` = expanded (icon beside label in a
+   * pill). Toggling runs the same spring morph the rail uses. Inside a
+   * `NavigationRail` this is ignored — the rail's `variant` governs.
+   */
+  expanded?: boolean
 }
 
 /**
@@ -36,7 +44,7 @@ export interface NavigationRailItemProps
  */
 export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailItemProps>(
   function NavigationRailItem(
-    { value, icon, label, badge, selected: selectedProp, disabled = false, className, onClick, ...rest },
+    { value, icon, label, badge, selected: selectedProp, expanded, disabled = false, className, onClick, ...rest },
     ref,
   ) {
     const ctx = useContext(RailContext)
@@ -53,6 +61,11 @@ export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailIt
       },
       [ref],
     )
+
+    // Standalone with `expanded` given: the item drives its own `--_t` with the
+    // rail's spring. Otherwise `--_t` is inherited (from the rail, or a custom
+    // container), so we must not shadow it with an inline value.
+    useRailMorph(!!expanded, buttonRef, ctx == null && expanded !== undefined)
 
     // Measure the expanded label's natural width (so the expanded pill can hug
     // it) and the collapsed label's wrapped height (so the item can grow for

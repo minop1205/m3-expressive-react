@@ -1,7 +1,6 @@
-import { forwardRef, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import { forwardRef, useRef, type CSSProperties, type ReactNode } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import Inbox from '@material-symbols/svg-400/outlined/inbox.svg?react'
-import Outbox from '@material-symbols/svg-400/outlined/outbox.svg?react'
 import { NavigationRailItem } from './NavigationRailItem'
 import { useRailMorph } from './useRailMorph'
 
@@ -31,9 +30,16 @@ const RailBox = forwardRef<HTMLDivElement, { t?: number; style?: CSSProperties; 
 )
 
 interface Args {
+  expanded: boolean
   t: number
+  label: string
+  badge: string
   selected: boolean
+  disabled: boolean
 }
+
+/** Map the `badge` text control to the `badge` prop. */
+const badgeProp = ({ badge }: Args) => badge || undefined
 
 const meta: Meta<Args> = {
   title: 'Components/NavigationRailItem',
@@ -41,41 +47,62 @@ const meta: Meta<Args> = {
   // morph easy to inspect, and matches the rail's real left-edge placement.
   parameters: { layout: 'padded' },
   argTypes: {
+    expanded: { control: 'boolean' },
     t: { control: { type: 'range', min: 0, max: 1, step: 0.01 }, name: 'morph t (0=collapsed, 1=expanded)' },
+    label: { control: 'text' },
+    badge: { control: 'text' },
     selected: { control: 'boolean' },
+    disabled: { control: 'boolean' },
   },
-  args: { t: 0, selected: true },
+  args: { expanded: false, t: 0, label: 'Inbox', badge: '', selected: true, disabled: false },
 }
 
 export default meta
 type Story = StoryObj<Args>
 
-/** Scrub the `t` slider to inspect any frame of the morph. */
+/**
+ * A single standalone item driven by its public props — toggle `expanded` to
+ * spring between collapsed and expanded. The RailBox runs the same spring only
+ * to animate the demo container's width alongside the item's own morph.
+ */
 export const Playground: Story = {
-  render: ({ t, selected }) => (
-    <RailBox t={t}>
-      <NavigationRailItem value="inbox" icon={<Inbox />} label="Inbox" selected={selected} />
-      <NavigationRailItem value="outbox" icon={<Outbox />} label="Outbox" badge="3" />
-    </RailBox>
-  ),
-}
-
-/** Click to spring between collapsed and expanded. */
-export const Morph: Story = {
-  render: () => {
+  argTypes: { t: { table: { disable: true } } },
+  render: (args) => {
+    const { expanded, label, selected, disabled } = args
     const ref = useRef<HTMLDivElement | null>(null)
-    const [expanded, setExpanded] = useState(false)
     useRailMorph(expanded, ref)
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'flex-start' }}>
-        <button type="button" onClick={() => setExpanded((e) => !e)}>
-          {expanded ? 'Collapse' : 'Expand'}
-        </button>
-        <RailBox ref={ref} style={{ minHeight: 160 }}>
-          <NavigationRailItem value="inbox" icon={<Inbox />} label="Inbox" selected />
-          <NavigationRailItem value="outbox" icon={<Outbox />} label="Outbox" badge="3" />
-        </RailBox>
-      </div>
+      <RailBox ref={ref} style={{ minHeight: 100 }}>
+        <NavigationRailItem
+          value="inbox"
+          icon={<Inbox />}
+          label={label || undefined}
+          badge={badgeProp(args)}
+          selected={selected}
+          disabled={disabled}
+          expanded={expanded}
+        />
+      </RailBox>
     )
   },
+}
+
+/**
+ * Frame-by-frame inspection: `expanded` is omitted so the item inherits `--_t`
+ * from the container; scrub the `t` slider to freeze any frame of the morph.
+ */
+export const MorphFrame: Story = {
+  argTypes: { expanded: { table: { disable: true } } },
+  render: (args) => (
+    <RailBox t={args.t}>
+      <NavigationRailItem
+        value="inbox"
+        icon={<Inbox />}
+        label={args.label || undefined}
+        badge={badgeProp(args)}
+        selected={args.selected}
+        disabled={args.disabled}
+      />
+    </RailBox>
+  ),
 }

@@ -46,3 +46,32 @@ describe('NavigationRail', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 })
+
+describe('NavigationRailItem (standalone)', () => {
+  it('drives its own morph from the expanded prop', () => {
+    const { rerender } = render(
+      <NavigationRailItem value="a" icon={Icon} label="Alpha" expanded />,
+    )
+    const item = screen.getByRole('button', { name: /Alpha/ })
+    expect(item.style.getPropertyValue('--_t')).toBe('1')
+    rerender(<NavigationRailItem value="a" icon={Icon} label="Alpha" expanded={false} />)
+    // The spring animates toward 0; the slide direction flag flips immediately.
+    expect(item.style.getPropertyValue('--_slide')).toBe('0')
+  })
+
+  it('does not set an inline --_t when expanded is omitted (inherits from container)', () => {
+    render(<NavigationRailItem value="a" icon={Icon} label="Alpha" />)
+    const item = screen.getByRole('button', { name: /Alpha/ })
+    expect(item.style.getPropertyValue('--_t')).toBe('')
+  })
+
+  it('does not shadow the rail-inherited --_t when inside a rail', () => {
+    render(
+      <NavigationRail value="a" onChange={() => {}} aria-label="Rail">
+        <NavigationRailItem value="a" icon={Icon} label="Alpha" expanded />
+      </NavigationRail>,
+    )
+    const item = screen.getByRole('button', { name: /Alpha/ })
+    expect(item.style.getPropertyValue('--_t')).toBe('')
+  })
+})

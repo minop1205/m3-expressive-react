@@ -19,18 +19,24 @@ const DAMPING = 2 * DAMPING_RATIO * Math.sqrt(STIFFNESS)
  * nature: a change mid-flight keeps the current position and velocity. Also sets
  * `--_slide` (1 expanding / 0 collapsing) so the label only slides in on expand.
  */
-export function useRailMorph(expanded: boolean, ref: RefObject<HTMLElement | null>) {
+export function useRailMorph(
+  expanded: boolean,
+  ref: RefObject<HTMLElement | null>,
+  enabled = true,
+) {
   const t = useRef(expanded ? 1 : 0)
   const vel = useRef(0)
   const raf = useRef(0)
 
   // Resting value + direction flag on first paint.
   useEffect(() => {
+    if (!enabled) return
     ref.current?.style.setProperty('--_t', String(t.current))
     ref.current?.style.setProperty('--_slide', expanded ? '1' : '0')
-  }, [ref, expanded])
+  }, [ref, expanded, enabled])
 
   useEffect(() => {
+    if (!enabled) return
     const target = expanded ? 1 : 0
     // The label only slides while expanding; collapsing is a plain cross-fade.
     ref.current?.style.setProperty('--_slide', expanded ? '1' : '0')
@@ -66,5 +72,5 @@ export function useRailMorph(expanded: boolean, ref: RefObject<HTMLElement | nul
     }
     raf.current = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf.current)
-  }, [expanded, ref])
+  }, [expanded, ref, enabled])
 }
