@@ -26,20 +26,52 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 /**
- * Header contents shared by the stories: the 40dp menu button interpolates its
- * inset from the inherited `--_t` (centered at 28dp collapsed → 20dp leading
- * expanded); the 56dp FAB sits at the constant 20dp header inset in both
- * states and morphs itself via `expanded`.
+ * Menu icon that rotates 180° clockwise while switching between `menu` and
+ * `menu_open` halfway through the turn (the swap point measured from the
+ * official m3.material.io rail demo). The rotation is driven by the inherited
+ * `--_t`, so it runs on the rail's own DefaultSpatial spring — exactly the
+ * same duration/curve as the items' and FAB's morphs, and interruptible with
+ * them. `menu_open` is pre-rotated −180° so it lands upright at t = 1;
+ * collapsing plays the same turn in reverse.
+ */
+function MenuMorphIcon() {
+  // Glyphs cross-switch in the t ≈ 0.45–0.55 window (opacity clamps to [0,1]).
+  return (
+    <span
+      style={{
+        display: 'grid',
+        width: '100%',
+        height: '100%',
+        transform: 'rotate(calc(var(--_t, 0) * 180deg))',
+      }}
+    >
+      <Menu style={{ gridArea: '1 / 1', opacity: 'calc((0.55 - var(--_t, 0)) * 20)' }} />
+      <MenuOpen
+        style={{
+          gridArea: '1 / 1',
+          transform: 'rotate(-180deg)',
+          opacity: 'calc((var(--_t, 0) - 0.45) * 20)',
+        }}
+      />
+    </span>
+  )
+}
+
+/**
+ * Header contents shared by the stories: the 40dp menu button keeps the
+ * collapsed-centered inset (20 + 8 = 28dp) in both states so it never moves;
+ * the 56dp FAB sits at the constant 20dp header inset in both states and
+ * morphs itself via `expanded`.
  */
 function Header({ expanded, onMenuClick }: { expanded: boolean; onMenuClick?: () => void }) {
   return (
     <>
       <IconButton
         variant="standard"
-        icon={expanded ? <MenuOpen /> : <Menu />}
+        icon={<MenuMorphIcon />}
         aria-label={expanded ? 'Collapse navigation' : 'Expand navigation'}
         onClick={onMenuClick}
-        style={{ marginInlineStart: 'calc(8px * (1 - var(--_t, 0)))' }}
+        style={{ marginInlineStart: 8 }}
       />
       <Fab icon={<Edit />} label="Compose" expanded={expanded} color="tertiary-container" disableElevation />
     </>
