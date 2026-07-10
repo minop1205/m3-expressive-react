@@ -25,6 +25,27 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
+/**
+ * Header contents shared by the stories: the 40dp menu button interpolates its
+ * inset from the inherited `--_t` (centered at 28dp collapsed → 20dp leading
+ * expanded); the 56dp FAB sits at the constant 20dp header inset in both
+ * states and morphs itself via `expanded`.
+ */
+function Header({ expanded, onMenuClick }: { expanded: boolean; onMenuClick?: () => void }) {
+  return (
+    <>
+      <IconButton
+        variant="standard"
+        icon={expanded ? <MenuOpen /> : <Menu />}
+        aria-label={expanded ? 'Collapse navigation' : 'Expand navigation'}
+        onClick={onMenuClick}
+        style={{ marginInlineStart: 'calc(8px * (1 - var(--_t, 0)))' }}
+      />
+      <Fab icon={<Edit />} label="Compose" expanded={expanded} color="tertiary-container" />
+    </>
+  )
+}
+
 function Items() {
   return (
     <>
@@ -41,16 +62,7 @@ export const Collapsed: Story = {
     const [value, setValue] = useState('inbox')
     return (
       <div style={{ height: 520, display: 'flex' }}>
-        <NavigationRail
-          value={value}
-          onChange={setValue}
-          header={
-            <>
-              <IconButton variant="standard" icon={<Menu />} aria-label="Open navigation" />
-              <Fab size="small" icon={<Edit />} aria-label="Compose" color="tertiary-container" />
-            </>
-          }
-        >
+        <NavigationRail value={value} onChange={setValue} header={<Header expanded={false} />}>
           <Items />
         </NavigationRail>
       </div>
@@ -63,17 +75,7 @@ export const Expanded: Story = {
     const [value, setValue] = useState('inbox')
     return (
       <div style={{ height: 520, display: 'flex' }}>
-        <NavigationRail
-          value={value}
-          onChange={setValue}
-          variant="expanded"
-          header={
-            <>
-              <IconButton variant="standard" icon={<MenuOpen />} aria-label="Close navigation" />
-              <Fab icon={<Edit />} label="Label" color="tertiary-container" />
-            </>
-          }
-        >
+        <NavigationRail value={value} onChange={setValue} variant="expanded" header={<Header expanded />}>
           <Items />
         </NavigationRail>
       </div>
@@ -94,19 +96,10 @@ export const Toggle: Story = {
           onChange={setValue}
           variant={variant}
           header={
-            <>
-              <IconButton
-                variant="standard"
-                icon={expanded ? <MenuOpen /> : <Menu />}
-                aria-label={expanded ? 'Collapse navigation' : 'Expand navigation'}
-                onClick={() => setVariant(expanded ? 'collapsed' : 'expanded')}
-              />
-              {expanded ? (
-                <Fab icon={<Edit />} label="Label" color="tertiary-container" />
-              ) : (
-                <Fab size="small" icon={<Edit />} aria-label="Compose" color="tertiary-container" />
-              )}
-            </>
+            <Header
+              expanded={expanded}
+              onMenuClick={() => setVariant(expanded ? 'collapsed' : 'expanded')}
+            />
           }
         >
           <Items />

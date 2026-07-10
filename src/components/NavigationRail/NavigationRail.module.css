@@ -17,18 +17,18 @@
   background-color: var(--md-sys-color-surface);
 }
 
-/* Header (menu button / FAB) pinned to the top; left edge aligns with the item
-   pill (20dp inset) when expanded. */
+/* Header (menu button / FAB) pinned to the top. Start-aligned with a constant
+   20dp inset in BOTH variants (Compose places the header slot at the start
+   edge): a 56dp child (FAB, md icon button) at inset 20 is also exactly
+   centered in the collapsed 96dp rail, so nothing jumps when the alignment
+   would otherwise flip mid-morph. Narrower children that should be centered
+   while collapsed can interpolate their own offset from the inherited --_t. */
 .header {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
   margin-bottom: 40px;
-  align-items: center;
-}
-
-.rail[data-variant='expanded'] .header {
-  align-items: flex-start;
   padding-inline-start: 20px;
 }
 
