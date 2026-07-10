@@ -58,22 +58,22 @@ function MenuMorphIcon() {
 }
 
 /**
- * Header contents shared by the stories: the 40dp menu button keeps the
- * collapsed-centered inset (20 + 8 = 28dp) in both states so it never moves;
- * the 56dp FAB sits at the constant 20dp header inset in both states and
- * morphs itself via `expanded`.
+ * Header contents shared by the stories (per the M3 Design Kit rail): a 56dp
+ * (md) menu button and the 56dp FAB. Both sit at the constant 20dp header
+ * inset — which is also the collapsed-centered position in the 96dp rail —
+ * so nothing moves between states; the FAB morphs itself via `expanded`.
  */
 function Header({ expanded, onMenuClick }: { expanded: boolean; onMenuClick?: () => void }) {
   return (
     <>
       <IconButton
         variant="standard"
+        size="md"
         icon={<MenuMorphIcon />}
         aria-label={expanded ? 'Collapse navigation' : 'Expand navigation'}
         onClick={onMenuClick}
-        style={{ marginInlineStart: 8 }}
       />
-      <Fab icon={<Edit />} label="Compose" expanded={expanded} color="tertiary-container" disableElevation />
+      <Fab icon={<Edit />} label="Compose" expanded={expanded} color="primary-container" disableElevation />
     </>
   )
 }
