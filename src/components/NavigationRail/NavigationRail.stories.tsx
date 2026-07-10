@@ -41,7 +41,7 @@ function Header({ expanded, onMenuClick }: { expanded: boolean; onMenuClick?: ()
         onClick={onMenuClick}
         style={{ marginInlineStart: 'calc(8px * (1 - var(--_t, 0)))' }}
       />
-      <Fab icon={<Edit />} label="Compose" expanded={expanded} color="tertiary-container" />
+      <Fab icon={<Edit />} label="Compose" expanded={expanded} color="tertiary-container" disableElevation />
     </>
   )
 }

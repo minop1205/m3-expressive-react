@@ -64,6 +64,12 @@
   box-shadow: var(--_elevation);
 }
 
+/* No shadow at all (MD3: a FAB inside a Navigation rail / drawer is flat). */
+.fab[data-disable-elevation] {
+  --_elevation: none;
+  --_elevation-hover: none;
+}
+
 /* --------------------------------------------------------------------------- */
 /* Sizes                                                                       */
 /* --------------------------------------------------------------------------- */

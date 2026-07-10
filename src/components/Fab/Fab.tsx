@@ -41,6 +41,11 @@ export interface FabProps
   color?: FabColor
   /** Container size. @default 'regular' (56dp) */
   size?: FabSize
+  /**
+   * Removes the container shadow. Per the MD3 spec a FAB inside a Navigation
+   * rail (or drawer) has no elevation. @default false
+   */
+  disableElevation?: boolean
 }
 
 /**
@@ -61,6 +66,7 @@ export const Fab = forwardRef<HTMLButtonElement, FabProps>(function Fab(
     expanded,
     color = 'primary-container',
     size = 'regular',
+    disableElevation = false,
     disabled = false,
     type = 'button',
     className,
@@ -108,6 +114,7 @@ export const Fab = forwardRef<HTMLButtonElement, FabProps>(function Fab(
       disabled={disabled}
       data-color={color}
       data-size={size}
+      data-disable-elevation={disableElevation || undefined}
       data-extended={(isExtended && !morph) || undefined}
       data-morph={morph || undefined}
       className={clsx(styles.fab, className)}

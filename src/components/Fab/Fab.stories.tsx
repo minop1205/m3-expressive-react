@@ -32,6 +32,7 @@ const meta = {
       control: 'inline-radio',
       options: ['small', 'regular', 'medium', 'large'],
     },
+    disableElevation: { control: 'boolean' },
     disabled: { control: 'boolean' },
     icon: { control: false },
     onClick: { action: 'onClick' },
@@ -87,6 +88,17 @@ export const Morph: Story = {
   render: (args) => <Fab {...args} icon={<EditIcon />} label="Compose" />,
   args: { expanded: false },
   argTypes: { expanded: { control: 'boolean' } },
+}
+
+/** Flat FAB (elevation 0) — as used inside a Navigation rail / drawer. */
+export const DisableElevation: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+      <Fab {...args} aria-label="Flat" />
+      <Fab {...args} icon={<AddIcon />} label="Create" />
+    </div>
+  ),
+  args: { disableElevation: true },
 }
 
 export const Disabled: Story = {

@@ -74,6 +74,11 @@ describe('Fab', () => {
     expect(screen.getByRole('button', { name: 'Create' })).toBeInTheDocument()
   })
 
+  it('removes the shadow with disableElevation', () => {
+    render(<Fab icon={Icon} aria-label="x" disableElevation />)
+    expect(screen.getByRole('button')).toHaveAttribute('data-disable-elevation', 'true')
+  })
+
   it('stays a static Extended FAB when expanded is omitted', () => {
     render(<Fab icon={Icon} label="Create" />)
     const btn = screen.getByRole('button', { name: 'Create' })
