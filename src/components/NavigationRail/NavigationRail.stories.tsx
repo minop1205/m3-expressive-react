@@ -73,7 +73,9 @@ function Header({ expanded, onMenuClick }: { expanded: boolean; onMenuClick?: ()
         aria-label={expanded ? 'Collapse navigation' : 'Expand navigation'}
         onClick={onMenuClick}
       />
-      <Fab icon={<Edit />} label="Compose" expanded={expanded} color="primary-container" disableElevation />
+      {/* expanded="container": the FAB follows the rail's --_t spring, in
+          exact sync with the rail width and the items' morphs. */}
+      <Fab icon={<Edit />} label="Compose" expanded="container" color="primary-container" disableElevation />
     </>
   )
 }

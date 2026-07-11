@@ -134,8 +134,13 @@
   display: inline-flex;
   justify-content: flex-start;
   overflow: hidden;
-  width: calc(var(--_ext, 1) * var(--_label-total, 0px));
-  opacity: var(--_label-o, 1);
+  /* Spring-driven morphs (`expanded` boolean) write --_ext/--_label-o inline;
+     container-driven morphs (`expanded="container"`) fall back to the
+     inherited --_t, so the label row tracks the container's spring exactly.
+     The fallback opacity fades in over the first ~30% of the morph (per the
+     m3.material.io rail demo; the clip does the rest of the reveal). */
+  width: calc(var(--_ext, var(--_t, 1)) * var(--_label-total, 0px));
+  opacity: var(--_label-o, calc(var(--_t, 1) * 3.4));
 }
 
 /* Regular size: 16 (pad) + 24 (icon) + 12 (gap) + label + 4 + 16 (pad) —

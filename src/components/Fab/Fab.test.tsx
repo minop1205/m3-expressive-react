@@ -79,6 +79,15 @@ describe('Fab', () => {
     expect(screen.getByRole('button')).toHaveAttribute('data-disable-elevation', 'true')
   })
 
+  it("renders the morph DOM without inline morph values for expanded='container'", () => {
+    render(<Fab icon={Icon} label="Create" expanded="container" />)
+    const btn = screen.getByRole('button', { name: 'Create' })
+    expect(btn).toHaveAttribute('data-morph', 'true')
+    // No inline --_ext / --_label-o: the CSS falls back to the inherited --_t.
+    expect(btn.style.getPropertyValue('--_ext')).toBe('')
+    expect(btn.style.getPropertyValue('--_label-o')).toBe('')
+  })
+
   it('stays a static Extended FAB when expanded is omitted', () => {
     render(<Fab icon={Icon} label="Create" />)
     const btn = screen.getByRole('button', { name: 'Create' })

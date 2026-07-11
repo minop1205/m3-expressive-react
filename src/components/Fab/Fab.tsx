@@ -33,10 +33,13 @@ export interface FabProps
   /**
    * For an Extended FAB (with `label`): `true` shows the label, `false`
    * collapses it to the plain icon-only FAB. Toggling runs the MD3 Expressive
-   * spring morph (Compose `ExtendedFloatingActionButton(expanded=)`). Omit for
-   * a static Extended FAB. Ignored without `label`.
+   * spring morph (Compose `ExtendedFloatingActionButton(expanded=)`).
+   * `'container'` follows the `--_t` morph value inherited from a morphing
+   * container instead (e.g. a `NavigationRail` header), staying exactly in
+   * sync with the container's own spring. Omit for a static Extended FAB.
+   * Ignored without `label`.
    */
-  expanded?: boolean
+  expanded?: boolean | 'container'
   /** Container color style. @default 'primary-container' */
   color?: FabColor
   /** Container size. @default 'regular' (56dp) */
@@ -88,7 +91,9 @@ export const Fab = forwardRef<HTMLButtonElement, FabProps>(function Fab(
     [ref],
   )
 
-  useFabMorph(!!expanded, buttonRef, morph)
+  // 'container' renders the morph DOM but writes no inline --_ext/--_label-o,
+  // so the CSS falls back to the inherited --_t (the container's spring).
+  useFabMorph(expanded === true, buttonRef, morph && typeof expanded === 'boolean')
 
   // Measure the label row's natural width (gap + label + trailing padding) so
   // the morph can scale it without reflowing the text.
