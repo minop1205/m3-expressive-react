@@ -1,0 +1,266 @@
+/**
+ * MD3 (Expressive) Split button. A leading action button joined to a trailing
+ * menu button with a 2dp gap. Outer corners are round (CornerFull); inner
+ * corners are small and morph to round on the trailing button when the menu is
+ * open. Colors mirror the standard Button variants. Per m3.material.io
+ * split-button specs (sizes XS–XL).
+ */
+
+.split {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 2px;
+  vertical-align: middle;
+
+  --_inner: var(--md-sys-shape-corner-small, 8px);
+  --_outer: calc(var(--_height) / 2);
+}
+
+/* Menu wraps the trailing button in an inline-flex span. */
+.split > :global(span) {
+  display: inline-flex;
+}
+
+/* ---- Shared button base ---- */
+.leading,
+.trailing {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: var(--_height);
+  appearance: none;
+  margin: 0;
+  border: var(--_outline-width, 0) solid var(--_outline-color, transparent);
+  outline: none;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  color: var(--_label-text-color);
+  background-color: var(--_container-color);
+  box-shadow: var(--_shadow, none);
+
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--_font-size);
+  line-height: var(--_line-height);
+  font-weight: var(--_font-weight);
+  letter-spacing: var(--_tracking);
+
+  --md-ripple-color: var(--_state-layer-color);
+  --md-focus-ring-color: var(--md-sys-color-secondary);
+
+  transition:
+    box-shadow var(--md-sys-motion-duration-short3, 150ms)
+      var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    border-radius var(--md-sys-motion-duration-medium1, 250ms)
+      cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+.leading:hover:not(:disabled),
+.trailing:hover:not(:disabled) {
+  box-shadow: var(--_shadow-hover, var(--_shadow, none));
+}
+
+/* Leading: label (+ optional icon), outer-left corners round, inner-right small. */
+.leading {
+  gap: var(--_icon-label-gap);
+  min-width: 64px;
+  padding-inline: var(--_padding-leading) var(--_padding-trailing);
+  border-start-start-radius: var(--_outer);
+  border-end-start-radius: var(--_outer);
+  border-start-end-radius: var(--_inner);
+  border-end-end-radius: var(--_inner);
+}
+
+/* Trailing: icon-only, inner-left small, outer-right corners round. */
+.trailing {
+  padding-inline: var(--_trailing-pad);
+  border-start-start-radius: var(--_inner);
+  border-end-start-radius: var(--_inner);
+  border-start-end-radius: var(--_outer);
+  border-end-end-radius: var(--_outer);
+}
+
+/* Signature morph: trailing inner corner rounds while the menu is open. */
+.split[data-open] .trailing {
+  border-start-start-radius: var(--_outer);
+  border-end-start-radius: var(--_outer);
+}
+
+.chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_trailing-icon);
+  height: var(--_trailing-icon);
+  transition: transform var(--md-sys-motion-duration-medium1, 250ms)
+    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+}
+
+.split[data-open] .chevron {
+  transform: rotate(180deg);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+  font-size: var(--_icon-size);
+}
+
+.icon svg,
+.icon img {
+  width: 100%;
+  height: 100%;
+}
+
+.label,
+.icon,
+.chevron {
+  position: relative;
+  z-index: 1;
+}
+
+/* --------------------------------------------------------------------------- */
+/* Sizes (Expressive scale)                                                    */
+/* --------------------------------------------------------------------------- */
+.split[data-size='xs'] {
+  --_height: 32px;
+  --_padding-leading: 12px;
+  --_padding-trailing: 10px;
+  --_trailing-pad: 13px;
+  --_trailing-icon: 22px;
+  --_icon-label-gap: 8px;
+  --_icon-size: 20px;
+  --_font-size: var(--md-sys-typescale-label-large-size);
+  --_line-height: var(--md-sys-typescale-label-large-line-height);
+  --_font-weight: var(--md-sys-typescale-label-large-weight);
+  --_tracking: var(--md-sys-typescale-label-large-tracking);
+}
+
+.split[data-size='sm'] {
+  --_height: 40px;
+  --_padding-leading: 16px;
+  --_padding-trailing: 12px;
+  --_trailing-pad: 14px;
+  --_trailing-icon: 22px;
+  --_icon-label-gap: 8px;
+  --_icon-size: 20px;
+  --_font-size: var(--md-sys-typescale-label-large-size);
+  --_line-height: var(--md-sys-typescale-label-large-line-height);
+  --_font-weight: var(--md-sys-typescale-label-large-weight);
+  --_tracking: var(--md-sys-typescale-label-large-tracking);
+}
+
+.split[data-size='md'] {
+  --_height: 56px;
+  --_padding-leading: 24px;
+  --_padding-trailing: 16px;
+  --_trailing-pad: 20px;
+  --_trailing-icon: 24px;
+  --_icon-label-gap: 8px;
+  --_icon-size: 24px;
+  --_font-size: var(--md-sys-typescale-title-medium-size);
+  --_line-height: var(--md-sys-typescale-title-medium-line-height);
+  --_font-weight: var(--md-sys-typescale-title-medium-weight);
+  --_tracking: var(--md-sys-typescale-title-medium-tracking);
+}
+
+.split[data-size='lg'] {
+  --_height: 96px;
+  --_padding-leading: 48px;
+  --_padding-trailing: 32px;
+  --_trailing-pad: 36px;
+  --_trailing-icon: 32px;
+  --_icon-label-gap: 12px;
+  --_icon-size: 32px;
+  --_font-size: var(--md-sys-typescale-headline-small-size);
+  --_line-height: var(--md-sys-typescale-headline-small-line-height);
+  --_font-weight: var(--md-sys-typescale-headline-small-weight);
+  --_tracking: var(--md-sys-typescale-headline-small-tracking);
+}
+
+.split[data-size='xl'] {
+  --_height: 136px;
+  --_padding-leading: 64px;
+  --_padding-trailing: 48px;
+  --_trailing-pad: 52px;
+  --_trailing-icon: 40px;
+  --_icon-label-gap: 16px;
+  --_icon-size: 40px;
+  --_font-size: var(--md-sys-typescale-headline-large-size);
+  --_line-height: var(--md-sys-typescale-headline-large-line-height);
+  --_font-weight: var(--md-sys-typescale-headline-large-weight);
+  --_tracking: var(--md-sys-typescale-headline-large-tracking);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Variants (mirror Button)                                                    */
+/* --------------------------------------------------------------------------- */
+.split[data-variant='filled'] {
+  --_container-color: var(--md-sys-color-primary);
+  --_label-text-color: var(--md-sys-color-on-primary);
+  --_state-layer-color: var(--md-sys-color-on-primary);
+  --_shadow: var(--md-sys-elevation-shadow-level0);
+  --_shadow-hover: var(--md-sys-elevation-shadow-level1);
+}
+
+.split[data-variant='tonal'] {
+  --_container-color: var(--md-sys-color-secondary-container);
+  --_label-text-color: var(--md-sys-color-on-secondary-container);
+  --_state-layer-color: var(--md-sys-color-on-secondary-container);
+  --_shadow: var(--md-sys-elevation-shadow-level0);
+  --_shadow-hover: var(--md-sys-elevation-shadow-level1);
+}
+
+.split[data-variant='elevated'] {
+  --_container-color: var(--md-sys-color-surface-container-low);
+  --_label-text-color: var(--md-sys-color-primary);
+  --_state-layer-color: var(--md-sys-color-primary);
+  --_shadow: var(--md-sys-elevation-shadow-level1);
+  --_shadow-hover: var(--md-sys-elevation-shadow-level2);
+}
+
+.split[data-variant='outlined'] {
+  --_container-color: transparent;
+  --_label-text-color: var(--md-sys-color-primary);
+  --_state-layer-color: var(--md-sys-color-primary);
+  --_outline-color: var(--md-sys-color-outline-variant);
+  --_outline-width: 1px;
+}
+
+/* --------------------------------------------------------------------------- */
+/* Disabled                                                                    */
+/* --------------------------------------------------------------------------- */
+.leading:disabled,
+.trailing:disabled {
+  cursor: default;
+  pointer-events: none;
+  box-shadow: none;
+  --_label-text-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+.split[data-variant='filled'] .leading:disabled,
+.split[data-variant='filled'] .trailing:disabled,
+.split[data-variant='tonal'] .leading:disabled,
+.split[data-variant='tonal'] .trailing:disabled,
+.split[data-variant='elevated'] .leading:disabled,
+.split[data-variant='elevated'] .trailing:disabled {
+  --_container-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+}
+
+.split[data-variant='outlined'] .leading:disabled,
+.split[data-variant='outlined'] .trailing:disabled {
+  --_outline-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leading,
+  .trailing,
+  .chevron {
+    transition: none;
+  }
+}
