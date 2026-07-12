@@ -1,5 +1,6 @@
 export * from './AppBar'
 export * from './BottomSheet'
+export * from './SideSheet'
 export * from './Button'
 export * from './Card'
 export * from './DatePicker'
