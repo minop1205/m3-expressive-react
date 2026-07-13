@@ -1,5 +1,10 @@
 import type { Preview, Decorator } from '@storybook/react'
 import React from 'react'
+// Roboto (Storybook preview only). Library consumers load Roboto themselves —
+// see README. Weights 400 (regular) / 500 (medium) are the only ones the
+// typescale tokens use.
+import '@fontsource/roboto/400.css'
+import '@fontsource/roboto/500.css'
 import { ThemeProvider } from '../src/theme/ThemeProvider'
 import '../src/styles/tokens.css'
 import '../src/styles/typescale.css'
