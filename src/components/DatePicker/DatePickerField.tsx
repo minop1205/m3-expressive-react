@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type HTMLAttributes,
 } from 'react'
 import clsx from 'clsx'
 import { TextField } from '../TextField'
@@ -11,7 +12,8 @@ import { DatePicker } from './DatePicker'
 import { CalendarIcon } from '../../internal/icons'
 import styles from './DatePickerField.module.css'
 
-export interface DatePickerFieldProps {
+export interface DatePickerFieldProps
+  extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange' | 'defaultValue'> {
   /** Controlled selected date. */
   value?: Date | null
   /** Uncontrolled initial date. */
@@ -44,7 +46,7 @@ function startOfDay(d: Date) {
  */
 export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
   function DatePickerField(
-    { value, defaultValue, onChange, label = 'Date', min, max, locale = 'en-US', disabled, className },
+    { value, defaultValue, onChange, label = 'Date', min, max, locale = 'en-US', disabled, className, ...rest },
     ref,
   ) {
     const isControlled = value !== undefined
@@ -106,7 +108,7 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
     }
 
     return (
-      <div ref={setRefs} className={clsx(styles.field, className)}>
+      <div {...rest} ref={setRefs} className={clsx(styles.field, className)}>
         <TextField
           variant="outlined"
           label={label}

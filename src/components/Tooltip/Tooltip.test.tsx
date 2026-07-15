@@ -64,6 +64,33 @@ describe('Tooltip', () => {
     expect(entered).toBe(true)
   })
 
+  it('passes HTML attributes through to the root element', () => {
+    render(
+      <Tooltip
+        text="Hint"
+        data-testid="tooltip-root"
+        style={{ marginTop: 8 }}
+        aria-label="Tooltip wrapper"
+      >
+        <button>Trigger</button>
+      </Tooltip>,
+    )
+    const root = screen.getByTestId('tooltip-root')
+    expect(root).toHaveStyle({ marginTop: '8px' })
+    expect(root).toHaveAttribute('aria-label', 'Tooltip wrapper')
+  })
+
+  it('merges a custom className with the internal one', () => {
+    render(
+      <Tooltip text="Hint" data-testid="tooltip-root" className="custom">
+        <button>Trigger</button>
+      </Tooltip>,
+    )
+    const root = screen.getByTestId('tooltip-root')
+    expect(root).toHaveClass('custom')
+    expect(root.className.split(' ').length).toBeGreaterThan(1)
+  })
+
   it('has no axe violations', async () => {
     const { container } = render(
       <Tooltip text="Hint">
