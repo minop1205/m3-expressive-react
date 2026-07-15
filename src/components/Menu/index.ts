@@ -1,1 +1,7 @@
-export { Menu, MenuItem, type MenuProps, type MenuItemProps } from './Menu'
+export {
+  Menu,
+  MenuItem,
+  type MenuProps,
+  type MenuItemProps,
+  type MenuAlign,
+} from './Menu'

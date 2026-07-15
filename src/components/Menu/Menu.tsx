@@ -22,6 +22,8 @@ interface MenuContextValue {
 
 const MenuContext = createContext<MenuContextValue | null>(null)
 
+export type MenuAlign = 'start' | 'end'
+
 export interface MenuProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
   /** The element that opens the menu (a single button-like element). */
   trigger: ReactElement
@@ -34,7 +36,7 @@ export interface MenuProps extends Omit<HTMLAttributes<HTMLDivElement>, 'childre
   /** Notified when the open state should change. */
   onOpenChange?: (open: boolean) => void
   /** Horizontal alignment to the trigger. @default 'start' */
-  align?: 'start' | 'end'
+  align?: MenuAlign
 }
 
 /**
