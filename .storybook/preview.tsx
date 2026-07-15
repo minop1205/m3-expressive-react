@@ -54,6 +54,16 @@ const preview: Preview = {
   },
   parameters: {
     controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },
+    // Snapshot every story in both color schemes. Each mode sets the
+    // `colorScheme` global, which the withTheme decorator feeds into
+    // ThemeProvider. Seed-color modes are deliberately left out to keep the
+    // snapshot count at 2x (add them per-story if a component needs it).
+    chromatic: {
+      modes: {
+        light: { colorScheme: 'light' },
+        dark: { colorScheme: 'dark' },
+      },
+    },
   },
 }
 
