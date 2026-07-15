@@ -105,10 +105,25 @@
   appearance: none;
 }
 
-.bar[data-disabled] {
-  opacity: 0.38;
+/*
+ * Disabled: per-layer colors instead of a blanket opacity (which would
+ * double-dim nested content). Content = on-surface at 38%; container =
+ * on-surface at 4%, matching TextField's filled disabled container.
+ */
+.wrapper[data-disabled] {
+  pointer-events: none;
 }
 
-.bar[data-disabled] .input {
-  pointer-events: none;
+.wrapper[data-disabled] .bar {
+  background-color: color-mix(in srgb, var(--md-sys-color-on-surface, #1d1b20) 4%, transparent);
+}
+
+.wrapper[data-disabled] .leading,
+.wrapper[data-disabled] .trailing,
+.wrapper[data-disabled] .input {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface, #1d1b20) 38%, transparent);
+}
+
+.wrapper[data-disabled] .input::placeholder {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface, #1d1b20) 38%, transparent);
 }

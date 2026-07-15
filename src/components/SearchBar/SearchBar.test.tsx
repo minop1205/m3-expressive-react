@@ -49,6 +49,12 @@ describe('SearchBar', () => {
     expect(input).toHaveAttribute('aria-expanded', 'false')
   })
 
+  it('marks the wrapper and disables the input when disabled', () => {
+    render(<SearchBar aria-label="Search" disabled />)
+    expect(screen.getByRole('search')).toHaveAttribute('data-disabled')
+    expect(screen.getByRole('searchbox')).toBeDisabled()
+  })
+
   it('forwards a ref to the input', () => {
     const ref = createRef<HTMLInputElement>()
     render(<SearchBar ref={ref} aria-label="Search" />)
