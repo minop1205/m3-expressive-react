@@ -20,20 +20,43 @@ export interface TextFieldProps
     InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>,
     'children'
   > {
+  /** Container style. @default 'filled' */
   variant?: TextFieldVariant
+  /** Floating label; rendered with a trailing `*` when `required`. */
   label?: string
+  /** Helper line below the field. Replaced by `errorText` while in error. */
   supportingText?: string
+  /** Shown instead of `supportingText` (with `role="alert"`) when `error` is set. */
   errorText?: string
+  /** Error state — error colors, `aria-invalid`, and `errorText`. Ignored while `disabled`. @default false */
   error?: boolean
+  /** Icon at the start of the field (decorative). */
   leadingIcon?: ReactNode
+  /** Icon at the end of the field (decorative). */
   trailingIcon?: ReactNode
+  /** Static text before the input value (e.g. currency symbol). */
   prefixText?: string
+  /** Static text after the input value (e.g. unit). */
   suffixText?: string
+  /** Native input `maxLength`; also shows a `length / maxLength` counter in the supporting line. */
   maxLength?: number
+  /** Render a `<textarea>` that auto-grows with its content. @default false */
   multiline?: boolean
+  /** Initial visible rows of the `multiline` textarea. @default 2 */
   rows?: number
 }
 
+/**
+ * Material Design 3 Text field (filled / outlined).
+ *
+ * A single-line `<input>` — or auto-growing `<textarea>` with `multiline` —
+ * wrapped in the MD3 field anatomy: floating label (outlined variant notches
+ * the border), leading/trailing icons, prefix/suffix text, and a supporting
+ * line that holds helper text, the error message, and the `maxLength`
+ * counter. Value follows the standard controlled (`value` + `onChange`) or
+ * uncontrolled (`defaultValue`) input pattern; clicking anywhere on the
+ * container focuses the input.
+ */
 export const TextField = forwardRef<
   HTMLInputElement | HTMLTextAreaElement,
   TextFieldProps
