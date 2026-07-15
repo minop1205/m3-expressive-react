@@ -23,3 +23,16 @@ export const Default: Story = {
     </Menu>
   ),
 }
+
+/** Open state so the menu surface (incl. the disabled item) is covered by VRT. */
+export const Open: Story = {
+  render: () => (
+    <div style={{ paddingBottom: 200 }}>
+      <Menu defaultOpen trigger={<Button variant="outlined">Open menu</Button>}>
+        <MenuItem leadingIcon={<ContentCopy />}>Copy</MenuItem>
+        <MenuItem leadingIcon={<Share />}>Share</MenuItem>
+        <MenuItem disabled>Archive</MenuItem>
+      </Menu>
+    </div>
+  ),
+}

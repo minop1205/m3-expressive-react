@@ -15,7 +15,9 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Plain: Story = {
-  args: { text: 'Add to favorites' },
+  // defaultOpen so the tooltip surface itself is captured by VRT
+  // (it only appears on hover/focus otherwise).
+  args: { text: 'Add to favorites', defaultOpen: true },
   render: (args) => (
     <Tooltip {...args}>
       <IconButton icon={<Info />} aria-label="Info" variant="standard" />
@@ -25,6 +27,7 @@ export const Plain: Story = {
 
 export const Rich: Story = {
   args: {
+    defaultOpen: true,
     variant: 'rich',
     subhead: 'Rich tooltip',
     text: 'Rich tooltips support a subhead, longer body text, and an action.',

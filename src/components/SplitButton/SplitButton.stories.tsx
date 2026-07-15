@@ -51,3 +51,12 @@ export const WithIcon: Story = {
 export const Disabled: Story = {
   args: { disabled: true },
 }
+
+/** Dropdown open so the menu half is covered by VRT (`open` is controlled-only). */
+export const Open: Story = {
+  render: (args) => (
+    <div style={{ paddingBottom: 200 }}>
+      <SplitButton {...args} open />
+    </div>
+  ),
+}

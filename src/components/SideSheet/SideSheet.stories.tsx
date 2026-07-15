@@ -38,7 +38,7 @@ export const Standard: Story = {
 
 export const Modal: Story = {
   render: () => {
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(true)
     return (
       <div style={{ padding: 24 }}>
         <Button onClick={() => setOpen(true)}>Open modal side sheet</Button>
@@ -72,7 +72,7 @@ export const Modal: Story = {
 
 export const LeftAnchor: Story = {
   render: () => {
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(true)
     return (
       <div style={{ padding: 24 }}>
         <Button onClick={() => setOpen(true)}>Open from left</Button>

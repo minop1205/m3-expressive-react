@@ -16,7 +16,7 @@ type Story = StoryObj<typeof meta>
 
 export const Basic: Story = {
   render: () => {
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(true)
     return (
       <div style={{ padding: 24 }}>
         <Button onClick={() => setOpen(true)}>Open dialog</Button>
@@ -44,7 +44,7 @@ export const Basic: Story = {
 
 export const FullScreen: Story = {
   render: () => {
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(true)
     return (
       <div style={{ padding: 24 }}>
         <Button onClick={() => setOpen(true)}>Open full-screen</Button>
@@ -68,7 +68,7 @@ export const FullScreen: Story = {
 
 export const WithIcon: Story = {
   render: () => {
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(true)
     return (
       <div style={{ padding: 24 }}>
         <Button onClick={() => setOpen(true)}>Open</Button>
