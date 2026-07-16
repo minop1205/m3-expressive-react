@@ -7,7 +7,7 @@ import {
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
-import { Menu } from '../Menu/Menu'
+import { Menu, type MenuAlign } from '../Menu/Menu'
 import styles from './SplitButton.module.css'
 
 export type SplitButtonVariant = 'elevated' | 'filled' | 'tonal' | 'outlined'
@@ -32,7 +32,7 @@ export interface SplitButtonProps
   /** `MenuItem`s shown when the trailing button opens the menu. */
   menu: ReactNode
   /** Menu alignment to the trailing button. @default 'end' */
-  menuAlign?: 'start' | 'end'
+  menuAlign?: MenuAlign
   /** Controlled menu open state. */
   open?: boolean
   /** Notified when the menu open state changes. */

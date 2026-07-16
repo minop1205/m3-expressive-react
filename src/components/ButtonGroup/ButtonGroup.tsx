@@ -4,6 +4,7 @@ import styles from './ButtonGroup.module.css'
 
 export type ButtonGroupVariant = 'standard' | 'connected'
 export type ButtonGroupSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+export type ButtonGroupOrientation = 'horizontal' | 'vertical'
 
 export interface ButtonGroupProps extends HTMLAttributes<HTMLDivElement> {
   /** `standard` spaces buttons and pops the pressed one; `connected` joins them
@@ -12,7 +13,7 @@ export interface ButtonGroupProps extends HTMLAttributes<HTMLDivElement> {
   /** Controls the between-space to match the child button size. @default 'sm' */
   size?: ButtonGroupSize
   /** Layout direction. @default 'horizontal' */
-  orientation?: 'horizontal' | 'vertical'
+  orientation?: ButtonGroupOrientation
   /** `Button` / `IconButton` children. */
   children?: ReactNode
 }

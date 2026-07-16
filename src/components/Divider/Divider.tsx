@@ -3,12 +3,13 @@ import clsx from 'clsx'
 import styles from './Divider.module.css'
 
 export type DividerVariant = 'full-width' | 'inset' | 'middle-inset'
+export type DividerOrientation = 'horizontal' | 'vertical'
 
 export interface DividerProps extends HTMLAttributes<HTMLHRElement> {
   /** Layout variant. @default "full-width" */
   variant?: DividerVariant
   /** Orientation. @default "horizontal" */
-  orientation?: 'horizontal' | 'vertical'
+  orientation?: DividerOrientation
 }
 
 export const Divider = forwardRef<HTMLHRElement, DividerProps>(
