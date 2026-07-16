@@ -9,10 +9,15 @@ import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { CheckIcon } from '../../internal/icons'
 import styles from './SegmentedButton.module.css'
 
+/** One segment of a {@link SegmentedButtons} group. */
 export interface SegmentedButtonOption {
+  /** Unique value identifying the segment within the group. */
   value: string
+  /** Segment label text. */
   label?: ReactNode
+  /** Leading icon; replaced by the check icon while selected (when `showSelectedCheck`). */
   icon?: ReactNode
+  /** Disable this segment only. */
   disabled?: boolean
 }
 

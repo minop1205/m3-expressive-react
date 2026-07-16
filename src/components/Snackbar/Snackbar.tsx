@@ -9,8 +9,11 @@ import clsx from 'clsx'
 import { CloseIcon } from '../../internal/icons'
 import styles from './Snackbar.module.css'
 
+/** Built-in action button for {@link Snackbar}'s `action` prop. */
 export interface SnackbarAction {
+  /** Action button label. */
   label: string
+  /** Fires when the action button is clicked. */
   onClick?: MouseEventHandler<HTMLButtonElement>
 }
 
