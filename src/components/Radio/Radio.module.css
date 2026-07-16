@@ -154,7 +154,7 @@
 
 /* Pressed */
 .radio:not(.disabled):has(.input:active) .stateLayer {
-  opacity: var(--md-sys-state-pressed-state-layer-opacity, 0.12);
+  opacity: var(--md-sys-state-pressed-state-layer-opacity, 0.10);
 }
 
 /* Disabled — no state layer */

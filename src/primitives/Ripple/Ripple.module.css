@@ -34,7 +34,7 @@
   position: absolute;
   border-radius: 50%;
   background-color: var(--_color);
-  opacity: var(--md-sys-state-pressed-state-layer-opacity, 0.12);
+  opacity: var(--md-sys-state-pressed-state-layer-opacity, 0.10);
   transform: scale(0);
   transform-origin: center;
   pointer-events: none;
