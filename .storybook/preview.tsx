@@ -15,7 +15,18 @@ const withTheme: Decorator = (Story, context) => {
   const seed = context.globals.seedColor ?? '#6750A4'
   return (
     <ThemeProvider seedColor={seed} mode={mode}>
-      <div style={{ padding: 24, background: 'var(--md-sys-color-background)', minHeight: '100vh' }}>
+      {/* color must be set here (inside ThemeProvider) — the --md-sys-color-*
+          vars live on ThemeProvider's div, so the body-level rule in
+          preview.css can't resolve them and currentColor icons stayed black
+          in dark mode. */}
+      <div
+        style={{
+          padding: 24,
+          background: 'var(--md-sys-color-background)',
+          color: 'var(--md-sys-color-on-background)',
+          minHeight: '100vh',
+        }}
+      >
         <Story />
       </div>
     </ThemeProvider>
