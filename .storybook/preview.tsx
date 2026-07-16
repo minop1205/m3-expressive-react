@@ -1,5 +1,6 @@
 import type { Preview, Decorator } from '@storybook/react'
 import React from 'react'
+import isChromatic from 'chromatic/isChromatic'
 // Roboto (Storybook preview only). Library consumers load Roboto themselves —
 // see README. Weights 400 (regular) / 500 (medium) are the only ones the
 // typescale tokens use.
@@ -9,6 +10,27 @@ import { ThemeProvider } from '../src/theme/ThemeProvider'
 import '../src/styles/tokens.css'
 import '../src/styles/typescale.css'
 import './preview.css'
+
+// Chromatic pauses CSS animations automatically but NOT rAF-driven ones.
+// Our animated components honor prefers-reduced-motion, so emulate it in
+// Chromatic's capture browsers to freeze JS animations deterministically.
+if (isChromatic() && typeof window !== 'undefined') {
+  const originalMatchMedia = window.matchMedia.bind(window)
+  window.matchMedia = (query: string): MediaQueryList => {
+    const mql = originalMatchMedia(query)
+    if (!query.includes('prefers-reduced-motion')) return mql
+    return {
+      matches: true,
+      media: mql.media,
+      onchange: null,
+      addListener: mql.addListener.bind(mql),
+      removeListener: mql.removeListener.bind(mql),
+      addEventListener: mql.addEventListener.bind(mql),
+      removeEventListener: mql.removeEventListener.bind(mql),
+      dispatchEvent: mql.dispatchEvent.bind(mql),
+    }
+  }
+}
 
 const withTheme: Decorator = (Story, context) => {
   const mode = context.globals.colorScheme === 'dark' ? 'dark' : 'light'
