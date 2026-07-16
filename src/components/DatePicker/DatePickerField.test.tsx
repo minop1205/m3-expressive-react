@@ -46,6 +46,26 @@ describe('DatePickerField', () => {
     expect(ref.current).toBeInstanceOf(HTMLDivElement)
   })
 
+  it('passes HTML attributes through to the root element', () => {
+    render(
+      <DatePickerField
+        data-testid="date-field"
+        style={{ marginTop: 8 }}
+        aria-label="Pick a date"
+      />,
+    )
+    const root = screen.getByTestId('date-field')
+    expect(root).toHaveStyle({ marginTop: '8px' })
+    expect(root).toHaveAttribute('aria-label', 'Pick a date')
+  })
+
+  it('merges a custom className with the internal one', () => {
+    render(<DatePickerField data-testid="date-field" className="custom" />)
+    const root = screen.getByTestId('date-field')
+    expect(root).toHaveClass('custom')
+    expect(root.className.split(' ').length).toBeGreaterThan(1)
+  })
+
   it('has no axe violations', async () => {
     const { container } = render(<DatePickerField label="Date" />)
     expect(await axe(container)).toHaveNoViolations()

@@ -5,6 +5,7 @@ import {
   useId,
   useState,
   type FocusEvent,
+  type HTMLAttributes,
   type KeyboardEvent,
   type MouseEvent,
   type ReactElement,
@@ -16,7 +17,8 @@ import styles from './Tooltip.module.css'
 export type TooltipVariant = 'plain' | 'rich'
 export type TooltipPlacement = 'top' | 'bottom'
 
-export interface TooltipProps {
+export interface TooltipProps
+  extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
   /** The trigger element (a single focusable/hoverable element). */
   children: ReactElement
   /** Plain style or rich (with subhead + action). @default 'plain' */
@@ -66,6 +68,9 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     defaultOpen = false,
     open,
     onOpenChange,
+    className,
+    onKeyDown,
+    ...rest
   },
   ref,
 ) {
@@ -101,6 +106,7 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
   })
 
   const handleKeyDown = (event: KeyboardEvent<HTMLSpanElement>) => {
+    onKeyDown?.(event)
     if (event.key === 'Escape' && isOpen) {
       setOpen(false)
     }
@@ -108,8 +114,9 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
 
   return (
     <span
+      {...rest}
       ref={ref}
-      className={styles.wrapper}
+      className={clsx(styles.wrapper, className)}
       onKeyDown={handleKeyDown}
     >
       {trigger}
