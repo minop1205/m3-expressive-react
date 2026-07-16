@@ -30,7 +30,7 @@ export const Standard: Story = {
 
 export const Modal: Story = {
   render: () => {
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(true)
     const [value, setValue] = useState('inbox')
     return (
       <div style={{ padding: 24 }}>

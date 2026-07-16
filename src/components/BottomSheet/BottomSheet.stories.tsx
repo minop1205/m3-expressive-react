@@ -16,7 +16,7 @@ type Story = StoryObj<typeof meta>
 
 export const Default: Story = {
   render: () => {
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(true)
     return (
       <div style={{ padding: 24 }}>
         <Button onClick={() => setOpen(true)}>Open sheet</Button>
