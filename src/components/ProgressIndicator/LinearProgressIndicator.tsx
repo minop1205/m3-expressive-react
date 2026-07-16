@@ -78,6 +78,8 @@ const WAVY_INDETERMINATE_SPEED_PER_MS = WAVY_INDETERMINATE_WAVELENGTH / 1000
 const PROGRESS_TRANSITION_DURATION_MS = 600
 const AMPLITUDE_TRANSITION_DURATION_MS = 500
 const LINEAR_INDETERMINATE_DURATION_MS = 1750
+/** Static frame shown under prefers-reduced-motion (mid first-line sweep). */
+const LINEAR_INDETERMINATE_FROZEN_TIME_MS = 600
 const FIRST_LINE_HEAD_DURATION_MS = 1000
 const FIRST_LINE_TAIL_DURATION_MS = 1000
 const SECOND_LINE_HEAD_DURATION_MS = 850
@@ -503,6 +505,13 @@ export const LinearProgressIndicator = forwardRef<
       setWavyPhase(0)
       return
     }
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduce) {
+      setWavyPhase(0)
+      return
+    }
 
     let animationFrame = 0
     let previousTime: number | undefined
@@ -541,6 +550,14 @@ export const LinearProgressIndicator = forwardRef<
   useEffect(() => {
     if (!indeterminate) {
       setIndeterminateCycleTime(0)
+      return
+    }
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduce) {
+      // Freeze mid first-line sweep so a bar stays visible.
+      setIndeterminateCycleTime(LINEAR_INDETERMINATE_FROZEN_TIME_MS)
       return
     }
 

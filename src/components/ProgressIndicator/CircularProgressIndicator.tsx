@@ -437,6 +437,13 @@ export const CircularProgressIndicator = forwardRef<
       setWavyPhase(0)
       return
     }
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduce) {
+      setWavyPhase(0)
+      return
+    }
 
     let animationFrame = 0
     let previousTime: number | undefined
@@ -473,6 +480,14 @@ export const CircularProgressIndicator = forwardRef<
   useEffect(() => {
     if (!indeterminate || !wavy) {
       setIndeterminateCycleTime(0)
+      return
+    }
+    const reduce =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    if (reduce) {
+      // Freeze mid-cycle so a visible arc is shown.
+      setIndeterminateCycleTime(INDETERMINATE_DURATION_MS * 0.3)
       return
     }
 
