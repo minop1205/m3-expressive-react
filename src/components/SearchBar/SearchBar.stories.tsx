@@ -25,6 +25,10 @@ export const WithTrailingIcon: Story = {
   args: { trailingIcon: <Mic /> },
 }
 
+export const Disabled: Story = {
+  args: { disabled: true, trailingIcon: <Mic /> },
+}
+
 export const SearchView: Story = {
   render: (args) => (
     <div style={{ maxWidth: 720 }}>
