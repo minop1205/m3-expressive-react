@@ -15,6 +15,8 @@ import {
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
+import { Ripple } from '../../primitives/Ripple/Ripple'
+import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import styles from './Menu.module.css'
 
 interface MenuContextValue {
@@ -273,6 +275,8 @@ export const MenuItem = forwardRef<HTMLButtonElement, MenuItemProps>(
             {trailingIcon}
           </span>
         )}
+        {!disabled && <Ripple />}
+        {!disabled && <FocusRing />}
       </button>
     )
   },
