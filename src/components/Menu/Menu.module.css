@@ -60,19 +60,12 @@
   font-weight: var(--md-sys-typescale-label-large-weight);
   line-height: var(--md-sys-typescale-label-large-line-height);
   letter-spacing: var(--md-sys-typescale-label-large-tracking);
-}
 
-.item:hover:not([aria-disabled='true'])::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-color: var(--md-sys-color-on-surface);
-  opacity: var(--md-sys-state-hover-state-layer-opacity, 0.08);
-}
-
-.item:focus-visible {
-  outline: 2px solid var(--md-sys-color-secondary);
-  outline-offset: -2px;
+  /* Hover/pressed state layers come from the Ripple primitive; the focus
+     indicator from FocusRing (spec: 3dp secondary ring, offset -3dp so it
+     stays inside the popup). */
+  --md-ripple-color: var(--md-sys-color-on-surface);
+  --md-focus-ring-offset: -3px;
 }
 
 .item[aria-disabled='true'] {
@@ -82,6 +75,8 @@
 }
 
 .label {
+  position: relative;
+  z-index: 1;
   flex: 1 1 auto;
   min-width: 0;
   white-space: nowrap;
@@ -91,6 +86,8 @@
 
 .leading,
 .trailing {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
