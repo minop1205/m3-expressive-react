@@ -41,3 +41,7 @@ jobs:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
           exitZeroOnChanges: true
           autoAcceptChanges: "(main|develop)"
+          # TurboSnap: only snapshot stories affected by the changed files.
+          # Requires full git history (fetch-depth: 0 above). Global inputs
+          # (.storybook/*, src/styles/*, lockfile) still trigger full builds.
+          onlyChanged: true
