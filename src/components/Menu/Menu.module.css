@@ -24,18 +24,47 @@
   background-color: var(--md-sys-color-surface-container);
   color: var(--md-sys-color-on-surface);
   box-shadow: var(--md-sys-elevation-shadow-level2);
+
+  /* Open/close motion ≈ Compose DropdownMenu: scale 0.8→1 (FastSpatial,
+     standard scheme 0.9/1400 ≈ 150ms with no visible bounce) + fade
+     (FastEffects 1.0/3800 ≈ 80ms), growing from the anchored top corner.
+     Exit relies on `transition-behavior: allow-discrete`; browsers without
+     it (or @starting-style) fall back to instant show/hide. */
+  opacity: 0;
+  transform: scale(0.8);
+  transition:
+    opacity 80ms linear,
+    transform 150ms var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    display 150ms allow-discrete;
 }
 
 .menu[data-open] {
   display: flex;
+  opacity: 1;
+  transform: none;
+}
+
+@starting-style {
+  .menu[data-open] {
+    opacity: 0;
+    transform: scale(0.8);
+  }
 }
 
 .menu[data-align='start'] {
   inset-inline-start: 0;
+  transform-origin: top left;
 }
 
 .menu[data-align='end'] {
   inset-inline-end: 0;
+  transform-origin: top right;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu {
+    transition: none;
+  }
 }
 
 .item {
