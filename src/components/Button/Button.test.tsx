@@ -91,6 +91,44 @@ describe('Button', () => {
     expect(screen.getByRole('button')).toHaveAttribute('data-selected', 'true')
   })
 
+  it('keeps the resting shape for non-toggle buttons', () => {
+    render(<Button shape="square">Plain</Button>)
+    expect(screen.getByRole('button')).toHaveAttribute('data-shape-state', 'square')
+  })
+
+  it('swaps the shape when a toggle button is selected (round → square)', async () => {
+    const user = userEvent.setup()
+    render(<Button toggle>Bold</Button>)
+    const btn = screen.getByRole('button')
+    expect(btn).toHaveAttribute('data-shape-state', 'round')
+    await user.click(btn)
+    expect(btn).toHaveAttribute('data-shape-state', 'square')
+  })
+
+  it('swaps a square toggle button to round when selected', () => {
+    render(
+      <Button toggle selected shape="square">
+        Bold
+      </Button>,
+    )
+    expect(screen.getByRole('button')).toHaveAttribute('data-shape-state', 'round')
+  })
+
+  it('does not change state when controlled selected is fixed', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <Button toggle selected={false} onChange={onChange}>
+        Bold
+      </Button>,
+    )
+    const btn = screen.getByRole('button')
+    await user.click(btn)
+    expect(onChange).toHaveBeenCalledWith(true)
+    expect(btn).toHaveAttribute('aria-pressed', 'false')
+    expect(btn).toHaveAttribute('data-shape-state', 'round')
+  })
+
   it('forwards a ref to the underlying button', () => {
     const ref = { current: null as HTMLButtonElement | null }
     render(<Button ref={ref}>Ref</Button>)

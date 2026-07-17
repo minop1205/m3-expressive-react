@@ -51,12 +51,24 @@
   --md-ripple-color: var(--_state-layer-color);
   --md-focus-ring-color: var(--md-sys-color-secondary);
 
-  /* Spring-like overshoot on the shape morph for the Expressive "squish". */
+  /* Press morph ≈ spec spring (damping 0.9 / stiffness 1400 → ~150ms with no
+     visible bounce; Compose regular buttons use the equally bounce-free
+     DefaultEffects). Toggle buttons override these vars below with the
+     springy FastSpatial-like curve. */
+  --_shape-morph-duration: var(--md-sys-motion-duration-short3, 150ms);
+  --_shape-morph-easing: var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
   transition:
     box-shadow var(--md-sys-motion-duration-short3, 150ms)
       var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
-    border-radius var(--md-sys-motion-duration-medium1, 250ms)
-      cubic-bezier(0.34, 1.4, 0.5, 1);
+    border-radius var(--_shape-morph-duration) var(--_shape-morph-easing);
+}
+
+/* Toggle buttons morph with a springy overshoot for both press and
+   selected-shape changes (Compose FastSpatial, Expressive scheme:
+   damping 0.6 / stiffness 800). data-selected exists only in toggle mode. */
+.button[data-selected] {
+  --_shape-morph-duration: var(--md-sys-motion-duration-medium3, 350ms);
+  --_shape-morph-easing: cubic-bezier(0.34, 1.4, 0.5, 1);
 }
 
 /* Expanded 48dp touch target without changing visual height. */
@@ -70,7 +82,9 @@
   transform: translateY(-50%);
 }
 
-.button[data-shape='square'] {
+/* data-shape-state is resolved in JS: the shape prop, swapped when a toggle
+   button is selected (round ⇄ square). */
+.button[data-shape-state='square'] {
   border-radius: var(--_shape-square);
 }
 

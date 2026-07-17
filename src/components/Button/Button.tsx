@@ -83,6 +83,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     onClick?.(event)
   }
 
+  // Toggle buttons swap their resting shape when selected: round → square and
+  // square → round (Expressive). Resolved in JS to a single data-shape-state
+  // attribute; the pressed shape still wins via CSS :active.
+  const shapeState = toggle && isSelected ? (shape === 'round' ? 'square' : 'round') : shape
+
   return (
     <button
       ref={ref}
@@ -93,7 +98,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       aria-pressed={toggle ? isSelected : undefined}
       data-variant={variant}
       data-size={size}
-      data-shape={shape}
+      data-shape-state={shapeState}
       data-selected={toggle ? String(isSelected) : undefined}
       className={clsx(styles.button, className)}
     >
