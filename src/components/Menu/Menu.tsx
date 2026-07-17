@@ -8,8 +8,9 @@ import {
   useRef,
   useState,
   type ButtonHTMLAttributes,
-  type HTMLAttributes,
+  type KeyboardEvent,
   type MouseEvent,
+  type HTMLAttributes,
   type ReactElement,
   type ReactNode,
 } from 'react'
@@ -39,12 +40,22 @@ export interface MenuProps extends Omit<HTMLAttributes<HTMLDivElement>, 'childre
   align?: MenuAlign
 }
 
+/** How long a pause resets the typeahead buffer (APG-typical). */
+const TYPEAHEAD_RESET_MS = 500
+
 /**
  * Material Design 3 Menu (dropdown).
  *
  * Anchors a `role="menu"` popup to a trigger. SurfaceContainer container, 4dp
  * corners, elevation 2, 112–280dp wide, 8dp vertical padding — per Compose
- * MenuTokens. Closes on outside click, Escape, or item selection.
+ * MenuTokens. Closes on outside click, Escape, Tab-out, or item selection.
+ *
+ * Keyboard (WAI-ARIA APG menu-button pattern): Enter/Space/ArrowDown open and
+ * focus the first item (ArrowUp: the last); ArrowUp/Down cycle with wrap;
+ * Home/End jump; printable characters move focus by typeahead; Escape and
+ * item activation close and return focus to the trigger. Items use a roving
+ * tabindex (-1) so the closed/open menu never pollutes the page Tab order;
+ * disabled items are focusable but inert (`aria-disabled`).
  */
 export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   {
@@ -55,6 +66,7 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     onOpenChange,
     align = 'start',
     className,
+    onKeyDown,
     ...rest
   },
   ref,
@@ -63,11 +75,38 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   const isControlled = controlledOpen !== undefined
   const open = isControlled ? controlledOpen : uncontrolled
   const wrapperRef = useRef<HTMLSpanElement>(null)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  // Where to move focus once the menu opens ('last' for ArrowUp on the trigger).
+  const pendingFocus = useRef<'first' | 'last'>('first')
+  const typeahead = useRef({ buffer: '', at: 0 })
 
   const setOpen = (value: boolean) => {
     if (!isControlled) setUncontrolled(value)
     onOpenChange?.(value)
   }
+
+  // The trigger is always the wrapper's first element child; focusing it via
+  // the DOM avoids fragile ref-merging with a user-provided element.
+  const focusTrigger = () => {
+    const el = wrapperRef.current?.firstElementChild as HTMLElement | null
+    el?.focus()
+  }
+
+  const closeMenu = (restoreFocus: boolean) => {
+    setOpen(false)
+    if (restoreFocus) focusTrigger()
+  }
+
+  const getItems = () =>
+    Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])
+
+  useEffect(() => {
+    if (!open) return
+    const items = getItems()
+    const target = pendingFocus.current === 'last' ? items[items.length - 1] : items[0]
+    pendingFocus.current = 'first'
+    target?.focus()
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -76,42 +115,115 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
         setOpen(false)
       }
     }
-    const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
+    const onDocKeyDown = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') closeMenu(true)
     }
     document.addEventListener('mousedown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
+    document.addEventListener('keydown', onDocKeyDown)
     return () => {
       document.removeEventListener('mousedown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('keydown', onDocKeyDown)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
+  const handleMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    onKeyDown?.(event)
+    const items = getItems()
+    if (items.length === 0) return
+    const current = items.indexOf(document.activeElement as HTMLElement)
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault()
+        items[(current + 1) % items.length]?.focus()
+        return
+      case 'ArrowUp':
+        event.preventDefault()
+        items[(current - 1 + items.length) % items.length]?.focus()
+        return
+      case 'Home':
+        event.preventDefault()
+        items[0]?.focus()
+        return
+      case 'End':
+        event.preventDefault()
+        items[items.length - 1]?.focus()
+        return
+      case 'Tab':
+        // APG: Tab closes the menu and moves focus per the page's Tab order.
+        setOpen(false)
+        return
+    }
+
+    // Typeahead: printable characters move focus to the next matching item.
+    if (event.key.length === 1 && /\S/.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
+      const now = Date.now()
+      const state = typeahead.current
+      if (now - state.at > TYPEAHEAD_RESET_MS) state.buffer = ''
+      state.at = now
+      state.buffer += event.key.toLowerCase()
+      // A repeated single character cycles through matches; a growing buffer
+      // keeps matching from the focused item.
+      const searchFrom = state.buffer.length === 1 ? current + 1 : Math.max(current, 0)
+      for (let offset = 0; offset < items.length; offset++) {
+        const item = items[(searchFrom + offset + items.length) % items.length]
+        if ((item.textContent ?? '').trim().toLowerCase().startsWith(state.buffer)) {
+          item.focus()
+          return
+        }
+      }
+    }
+  }
+
   const child = Children.only(trigger) as ReactElement<{
     onClick?: (event: MouseEvent) => void
+    onKeyDown?: (event: KeyboardEvent) => void
   }>
   const triggerEl = cloneElement(child, {
     onClick: (event: MouseEvent) => {
       child.props.onClick?.(event)
       setOpen(!open)
     },
+    onKeyDown: (event: KeyboardEvent) => {
+      child.props.onKeyDown?.(event)
+      if (event.defaultPrevented) return
+      // Enter/Space open via the native click; the open effect focuses the
+      // first item. Arrow keys open with an explicit target.
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault()
+        pendingFocus.current = event.key === 'ArrowUp' ? 'last' : 'first'
+        if (open) {
+          const items = getItems()
+          ;(event.key === 'ArrowUp' ? items[items.length - 1] : items[0])?.focus()
+        } else {
+          setOpen(true)
+        }
+      }
+    },
     'aria-haspopup': 'menu',
     'aria-expanded': open,
   } as Partial<typeof child.props>)
+
+  const setMenuRef = (node: HTMLDivElement | null) => {
+    menuRef.current = node
+    if (typeof ref === 'function') ref(node)
+    else if (ref) ref.current = node
+  }
 
   return (
     <span ref={wrapperRef} className={styles.wrapper}>
       {triggerEl}
       <div
-        ref={ref}
+        ref={setMenuRef}
         {...rest}
         role="menu"
         data-open={open || undefined}
         data-align={align}
         className={clsx(styles.menu, className)}
+        onKeyDown={handleMenuKeyDown}
       >
-        <MenuContext.Provider value={{ close: () => setOpen(false) }}>
+        <MenuContext.Provider value={{ close: () => closeMenu(true) }}>
           {children}
         </MenuContext.Provider>
       </div>
@@ -138,9 +250,14 @@ export const MenuItem = forwardRef<HTMLButtonElement, MenuItemProps>(
         {...rest}
         type="button"
         role="menuitem"
-        disabled={disabled}
+        // Roving tabindex — the menu manages focus; items never join the page
+        // Tab order. Disabled items stay focusable but inert (APG guidance),
+        // so `aria-disabled` instead of the `disabled` attribute.
+        tabIndex={-1}
+        aria-disabled={disabled || undefined}
         className={clsx(styles.item, className)}
         onClick={(event) => {
+          if (disabled) return
           onClick?.(event)
           ctx?.close()
         }}

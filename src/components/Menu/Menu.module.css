@@ -62,7 +62,7 @@
   letter-spacing: var(--md-sys-typescale-label-large-tracking);
 }
 
-.item:hover:not(:disabled)::after {
+.item:hover:not([aria-disabled='true'])::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -75,7 +75,7 @@
   outline-offset: -2px;
 }
 
-.item:disabled {
+.item[aria-disabled='true'] {
   cursor: default;
   pointer-events: none;
   color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
@@ -100,8 +100,8 @@
   color: var(--md-sys-color-on-surface-variant);
 }
 
-.item:disabled .leading,
-.item:disabled .trailing {
+.item[aria-disabled='true'] .leading,
+.item[aria-disabled='true'] .trailing {
   color: inherit;
 }
 
