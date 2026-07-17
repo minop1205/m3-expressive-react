@@ -12,9 +12,12 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
+// Fixed dates keep snapshots idempotent. June 2026 matches the frozen clock in
+// .storybook/preview.tsx (Chromatic), so the today marker (15th) is visible
+// alongside the selection.
 export const Modal: Story = {
   render: () => {
-    const [date, setDate] = useState<Date | null>(new Date())
+    const [date, setDate] = useState<Date | null>(new Date(2026, 5, 10))
     return (
       <div>
         <DatePicker value={date} onChange={(d) => setDate(d as Date)} />
@@ -26,7 +29,7 @@ export const Modal: Story = {
 
 export const Range: Story = {
   render: () => {
-    const [range, setRange] = useState<DateRange>([null, null])
+    const [range, setRange] = useState<DateRange>([new Date(2026, 5, 5), new Date(2026, 5, 12)])
     return (
       <div>
         <DatePicker range value={range} onChange={(v) => setRange(v as DateRange)} />
