@@ -282,14 +282,18 @@
   --_state-layer-color: transparent;
 }
 
+/* Current spec: disabled container = on-surface 10% (m3.material.io 0.1,
+   Compose v0_11_0 tokens 0.10 — the classic 0.12 is outdated). */
 .button[data-variant='filled']:disabled,
 .button[data-variant='tonal']:disabled,
 .button[data-variant='elevated']:disabled {
-  --_container-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  --_container-color: color-mix(in srgb, var(--md-sys-color-on-surface) 10%, transparent);
 }
 
+/* Disabled outline keeps the outline-variant hue at container opacity
+   (Compose outlinedButtonBorder(enabled=false)). */
 .button[data-variant='outlined']:disabled {
-  --_outline-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  --_outline-color: color-mix(in srgb, var(--md-sys-color-outline-variant) 10%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
