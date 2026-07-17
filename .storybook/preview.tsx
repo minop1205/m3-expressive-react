@@ -1,6 +1,7 @@
 import type { Preview, Decorator } from '@storybook/react'
 import React from 'react'
 import isChromatic from 'chromatic/isChromatic'
+import MockDate from 'mockdate'
 // Roboto (Storybook preview only). Library consumers load Roboto themselves —
 // see README. Weights 400 (regular) / 500 (medium) are the only ones the
 // typescale tokens use.
@@ -30,6 +31,15 @@ if (isChromatic() && typeof window !== 'undefined') {
       dispatchEvent: mql.dispatchEvent.bind(mql),
     }
   }
+}
+
+// Freeze the clock in Chromatic captures. Components that read the real time
+// (DatePicker's today marker / default visible month) would otherwise produce
+// spurious diffs whenever the calendar date changes. Mid-month, mid-day to
+// stay clear of timezone and month boundaries. Keep in sync with the fixed
+// dates used in date-dependent stories.
+if (isChromatic()) {
+  MockDate.set(new Date(2026, 5, 15, 10, 30, 0))
 }
 
 const withTheme: Decorator = (Story, context) => {

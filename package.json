@@ -59,6 +59,7 @@
     "chromatic": "^17.5.0",
     "husky": "^9.1.7",
     "jsdom": "^25.0.0",
+    "mockdate": "^3.0.5",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "storybook": "^8.4.0",
