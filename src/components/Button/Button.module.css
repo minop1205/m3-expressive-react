@@ -110,9 +110,9 @@
 /* --------------------------------------------------------------------------- */
 .button[data-size='xs'] {
   --_height: 32px;
-  --_padding-leading: 16px;
-  --_padding-trailing: 16px;
-  --_icon-label-gap: 8px;
+  --_padding-leading: 12px;
+  --_padding-trailing: 12px;
+  --_icon-label-gap: 4px;
   --_icon-size: 20px;
   --_font-size: var(--md-sys-typescale-label-large-size);
   --_line-height: var(--md-sys-typescale-label-large-line-height);
