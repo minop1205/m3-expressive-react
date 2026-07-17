@@ -6,7 +6,9 @@ storybook-static
 coverage
 *.tsbuildinfo
 .playwright-mcp
-.claude/
+# Claude Code: personal state stays local; shared skills are tracked
+.claude/*
+!.claude/skills/
 .env
 .env.*
 src/components/**/*.mp4
