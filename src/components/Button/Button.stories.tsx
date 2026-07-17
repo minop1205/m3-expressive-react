@@ -93,6 +93,27 @@ export const Toggle: Story = {
   args: { size: 'md' },
 }
 
+/** Selected toggles swap their resting shape (round → square, square → round). */
+export const ToggleSelectedShapes: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Button {...args} toggle>
+        round
+      </Button>
+      <Button {...args} toggle defaultSelected>
+        round selected
+      </Button>
+      <Button {...args} toggle shape="square">
+        square
+      </Button>
+      <Button {...args} toggle shape="square" defaultSelected>
+        square selected
+      </Button>
+    </div>
+  ),
+  args: { size: 'md', variant: 'tonal' },
+}
+
 export const Disabled: Story = {
   render: (args) => (
     <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
