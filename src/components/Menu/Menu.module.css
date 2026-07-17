@@ -2,7 +2,7 @@
  * MD3 Menu (dropdown). Values from androidx.compose.material3 MenuTokens:
  * SurfaceContainer container, CornerExtraSmall (4dp), elevation Level2,
  * 112–280dp width, 8dp vertical padding; items 48dp, LabelLarge OnSurface,
- * OnSurfaceVariant 20dp leading/trailing icons, 12dp padding, disabled 0.38.
+ * OnSurfaceVariant 24dp leading/trailing icons (ListTokens.ItemLeading/TrailingIconSize), 12dp padding, disabled 0.38.
  */
 
 .wrapper {
@@ -95,8 +95,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   color: var(--md-sys-color-on-surface-variant);
 }
 
