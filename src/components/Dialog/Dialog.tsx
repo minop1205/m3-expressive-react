@@ -2,11 +2,13 @@ import {
   forwardRef,
   useEffect,
   useId,
+  useRef,
   type HTMLAttributes,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
 import { CloseIcon } from '../../internal/icons'
+import { assignRefs, useModal } from '../../internal/useModal'
 import styles from './Dialog.module.css'
 
 export interface DialogProps
@@ -41,6 +43,9 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
   ref,
 ) {
   const titleId = useId()
+  const rootRef = useRef<HTMLDivElement>(null)
+  const surfaceRef = useRef<HTMLDivElement | null>(null)
+  useModal({ active: open, rootRef, surfaceRef })
 
   useEffect(() => {
     if (!open) return
@@ -53,6 +58,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
 
   return (
     <div
+      ref={rootRef}
       className={styles.root}
       data-open={open || undefined}
       data-full-screen={fullScreen || undefined}
@@ -61,7 +67,8 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
         <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
       )}
       <div
-        ref={ref}
+        ref={(node) => assignRefs(node, surfaceRef, ref)}
+        tabIndex={-1}
         {...rest}
         role="dialog"
         aria-modal="true"

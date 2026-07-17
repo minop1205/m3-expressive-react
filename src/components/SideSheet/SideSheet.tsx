@@ -1,12 +1,14 @@
 import {
   forwardRef,
   useEffect,
+  useRef,
   type HTMLAttributes,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
 import { IconButton } from '../IconButton/IconButton'
 import { Divider } from '../Divider/Divider'
+import { assignRefs, useModal } from '../../internal/useModal'
 import styles from './SideSheet.module.css'
 
 export type SideSheetVariant = 'standard' | 'modal'
@@ -83,6 +85,10 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
     },
     ref,
   ) {
+    const rootRef = useRef<HTMLDivElement>(null)
+    const surfaceRef = useRef<HTMLDivElement | null>(null)
+    useModal({ active: variant === 'modal' && open, rootRef, surfaceRef })
+
     useEffect(() => {
       if (variant !== 'modal' || !open) return
       const handle = (event: globalThis.KeyboardEvent) => {
@@ -96,7 +102,8 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
 
     const panel = (
       <div
-        ref={ref}
+        ref={(node) => assignRefs(node, surfaceRef, ref)}
+        tabIndex={variant === 'modal' ? -1 : undefined}
         {...rest}
         data-variant={variant}
         data-anchor={anchor}
@@ -143,7 +150,12 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
     }
 
     return (
-      <div className={styles.modalRoot} data-open={open || undefined} data-anchor={anchor}>
+      <div
+        ref={rootRef}
+        className={styles.modalRoot}
+        data-open={open || undefined}
+        data-anchor={anchor}
+      >
         <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
         {panel}
       </div>
