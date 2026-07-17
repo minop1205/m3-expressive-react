@@ -61,6 +61,20 @@
   transform-origin: top right;
 }
 
+/* Flipped above the trigger when the viewport can't fit the menu below. */
+.menu[data-placement='above'] {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+
+.menu[data-align='start'][data-placement='above'] {
+  transform-origin: bottom left;
+}
+
+.menu[data-align='end'][data-placement='above'] {
+  transform-origin: bottom right;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .menu {
     transition: none;
