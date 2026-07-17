@@ -5,6 +5,7 @@ import {
   forwardRef,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ButtonHTMLAttributes,
@@ -43,6 +44,9 @@ export interface MenuProps extends Omit<HTMLAttributes<HTMLDivElement>, 'childre
 /** How long a pause resets the typeahead buffer (APG-typical). */
 const TYPEAHEAD_RESET_MS = 500
 
+/** Gap between the trigger and the menu (kept in sync with the CSS). */
+const ANCHOR_GAP_PX = 4
+
 /**
  * Material Design 3 Menu (dropdown).
  *
@@ -76,6 +80,7 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   const open = isControlled ? controlledOpen : uncontrolled
   const wrapperRef = useRef<HTMLSpanElement>(null)
   const menuRef = useRef<HTMLDivElement | null>(null)
+  const [placement, setPlacement] = useState<'below' | 'above'>('below')
   // Where to move focus once the menu opens ('last' for ArrowUp on the trigger).
   const pendingFocus = useRef<'first' | 'last'>('first')
   const typeahead = useRef({ buffer: '', at: 0 })
@@ -99,6 +104,24 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
 
   const getItems = () =>
     Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])
+
+  // Collision handling (Compose falls back Below → Above): before paint,
+  // flip above the trigger when the space below can't fit the menu and the
+  // space above is larger.
+  useLayoutEffect(() => {
+    if (!open) {
+      setPlacement('below')
+      return
+    }
+    const anchor = wrapperRef.current?.getBoundingClientRect()
+    const menuHeight = menuRef.current?.offsetHeight ?? 0
+    if (!anchor) return
+    const spaceBelow = window.innerHeight - anchor.bottom
+    const spaceAbove = anchor.top
+    setPlacement(
+      spaceBelow < menuHeight + ANCHOR_GAP_PX && spaceAbove > spaceBelow ? 'above' : 'below',
+    )
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -220,6 +243,7 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
         role="menu"
         data-open={open || undefined}
         data-align={align}
+        data-placement={placement}
         className={clsx(styles.menu, className)}
         onKeyDown={handleMenuKeyDown}
       >

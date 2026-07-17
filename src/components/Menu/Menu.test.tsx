@@ -153,6 +153,36 @@ describe('Menu', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'true') // still open
   })
 
+  it('opens below by default', async () => {
+    const user = userEvent.setup()
+    render(<Example />)
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    expect(screen.getByRole('menu')).toHaveAttribute('data-placement', 'below')
+  })
+
+  it('flips above the trigger when there is no space below', async () => {
+    const user = userEvent.setup()
+    render(<Example />)
+    const trigger = screen.getByRole('button', { name: 'Open' })
+    const wrapper = trigger.parentElement as HTMLElement
+    // Anchor near the viewport bottom (jsdom window.innerHeight = 768).
+    vi.spyOn(wrapper, 'getBoundingClientRect').mockReturnValue({
+      top: 700,
+      bottom: 730,
+      left: 0,
+      right: 100,
+      width: 100,
+      height: 30,
+      x: 0,
+      y: 700,
+      toJSON: () => ({}),
+    } as DOMRect)
+    const menu = screen.getByRole('menu', { hidden: true })
+    Object.defineProperty(menu, 'offsetHeight', { value: 200, configurable: true })
+    await user.click(trigger)
+    expect(menu).toHaveAttribute('data-placement', 'above')
+  })
+
   it('has no axe violations when open', async () => {
     const user = userEvent.setup()
     const { container } = render(<Example />)
