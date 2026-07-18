@@ -55,11 +55,11 @@
      visible bounce; Compose regular buttons use the equally bounce-free
      DefaultEffects). Toggle buttons override these vars below with the
      springy FastSpatial-like curve. */
-  --_shape-morph-duration: var(--md-sys-motion-duration-short3, 150ms);
-  --_shape-morph-easing: var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  --_shape-morph-duration: var(--md-sys-motion-duration-short3);
+  --_shape-morph-easing: var(--md-sys-motion-easing-standard);
   transition:
-    box-shadow var(--md-sys-motion-duration-short3, 150ms)
-      var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    box-shadow var(--md-sys-motion-duration-short3)
+      var(--md-sys-motion-easing-standard),
     border-radius var(--_shape-morph-duration) var(--_shape-morph-easing);
 }
 
@@ -67,7 +67,7 @@
    selected-shape changes (Compose FastSpatial, Expressive scheme:
    damping 0.6 / stiffness 800). data-selected exists only in toggle mode. */
 .button[data-selected] {
-  --_shape-morph-duration: var(--md-sys-motion-duration-medium3, 350ms);
+  --_shape-morph-duration: var(--md-sys-motion-duration-medium3);
   --_shape-morph-easing: cubic-bezier(0.34, 1.4, 0.5, 1);
 }
 

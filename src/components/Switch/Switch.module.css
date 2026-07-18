@@ -15,7 +15,7 @@
   flex-shrink: 0;
   width: 52px;
   height: 32px;
-  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  border-radius: var(--md-sys-shape-corner-full);
   cursor: pointer;
   outline: none;
   -webkit-tap-highlight-color: transparent;
@@ -126,15 +126,15 @@
 /* Handle                                                                      */
 /* =========================================================================== */
 .handle {
-  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  border-radius: var(--md-sys-shape-corner-full);
   height: 16px;
   width: 16px;
   transform-origin: center;
   transition-property: height, width;
   transition-duration: 250ms, 250ms;
   transition-timing-function:
-    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
-    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+    var(--md-sys-motion-easing-standard),
+    var(--md-sys-motion-easing-standard);
   z-index: 0;
   position: relative;
   display: flex;
@@ -218,11 +218,11 @@
   position: absolute;
   width: 40px;
   height: 40px;
-  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  border-radius: var(--md-sys-shape-corner-full);
   pointer-events: none;
   opacity: 0;
-  transition: opacity var(--md-sys-motion-duration-short3, 150ms)
-    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  transition: opacity var(--md-sys-motion-duration-short3)
+    var(--md-sys-motion-easing-standard);
 }
 
 /* Unselected: on-surface state layer */
@@ -237,12 +237,12 @@
 
 /* Hover */
 .switch:not(.disabled):has(.input:hover) .stateLayer {
-  opacity: var(--md-sys-state-hover-state-layer-opacity, 0.08);
+  opacity: var(--md-sys-state-hover-state-layer-opacity);
 }
 
 /* Pressed */
 .switch:not(.disabled):has(.input:active) .stateLayer {
-  opacity: var(--md-sys-state-pressed-state-layer-opacity, 0.10);
+  opacity: var(--md-sys-state-pressed-state-layer-opacity);
 }
 
 /* Disabled — no state layer */
@@ -271,7 +271,7 @@
   transition:
     fill 67ms linear,
     opacity 33ms linear,
-    transform 167ms var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+    transform 167ms var(--md-sys-motion-easing-standard);
   opacity: 0;
 }
 
@@ -335,7 +335,7 @@
   --_width: var(--md-focus-ring-width, 3px);
   --_active-width: var(--md-focus-ring-active-width, 8px);
   --_offset: var(--md-focus-ring-offset, 2px);
-  --_color: var(--md-focus-ring-color, var(--md-sys-color-secondary, #625b71));
+  --_color: var(--md-focus-ring-color, var(--md-sys-color-secondary));
   --_duration: var(--md-focus-ring-duration, 600ms);
 }
 

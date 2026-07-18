@@ -32,7 +32,7 @@
   width: var(--_item-w, 260px);
   height: var(--_item-h, 200px);
   overflow: hidden;
-  border-radius: var(--md-sys-shape-corner-extra-large, 28px);
+  border-radius: var(--md-sys-shape-corner-extra-large);
   background-color: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface);
   scroll-snap-align: start;
@@ -40,8 +40,8 @@
   transform: scale(var(--_mask-scale, 1));
   opacity: var(--_mask-opacity, 1);
   transition:
-    transform var(--md-sys-motion-duration-short2, 100ms) linear,
-    opacity var(--md-sys-motion-duration-short2, 100ms) linear;
+    transform var(--md-sys-motion-duration-short2) linear,
+    opacity var(--md-sys-motion-duration-short2) linear;
 }
 
 .item > img {

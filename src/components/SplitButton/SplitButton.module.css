@@ -12,7 +12,7 @@
   gap: 2px;
   vertical-align: middle;
 
-  --_inner: var(--md-sys-shape-corner-small, 8px);
+  --_inner: var(--md-sys-shape-corner-small);
   --_outer: calc(var(--_height) / 2);
 }
 
@@ -51,9 +51,9 @@
   --md-focus-ring-color: var(--md-sys-color-secondary);
 
   transition:
-    box-shadow var(--md-sys-motion-duration-short3, 150ms)
-      var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
-    border-radius var(--md-sys-motion-duration-medium1, 250ms)
+    box-shadow var(--md-sys-motion-duration-short3)
+      var(--md-sys-motion-easing-standard),
+    border-radius var(--md-sys-motion-duration-medium1)
       cubic-bezier(0.34, 1.4, 0.5, 1);
 }
 
@@ -94,8 +94,8 @@
   justify-content: center;
   width: var(--_trailing-icon);
   height: var(--_trailing-icon);
-  transition: transform var(--md-sys-motion-duration-medium1, 250ms)
-    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  transition: transform var(--md-sys-motion-duration-medium1)
+    var(--md-sys-motion-easing-standard);
 }
 
 .split[data-open] .chevron {

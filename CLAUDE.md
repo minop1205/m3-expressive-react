@@ -87,7 +87,10 @@ Reference tokens → System tokens (--md-sys-*) → Component tokens (--_*)
 - Name component tokens after Compose's `part.property` structure —
   `--_container-color`, `--_label-text-color`, `--_container-shape`,
   `--_state-layer-color`, etc. (the `md.comp.*` layer)
-- System tokens referenced as `var(--md-sys-*, <fallback>)`
+- System tokens referenced as bare `var(--md-sys-*)` — **no fallbacks**
+  (`src/styles/tokens.css` + `typescale.css` are required dependencies; a
+  `lint:tokens` check in CI rejects new fallbacks). Private `--_*` and
+  `--md-ripple-*`/`--md-focus-ring-*` vars may keep contract defaults.
 - Shape morph: use `calc(var(--_height) / 2)` for round (not `9999px`)
 - Spring-like easing: `cubic-bezier(0.34, 1.4, 0.5, 1)` for border-radius transitions
 - `outline: none` on interactive components (FocusRing provides the accessible indicator)
