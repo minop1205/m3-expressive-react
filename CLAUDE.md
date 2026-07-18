@@ -41,15 +41,20 @@ components / variants exist are taken first from Compose.
 
 ### Known spec differences
 
-| Token / property               | m3.material.io / spec      | Compose (`androidx.compose.material3`) |
-| ------------------------------ | -------------------------- | -------------------------------------- |
-| Outlined variant border color  | `outline-variant`          | `outline` (material-web)               |
-| State-layer opacity (focus)    | `0.12`                     | `0.10` (`StateTokens.FocusStateLayerOpacity`) |
-| State-layer opacity (pressed)  | `0.12`                     | `0.10` (`StateTokens.PressedStateLayerOpacity`) |
+State-layer opacities: hover `0.08` / focus `0.10` / pressed `0.10` / dragged
+`0.16` — the current m3.material.io token tables and Compose `StateTokens`
+agree on these (the old `0.12` guidance is obsolete). Outlined border color is
+`outline-variant` per current spec and Compose (material-web's `outline` is the
+legacy value). Notes for auditing:
 
-We follow the Compose values: hover `0.08` / focus `0.10` / pressed `0.10` /
-dragged `0.16`. The outlined-border-color row applies to Button, IconButton, and
-likely other outlined components.
+- m3.material.io token tables mark deprecated values with a warning icon —
+  when a site value disagrees with current Compose, suspect the site row's
+  freshness before assuming a real difference.
+- Compose token files sometimes disagree with the shipped `*Defaults` values
+  (TODO-flagged overrides, flag-gated fixes). Always read both; record which
+  one a decision follows.
+- When m3.material.io and Compose genuinely conflict, follow the spec priority
+  above and record the ruling in the component's `docs/audits/` report.
 
 ## API Design Policy
 
@@ -62,9 +67,10 @@ the reference for *what* to build, but the *public API* is Web-idiomatic.
 - **Public props follow Web / MUI idioms**: `onClick`, `children`, `startIcon` /
   `endIcon`, `disabled`, `size`, `color`, standard HTML attributes, and
   controlled/uncontrolled patterns. **Avoid Compose-only prop shapes** such as
-  `colors` / `elevation` / `contentPadding` objects or `onPress`. react-aria hooks
-  (`useButton`, `useSwitch`, …) may be used internally, but the exposed handler is
-  `onClick`.
+  `colors` / `elevation` / `contentPadding` objects or `onPress`. Behavior is
+  built on native elements (`<button>`, `<input>`) plus the shared primitives
+  and internal hooks (`Ripple`, `FocusRing`, `useModal`) — no external a11y
+  framework. The exposed handler is `onClick`.
 - **Compose governs behavior, appearance, defaults, tokens, and which
   components / variants exist — NOT the public prop shape.**
 
@@ -89,17 +95,23 @@ Reference tokens → System tokens (--md-sys-*) → Component tokens (--_*)
   `--_state-layer-color`, etc. (the `md.comp.*` layer)
 - System tokens referenced as `var(--md-sys-*, <fallback>)`
 - Shape morph: use `calc(var(--_height) / 2)` for round (not `9999px`)
-- Spring-like easing: `cubic-bezier(0.34, 1.4, 0.5, 1)` for border-radius transitions
+- Springy easing `cubic-bezier(0.34, 1.4, 0.5, 1)` only where Compose uses a
+  bouncy spring (e.g. toggle shape morphs); plain press morphs use ~150ms
+  standard easing (see docs/audits/button.md B5)
 - `outline: none` on interactive components (FocusRing provides the accessible indicator)
 
 ## Component Conventions
 
-- `forwardRef` with `useButton` (react-aria) for press handling
+- `forwardRef` + native elements for behavior: `<button>` for press,
+  `<input type="checkbox|radio|range">` (visually hidden, oversized) for
+  selection controls; shared primitives `Ripple`/`FocusRing` for states and
+  `src/internal/useModal` for modal overlays — no external a11y framework
 - Props interface extends `Omit<ButtonHTMLAttributes, ...>` to avoid type conflicts
 - `data-variant`, `data-size`, etc. for CSS styling hooks
 - Controlled + uncontrolled patterns for stateful props (e.g. toggle `selected`)
 - Shape state resolved in JS → single `data-shape-state` attribute for clean CSS precedence
-- 48dp minimum touch target via `::before` pseudo-element
+- 48dp minimum touch target — via `::before` on button-like hosts, or by
+  oversizing the invisible native input on selection controls
 - Storybook `title` is flat — `Components/<Name>` (no per-variant hierarchy; each
   component's variants/sizes/states are exercised within its own stories)
 

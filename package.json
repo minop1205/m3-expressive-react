@@ -37,8 +37,7 @@
   },
   "dependencies": {
     "@material/material-color-utilities": "^0.3.0",
-    "clsx": "^2.1.1",
-    "react-aria": "^3.33.0"
+    "clsx": "^2.1.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.2",
