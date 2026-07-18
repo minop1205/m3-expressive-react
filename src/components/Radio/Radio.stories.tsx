@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { fn } from '@storybook/test'
 import { Radio } from './Radio'
+import { RadioGroup as RadioGroupComponent } from './RadioGroup'
 
 const meta = {
   title: 'Components/Radio',
@@ -72,7 +73,7 @@ export const Disabled: Story = {
   ),
 }
 
-export const RadioGroup: Story = {
+export const ManualNameGroup: Story = {
   render: ({ onChange: onChangeProp, ...args }) => {
     const [selected, setSelected] = useState('option1')
     const handleChange = useCallback(
@@ -108,4 +109,25 @@ export const RadioGroup: Story = {
       </div>
     )
   },
+}
+
+export const Grouped: Story = {
+  render: () => (
+    <RadioGroupComponent aria-label="Notification frequency" defaultValue="daily">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {(
+          [
+            ['realtime', 'Realtime'],
+            ['daily', 'Daily digest'],
+            ['weekly', 'Weekly digest'],
+          ] as const
+        ).map(([value, label]) => (
+          <label key={value} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Radio value={value} />
+            {label}
+          </label>
+        ))}
+      </div>
+    </RadioGroupComponent>
+  ),
 }
