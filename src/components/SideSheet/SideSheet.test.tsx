@@ -132,3 +132,28 @@ describe('SideSheet modal behavior (useModal)', () => {
     expect(document.body.style.overflow).not.toBe('hidden')
   })
 })
+
+describe('SideSheet accessible name', () => {
+  it('uses the visible headline as the accessible name', () => {
+    render(
+      <SideSheet variant="modal" open headline="Filters">
+        Body
+      </SideSheet>,
+    )
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('Filters')
+  })
+
+  it('falls back to a generic name without a headline', () => {
+    render(
+      <SideSheet variant="modal" open showCloseButton={false}>
+        Body
+      </SideSheet>,
+    )
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('Side sheet')
+  })
+
+  it('labels the standard complementary landmark with its headline', () => {
+    render(<SideSheet variant="standard" headline="Details">Body</SideSheet>)
+    expect(screen.getByRole('complementary')).toHaveAccessibleName('Details')
+  })
+})

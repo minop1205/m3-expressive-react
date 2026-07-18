@@ -35,6 +35,13 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
     const surfaceRef = useRef<HTMLDivElement | null>(null)
     useModal({ active: open, rootRef, surfaceRef })
 
+    // The sheet has no title slot, so default the accessible name (consumer
+    // aria props win) — Compose sets a "Bottom Sheet" paneTitle.
+    const restAriaLabel = (rest as Record<string, unknown>)['aria-label'] as string | undefined
+    const restLabelledby = (rest as Record<string, unknown>)['aria-labelledby'] as
+      | string
+      | undefined
+
     useEffect(() => {
       if (!open) return
       const handle = (event: globalThis.KeyboardEvent) => {
@@ -53,6 +60,7 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
           {...rest}
           role="dialog"
           aria-modal="true"
+          aria-label={restLabelledby == null ? (restAriaLabel ?? 'Bottom sheet') : restAriaLabel}
           className={clsx(styles.sheet, className)}
         >
           {showDragHandle && (

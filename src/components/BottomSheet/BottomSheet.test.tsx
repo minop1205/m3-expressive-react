@@ -110,3 +110,15 @@ describe('BottomSheet modal behavior (useModal)', () => {
     expect(outside.closest('[inert]')).toBeNull()
   })
 })
+
+describe('BottomSheet accessible name', () => {
+  it('falls back to a generic name', () => {
+    render(<BottomSheet open>Body</BottomSheet>)
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('Bottom sheet')
+  })
+
+  it('prefers a consumer aria-label', () => {
+    render(<BottomSheet open aria-label="Share options">Body</BottomSheet>)
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('Share options')
+  })
+})

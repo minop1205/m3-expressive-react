@@ -47,6 +47,14 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
   const surfaceRef = useRef<HTMLDivElement | null>(null)
   useModal({ active: open, rootRef, surfaceRef })
 
+  // Never ship an unnamed dialog (Compose always sets a paneTitle): the title
+  // labels it when present, consumer-supplied aria props win, and a generic
+  // fallback covers the rest.
+  const restAriaLabel = (rest as Record<string, unknown>)['aria-label'] as string | undefined
+  const restLabelledby = (rest as Record<string, unknown>)['aria-labelledby'] as
+    | string
+    | undefined
+
   useEffect(() => {
     if (!open) return
     const handle = (event: globalThis.KeyboardEvent) => {
@@ -72,7 +80,10 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
         {...rest}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={title != null ? titleId : undefined}
+        aria-labelledby={title != null ? titleId : restLabelledby}
+        aria-label={
+          title == null && restLabelledby == null ? (restAriaLabel ?? 'Dialog') : restAriaLabel
+        }
         data-has-icon={icon != null || undefined}
         data-full-screen={fullScreen || undefined}
         className={clsx(styles.dialog, className)}
