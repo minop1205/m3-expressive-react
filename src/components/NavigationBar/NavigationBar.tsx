@@ -5,6 +5,7 @@ import {
   type ButtonHTMLAttributes,
   type HTMLAttributes,
   type ReactNode,
+  useState,
 } from 'react'
 import clsx from 'clsx'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
@@ -22,10 +23,12 @@ const NavContext = createContext<NavContextValue | null>(null)
 
 export interface NavigationBarProps
   extends Omit<HTMLAttributes<HTMLElement>, 'onChange'> {
-  /** The selected destination value. */
-  value: string
+  /** Controlled selected destination value. */
+  value?: string
+  /** Uncontrolled initial destination value. */
+  defaultValue?: string
   /** Fires with the newly selected destination value. */
-  onChange: (value: string) => void
+  onChange?: (value: string) => void
   /** Item layout: icon over label (`vertical`) or beside it (`horizontal`, flexible). @default 'vertical' */
   itemLayout?: NavigationItemLayout
   children?: ReactNode
@@ -41,11 +44,19 @@ export interface NavigationBarProps
  */
 export const NavigationBar = forwardRef<HTMLElement, NavigationBarProps>(
   function NavigationBar(
-    { value, onChange, itemLayout = 'vertical', className, children, ...rest },
+    { value, defaultValue, onChange, itemLayout = 'vertical', className, children, ...rest },
     ref,
   ) {
+    const isControlled = value !== undefined
+    const [uncontrolled, setUncontrolled] = useState(defaultValue ?? '')
+    const current = isControlled ? value : uncontrolled
+    const handleChange = (v: string) => {
+      if (!isControlled) setUncontrolled(v)
+      onChange?.(v)
+    }
+
     return (
-      <NavContext.Provider value={{ value, onChange, layout: itemLayout }}>
+      <NavContext.Provider value={{ value: current, onChange: handleChange, layout: itemLayout }}>
         <nav
           ref={ref}
           {...rest}

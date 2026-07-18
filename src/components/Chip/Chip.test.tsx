@@ -152,3 +152,16 @@ describe('Chip', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 })
+
+describe('Chip uncontrolled selection', () => {
+  it('toggles from defaultSelected without a selected prop', async () => {
+    const user = userEvent.setup()
+    const onSelectionChange = vi.fn()
+    render(<Chip variant="filter" label="Tag" defaultSelected onSelectionChange={onSelectionChange} />)
+    const chip = screen.getByRole('button', { name: /Tag/ })
+    expect(chip).toHaveAttribute('aria-pressed', 'true')
+    await user.click(chip)
+    expect(chip).toHaveAttribute('aria-pressed', 'false')
+    expect(onSelectionChange).toHaveBeenCalledWith(false)
+  })
+})

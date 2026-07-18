@@ -35,6 +35,8 @@ export interface SplitButtonProps
   menuAlign?: MenuAlign
   /** Controlled menu open state. */
   open?: boolean
+  /** Uncontrolled initial open state. @default false */
+  defaultOpen?: boolean
   /** Notified when the menu open state changes. */
   onOpenChange?: (open: boolean) => void
   /** Accessible label for the trailing menu button. @default 'More options' */
@@ -61,6 +63,7 @@ export const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
       menu,
       menuAlign = 'end',
       open: controlledOpen,
+      defaultOpen = false,
       onOpenChange,
       trailingAriaLabel = 'More options',
       disabled = false,
@@ -71,7 +74,7 @@ export const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
     ref,
   ) {
     const isControlled = controlledOpen !== undefined
-    const [uncontrolled, setUncontrolled] = useState(false)
+    const [uncontrolled, setUncontrolled] = useState(defaultOpen)
     const open = isControlled ? controlledOpen : uncontrolled
     const setOpen = (value: boolean) => {
       if (!isControlled) setUncontrolled(value)

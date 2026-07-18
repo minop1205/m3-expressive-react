@@ -79,3 +79,10 @@ describe('SplitButton', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 })
+
+describe('SplitButton uncontrolled open', () => {
+  it('renders the menu open with defaultOpen', () => {
+    render(<SplitButton defaultOpen menu={<MenuItem>Item</MenuItem>}>Send</SplitButton>)
+    expect(screen.getByRole('menuitem', { name: 'Item' })).toBeVisible()
+  })
+})

@@ -62,3 +62,19 @@ describe('NavigationBar', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 })
+
+describe('NavigationBar uncontrolled mode', () => {
+  it('selects via defaultValue and updates on click without value', async () => {
+    const user = userEvent.setup()
+    render(
+      <NavigationBar aria-label="Main" defaultValue="home">
+        <NavigationBarItem value="home" icon={<svg aria-hidden="true" />} label="Home" />
+        <NavigationBarItem value="mail" icon={<svg aria-hidden="true" />} label="Mail" />
+      </NavigationBar>,
+    )
+    expect(screen.getByRole('button', { name: /Home/ })).toHaveAttribute('aria-current', 'page')
+    await user.click(screen.getByRole('button', { name: /Mail/ }))
+    expect(screen.getByRole('button', { name: /Mail/ })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: /Home/ })).not.toHaveAttribute('aria-current')
+  })
+})
