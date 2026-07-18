@@ -73,3 +73,19 @@ describe('Radio', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 })
+
+describe('Radio uncontrolled mode', () => {
+  it('supports defaultChecked with native group exclusivity', async () => {
+    const user = userEvent.setup()
+    render(
+      <>
+        <Radio name="g" value="a" defaultChecked aria-label="A" />
+        <Radio name="g" value="b" aria-label="B" />
+      </>,
+    )
+    expect(screen.getByRole('radio', { name: 'A' })).toBeChecked()
+    await user.click(screen.getByRole('radio', { name: 'B' }))
+    expect(screen.getByRole('radio', { name: 'B' })).toBeChecked()
+    expect(screen.getByRole('radio', { name: 'A' })).not.toBeChecked()
+  })
+})

@@ -85,3 +85,18 @@ describe('NavigationRailItem (standalone)', () => {
     expect(item.style.getPropertyValue('--_t')).toBe('')
   })
 })
+
+describe('NavigationRail uncontrolled mode', () => {
+  it('selects via defaultValue and updates on click without value', async () => {
+    const user = userEvent.setup()
+    render(
+      <NavigationRail aria-label="Main" defaultValue="inbox">
+        <NavigationRailItem value="inbox" icon={<svg aria-hidden="true" />} label="Inbox" />
+        <NavigationRailItem value="sent" icon={<svg aria-hidden="true" />} label="Sent" />
+      </NavigationRail>,
+    )
+    expect(screen.getByRole('button', { name: /Inbox/ })).toHaveAttribute('aria-current', 'page')
+    await user.click(screen.getByRole('button', { name: /Sent/ }))
+    expect(screen.getByRole('button', { name: /Sent/ })).toHaveAttribute('aria-current', 'page')
+  })
+})

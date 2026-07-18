@@ -84,3 +84,19 @@ describe('Tabs', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 })
+
+describe('Tabs uncontrolled mode', () => {
+  it('selects via defaultValue and updates on click without value', async () => {
+    const user = userEvent.setup()
+    render(
+      <Tabs defaultValue="one" aria-label="Sections">
+        <Tab value="one" label="One" />
+        <Tab value="two" label="Two" />
+      </Tabs>,
+    )
+    expect(screen.getByRole('tab', { name: 'One' })).toHaveAttribute('aria-selected', 'true')
+    await user.click(screen.getByRole('tab', { name: 'Two' }))
+    expect(screen.getByRole('tab', { name: 'Two' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'One' })).toHaveAttribute('aria-selected', 'false')
+  })
+})

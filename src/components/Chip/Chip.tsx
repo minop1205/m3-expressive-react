@@ -2,6 +2,7 @@ import {
   forwardRef,
   useCallback,
   useRef,
+  useState,
   type ButtonHTMLAttributes,
   type KeyboardEvent,
   type MouseEvent,
@@ -25,8 +26,10 @@ export interface ChipProps
   label: string
   /** Leading icon. */
   icon?: ReactNode
-  /** Whether the chip is selected (filter / input chips). */
+  /** Controlled selected state (filter / input chips). */
   selected?: boolean
+  /** Uncontrolled initial selected state. @default false */
+  defaultSelected?: boolean
   /** Fires when selection state changes (filter chip). */
   onSelectionChange?: (selected: boolean) => void
   /** Whether a trailing remove button is shown (input / filter removable). */
@@ -61,7 +64,8 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(
       elevated = false,
       label,
       icon,
-      selected = false,
+      selected: controlledSelected,
+      defaultSelected = false,
       onSelectionChange,
       removable = false,
       onRemove,
@@ -75,6 +79,9 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(
     forwardedRef,
   ) {
     const isSelectable = variant === 'filter'
+    const isControlled = controlledSelected !== undefined
+    const [uncontrolledSelected, setUncontrolledSelected] = useState(defaultSelected)
+    const selected = isSelectable && (isControlled ? controlledSelected : uncontrolledSelected)
     const hasLeadingIcon = icon != null || (isSelectable && selected && showSelectedIcon)
     const hasTrailingAction = removable && (variant === 'input' || variant === 'filter')
 
@@ -84,11 +91,13 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(
     const handleClick = useCallback(
       (event: MouseEvent<HTMLButtonElement>) => {
         if (isSelectable) {
-          onSelectionChange?.(!selected)
+          const next = !selected
+          if (!isControlled) setUncontrolledSelected(next)
+          onSelectionChange?.(next)
         }
         onClick?.(event)
       },
-      [isSelectable, selected, onSelectionChange, onClick],
+      [isSelectable, isControlled, selected, onSelectionChange, onClick],
     )
 
     const handleRemove = useCallback(

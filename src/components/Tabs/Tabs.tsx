@@ -6,6 +6,7 @@ import {
   type HTMLAttributes,
   type KeyboardEvent,
   type ReactNode,
+  useState,
 } from 'react'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
@@ -23,10 +24,12 @@ interface TabsContextValue {
 const TabsContext = createContext<TabsContextValue | null>(null)
 
 export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange'> {
-  /** The selected tab value. */
-  value: string
+  /** Controlled selected tab value. */
+  value?: string
+  /** Uncontrolled initial tab value. */
+  defaultValue?: string
   /** Fires with the newly selected tab value. */
-  onChange: (value: string) => void
+  onChange?: (value: string) => void
   /** Indicator style. @default 'primary' */
   variant?: TabsVariant
   /** Scrollable tabs size to content and scroll horizontally instead of filling. */
@@ -45,6 +48,7 @@ export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChang
 export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
   {
     value,
+    defaultValue,
     onChange,
     variant = 'primary',
     scrollable = false,
@@ -71,9 +75,16 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
     next.focus()
     next.click()
   }
+  const isControlled = value !== undefined
+  const [uncontrolled, setUncontrolled] = useState(defaultValue ?? '')
+  const current = isControlled ? value : uncontrolled
+  const handleChange = (v: string) => {
+    if (!isControlled) setUncontrolled(v)
+    onChange?.(v)
+  }
 
   return (
-    <TabsContext.Provider value={{ value, onChange, variant }}>
+    <TabsContext.Provider value={{ value: current, onChange: handleChange, variant }}>
       <div
         ref={ref}
         {...rest}

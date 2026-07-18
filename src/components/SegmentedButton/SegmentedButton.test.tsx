@@ -70,3 +70,41 @@ describe('SegmentedButtons', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 })
+
+describe('SegmentedButtons uncontrolled mode', () => {
+  it('single-select updates from defaultValue', async () => {
+    const user = userEvent.setup()
+    render(
+      <SegmentedButtons
+        aria-label="View"
+        defaultValue="day"
+        options={[
+          { value: 'day', label: 'Day' },
+          { value: 'week', label: 'Week' },
+        ]}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Day' })).toHaveAttribute('aria-pressed', 'true')
+    await user.click(screen.getByRole('button', { name: 'Week' }))
+    expect(screen.getByRole('button', { name: 'Week' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'Day' })).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('multi-select accumulates from an empty default', async () => {
+    const user = userEvent.setup()
+    render(
+      <SegmentedButtons
+        aria-label="Toppings"
+        multiSelect
+        options={[
+          { value: 'a', label: 'A' },
+          { value: 'b', label: 'B' },
+        ]}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: 'A' }))
+    await user.click(screen.getByRole('button', { name: 'B' }))
+    expect(screen.getByRole('button', { name: 'A' })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: 'B' })).toHaveAttribute('aria-pressed', 'true')
+  })
+})

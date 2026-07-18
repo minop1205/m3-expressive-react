@@ -11,6 +11,11 @@ export interface RadioProps
   extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'onChange' | 'children'> {
   /** Controlled checked state. */
   checked?: boolean
+  /**
+   * Uncontrolled initial checked state (native input behavior — the browser
+   * manages group exclusivity for radios sharing a `name`).
+   */
+  defaultChecked?: boolean
   /** Fires with the native event when the radio is selected. */
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void
 }

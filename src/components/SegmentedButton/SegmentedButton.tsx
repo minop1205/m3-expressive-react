@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  useState,
   type HTMLAttributes,
   type ReactNode,
 } from 'react'
@@ -25,10 +26,12 @@ export interface SegmentedButtonsProps
   extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange'> {
   /** The segments. */
   options: SegmentedButtonOption[]
-  /** Selected value (string) — or an array of values when `multiSelect`. */
-  value: string | string[]
+  /** Controlled selected value (string) — or an array of values when `multiSelect`. */
+  value?: string | string[]
+  /** Uncontrolled initial selection. Defaults to none (`''`, or `[]` when `multiSelect`). */
+  defaultValue?: string | string[]
   /** Fires with the next selection (string, or string[] when `multiSelect`). */
-  onChange: (value: string | string[]) => void
+  onChange?: (value: string | string[]) => void
   /** Allow selecting multiple segments. @default false */
   multiSelect?: boolean
   /** Disable the whole group. */
@@ -51,6 +54,7 @@ export const SegmentedButtons = forwardRef<HTMLDivElement, SegmentedButtonsProps
     {
       options,
       value,
+      defaultValue,
       onChange,
       multiSelect = false,
       disabled = false,
@@ -60,17 +64,27 @@ export const SegmentedButtons = forwardRef<HTMLDivElement, SegmentedButtonsProps
     },
     ref,
   ) {
-    const selectedValues = Array.isArray(value) ? value : [value]
+    const isControlled = value !== undefined
+    const [uncontrolled, setUncontrolled] = useState<string | string[]>(
+      () => defaultValue ?? (multiSelect ? [] : ''),
+    )
+    const current = isControlled ? value : uncontrolled
+    const selectedValues = Array.isArray(current) ? current : [current]
     const isSelected = (v: string) => selectedValues.includes(v)
+
+    const emit = (next: string | string[]) => {
+      if (!isControlled) setUncontrolled(next)
+      onChange?.(next)
+    }
 
     const handleClick = (v: string) => {
       if (multiSelect) {
         const set = new Set(selectedValues)
         if (set.has(v)) set.delete(v)
         else set.add(v)
-        onChange([...set])
+        emit([...set])
       } else {
-        onChange(v)
+        emit(v)
       }
     }
 

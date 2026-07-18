@@ -4,6 +4,7 @@ import {
   useRef,
   type HTMLAttributes,
   type ReactNode,
+  useState,
 } from 'react'
 import clsx from 'clsx'
 import {
@@ -19,10 +20,12 @@ export { NavigationRailItem, type NavigationRailItemProps } from './NavigationRa
 
 export interface NavigationRailProps
   extends Omit<HTMLAttributes<HTMLElement>, 'onChange'> {
-  /** The selected destination value. */
-  value: string
+  /** Controlled selected destination value. */
+  value?: string
+  /** Uncontrolled initial destination value. */
+  defaultValue?: string
   /** Fires with the newly selected destination value. */
-  onChange: (value: string) => void
+  onChange?: (value: string) => void
   /**
    * `collapsed` (96dp, icon-over-label) or `expanded` (220dp, icon beside label
    * in a full-width pill). The change is a spring morph. @default 'collapsed'
@@ -47,7 +50,7 @@ export interface NavigationRailProps
  */
 export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
   function NavigationRail(
-    { value, onChange, variant = 'collapsed', arrangement = 'top', header, className, children, ...rest },
+    { value, defaultValue, onChange, variant = 'collapsed', arrangement = 'top', header, className, children, ...rest },
     ref,
   ) {
     const innerRef = useRef<HTMLElement | null>(null)
@@ -61,9 +64,16 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
       },
       [ref],
     )
+    const isControlled = value !== undefined
+    const [uncontrolled, setUncontrolled] = useState(defaultValue ?? '')
+    const current = isControlled ? value : uncontrolled
+    const handleChange = (v: string) => {
+      if (!isControlled) setUncontrolled(v)
+      onChange?.(v)
+    }
 
     return (
-      <RailContext.Provider value={{ value, onChange }}>
+      <RailContext.Provider value={{ value: current, onChange: handleChange }}>
         <nav
           ref={setRefs}
           {...rest}
