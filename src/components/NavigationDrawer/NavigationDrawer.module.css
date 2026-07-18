@@ -32,7 +32,7 @@
 .modalRoot {
   position: fixed;
   inset: 0;
-  z-index: 20;
+  z-index: 24; /* match the other modal overlays */
   display: flex;
   visibility: hidden;
   pointer-events: none;
@@ -95,6 +95,13 @@
 .item[data-selected] {
   --_container-color: var(--md-sys-color-secondary-container);
   --_content-color: var(--md-sys-color-on-secondary-container);
+  /* Spec: active item label is bold (700); Compose keeps 500 — site wins. */
+  --_label-weight: 700;
+}
+
+/* Inactive item content shifts to on-surface while interacted (site + Compose). */
+.item:not([data-selected]):not(:disabled):is(:hover, :focus-visible, :active) {
+  --_content-color: var(--md-sys-color-on-surface);
 }
 
 .item:hover:not(:disabled)::after {
@@ -136,7 +143,7 @@
   color: var(--_content-color);
   font-family: var(--md-sys-typescale-label-large-font);
   font-size: var(--md-sys-typescale-label-large-size);
-  font-weight: var(--md-sys-typescale-label-large-weight);
+  font-weight: var(--_label-weight, var(--md-sys-typescale-label-large-weight));
   line-height: var(--md-sys-typescale-label-large-line-height);
   letter-spacing: var(--md-sys-typescale-label-large-tracking);
   white-space: nowrap;
