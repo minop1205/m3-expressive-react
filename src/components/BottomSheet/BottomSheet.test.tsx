@@ -1,5 +1,5 @@
 import { createRef, useState } from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
@@ -79,12 +79,12 @@ function SheetHarness() {
 }
 
 describe('BottomSheet modal behavior (useModal)', () => {
-  it('moves focus in on open and restores it on close', async () => {
+  it('moves focus in on open (drag handle is first) and restores it on close', async () => {
     const user = userEvent.setup()
     render(<SheetHarness />)
     const trigger = screen.getByRole('button', { name: 'Open sheet' })
     await user.click(trigger)
-    expect(screen.getByRole('button', { name: 'First' })).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus()
     await user.keyboard('{Escape}')
     expect(trigger).toHaveFocus()
   })
@@ -93,9 +93,10 @@ describe('BottomSheet modal behavior (useModal)', () => {
     const user = userEvent.setup()
     render(<SheetHarness />)
     await user.click(screen.getByRole('button', { name: 'Open sheet' }))
-    await user.tab() // First -> Last
-    await user.tab() // wraps -> First
-    expect(screen.getByRole('button', { name: 'First' })).toHaveFocus()
+    await user.tab() // Close (handle) -> First
+    await user.tab() // -> Last
+    await user.tab() // wraps -> Close
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus()
   })
 
   it('locks scroll and inerts the background while open', async () => {
@@ -120,5 +121,77 @@ describe('BottomSheet accessible name', () => {
   it('prefers a consumer aria-label', () => {
     render(<BottomSheet open aria-label="Share options">Body</BottomSheet>)
     expect(screen.getByRole('dialog')).toHaveAccessibleName('Share options')
+  })
+})
+
+/** jsdom drops props passed to fireEvent.pointer*; construct events manually. */
+function firePointer(el: Element, type: string, props: Record<string, unknown>) {
+  const event = new Event(type, { bubbles: true, cancelable: true })
+  Object.assign(event, props)
+  fireEvent(el, event)
+}
+
+describe('BottomSheet drag handle', () => {
+  it('is an accessible button that dismisses on click', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    render(
+      <BottomSheet open onClose={onClose}>
+        Body
+      </BottomSheet>,
+    )
+    const handle = screen.getByRole('button', { name: 'Close' })
+    await user.click(handle)
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('dismisses via keyboard on the handle', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    render(
+      <BottomSheet open onClose={onClose}>
+        Body
+      </BottomSheet>,
+    )
+    screen.getByRole('button', { name: 'Close' }).focus()
+    await user.keyboard('{Enter}')
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('dismisses when dragged past the distance threshold', () => {
+    const onClose = vi.fn()
+    render(
+      <BottomSheet open onClose={onClose}>
+        Body
+      </BottomSheet>,
+    )
+    const handle = screen.getByRole('button', { name: 'Close' })
+    firePointer(handle, 'pointerdown', { pointerId: 1, clientY: 300 })
+    firePointer(handle, 'pointermove', { pointerId: 1, clientY: 400 })
+    firePointer(handle, 'pointerup', { pointerId: 1, clientY: 400 })
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('settles back after a short slow drag and suppresses the trailing click', () => {
+    // Space the velocity samples 200ms apart so the synthetic drag is "slow".
+    let clock = 0
+    const nowSpy = vi.spyOn(Date, 'now').mockImplementation(() => (clock += 200))
+    const onClose = vi.fn()
+    render(
+      <BottomSheet open onClose={onClose}>
+        Body
+      </BottomSheet>,
+    )
+    const handle = screen.getByRole('button', { name: 'Close' })
+    const sheet = screen.getByRole('dialog')
+    firePointer(handle, 'pointerdown', { pointerId: 1, clientY: 300 })
+    firePointer(handle, 'pointermove', { pointerId: 1, clientY: 320 })
+    firePointer(handle, 'pointerup', { pointerId: 1, clientY: 320 })
+    expect(onClose).not.toHaveBeenCalled()
+    expect(sheet.style.transform).toBe('')
+    // The click event that follows a real drag must not dismiss.
+    fireEvent.click(handle)
+    expect(onClose).not.toHaveBeenCalled()
+    nowSpy.mockRestore()
   })
 })

@@ -62,8 +62,32 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-block: 22px;
   flex-shrink: 0;
+}
+
+/* Interactive handle: 48px-tall touch area (4px pill + 22dp padding above and
+   below, per spec), draggable and click/Enter-dismissable. */
+.dragHandleButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
+  border: none;
+  background: transparent;
+  margin: 0;
+  padding: 22px 24px;
+  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  cursor: grab;
+  outline: none;
+  /* Pointer dragging needs the browser's touch gestures suppressed. */
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  --md-focus-ring-color: var(--md-sys-color-secondary);
+}
+
+.dragHandleButton:active {
+  cursor: grabbing;
 }
 
 .dragHandle {
