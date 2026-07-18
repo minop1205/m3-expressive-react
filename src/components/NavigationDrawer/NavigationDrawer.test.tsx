@@ -107,3 +107,32 @@ describe('NavigationDrawer modal behavior (useModal)', () => {
     expect(outside.closest('[inert]')).toBeNull()
   })
 })
+
+describe('NavigationDrawer accessible name', () => {
+  it('defaults the modal dialog name to Navigation', () => {
+    render(
+      <NavigationDrawer variant="modal" open value="a" onChange={() => {}}>
+        <NavigationDrawerItem value="a" icon={Icon} label="Inbox" />
+      </NavigationDrawer>,
+    )
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('Navigation')
+  })
+
+  it('labels the standard aside landmark by default', () => {
+    render(
+      <NavigationDrawer value="a" onChange={() => {}}>
+        <NavigationDrawerItem value="a" icon={Icon} label="Inbox" />
+      </NavigationDrawer>,
+    )
+    expect(screen.getByRole('complementary')).toHaveAccessibleName('Navigation')
+  })
+
+  it('prefers a consumer aria-label', () => {
+    render(
+      <NavigationDrawer value="a" onChange={() => {}} aria-label="Mail folders">
+        <NavigationDrawerItem value="a" icon={Icon} label="Inbox" />
+      </NavigationDrawer>,
+    )
+    expect(screen.getByRole('complementary')).toHaveAccessibleName('Mail folders')
+  })
+})

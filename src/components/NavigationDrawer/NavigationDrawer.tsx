@@ -64,6 +64,13 @@ export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
     const surfaceRef = useRef<HTMLElement | null>(null)
     useModal({ active: variant === 'modal' && open, rootRef, surfaceRef })
 
+    // Default the accessible name for both the modal dialog and the standard
+    // <aside> landmark (Compose sets a "Navigation Menu" paneTitle).
+    const restAriaLabel = (rest as Record<string, unknown>)['aria-label'] as string | undefined
+    const restLabelledby = (rest as Record<string, unknown>)['aria-labelledby'] as
+      | string
+      | undefined
+
     const panel = (
       <aside
         ref={(node) => assignRefs(node, surfaceRef, ref)}
@@ -73,6 +80,7 @@ export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
         className={clsx(styles.drawer, className)}
         role={variant === 'modal' ? 'dialog' : undefined}
         aria-modal={variant === 'modal' ? true : undefined}
+        aria-label={restLabelledby == null ? (restAriaLabel ?? 'Navigation') : restAriaLabel}
       >
         {children}
       </aside>

@@ -132,3 +132,15 @@ describe('Dialog modal behavior (useModal)', () => {
     expect(outside.closest('[inert]')).toBeNull()
   })
 })
+
+describe('Dialog accessible name', () => {
+  it('falls back to a generic name without a title', () => {
+    render(<Dialog open>Body</Dialog>)
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('Dialog')
+  })
+
+  it('prefers a consumer aria-label over the fallback', () => {
+    render(<Dialog open aria-label="Settings">Body</Dialog>)
+    expect(screen.getByRole('dialog')).toHaveAccessibleName('Settings')
+  })
+})

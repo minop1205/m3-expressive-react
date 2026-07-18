@@ -1,6 +1,7 @@
 import {
   forwardRef,
   useEffect,
+  useId,
   useRef,
   type HTMLAttributes,
   type ReactNode,
@@ -89,6 +90,14 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
     const surfaceRef = useRef<HTMLDivElement | null>(null)
     useModal({ active: variant === 'modal' && open, rootRef, surfaceRef })
 
+    // Wire the visible headline as the sheet's accessible name; consumer aria
+    // props win, and a generic fallback covers headline-less sheets.
+    const headlineId = useId()
+    const restAriaLabel = (rest as Record<string, unknown>)['aria-label'] as string | undefined
+    const restLabelledby = (rest as Record<string, unknown>)['aria-labelledby'] as
+      | string
+      | undefined
+
     useEffect(() => {
       if (variant !== 'modal' || !open) return
       const handle = (event: globalThis.KeyboardEvent) => {
@@ -111,6 +120,12 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
         className={clsx(styles.sheet, className)}
         role={variant === 'modal' ? 'dialog' : 'complementary'}
         aria-modal={variant === 'modal' ? true : undefined}
+        aria-labelledby={
+          restLabelledby ?? (headline != null && restAriaLabel == null ? headlineId : undefined)
+        }
+        aria-label={
+          restLabelledby == null && headline == null ? (restAriaLabel ?? 'Side sheet') : restAriaLabel
+        }
       >
         {hasHeader && (
           <div className={styles.header}>
@@ -123,7 +138,11 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
                 className={styles.headerButton}
               />
             )}
-            {headline != null && <h2 className={styles.headline}>{headline}</h2>}
+            {headline != null && (
+              <h2 id={headlineId} className={styles.headline}>
+                {headline}
+              </h2>
+            )}
             {showCloseButton && (
               <IconButton
                 variant="standard"
