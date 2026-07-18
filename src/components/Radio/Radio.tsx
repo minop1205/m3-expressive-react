@@ -1,10 +1,12 @@
 import {
   forwardRef,
   useCallback,
+  useContext,
   type ChangeEvent,
   type InputHTMLAttributes,
 } from 'react'
 import clsx from 'clsx'
+import { RadioGroupContext } from './RadioGroup'
 import styles from './Radio.module.css'
 
 export interface RadioProps
@@ -32,34 +34,44 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
     {
       checked,
       onChange,
-      disabled = false,
+      disabled: disabledProp = false,
+      value,
+      name,
       className,
       ...rest
     },
     forwardedRef,
   ) {
+    // Inside a RadioGroup the group manages name/checked/disabled; standalone
+    // radios keep their own props (native uncontrolled behavior included).
+    const group = useContext(RadioGroupContext)
+    const disabled = disabledProp || (group?.disabled ?? false)
+    const groupChecked =
+      group != null && value !== undefined ? group.value === String(value) : undefined
+    const resolvedChecked = group != null ? (groupChecked ?? false) : checked
+
     const handleChange = useCallback(
       (event: ChangeEvent<HTMLInputElement>) => {
         onChange?.(event)
+        if (group != null && value !== undefined) {
+          group.onSelect(event, String(value))
+        }
       },
-      [onChange],
+      [onChange, group, value],
     )
 
     return (
       <span
-        className={clsx(
-          styles.radio,
-          checked && styles.checked,
-          disabled && styles.disabled,
-          className,
-        )}
+        className={clsx(styles.radio, disabled && styles.disabled, className)}
       >
         <input
           ref={forwardedRef}
           {...rest}
           type="radio"
           className={styles.input}
-          checked={checked}
+          name={group?.name ?? name}
+          value={value}
+          checked={resolvedChecked}
           disabled={disabled}
           onChange={handleChange}
         />
