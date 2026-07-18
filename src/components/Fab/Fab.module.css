@@ -47,9 +47,9 @@
   letter-spacing: var(--md-sys-typescale-label-large-tracking);
 
   transition:
-    box-shadow var(--md-sys-motion-duration-short3, 150ms)
-      var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
-    border-radius var(--md-sys-motion-duration-medium1, 250ms)
+    box-shadow var(--md-sys-motion-duration-short3)
+      var(--md-sys-motion-easing-standard),
+    border-radius var(--md-sys-motion-duration-medium1)
       cubic-bezier(0.34, 1.4, 0.5, 1);
 }
 

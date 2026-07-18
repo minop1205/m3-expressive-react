@@ -40,7 +40,7 @@
 /* The pressed button briefly grows — approximates the neighbour squish with a
    FastSpatial-style spring. */
 .group[data-variant='standard'] > button {
-  transition: transform var(--md-sys-motion-duration-short4, 200ms)
+  transition: transform var(--md-sys-motion-duration-short4)
     cubic-bezier(0.34, 1.4, 0.5, 1);
 }
 
@@ -52,8 +52,8 @@
 /* ---- Connected: 2dp gap, joined shape ---- */
 .group[data-variant='connected'] {
   gap: 2px;
-  --_inner: var(--md-sys-shape-corner-small, 8px);
-  --_outer: var(--md-sys-shape-corner-full, 9999px);
+  --_inner: var(--md-sys-shape-corner-small);
+  --_outer: var(--md-sys-shape-corner-full);
 }
 
 /* Horizontal joined corners (specificity > Button's own :active rule). */

@@ -25,8 +25,8 @@
 }
 
 .content:not([data-dragging]) {
-  transition: transform var(--md-sys-motion-duration-medium2, 300ms)
-    var(--md-sys-motion-easing-emphasized, cubic-bezier(0.2, 0, 0, 1));
+  transition: transform var(--md-sys-motion-duration-medium2)
+    var(--md-sys-motion-easing-emphasized);
 }
 
 @media (prefers-reduced-motion: reduce) {

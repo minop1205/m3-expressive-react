@@ -5,15 +5,15 @@
 
 /* --- Private tokens ------------------------------------------------------ */
 .badge {
-  --_container-color: var(--md-sys-color-error, #b3261e);
-  --_label-text-color: var(--md-sys-color-on-error, #ffffff);
+  --_container-color: var(--md-sys-color-error);
+  --_label-text-color: var(--md-sys-color-on-error);
   --_small-size: 6px;
   --_large-height: 16px;
   --_large-shape: 8px;
   --_large-padding: 4px;
   --_large-offset-bottom: 14px;
   --_large-offset-start: 12px;
-  --_easing: var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  --_easing: var(--md-sys-motion-easing-standard);
 }
 
 .anchor {
@@ -60,11 +60,11 @@
   padding-inline: var(--_large-padding);
 
   /* Label Small typescale */
-  font-family: var(--md-sys-typescale-label-small-font, Roboto, system-ui, sans-serif);
-  font-size: var(--md-sys-typescale-label-small-size, 0.6875rem);
-  line-height: var(--md-sys-typescale-label-small-line-height, 1rem);
-  font-weight: var(--md-sys-typescale-label-small-weight, 500);
-  letter-spacing: var(--md-sys-typescale-label-small-tracking, 0.03125rem);
+  font-family: var(--md-sys-typescale-label-small-font);
+  font-size: var(--md-sys-typescale-label-small-size);
+  line-height: var(--md-sys-typescale-label-small-line-height);
+  font-weight: var(--md-sys-typescale-label-small-weight);
+  letter-spacing: var(--md-sys-typescale-label-small-tracking);
   color: var(--_label-text-color);
 
   display: inline-flex;

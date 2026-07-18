@@ -40,6 +40,11 @@ export function App() {
 }
 ```
 
+> **Note:** the `md3-react/styles.css` import is **required** — it carries the
+> design tokens (shape, motion, state, typescale) that every component
+> references. Components intentionally ship without per-value fallbacks, and
+> colors come from `ThemeProvider`.
+
 ## Icons
 
 The library is **icon-agnostic**: every icon prop (`icon`, `startIcon`,

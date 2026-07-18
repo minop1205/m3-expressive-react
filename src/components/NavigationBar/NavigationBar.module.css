@@ -95,8 +95,8 @@
   opacity: 0;
   transform: scaleX(0.3);
   transition:
-    opacity 100ms var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
-    transform 200ms var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1));
+    opacity 100ms var(--md-sys-motion-easing-standard),
+    transform 200ms var(--md-sys-motion-easing-emphasized-decelerate);
   z-index: 0;
 }
 
@@ -113,17 +113,17 @@
   border-radius: inherit;
   background-color: var(--_icon-color);
   opacity: 0;
-  transition: opacity var(--md-sys-motion-duration-short3, 150ms)
-    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  transition: opacity var(--md-sys-motion-duration-short3)
+    var(--md-sys-motion-easing-standard);
   z-index: 1;
 }
 
 .item:hover:not(:disabled) .indicator::after {
-  opacity: var(--md-sys-state-hover-state-layer-opacity, 0.08);
+  opacity: var(--md-sys-state-hover-state-layer-opacity);
 }
 
 .item:active:not(:disabled) .indicator::after {
-  opacity: var(--md-sys-state-pressed-state-layer-opacity, 0.1);
+  opacity: var(--md-sys-state-pressed-state-layer-opacity);
 }
 
 .icon {

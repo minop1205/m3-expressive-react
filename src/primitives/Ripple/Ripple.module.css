@@ -21,12 +21,12 @@
   border-radius: inherit;
   background-color: var(--_color);
   opacity: 0;
-  transition: opacity var(--md-sys-motion-duration-short3, 150ms)
-    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  transition: opacity var(--md-sys-motion-duration-short3)
+    var(--md-sys-motion-easing-standard);
 }
 
 .hovered {
-  opacity: var(--md-sys-state-hover-state-layer-opacity, 0.08);
+  opacity: var(--md-sys-state-hover-state-layer-opacity);
 }
 
 /* Each press emits an expanding circle that fades on release. */
@@ -34,7 +34,7 @@
   position: absolute;
   border-radius: 50%;
   background-color: var(--_color);
-  opacity: var(--md-sys-state-pressed-state-layer-opacity, 0.10);
+  opacity: var(--md-sys-state-pressed-state-layer-opacity);
   transform: scale(0);
   transform-origin: center;
   pointer-events: none;
@@ -42,13 +42,13 @@
 }
 
 .rippleEntering {
-  animation: md-ripple-enter var(--md-sys-motion-duration-long2, 500ms)
-    var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1)) forwards;
+  animation: md-ripple-enter var(--md-sys-motion-duration-long2)
+    var(--md-sys-motion-easing-emphasized-decelerate) forwards;
 }
 
 .rippleLeaving {
-  animation: md-ripple-leave var(--md-sys-motion-duration-short4, 200ms)
-    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)) forwards;
+  animation: md-ripple-leave var(--md-sys-motion-duration-short4)
+    var(--md-sys-motion-easing-standard) forwards;
 }
 
 @keyframes md-ripple-enter {

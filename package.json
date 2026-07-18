@@ -28,6 +28,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
+    "lint:tokens": "! grep -rEn 'var\\(--md-sys-[a-z0-9-]+,' src --include='*.css'",
     "chromatic": "chromatic --exit-zero-on-changes --only-changed",
     "prepare": "husky"
   },

@@ -24,10 +24,10 @@
 .scrim {
   position: absolute;
   inset: 0;
-  background-color: color-mix(in srgb, var(--md-sys-color-scrim, #000) 32%, transparent);
+  background-color: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
   opacity: 0;
-  transition: opacity var(--md-sys-motion-duration-medium2, 300ms)
-    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  transition: opacity var(--md-sys-motion-duration-medium2)
+    var(--md-sys-motion-easing-standard);
 }
 
 .root[data-open] .scrim {
@@ -43,15 +43,15 @@
   max-width: 640px;
   max-height: calc(100% - 56px);
   overflow: hidden;
-  border-start-start-radius: var(--md-sys-shape-corner-extra-large, 28px);
-  border-start-end-radius: var(--md-sys-shape-corner-extra-large, 28px);
+  border-start-start-radius: var(--md-sys-shape-corner-extra-large);
+  border-start-end-radius: var(--md-sys-shape-corner-extra-large);
   background-color: var(--md-sys-color-surface-container-low);
   color: var(--md-sys-color-on-surface);
   box-shadow: var(--md-sys-elevation-shadow-level1);
 
   transform: translateY(100%);
-  transition: transform var(--md-sys-motion-duration-medium4, 400ms)
-    var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1));
+  transition: transform var(--md-sys-motion-duration-medium4)
+    var(--md-sys-motion-easing-emphasized-decelerate);
 }
 
 .root[data-open] .sheet {
@@ -77,7 +77,7 @@
   background: transparent;
   margin: 0;
   padding: 22px 24px;
-  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  border-radius: var(--md-sys-shape-corner-full);
   cursor: grab;
   outline: none;
   /* Pointer dragging needs the browser's touch gestures suppressed. */
@@ -93,7 +93,7 @@
 .dragHandle {
   width: 32px;
   height: 4px;
-  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  border-radius: var(--md-sys-shape-corner-full);
   background-color: var(--md-sys-color-on-surface-variant);
 }
 

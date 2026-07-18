@@ -26,10 +26,10 @@
 .scrim {
   position: absolute;
   inset: 0;
-  background-color: color-mix(in srgb, var(--md-sys-color-scrim, #000) 32%, transparent);
+  background-color: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
   opacity: 0;
-  transition: opacity var(--md-sys-motion-duration-medium2, 300ms)
-    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  transition: opacity var(--md-sys-motion-duration-medium2)
+    var(--md-sys-motion-easing-standard);
 }
 
 .root[data-open] .scrim {
@@ -47,7 +47,7 @@
   max-height: calc(100% - 48px);
   overflow-y: auto;
   padding: 24px;
-  border-radius: var(--md-sys-shape-corner-extra-large, 28px);
+  border-radius: var(--md-sys-shape-corner-extra-large);
   background-color: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface);
   box-shadow: var(--md-sys-elevation-shadow-level3);
@@ -55,10 +55,10 @@
   opacity: 0;
   transform: scale(0.85);
   transition:
-    opacity var(--md-sys-motion-duration-short4, 200ms)
-      var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
-    transform var(--md-sys-motion-duration-medium2, 300ms)
-      var(--md-sys-motion-easing-emphasized-decelerate, cubic-bezier(0.05, 0.7, 0.1, 1));
+    opacity var(--md-sys-motion-duration-short4)
+      var(--md-sys-motion-easing-standard),
+    transform var(--md-sys-motion-duration-medium2)
+      var(--md-sys-motion-easing-emphasized-decelerate);
 }
 
 .root[data-open] .dialog {

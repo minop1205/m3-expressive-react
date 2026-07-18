@@ -4,11 +4,11 @@
 
 .linear,
 .circular {
-  --_active-indicator-color: var(--md-sys-color-primary, #6750a4);
-  --_track-color: var(--md-sys-color-secondary-container, #e8def8);
-  --_surface-color: var(--md-sys-color-surface, #fffbfe);
-  --_duration: var(--md-sys-motion-duration-medium4, 600ms);
-  --_easing: var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  --_active-indicator-color: var(--md-sys-color-primary);
+  --_track-color: var(--md-sys-color-secondary-container);
+  --_surface-color: var(--md-sys-color-surface);
+  --_duration: var(--md-sys-motion-duration-medium4);
+  --_easing: var(--md-sys-motion-easing-standard);
 }
 
 /* --------------------------------------------------------------------------
@@ -26,7 +26,7 @@
   width: 100%;
   height: var(--_thickness);
   overflow: hidden;
-  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  border-radius: var(--md-sys-shape-corner-full);
   contain: layout paint;
 }
 
@@ -101,7 +101,7 @@
   width: var(--_stop-size);
   height: var(--_stop-size);
   background-color: var(--_active-indicator-color);
-  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  border-radius: var(--md-sys-shape-corner-full);
   transform: translateY(-50%);
 }
 
@@ -118,7 +118,7 @@
 .linearIndeterminateSegment {
   top: 50%;
   height: var(--_thickness);
-  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  border-radius: var(--md-sys-shape-corner-full);
   transform: translateY(-50%);
   will-change: inset-inline-start, width;
 }

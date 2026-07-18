@@ -15,13 +15,13 @@
   color: var(--_content-color);
   box-shadow: var(--_elevation);
 
-  --_container-shape: var(--md-sys-shape-corner-medium, 12px);
+  --_container-shape: var(--md-sys-shape-corner-medium);
   --_content-color: var(--md-sys-color-on-surface);
   --md-ripple-color: var(--md-sys-color-on-surface);
   --md-focus-ring-color: var(--md-sys-color-secondary);
 
-  transition: box-shadow var(--md-sys-motion-duration-short3, 150ms)
-    var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1));
+  transition: box-shadow var(--md-sys-motion-duration-short3)
+    var(--md-sys-motion-easing-standard);
 }
 
 /* --------------------------------------------------------------------------- */

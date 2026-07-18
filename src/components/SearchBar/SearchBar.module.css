@@ -20,7 +20,7 @@
   min-width: 0;
   height: 56px;
   padding-inline: 16px;
-  border-radius: var(--md-sys-shape-corner-full, 9999px);
+  border-radius: var(--md-sys-shape-corner-full);
   background-color: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface);
 }
@@ -115,15 +115,15 @@
 }
 
 .wrapper[data-disabled] .bar {
-  background-color: color-mix(in srgb, var(--md-sys-color-on-surface, #1d1b20) 4%, transparent);
+  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 4%, transparent);
 }
 
 .wrapper[data-disabled] .leading,
 .wrapper[data-disabled] .trailing,
 .wrapper[data-disabled] .input {
-  color: color-mix(in srgb, var(--md-sys-color-on-surface, #1d1b20) 38%, transparent);
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
 }
 
 .wrapper[data-disabled] .input::placeholder {
-  color: color-mix(in srgb, var(--md-sys-color-on-surface, #1d1b20) 38%, transparent);
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
 }

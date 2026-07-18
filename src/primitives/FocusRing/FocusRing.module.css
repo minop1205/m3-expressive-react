@@ -15,7 +15,7 @@
   --_width: var(--md-focus-ring-width, 3px);
   --_active-width: var(--md-focus-ring-active-width, 8px);
   --_offset: var(--md-focus-ring-offset, 2px);
-  --_color: var(--md-focus-ring-color, var(--md-sys-color-secondary, #625b71));
+  --_color: var(--md-focus-ring-color, var(--md-sys-color-secondary));
   --_duration: var(--md-focus-ring-duration, 600ms);
 }
 

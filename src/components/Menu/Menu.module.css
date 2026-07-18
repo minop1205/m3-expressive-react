@@ -20,7 +20,7 @@
   min-width: 112px;
   max-width: 280px;
   padding-block: 8px;
-  border-radius: var(--md-sys-shape-corner-extra-small, 4px);
+  border-radius: var(--md-sys-shape-corner-extra-small);
   background-color: var(--md-sys-color-surface-container);
   color: var(--md-sys-color-on-surface);
   box-shadow: var(--md-sys-elevation-shadow-level2);
@@ -34,7 +34,7 @@
   transform: scale(0.8);
   transition:
     opacity 80ms linear,
-    transform 150ms var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
+    transform 150ms var(--md-sys-motion-easing-standard),
     display 150ms allow-discrete;
 }
 
