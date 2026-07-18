@@ -1,4 +1,4 @@
-import { createRef } from 'react'
+import { createRef, useState } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
@@ -61,5 +61,52 @@ describe('BottomSheet', () => {
       </BottomSheet>,
     )
     expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+function SheetHarness() {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button onClick={() => setOpen(true)}>Open sheet</button>
+      <button>Outside</button>
+      <BottomSheet open={open} onClose={() => setOpen(false)} aria-label="Options">
+        <button>First</button>
+        <button>Last</button>
+      </BottomSheet>
+    </>
+  )
+}
+
+describe('BottomSheet modal behavior (useModal)', () => {
+  it('moves focus in on open and restores it on close', async () => {
+    const user = userEvent.setup()
+    render(<SheetHarness />)
+    const trigger = screen.getByRole('button', { name: 'Open sheet' })
+    await user.click(trigger)
+    expect(screen.getByRole('button', { name: 'First' })).toHaveFocus()
+    await user.keyboard('{Escape}')
+    expect(trigger).toHaveFocus()
+  })
+
+  it('wraps Tab inside the sheet', async () => {
+    const user = userEvent.setup()
+    render(<SheetHarness />)
+    await user.click(screen.getByRole('button', { name: 'Open sheet' }))
+    await user.tab() // First -> Last
+    await user.tab() // wraps -> First
+    expect(screen.getByRole('button', { name: 'First' })).toHaveFocus()
+  })
+
+  it('locks scroll and inerts the background while open', async () => {
+    const user = userEvent.setup()
+    render(<SheetHarness />)
+    const outside = screen.getByRole('button', { name: 'Outside' })
+    await user.click(screen.getByRole('button', { name: 'Open sheet' }))
+    expect(document.body.style.overflow).toBe('hidden')
+    expect(outside.closest('[inert]')).not.toBeNull()
+    await user.keyboard('{Escape}')
+    expect(document.body.style.overflow).not.toBe('hidden')
+    expect(outside.closest('[inert]')).toBeNull()
   })
 })

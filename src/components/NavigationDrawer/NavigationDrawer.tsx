@@ -3,12 +3,14 @@ import {
   forwardRef,
   useContext,
   useEffect,
+  useRef,
   type ButtonHTMLAttributes,
   type HTMLAttributes,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import { assignRefs, useModal } from '../../internal/useModal'
 import styles from './NavigationDrawer.module.css'
 
 export type NavigationDrawerVariant = 'standard' | 'modal'
@@ -58,9 +60,14 @@ export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
     },
     ref,
   ) {
+    const rootRef = useRef<HTMLDivElement>(null)
+    const surfaceRef = useRef<HTMLElement | null>(null)
+    useModal({ active: variant === 'modal' && open, rootRef, surfaceRef })
+
     const panel = (
       <aside
-        ref={ref}
+        ref={(node) => assignRefs(node, surfaceRef, ref)}
+        tabIndex={variant === 'modal' ? -1 : undefined}
         {...rest}
         data-variant={variant}
         className={clsx(styles.drawer, className)}
@@ -87,7 +94,7 @@ export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
 
     return (
       <DrawerContext.Provider value={{ value, onChange }}>
-        <div className={styles.modalRoot} data-open={open || undefined}>
+        <div ref={rootRef} className={styles.modalRoot} data-open={open || undefined}>
           <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
           {panel}
         </div>

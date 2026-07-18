@@ -1,10 +1,12 @@
 import {
   forwardRef,
   useEffect,
+  useRef,
   type HTMLAttributes,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
+import { assignRefs, useModal } from '../../internal/useModal'
 import styles from './BottomSheet.module.css'
 
 export interface BottomSheetProps extends HTMLAttributes<HTMLDivElement> {
@@ -29,6 +31,10 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
     { open, onClose, showDragHandle = true, className, children, ...rest },
     ref,
   ) {
+    const rootRef = useRef<HTMLDivElement>(null)
+    const surfaceRef = useRef<HTMLDivElement | null>(null)
+    useModal({ active: open, rootRef, surfaceRef })
+
     useEffect(() => {
       if (!open) return
       const handle = (event: globalThis.KeyboardEvent) => {
@@ -39,10 +45,11 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
     }, [open, onClose])
 
     return (
-      <div className={styles.root} data-open={open || undefined}>
+      <div ref={rootRef} className={styles.root} data-open={open || undefined}>
         <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
         <div
-          ref={ref}
+          ref={(node) => assignRefs(node, surfaceRef, ref)}
+          tabIndex={-1}
           {...rest}
           role="dialog"
           aria-modal="true"

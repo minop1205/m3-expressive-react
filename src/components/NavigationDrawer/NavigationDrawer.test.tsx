@@ -1,4 +1,4 @@
-import { createRef } from 'react'
+import { createRef, useState } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
@@ -61,5 +61,49 @@ describe('NavigationDrawer', () => {
       </NavigationDrawer>,
     )
     expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+function ModalDrawerHarness() {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button onClick={() => setOpen(true)}>Open drawer</button>
+      <button>Outside</button>
+      <NavigationDrawer
+        variant="modal"
+        open={open}
+        onClose={() => setOpen(false)}
+        value="a"
+        onChange={() => {}}
+        aria-label="Navigation"
+      >
+        <NavigationDrawerItem value="a" icon={Icon} label="Inbox" />
+        <NavigationDrawerItem value="b" icon={Icon} label="Starred" />
+      </NavigationDrawer>
+    </>
+  )
+}
+
+describe('NavigationDrawer modal behavior (useModal)', () => {
+  it('moves focus in on open and restores it on close', async () => {
+    const user = userEvent.setup()
+    render(<ModalDrawerHarness />)
+    const trigger = screen.getByRole('button', { name: 'Open drawer' })
+    await user.click(trigger)
+    expect(screen.getByRole('button', { name: 'Inbox' })).toHaveFocus()
+    await user.keyboard('{Escape}')
+    expect(trigger).toHaveFocus()
+  })
+
+  it('locks scroll and inerts the background while open', async () => {
+    const user = userEvent.setup()
+    render(<ModalDrawerHarness />)
+    const outside = screen.getByRole('button', { name: 'Outside' })
+    await user.click(screen.getByRole('button', { name: 'Open drawer' }))
+    expect(document.body.style.overflow).toBe('hidden')
+    expect(outside.closest('[inert]')).not.toBeNull()
+    await user.keyboard('{Escape}')
+    expect(outside.closest('[inert]')).toBeNull()
   })
 })

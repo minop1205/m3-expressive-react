@@ -1,4 +1,4 @@
-import { createRef } from 'react'
+import { createRef, useState } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
@@ -79,5 +79,56 @@ describe('SideSheet', () => {
       </SideSheet>,
     )
     expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+function ModalSheetHarness() {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button onClick={() => setOpen(true)}>Open side sheet</button>
+      <button>Outside</button>
+      <SideSheet
+        variant="modal"
+        open={open}
+        onClose={() => setOpen(false)}
+        headline="Filters"
+        aria-label="Filters"
+      >
+        <button>Inside</button>
+      </SideSheet>
+    </>
+  )
+}
+
+describe('SideSheet modal behavior (useModal)', () => {
+  it('moves focus in on open and restores it on close', async () => {
+    const user = userEvent.setup()
+    render(<ModalSheetHarness />)
+    const trigger = screen.getByRole('button', { name: 'Open side sheet' })
+    await user.click(trigger)
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus()
+    await user.keyboard('{Escape}')
+    expect(trigger).toHaveFocus()
+  })
+
+  it('locks scroll and inerts the background while open', async () => {
+    const user = userEvent.setup()
+    render(<ModalSheetHarness />)
+    const outside = screen.getByRole('button', { name: 'Outside' })
+    await user.click(screen.getByRole('button', { name: 'Open side sheet' }))
+    expect(document.body.style.overflow).toBe('hidden')
+    expect(outside.closest('[inert]')).not.toBeNull()
+    await user.keyboard('{Escape}')
+    expect(outside.closest('[inert]')).toBeNull()
+  })
+
+  it('does not trap or lock for the standard variant', () => {
+    render(
+      <SideSheet variant="standard" headline="Details">
+        <button>Inside</button>
+      </SideSheet>,
+    )
+    expect(document.body.style.overflow).not.toBe('hidden')
   })
 })
