@@ -70,7 +70,10 @@ material-web deliberately drops focus state layers (`$unsupported-tokens`),
 rendering only the focus ring. m3 defines focus layer tokens @ 0.10 and
 Compose renders focus interactions through the ripple indication.
 **Ruling: show the 0.10 state layer on `:focus-visible`, in addition to the
-focus ring.**
+focus ring.** This supersedes the earlier "FocusRing only, no focus layer"
+decision recorded in `docs/audits/selection-controls.md` (marked superseded
+there); Checkbox/Switch still follow the old decision — follow-up alongside
+issues #75/#76.
 
 ## Motion
 
