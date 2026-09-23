@@ -1,7 +1,8 @@
 /**
  * MD3 Radio Button. Icon 20dp, state layer 40dp, touch target 48dp.
- * Token values from m3.material.io/components/radio-button/specs.
- * Animation patterns from material-web (material-components/material-web).
+ * Spec: docs/specs/radio-button.md (adjudicated from m3.material.io /
+ * Compose androidx-main / material-web). Motion follows Compose's
+ * FastSpatial standard spring (~150ms, both directions).
  */
 
 /* =========================================================================== */
@@ -71,30 +72,24 @@
   stroke: var(--md-sys-color-primary);
 }
 
-/* Inner dot */
+/* Inner dot — scales 0 ↔ 1 in both directions (Compose animates the dot
+   radius on uncheck too; damping 0.9 ⇒ no visible overshoot) */
 .inner {
   fill: var(--md-sys-color-primary);
-  opacity: 0;
   transform: scale(0);
   transform-origin: center;
-  transition: opacity 50ms linear;
+  transition: transform 150ms var(--md-sys-motion-easing-standard);
 }
 
 .radio:has(.input:checked) .inner {
-  opacity: 1;
   transform: scale(1);
-  animation: inner-circle-grow 300ms cubic-bezier(0.05, 0.7, 0.1, 1);
-}
-
-@keyframes inner-circle-grow {
-  from { transform: scale(0); }
-  to { transform: scale(1); }
 }
 
 /* =========================================================================== */
 /* Hover colors                                                                */
 /* =========================================================================== */
 .radio:not(:has(.input:checked)):not(.disabled):has(.input:hover) .outer,
+.radio:not(:has(.input:checked)):not(.disabled):has(.input:focus-visible) .outer,
 .radio:not(:has(.input:checked)):not(.disabled):has(.input:active) .outer {
   stroke: var(--md-sys-color-on-surface);
 }
@@ -116,11 +111,6 @@
   fill: var(--md-sys-color-on-surface);
   opacity: 0.38;
   transition: none;
-  animation: none;
-}
-
-.disabled:has(.input:checked) .inner {
-  opacity: 0.38;
 }
 
 /* =========================================================================== */
@@ -137,12 +127,11 @@
     var(--md-sys-motion-easing-standard);
 }
 
-/* Unchecked: on-surface state layer */
+/* Hover/focus layer color: unchecked = on-surface, checked = primary */
 .radio:not(:has(.input:checked)) .stateLayer {
   background-color: var(--md-sys-color-on-surface);
 }
 
-/* Checked: primary state layer */
 .radio:has(.input:checked) .stateLayer {
   background-color: var(--md-sys-color-primary);
 }
@@ -152,9 +141,23 @@
   opacity: var(--md-sys-state-hover-state-layer-opacity);
 }
 
-/* Pressed */
+/* Focus */
+.radio:not(.disabled):has(.input:focus-visible) .stateLayer {
+  opacity: var(--md-sys-state-focus-state-layer-opacity);
+}
+
+/* Pressed — colors cross over to the target state's color (spec R1 table):
+   pressing an unchecked radio shows primary, a checked one shows on-surface */
 .radio:not(.disabled):has(.input:active) .stateLayer {
   opacity: var(--md-sys-state-pressed-state-layer-opacity);
+}
+
+.radio:not(.disabled):not(:has(.input:checked)):has(.input:active) .stateLayer {
+  background-color: var(--md-sys-color-primary);
+}
+
+.radio:not(.disabled):has(.input:checked):has(.input:active) .stateLayer {
+  background-color: var(--md-sys-color-on-surface);
 }
 
 /* Disabled — no state layer */
@@ -165,10 +168,13 @@
 /* =========================================================================== */
 /* Focus ring                                                                  */
 /* =========================================================================== */
+/* Rings the 40dp state layer (not the 20dp icon); centered by the host's
+   flex alignment like .stateLayer */
 .focusRing {
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--md-sys-shape-corner-full);
   pointer-events: none;
   display: none;
   box-sizing: border-box;
@@ -232,10 +238,6 @@
   .inner,
   .stateLayer {
     transition: none;
-  }
-
-  .radio:has(.input:checked) .inner {
-    animation: none;
   }
 
   .radio:has(.input:focus-visible) .focusRing {
