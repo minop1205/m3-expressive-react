@@ -62,13 +62,16 @@
   height: 20px;
 }
 
-/* Outer ring */
+/* Outer ring — color ≈ Compose DefaultEffects spring (no overshoot), in
+   sync with the dot's 150ms scale */
 .outer {
   stroke: var(--md-sys-color-on-surface-variant);
-  transition: stroke 50ms linear;
+  transition: stroke 150ms var(--md-sys-motion-easing-standard);
 }
 
-.radio:has(.input:checked) .outer {
+/* :not(.disabled) keeps this below `.disabled .outer` so a disabled+checked
+   ring gets on-surface @ 0.38 (and GrayText in forced colors), not primary */
+.radio:not(.disabled):has(.input:checked) .outer {
   stroke: var(--md-sys-color-primary);
 }
 
@@ -86,16 +89,15 @@
 }
 
 /* =========================================================================== */
-/* Hover colors                                                                */
+/* Interaction colors — unselected ring shifts to on-surface on               */
+/* hover/focus/pressed (spec R1); the selected ring stays primary             */
 /* =========================================================================== */
-.radio:not(:has(.input:checked)):not(.disabled):has(.input:hover) .outer,
-.radio:not(:has(.input:checked)):not(.disabled):has(.input:focus-visible) .outer,
-.radio:not(:has(.input:checked)):not(.disabled):has(.input:active) .outer {
+.radio:not(:has(.input:checked)):not(.disabled):has(
+    .input:hover,
+    .input:focus-visible,
+    .input:active
+  ) .outer {
   stroke: var(--md-sys-color-on-surface);
-}
-
-.radio:has(.input:checked):not(.disabled):has(.input:hover) .outer {
-  stroke: var(--md-sys-color-primary);
 }
 
 /* =========================================================================== */
@@ -107,10 +109,11 @@
   transition: none;
 }
 
+/* Color snaps on disable (spec: no enabled/disabled animation) but the dot
+   scale still animates — only .outer needs transition: none */
 .disabled .inner {
   fill: var(--md-sys-color-on-surface);
   opacity: 0.38;
-  transition: none;
 }
 
 /* =========================================================================== */
