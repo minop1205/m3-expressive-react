@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
-import { fn } from '@storybook/test'
+import { fn } from 'storybook/test'
 import Favorite from '@material-symbols/svg-400/outlined/favorite.svg?react'
 import FavoriteFill from '@material-symbols/svg-400/outlined/favorite-fill.svg?react'
 import Settings from '@material-symbols/svg-400/outlined/settings.svg?react'
