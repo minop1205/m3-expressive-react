@@ -5,6 +5,7 @@ import {
   type ChangeEvent,
   type CSSProperties,
   type HTMLAttributes,
+  type KeyboardEvent,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
@@ -153,6 +154,41 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
     onChange?.(out, event)
   }
 
+  /**
+   * PageUp/PageDown large steps (browser support is inconsistent — Safari
+   * ignores them; Chromium jumps 10% of the range regardless of step) and
+   * Home/End, normalized to the Compose formula: with N step intervals the
+   * page jump is `clamp(floor(N / 10), 1, 10)` steps — 10% for continuous
+   * sliders. Drives the native input so React emits a regular ChangeEvent.
+   */
+  const handleKeyDown = (index: number) => (event: KeyboardEvent<HTMLInputElement>) => {
+    const { key } = event
+    let next: number | null = null
+    if (key === 'PageUp' || key === 'PageDown') {
+      const intervals = step > 0 ? Math.max(1, Math.floor(span / step)) : 100
+      const page = clamp(Math.floor(intervals / 10), 1, 10)
+      const delta = page * (step > 0 ? step : span / 100)
+      next = clamp(clamped[index] + (key === 'PageUp' ? delta : -delta), min, max)
+    } else if (key === 'Home') {
+      next = min
+    } else if (key === 'End') {
+      next = max
+    }
+    if (next === null) return
+    event.preventDefault()
+    if (next === clamped[index]) return
+    const input = event.currentTarget
+    // Set the value through the native setter and dispatch `input` so React's
+    // onChange fires with an ordinary ChangeEvent (same code path as pointer
+    // and native keyboard edits — controlled/uncontrolled semantics intact).
+    const setValue = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'value',
+    )?.set
+    setValue?.call(input, String(next))
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  }
+
   // Active interval [a, b] along the main axis, and which ends touch a handle.
   let a: number
   let b: number
@@ -275,6 +311,7 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
           aria-orientation={orientation === 'vertical' ? 'vertical' : undefined}
           aria-valuetext={ariaValueText(valueLabelFormat, clamped[i])}
           onChange={(event) => commit(Number(event.target.value), i, event)}
+          onKeyDown={handleKeyDown(i)}
           onPointerDown={() => {
             if (!disabled) setPressed(i)
           }}
