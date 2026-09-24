@@ -42,8 +42,15 @@ export interface SliderProps
   showTicks?: boolean
   /** Show the value-indicator bubble on hover / focus / drag. @default false */
   showValueLabel?: boolean
-  /** Format the value-indicator label. */
+  /**
+   * Format the value-indicator label. A `string` / `number` result is also
+   * announced via `aria-valuetext` so AT reads what the label shows.
+   */
   valueLabelFormat?: (value: number) => ReactNode
+  /** Accessible label for the start (minimum) thumb of a range slider. @default 'Minimum' */
+  rangeStartLabel?: string
+  /** Accessible label for the end (maximum) thumb of a range slider. @default 'Maximum' */
+  rangeEndLabel?: string
   disabled?: boolean
 }
 
@@ -93,6 +100,8 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
     showTicks = false,
     showValueLabel = false,
     valueLabelFormat,
+    rangeStartLabel = 'Minimum',
+    rangeEndLabel = 'Maximum',
     disabled = false,
     className,
     style,
@@ -261,8 +270,10 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
           step={step}
           value={clamped[i]}
           disabled={disabled}
-          aria-label={isRange ? (i === 0 ? 'Minimum' : 'Maximum') : ariaLabel}
+          aria-label={isRange ? (i === 0 ? rangeStartLabel : rangeEndLabel) : ariaLabel}
           aria-labelledby={isRange ? undefined : ariaLabelledby}
+          aria-orientation={orientation === 'vertical' ? 'vertical' : undefined}
+          aria-valuetext={ariaValueText(valueLabelFormat, clamped[i])}
           onChange={(event) => commit(Number(event.target.value), i, event)}
           onPointerDown={() => {
             if (!disabled) setPressed(i)
@@ -272,6 +283,21 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
     </span>
   )
 })
+
+/**
+ * `aria-valuetext` from `valueLabelFormat` — only when the formatted value is
+ * a plain string/number (arbitrary ReactNode markup can't be announced).
+ */
+function ariaValueText(
+  format: ((value: number) => ReactNode) | undefined,
+  value: number,
+): string | undefined {
+  if (!format) return undefined
+  const formatted = format(value)
+  return typeof formatted === 'string' || typeof formatted === 'number'
+    ? String(formatted)
+    : undefined
+}
 
 /** Build a main-axis segment style from fractions + per-end gaps. */
 function mainSeg(
