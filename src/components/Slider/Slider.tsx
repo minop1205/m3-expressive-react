@@ -1,5 +1,6 @@
 import {
   forwardRef,
+  useEffect,
   useState,
   type ChangeEvent,
   type CSSProperties,
@@ -106,6 +107,20 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
   const [internal, setInternal] = useState<SliderValue>(
     defaultValue ?? (rangeInit ? [min, max] : min),
   )
+  // Index of the handle currently pressed/dragged (Compose PressInteraction /
+  // DragInteraction — drives the 4 → 2dp handle squeeze).
+  const [pressed, setPressed] = useState<number | null>(null)
+  useEffect(() => {
+    if (pressed === null) return
+    const clear = () => setPressed(null)
+    window.addEventListener('pointerup', clear)
+    window.addEventListener('pointercancel', clear)
+    return () => {
+      window.removeEventListener('pointerup', clear)
+      window.removeEventListener('pointercancel', clear)
+    }
+  }, [pressed])
+
   const current = isControlled ? value : internal
   const values = Array.isArray(current) ? current : [current]
   const isRange = values.length === 2
@@ -213,8 +228,14 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
           key={i}
           className={styles.thumb}
           aria-hidden="true"
+          data-index={i}
+          data-pressed={pressed === i || undefined}
           style={{ '--_p': pos(f) } as CSSProperties}
-        />
+        >
+          {/* Focus ring around the handle, shown on the paired input's
+              :focus-visible (Compose: inset focus ring around the handle). */}
+          <span className={styles.focusRing} />
+        </span>
       ))}
 
       {showValueLabel &&
@@ -234,6 +255,7 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
           key={i}
           type="range"
           className={styles.input}
+          data-index={i}
           min={min}
           max={max}
           step={step}
@@ -242,6 +264,9 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
           aria-label={isRange ? (i === 0 ? 'Minimum' : 'Maximum') : ariaLabel}
           aria-labelledby={isRange ? undefined : ariaLabelledby}
           onChange={(event) => commit(Number(event.target.value), i, event)}
+          onPointerDown={() => {
+            if (!disabled) setPressed(i)
+          }}
         />
       ))}
     </span>
