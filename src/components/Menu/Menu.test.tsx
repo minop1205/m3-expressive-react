@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
-import { Menu, MenuItem } from './Menu'
+import { Menu, MenuDivider, MenuGroup, MenuItem } from './Menu'
 
 function Example({
   onSelect = () => {},
@@ -186,6 +186,123 @@ describe('Menu', () => {
   it('has no axe violations when open', async () => {
     const user = userEvent.setup()
     const { container } = render(<Example />)
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+function VerticalExample({
+  color,
+  onBold = () => {},
+}: {
+  color?: 'standard' | 'vibrant'
+  onBold?: () => void
+}) {
+  return (
+    <Menu variant="vertical" color={color} trigger={<button>Open</button>} aria-label="Edit">
+      <MenuGroup label="Format">
+        <MenuItem selected onClick={onBold}>
+          Bold
+        </MenuItem>
+        <MenuItem selected={false}>Italic</MenuItem>
+      </MenuGroup>
+      <MenuGroup>
+        <MenuItem>Copy</MenuItem>
+        <MenuDivider />
+        <MenuItem disabled>Archive</MenuItem>
+      </MenuGroup>
+    </Menu>
+  )
+}
+
+describe('Menu (vertical variant)', () => {
+  it('sets data-variant and data-color on the popup', async () => {
+    const user = userEvent.setup()
+    render(<VerticalExample color="vibrant" />)
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    const menu = screen.getByRole('menu')
+    expect(menu).toHaveAttribute('data-variant', 'vertical')
+    expect(menu).toHaveAttribute('data-color', 'vibrant')
+  })
+
+  it('defaults to the standard variant and color', async () => {
+    const user = userEvent.setup()
+    render(<Example />)
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    const menu = screen.getByRole('menu')
+    expect(menu).toHaveAttribute('data-variant', 'standard')
+    expect(menu).toHaveAttribute('data-color', 'standard')
+  })
+
+  it('renders groups with an accessible label', async () => {
+    const user = userEvent.setup()
+    render(<VerticalExample />)
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    const groups = screen.getAllByRole('group')
+    expect(groups).toHaveLength(2)
+    expect(groups[0]).toHaveAccessibleName('Format')
+    expect(groups[1]).not.toHaveAttribute('aria-labelledby')
+  })
+
+  it('renders a divider as a separator', async () => {
+    const user = userEvent.setup()
+    render(<VerticalExample />)
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    expect(screen.getByRole('separator')).toBeInTheDocument()
+  })
+
+  it('exposes selection via role="menuitemcheckbox" and aria-checked', async () => {
+    const user = userEvent.setup()
+    render(<VerticalExample />)
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Bold' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    )
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Italic' })).toHaveAttribute(
+      'aria-checked',
+      'false',
+    )
+    // Items without a `selected` prop stay plain menuitems.
+    expect(screen.getByRole('menuitem', { name: 'Copy' })).toBeInTheDocument()
+  })
+
+  it('activates a checkbox item and closes the menu', async () => {
+    const user = userEvent.setup()
+    const onBold = vi.fn()
+    render(<VerticalExample onBold={onBold} />)
+    const trigger = screen.getByRole('button', { name: 'Open' })
+    await user.click(trigger)
+    await user.click(screen.getByRole('menuitemcheckbox', { name: 'Bold' }))
+    expect(onBold).toHaveBeenCalled()
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('keyboard navigation traverses items across groups and skips labels/dividers', async () => {
+    const user = userEvent.setup()
+    render(<VerticalExample />)
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Bold' })).toHaveFocus()
+    await user.keyboard('{ArrowDown}{ArrowDown}')
+    expect(screen.getByRole('menuitem', { name: 'Copy' })).toHaveFocus()
+    await user.keyboard('{ArrowDown}')
+    expect(screen.getByRole('menuitem', { name: 'Archive' })).toHaveFocus()
+    await user.keyboard('{ArrowDown}')
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Bold' })).toHaveFocus() // wraps
+    await user.keyboard('{End}')
+    expect(screen.getByRole('menuitem', { name: 'Archive' })).toHaveFocus()
+  })
+
+  it('has no axe violations when open', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<VerticalExample />)
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('has no axe violations with the vibrant color option', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<VerticalExample color="vibrant" />)
     await user.click(screen.getByRole('button', { name: 'Open' }))
     expect(await axe(container)).toHaveNoViolations()
   })

@@ -5,6 +5,7 @@ import {
   forwardRef,
   useContext,
   useEffect,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -28,10 +29,14 @@ const MenuContext = createContext<MenuContextValue | null>(null)
 
 export type MenuAlign = 'start' | 'end'
 
-export interface MenuProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children'> {
+export type MenuVariant = 'standard' | 'vertical'
+
+export type MenuColor = 'standard' | 'vibrant'
+
+export interface MenuProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'color'> {
   /** The element that opens the menu (a single button-like element). */
   trigger: ReactElement
-  /** `MenuItem`s. */
+  /** `MenuItem`s — or, for the `vertical` variant, `MenuGroup`s. */
   children: ReactNode
   /** Controlled open state. */
   open?: boolean
@@ -41,6 +46,17 @@ export interface MenuProps extends Omit<HTMLAttributes<HTMLDivElement>, 'childre
   onOpenChange?: (open: boolean) => void
   /** Horizontal alignment to the trigger. @default 'start' */
   align?: MenuAlign
+  /**
+   * `'standard'` is the baseline dropdown menu; `'vertical'` is the MD3
+   * Expressive vertical menu (segmented `MenuGroup` containers, 44dp items,
+   * selected states with shape morph). @default 'standard'
+   */
+  variant?: MenuVariant
+  /**
+   * Color option for the `vertical` variant: `'standard'` (surface based) or
+   * `'vibrant'` (tertiary based, higher emphasis). @default 'standard'
+   */
+  color?: MenuColor
 }
 
 /** How long a pause resets the typeahead buffer (APG-typical). */
@@ -55,6 +71,13 @@ const ANCHOR_GAP_PX = 4
  * Anchors a `role="menu"` popup to a trigger. SurfaceContainer container, 4dp
  * corners, elevation 2, 112–280dp wide, 8dp vertical padding — per Compose
  * MenuTokens. Closes on outside click, Escape, Tab-out, or item selection.
+ *
+ * `variant="vertical"` renders the MD3 Expressive vertical menu (Compose
+ * `DropdownMenuPopup`/`DropdownMenuGroup`): a transparent popup that stacks
+ * `MenuGroup` containers (surface-container-low, elevation 2, 2dp gap) with
+ * 44dp items, 20dp icons, positional corner shapes, and a tertiary-based
+ * selected state with a springy shape morph. `color="vibrant"` switches the
+ * groups and items to the tertiary-container based high-emphasis mapping.
  *
  * Keyboard (WAI-ARIA APG menu-button pattern): Enter/Space/ArrowDown open and
  * focus the first item (ArrowUp: the last); ArrowUp/Down cycle with wrap;
@@ -71,6 +94,8 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     defaultOpen = false,
     onOpenChange,
     align = 'start',
+    variant = 'standard',
+    color = 'standard',
     className,
     onKeyDown,
     ...rest
@@ -105,7 +130,11 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   }
 
   const getItems = () =>
-    Array.from(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? [])
+    Array.from(
+      menuRef.current?.querySelectorAll<HTMLElement>(
+        '[role="menuitem"], [role="menuitemcheckbox"]',
+      ) ?? [],
+    )
 
   // Collision handling (Compose falls back Below → Above): before paint,
   // flip above the trigger when the space below can't fit the menu and the
@@ -246,6 +275,8 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
         data-open={open || undefined}
         data-align={align}
         data-placement={placement}
+        data-variant={variant}
+        data-color={color}
         className={clsx(styles.menu, className)}
         onKeyDown={handleMenuKeyDown}
       >
@@ -260,13 +291,29 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
 export interface MenuItemProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   leadingIcon?: ReactNode
   trailingIcon?: ReactNode
+  /**
+   * Selection state (for the menu's `vertical` variant). When set (even to
+   * `false`) the item becomes a `role="menuitemcheckbox"` with `aria-checked`;
+   * a selected item shows the tertiary-container mapping and morphs to a 12dp
+   * corner shape.
+   */
+  selected?: boolean
   children?: ReactNode
 }
 
 /** A selectable item inside a `Menu`. */
 export const MenuItem = forwardRef<HTMLButtonElement, MenuItemProps>(
   function MenuItem(
-    { leadingIcon, trailingIcon, disabled = false, className, children, onClick, ...rest },
+    {
+      leadingIcon,
+      trailingIcon,
+      selected,
+      disabled = false,
+      className,
+      children,
+      onClick,
+      ...rest
+    },
     ref,
   ) {
     const ctx = useContext(MenuContext)
@@ -275,7 +322,8 @@ export const MenuItem = forwardRef<HTMLButtonElement, MenuItemProps>(
         ref={ref}
         {...rest}
         type="button"
-        role="menuitem"
+        role={selected === undefined ? 'menuitem' : 'menuitemcheckbox'}
+        aria-checked={selected === undefined ? undefined : selected}
         // Roving tabindex — the menu manages focus; items never join the page
         // Tab order. Disabled items stay focusable but inert (APG guidance),
         // so `aria-disabled` instead of the `disabled` attribute.
@@ -303,5 +351,53 @@ export const MenuItem = forwardRef<HTMLButtonElement, MenuItemProps>(
         {!disabled && <FocusRing />}
       </button>
     )
+  },
+)
+
+export interface MenuGroupProps extends HTMLAttributes<HTMLDivElement> {
+  /** Optional section label rendered above the group's items. */
+  label?: ReactNode
+  /** `MenuItem`s (and `MenuDivider`s). */
+  children: ReactNode
+}
+
+/**
+ * A visually distinct group of items inside a `variant="vertical"` `Menu`
+ * (Compose `DropdownMenuGroup`): a surface-container-low container at
+ * elevation 2 whose corner shape depends on its position in the menu (single
+ * group 16dp; first 16/8dp, middle 8dp, last 8/16dp), morphing to the 8dp
+ * inactive shape while another group is hovered.
+ */
+export const MenuGroup = forwardRef<HTMLDivElement, MenuGroupProps>(function MenuGroup(
+  { label, className, children, ...rest },
+  ref,
+) {
+  const labelId = useId()
+  return (
+    <div
+      ref={ref}
+      {...rest}
+      role="group"
+      aria-labelledby={label != null ? labelId : undefined}
+      className={clsx(styles.group, className)}
+    >
+      {label != null && (
+        // aria-labelledby resolves aria-hidden references, while hiding the
+        // bare text node keeps the menu's required-children structure clean.
+        <span id={labelId} className={styles.groupLabel} aria-hidden="true">
+          {label}
+        </span>
+      )}
+      {children}
+    </div>
+  )
+})
+
+export type MenuDividerProps = HTMLAttributes<HTMLHRElement>
+
+/** A separator between menu items (native `<hr>`, `role="separator"`). */
+export const MenuDivider = forwardRef<HTMLHRElement, MenuDividerProps>(
+  function MenuDivider({ className, ...rest }, ref) {
+    return <hr ref={ref} {...rest} className={clsx(styles.divider, className)} />
   },
 )
