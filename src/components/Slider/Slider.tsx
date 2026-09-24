@@ -242,12 +242,22 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
     >
       <span className={styles.track} aria-hidden="true">
         {/* Inactive track (full), then the active segment on top with gaps. */}
-        <span className={styles.inactive} style={mainSeg(0, a, false, gapAtA)} />
+        <span
+          className={styles.inactive}
+          data-inside-end={gapAtA || undefined}
+          style={mainSeg(0, a, false, gapAtA)}
+        />
         {b < 1 && (
-          <span className={styles.inactive} style={mainSeg(b, 1, gapAtB, false)} />
+          <span
+            className={styles.inactive}
+            data-inside-start={gapAtB || undefined}
+            style={mainSeg(b, 1, gapAtB, false)}
+          />
         )}
         <span
           className={styles.active}
+          data-inside-start={gapAtA || undefined}
+          data-inside-end={gapAtB || undefined}
           style={mainSeg(a, b, gapAtA, gapAtB)}
         />
         {ticks.map((t) => (

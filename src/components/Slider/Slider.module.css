@@ -19,6 +19,8 @@
   --_handle: 44px;
   --_corner: 8px;
   --_icon: 0px;
+  /* Compose TrackInsideCornerSize (hardcoded 2dp) — handle-facing track ends. */
+  --_track-inside-corner: 2px;
 }
 
 .slider[data-orientation='horizontal'] {
@@ -79,38 +81,68 @@
   height: max(0px, calc(var(--_e) - var(--_s)));
 }
 
-/* Stop indicator (single, non-centered). */
+/*
+ * Inside corners — a segment end that faces a handle (data-inside-start/end,
+ * set where the segment has a handle gap) gets the small 2dp corner; outer
+ * ends keep the per-size radius. Horizontal `start` = inline-start; vertical
+ * `start` = bottom (segments grow bottom-up).
+ */
+.slider[data-orientation='horizontal'] :where(.inactive, .active)[data-inside-start] {
+  border-start-start-radius: var(--_track-inside-corner);
+  border-end-start-radius: var(--_track-inside-corner);
+}
+
+.slider[data-orientation='horizontal'] :where(.inactive, .active)[data-inside-end] {
+  border-start-end-radius: var(--_track-inside-corner);
+  border-end-end-radius: var(--_track-inside-corner);
+}
+
+.slider[data-orientation='vertical'] :where(.inactive, .active)[data-inside-start] {
+  border-bottom-left-radius: var(--_track-inside-corner);
+  border-bottom-right-radius: var(--_track-inside-corner);
+}
+
+.slider[data-orientation='vertical'] :where(.inactive, .active)[data-inside-end] {
+  border-top-left-radius: var(--_track-inside-corner);
+  border-top-right-radius: var(--_track-inside-corner);
+}
+
+/*
+ * Stop indicators — on-secondary-container on the inactive track, on-primary
+ * on the active track (m3.material.io current tokens; ruled over Compose —
+ * see docs/audits/slider.md SL8). 4dp trailing space (site; Compose token 6dp).
+ */
 .stop {
   position: absolute;
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background-color: var(--md-sys-color-primary);
+  background-color: var(--md-sys-color-on-secondary-container);
 }
 
 .slider[data-orientation='horizontal'] .stop {
   top: 50%;
-  inset-inline-end: 6px;
+  inset-inline-end: 4px;
   transform: translateY(-50%);
 }
 
 .slider[data-orientation='vertical'] .stop {
   left: 50%;
-  top: 6px;
+  top: 4px;
   transform: translateX(-50%);
 }
 
-/* Ticks. */
+/* Ticks (stop indicators at each step). */
 .tick {
   position: absolute;
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background-color: var(--md-sys-color-primary);
+  background-color: var(--md-sys-color-on-secondary-container);
 }
 
 .tick[data-active] {
-  background-color: var(--md-sys-color-secondary-container);
+  background-color: var(--md-sys-color-on-primary);
 }
 
 .slider[data-orientation='horizontal'] .tick {
@@ -352,7 +384,8 @@
 }
 
 .slider[data-disabled] .thumb,
-.slider[data-disabled] .stop {
+.slider[data-disabled] .stop,
+.slider[data-disabled] .tick {
   background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
 }
 
