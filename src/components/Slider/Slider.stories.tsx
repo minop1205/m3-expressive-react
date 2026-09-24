@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
-import { fn } from '@storybook/test'
+import { fn } from 'storybook/test'
 import { Slider, type SliderValue, type SliderSize } from './Slider'
 import VolumeIcon from '@material-symbols/svg-400/outlined/volume_up.svg?react'
 

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { fn } from '@storybook/test'
+import { fn } from 'storybook/test'
 import { Fab } from './Fab'
 import EditIcon from '@material-symbols/svg-400/outlined/edit.svg?react'
 import AddIcon from '@material-symbols/svg-400/outlined/add.svg?react'

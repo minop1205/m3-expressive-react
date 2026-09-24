@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { fn } from '@storybook/test'
+import { fn } from 'storybook/test'
 import Star from '@material-symbols/svg-400/outlined/star.svg?react'
 import ChevronRight from '@material-symbols/svg-400/outlined/chevron_right.svg?react'
 import { List, ListItem } from './List'

@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { fn } from '@storybook/test'
+import { fn } from 'storybook/test'
 import Mic from '@material-symbols/svg-400/outlined/mic.svg?react'
 import { List, ListItem } from '../List'
 import { SearchBar } from './SearchBar'

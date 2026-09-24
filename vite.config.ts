@@ -18,7 +18,7 @@ export default defineConfig({
     dts({
       include: ['src'],
       exclude: ['src/**/*.stories.*', 'src/**/*.test.*', 'src/test'],
-      rollupTypes: true,
+      bundleTypes: true,
     }),
   ],
   build: {
@@ -26,13 +26,12 @@ export default defineConfig({
       entry: resolve(__dirname, 'src/index.ts'),
       formats: ['es', 'cjs'],
       fileName: (format) => (format === 'es' ? 'index.js' : 'index.cjs'),
+      // Vite ≥5.4 names the lib CSS after the package by default; keep the
+      // published ./styles.css export stable
+      cssFileName: 'styles',
     },
     rollupOptions: {
       external: ['react', 'react-dom', 'react/jsx-runtime'],
-      output: {
-        assetFileNames: (assetInfo) =>
-          assetInfo.name === 'style.css' ? 'styles.css' : (assetInfo.name ?? '[name][extname]'),
-      },
     },
     cssCodeSplit: false,
     sourcemap: true,
