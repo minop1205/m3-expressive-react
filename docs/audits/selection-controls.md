@@ -43,8 +43,11 @@ site 準拠で実装済み**)/ Checkbox の error 状態(Compose には API 自�
   ため、決定後に実装 Issue 化する
 - **組み込みのラベル関連付け API が無い**(3つとも aria-label 頼み)— label prop / children label は
   公開 API の追加なので Phase A 側で方針決定
-- フォーカス state layer(0.1)は site にあるが、本ライブラリは FocusRing で表現する方針(既録の
-  意図的選択)— 変更しない
+- ~~フォーカス state layer(0.1)は site にあるが、本ライブラリは FocusRing で表現する方針(既録の
+  意図的選択)— 変更しない~~ **【2026-09-23 撤回】** 3ソース裁定(`docs/specs/radio-button.md`
+  Ruling R2)により方針変更: m3 と Compose の両方が focus state layer 0.10 を定義・描画しており
+  (material-web のみ意図的非対応)、FocusRing に**加えて** 0.10 レイヤーを表示する。Radio は
+  実装済み。Checkbox / Switch への展開は #75/#76 系のフォローアップ
 
 ## ソース間の食い違い(裁定)
 

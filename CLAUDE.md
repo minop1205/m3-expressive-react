@@ -54,7 +54,11 @@ legacy value). Notes for auditing:
   (TODO-flagged overrides, flag-gated fixes). Always read both; record which
   one a decision follows.
 - When m3.material.io and Compose genuinely conflict, follow the spec priority
-  above and record the ruling in the component's `docs/audits/` report.
+  above and record the ruling in the component's adjudicated spec sheet
+  (`docs/specs/<component>.md`, pre-implementation) or its `docs/audits/`
+  report (post-implementation) — and when the other document already states a
+  conflicting decision, mark it superseded with a cross-reference instead of
+  leaving both standing.
 
 ## API Design Policy
 
