@@ -2,10 +2,12 @@
  * MD3 (Expressive) Slider. Sizes from m3.material.io measurements; colors/gap
  * from Compose SliderTokens. Per-size: --_track (16/24/40/56/96), --_handle
  * (44/44/52/68/108), --_corner (8/8/12/16/28), --_icon (0/0/24/24/32). Handle
- * width is constant 4dp; active Primary, inactive SecondaryContainer; 6dp clear
- * gap (8px incl. half-handle). Supports single/range/centered, horizontal/
- * vertical, ticks, value bubble, and an inset icon. `--_p` positions handles/
- * ticks; `--_s`/`--_e` bound each track segment.
+ * width is 4dp, squeezed to 2dp while focused/pressed/dragged (SliderTokens
+ * FocusHandleWidth/PressedHandleWidth = 2dp, HoverHandleWidth = 4dp; the switch
+ * is instant — Compose Slider has no animation). Active Primary, inactive
+ * SecondaryContainer; 6dp clear gap (8px incl. half-handle). Supports single/
+ * range/centered, horizontal/vertical, ticks, value bubble, and an inset icon.
+ * `--_p` positions handles/ticks; `--_s`/`--_e` bound each track segment.
  */
 
 .slider {
@@ -17,6 +19,8 @@
   --_handle: 44px;
   --_corner: 8px;
   --_icon: 0px;
+  /* Compose TrackInsideCornerSize (hardcoded 2dp) — handle-facing track ends. */
+  --_track-inside-corner: 2px;
 }
 
 .slider[data-orientation='horizontal'] {
@@ -77,38 +81,68 @@
   height: max(0px, calc(var(--_e) - var(--_s)));
 }
 
-/* Stop indicator (single, non-centered). */
+/*
+ * Inside corners — a segment end that faces a handle (data-inside-start/end,
+ * set where the segment has a handle gap) gets the small 2dp corner; outer
+ * ends keep the per-size radius. Horizontal `start` = inline-start; vertical
+ * `start` = bottom (segments grow bottom-up).
+ */
+.slider[data-orientation='horizontal'] :where(.inactive, .active)[data-inside-start] {
+  border-start-start-radius: var(--_track-inside-corner);
+  border-end-start-radius: var(--_track-inside-corner);
+}
+
+.slider[data-orientation='horizontal'] :where(.inactive, .active)[data-inside-end] {
+  border-start-end-radius: var(--_track-inside-corner);
+  border-end-end-radius: var(--_track-inside-corner);
+}
+
+.slider[data-orientation='vertical'] :where(.inactive, .active)[data-inside-start] {
+  border-bottom-left-radius: var(--_track-inside-corner);
+  border-bottom-right-radius: var(--_track-inside-corner);
+}
+
+.slider[data-orientation='vertical'] :where(.inactive, .active)[data-inside-end] {
+  border-top-left-radius: var(--_track-inside-corner);
+  border-top-right-radius: var(--_track-inside-corner);
+}
+
+/*
+ * Stop indicators — on-secondary-container on the inactive track, on-primary
+ * on the active track (m3.material.io current tokens; ruled over Compose —
+ * see docs/audits/slider.md SL8). 4dp trailing space (site; Compose token 6dp).
+ */
 .stop {
   position: absolute;
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background-color: var(--md-sys-color-primary);
+  background-color: var(--md-sys-color-on-secondary-container);
 }
 
 .slider[data-orientation='horizontal'] .stop {
   top: 50%;
-  inset-inline-end: 6px;
+  inset-inline-end: 4px;
   transform: translateY(-50%);
 }
 
 .slider[data-orientation='vertical'] .stop {
   left: 50%;
-  top: 6px;
+  top: 4px;
   transform: translateX(-50%);
 }
 
-/* Ticks. */
+/* Ticks (stop indicators at each step). */
 .tick {
   position: absolute;
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background-color: var(--md-sys-color-primary);
+  background-color: var(--md-sys-color-on-secondary-container);
 }
 
 .tick[data-active] {
-  background-color: var(--md-sys-color-secondary-container);
+  background-color: var(--md-sys-color-on-primary);
 }
 
 .slider[data-orientation='horizontal'] .tick {
@@ -177,6 +211,79 @@
   bottom: var(--_p);
   left: 50%;
   transform: translate(-50%, 50%);
+}
+
+/*
+ * Handle squeeze — 4 → 2dp while the paired input is keyboard-focused or the
+ * handle is pressed/dragged (SliderTokens.FocusHandleWidth = 2dp,
+ * PressedHandleWidth = 2dp; hover stays 4dp per HoverHandleWidth). Instant, no
+ * transition (Compose Slider has no motion APIs). Each thumb pairs with its
+ * input via data-index so range handles squeeze independently.
+ */
+.slider[data-orientation='horizontal'] .thumb[data-pressed],
+.slider[data-orientation='horizontal']:has(.input[data-index='0']:focus-visible)
+  .thumb[data-index='0'],
+.slider[data-orientation='horizontal']:has(.input[data-index='1']:focus-visible)
+  .thumb[data-index='1'] {
+  width: 2px;
+}
+
+.slider[data-orientation='vertical'] .thumb[data-pressed],
+.slider[data-orientation='vertical']:has(.input[data-index='0']:focus-visible)
+  .thumb[data-index='0'],
+.slider[data-orientation='vertical']:has(.input[data-index='1']:focus-visible)
+  .thumb[data-index='1'] {
+  height: 2px;
+}
+
+/*
+ * Focus ring — matches the FocusRing primitive styling (two-phase pulse,
+ * constant 2px offset). CSS-driven via :has() since input focus doesn't bubble
+ * to the host (same pattern as Switch/Checkbox). Wraps the handle: Compose
+ * draws an inset focus ring around the (squeezed) handle with 4dp padding.
+ */
+.focusRing {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  display: none;
+  box-sizing: border-box;
+
+  --_width: var(--md-focus-ring-width, 3px);
+  --_active-width: var(--md-focus-ring-active-width, 8px);
+  --_offset: var(--md-focus-ring-offset, 2px);
+  --_color: var(--md-focus-ring-color, var(--md-sys-color-secondary));
+  --_duration: var(--md-focus-ring-duration, 600ms);
+}
+
+.slider:has(.input[data-index='0']:focus-visible) .thumb[data-index='0'] .focusRing,
+.slider:has(.input[data-index='1']:focus-visible) .thumb[data-index='1'] .focusRing {
+  display: flex;
+  outline: var(--_width) solid var(--_color);
+  outline-offset: var(--_offset);
+  animation-name: md-focus-ring-grow, md-focus-ring-shrink;
+  animation-delay: 0s, calc(var(--_duration) * 0.25);
+  animation-duration: calc(var(--_duration) * 0.25), calc(var(--_duration) * 0.75);
+  animation-timing-function: var(--md-sys-motion-easing-emphasized);
+}
+
+@keyframes md-focus-ring-grow {
+  from {
+    outline-width: 0;
+  }
+  to {
+    outline-width: var(--_active-width);
+  }
+}
+
+@keyframes md-focus-ring-shrink {
+  from {
+    outline-width: var(--_active-width);
+  }
+  to {
+    outline-width: var(--_width);
+  }
 }
 
 /* --------------------------------------------------------------------------- */
@@ -277,7 +384,8 @@
 }
 
 .slider[data-disabled] .thumb,
-.slider[data-disabled] .stop {
+.slider[data-disabled] .stop,
+.slider[data-disabled] .tick {
   background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
 }
 
@@ -285,5 +393,9 @@
   .thumb,
   .valueLabel {
     transition: none;
+  }
+
+  .focusRing {
+    animation: none;
   }
 }
