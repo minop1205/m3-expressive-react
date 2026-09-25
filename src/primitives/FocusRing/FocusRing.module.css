@@ -3,11 +3,20 @@
  * On appearance the outline plays a two-phase pulse: grow 0 → active-width
  * (25% of duration), then shrink active-width → resting width (75%). The
  * offset stays constant (animating it is what made the motion feel choppy).
+ *
+ * `.ring` is the single source of truth for the ring's contract vars, paint,
+ * and animation. It is shared two ways:
+ *  - the JS-driven `FocusRing` primitive toggles `.visible`;
+ *  - selection controls (Radio/Checkbox/Switch/Slider), whose focus sits on a
+ *    hidden native input, `composes: ring` (plus `fill` for inset geometry)
+ *    and reveal it with their own `:has(.input:focus-visible)` rule setting
+ *    `display: flex`.
+ * The animation declarations are inert while `display: none` and start when
+ * the element becomes rendered, so revealing IS the trigger — consumers never
+ * restate outline/animation, and the keyframes stay scoped to this module.
  */
 .ring {
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
   pointer-events: none;
   display: none;
   box-sizing: border-box;
@@ -17,20 +26,25 @@
   --_offset: var(--md-focus-ring-offset, 2px);
   --_color: var(--md-focus-ring-color, var(--md-sys-color-secondary));
   --_duration: var(--md-focus-ring-duration, 600ms);
+
+  outline: var(--_width) solid var(--_color);
+  outline-offset: var(--_offset);
+  animation-name: md-focus-ring-grow, md-focus-ring-shrink;
+  animation-delay: 0s, calc(var(--_duration) * 0.25);
+  animation-duration: calc(var(--_duration) * 0.25), calc(var(--_duration) * 0.75);
+  animation-timing-function: var(--md-sys-motion-easing-emphasized);
+}
+
+/* Default geometry: hug the positioned ancestor. Composable separately so a
+   consumer can size the ring to something else (Radio rings its 40dp state
+   layer instead of its 20dp host). */
+.fill {
+  inset: 0;
+  border-radius: inherit;
 }
 
 .visible {
   display: flex;
-  outline: var(--_width) solid var(--_color);
-  outline-offset: var(--_offset);
-
-  animation-name: md-focus-ring-grow, md-focus-ring-shrink;
-  animation-delay: 0s, calc(var(--_duration) * 0.25);
-  animation-duration: calc(var(--_duration) * 0.25), calc(var(--_duration) * 0.75);
-  animation-timing-function: var(
-    --md-sys-motion-easing-emphasized,
-    cubic-bezier(0.2, 0, 0, 1)
-  );
 }
 
 @keyframes md-focus-ring-grow {
@@ -52,7 +66,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .visible {
+  .ring {
     animation: none;
   }
 }

@@ -37,7 +37,7 @@ export function FocusRing({ className }: FocusRingProps) {
     <span
       ref={ref}
       aria-hidden="true"
-      className={clsx(styles.ring, visible && styles.visible, className)}
+      className={clsx(styles.ring, styles.fill, visible && styles.visible, className)}
     />
   )
 }
