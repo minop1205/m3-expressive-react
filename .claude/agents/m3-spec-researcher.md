@@ -56,6 +56,21 @@ actual token is `md.sys.color.outline-variant`. Therefore:
 - If after expansion some values are still missing, say so explicitly in the
   report — never fill gaps from memory.
 
+## The raw token dataset (best source when you can find it)
+
+The token table is backed by a JSON payload the page fetches:
+`https://m3.material.io/_dsm/data/dsdb-m3/<dataset-revision>/TOKEN_TABLE.<hash>.json`
+— it carries exact `md.comp.*`/`md.sys.*` token names, reference chains,
+deprecation flags and messages, and per-context exceptions (e.g. iOS-only
+overrides). Find the concrete URL in the page's network requests or the SSR
+transfer-state (`page.evaluate` over performance entries /
+`document.querySelector('script#ng-state')`). When you get it, cross-verify
+the rendered table against it and cite both. Caveats: the URL hash/revision
+changes over time (never hardcode one from a previous run), and the SSR
+transfer-state blob can contain the WRONG component's tokens (observed:
+switch specs page carrying checkbox data) — trust the fetched TOKEN_TABLE
+JSON and the rendered DOM where they agree, and say so if they disagree.
+
 ## Freshness traps
 
 - Rows marked with a **warning icon are deprecated/stale**. Record them as
