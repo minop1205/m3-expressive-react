@@ -1,8 +1,16 @@
 /**
- * MD3 Menu (dropdown). Values from androidx.compose.material3 MenuTokens:
- * SurfaceContainer container, CornerExtraSmall (4dp), elevation Level2,
- * 112–280dp width, 8dp vertical padding; items 48dp, LabelLarge OnSurface,
- * OnSurfaceVariant 24dp leading/trailing icons (ListTokens.ItemLeading/TrailingIconSize), 12dp padding, disabled 0.38.
+ * MD3 Menu (dropdown). Baseline values from androidx.compose.material3
+ * MenuTokens: SurfaceContainer container, CornerExtraSmall (4dp), elevation
+ * Level2, 112–280dp width, 8dp vertical padding; items 48dp, LabelLarge
+ * OnSurface, OnSurfaceVariant 24dp leading/trailing icons
+ * (ListTokens.ItemLeading/TrailingIconSize), 12dp padding, disabled 0.38.
+ *
+ * The Expressive vertical variant ([data-variant='vertical']) follows Compose
+ * DropdownMenuPopup / DropdownMenuGroup and SegmentedMenuTokens /
+ * StandardMenuTokens / VibrantMenuTokens: a transparent popup stacking group
+ * containers (SurfaceContainerLow, elevation Level2, SegmentedGap 2dp) with
+ * 44dp items, 20dp icons, 16dp leading/trailing space, positional corner
+ * shapes, and a TertiaryContainer selected state with a springy shape morph.
  */
 
 .wrapper {
@@ -11,6 +19,20 @@
 }
 
 .menu {
+  /* md.comp.menu component tokens (baseline). */
+  --_container-color: var(--md-sys-color-surface-container);
+  --_container-shape: var(--md-sys-shape-corner-extra-small);
+  --_item-container-height: 48px;
+  --_item-container-color: transparent;
+  --_item-container-shape: 0px;
+  --_item-leading-space: 12px;
+  --_item-trailing-space: 12px;
+  --_item-between-space: 12px;
+  --_item-icon-size: 24px;
+  --_item-label-text-color: var(--md-sys-color-on-surface);
+  --_item-icon-color: var(--md-sys-color-on-surface-variant);
+  --_state-layer-color: var(--md-sys-color-on-surface);
+
   position: absolute;
   top: calc(100% + 4px);
   z-index: 22;
@@ -20,8 +42,8 @@
   min-width: 112px;
   max-width: 280px;
   padding-block: 8px;
-  border-radius: var(--md-sys-shape-corner-extra-small);
-  background-color: var(--md-sys-color-surface-container);
+  border-radius: var(--_container-shape);
+  background-color: var(--_container-color);
   color: var(--md-sys-color-on-surface);
   box-shadow: var(--md-sys-elevation-shadow-level2);
 
@@ -81,21 +103,132 @@
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Expressive vertical menu (Compose DropdownMenuPopup + SegmentedMenuTokens) */
+
+.menu[data-variant='vertical'] {
+  /* The popup itself is bare — MenuGroups carry the surfaces. Groups are
+     separated by SegmentedMenuTokens.SegmentedGap (2dp). */
+  --_container-color: transparent;
+  --_container-shape: 0px;
+
+  /* SegmentedMenuTokens: Item 44dp, ItemLeading/TrailingIconSize 20dp,
+     ItemLeading/TrailingSpace 16dp, ItemBetweenSpace 12dp, ItemShape
+     CornerExtraSmall. Colors per StandardMenuTokens (surface based). */
+  --_item-container-height: 44px;
+  --_item-container-color: var(--md-sys-color-surface-container-low);
+  --_item-container-shape: var(--md-sys-shape-corner-extra-small);
+  --_item-leading-space: 16px;
+  --_item-trailing-space: 16px;
+  --_item-icon-size: 20px;
+  --_selected-item-container-color: var(--md-sys-color-tertiary-container);
+  --_selected-item-label-text-color: var(--md-sys-color-on-tertiary-container);
+  --_selected-item-icon-color: var(--md-sys-color-on-tertiary-container);
+  --_selected-state-layer-color: var(--md-sys-color-on-tertiary-container);
+  --_group-container-color: var(--md-sys-color-surface-container-low);
+  --_group-label-text-color: var(--md-sys-color-on-surface);
+
+  gap: 2px;
+  padding-block: 0;
+  box-shadow: none;
+}
+
+/* Vibrant (tertiary based) color option — VibrantMenuTokens. */
+.menu[data-variant='vertical'][data-color='vibrant'] {
+  --_item-container-color: var(--md-sys-color-tertiary-container);
+  --_item-label-text-color: var(--md-sys-color-on-tertiary-container);
+  --_item-icon-color: var(--md-sys-color-on-tertiary-container);
+  --_state-layer-color: var(--md-sys-color-on-tertiary-container);
+  --_selected-item-container-color: var(--md-sys-color-tertiary);
+  --_selected-item-label-text-color: var(--md-sys-color-on-tertiary);
+  --_selected-item-icon-color: var(--md-sys-color-on-tertiary);
+  --_selected-state-layer-color: var(--md-sys-color-on-tertiary);
+  --_group-container-color: var(--md-sys-color-tertiary-container);
+  --_group-label-text-color: var(--md-sys-color-on-tertiary-container);
+}
+
+/* Group container (Compose DropdownMenuGroup): its own Level2 surface with
+   2dp vertical content padding (DropdownMenuGroupContentPadding). Position
+   resolves the corner shape (MenuDefaults.groupShape): single group
+   CornerLarge; first 16/8dp, middle 8dp, last 8/16dp. The shape morph uses
+   the springy easing because Compose animates it with a FastSpatial spring. */
+.group {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding-block: 2px;
+  border-radius: var(--md-sys-shape-corner-small);
+  background-color: var(--_group-container-color);
+  box-shadow: var(--md-sys-elevation-shadow-level2);
+  transition: border-radius var(--md-sys-motion-duration-medium3)
+    cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+.group:first-of-type {
+  border-radius: var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-large)
+    var(--md-sys-shape-corner-small) var(--md-sys-shape-corner-small);
+}
+
+.group:last-of-type {
+  border-radius: var(--md-sys-shape-corner-small) var(--md-sys-shape-corner-small)
+    var(--md-sys-shape-corner-large) var(--md-sys-shape-corner-large);
+}
+
+.group:only-of-type {
+  border-radius: var(--md-sys-shape-corner-large);
+}
+
+/* Inactive group shape (SegmentedMenuTokens.InactiveContainerShape,
+   CornerSmall): while the pointer is over the menu, groups it is not over
+   morph to the 8dp inactive shape (≈ Compose's hovered/inactive morph). */
+.menu[data-variant='vertical']:hover .group:not(:hover) {
+  border-radius: var(--md-sys-shape-corner-small);
+}
+
+/* Group section label: LabelLarge (Compose DropdownMenuGroupLabel, shipped
+   typography), 32dp min height, 12/4dp horizontal padding. */
+.groupLabel {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 32px;
+  padding-inline: 12px 4px;
+  color: var(--_group-label-text-color);
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+}
+
+/* Divider: 1dp outline-variant with MenuDefaults.HorizontalDividerPadding
+   (12dp horizontal / 2dp vertical). */
+.divider {
+  align-self: stretch;
+  border: none;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  margin: 2px 12px;
+}
+
+/* ------------------------------------------------------------------ */
+/* Items */
+
 .item {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--_item-between-space);
   box-sizing: border-box;
   width: 100%;
-  min-height: 48px;
-  padding-inline: 12px;
+  min-height: var(--_item-container-height);
+  padding-inline: var(--_item-leading-space) var(--_item-trailing-space);
   border: none;
-  background: transparent;
+  border-radius: var(--_item-container-shape);
+  background-color: var(--_item-container-color);
   cursor: pointer;
   outline: none;
   text-align: start;
-  color: var(--md-sys-color-on-surface);
+  color: var(--_item-label-text-color);
   -webkit-tap-highlight-color: transparent;
 
   font-family: var(--md-sys-typescale-label-large-font);
@@ -107,14 +240,83 @@
   /* Hover/pressed state layers come from the Ripple primitive; the focus
      indicator from FocusRing (spec: 3dp secondary ring, offset -3dp so it
      stays inside the popup). */
-  --md-ripple-color: var(--md-sys-color-on-surface);
+  --md-ripple-color: var(--_state-layer-color);
   --md-focus-ring-offset: -3px;
 }
 
 .item[aria-disabled='true'] {
   cursor: default;
   pointer-events: none;
-  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  color: color-mix(in srgb, var(--_item-label-text-color) 38%, transparent);
+}
+
+/* Vertical-variant items: 4dp horizontal inset inside the group
+   (DropdownMenuSelectableItemPadding), 12dp vertical content padding
+   (SelectableItemVerticalPadding). Container color and radius animate like
+   Compose (color: FastEffects ≈ 80ms; shape morph: FastSpatial spring →
+   springy easing per the toggle-morph convention). */
+.menu[data-variant='vertical'] .item {
+  width: auto;
+  align-self: stretch;
+  margin-inline: 4px;
+  padding-block: 12px;
+  transition:
+    background-color 80ms linear,
+    color 80ms linear,
+    border-radius var(--md-sys-motion-duration-medium3)
+      cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+/* Positional item shapes inside a group (MenuDefaults.itemShape): first item
+   12/4dp, middle 4dp, last 4/12dp, standalone 4dp (= middle). */
+.menu[data-variant='vertical'] .group .item:first-of-type {
+  border-radius: var(--md-sys-shape-corner-medium) var(--md-sys-shape-corner-medium)
+    var(--md-sys-shape-corner-extra-small) var(--md-sys-shape-corner-extra-small);
+}
+
+.menu[data-variant='vertical'] .group .item:last-of-type {
+  border-radius: var(--md-sys-shape-corner-extra-small)
+    var(--md-sys-shape-corner-extra-small) var(--md-sys-shape-corner-medium)
+    var(--md-sys-shape-corner-medium);
+}
+
+.menu[data-variant='vertical'] .group .item:only-of-type {
+  border-radius: var(--md-sys-shape-corner-extra-small);
+}
+
+/* Selected item (StandardMenuTokens.ItemSelected*): tertiary-container /
+   on-tertiary-container (vibrant: tertiary / on-tertiary) morphing to the
+   12dp ItemSelectedShape regardless of position. Placed after the positional
+   rules so the equal-specificity group selectors lose. */
+.menu[data-variant='vertical'] .item[aria-checked='true'],
+.menu[data-variant='vertical'] .group .item[aria-checked='true'] {
+  border-radius: var(--md-sys-shape-corner-medium);
+  background-color: var(--_selected-item-container-color);
+  color: var(--_selected-item-label-text-color);
+  --md-ripple-color: var(--_selected-state-layer-color);
+}
+
+.menu[data-variant='vertical'] .item[aria-checked='true'] .leading,
+.menu[data-variant='vertical'] .item[aria-checked='true'] .trailing {
+  color: var(--_selected-item-icon-color);
+}
+
+/* Selected + disabled: both the container and content drop to 38%
+   (StandardMenuTokens.ItemSelectedDisabled*). */
+.menu[data-variant='vertical'] .item[aria-checked='true'][aria-disabled='true'] {
+  background-color: color-mix(
+    in srgb,
+    var(--_selected-item-container-color) 38%,
+    transparent
+  );
+  color: color-mix(in srgb, var(--_selected-item-label-text-color) 38%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu[data-variant='vertical'] .item,
+  .group {
+    transition: none;
+  }
 }
 
 .label {
@@ -135,13 +337,15 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  color: var(--md-sys-color-on-surface-variant);
+  width: var(--_item-icon-size);
+  height: var(--_item-icon-size);
+  color: var(--_item-icon-color);
 }
 
 .item[aria-disabled='true'] .leading,
-.item[aria-disabled='true'] .trailing {
+.item[aria-disabled='true'] .trailing,
+.menu[data-variant='vertical'] .item[aria-disabled='true'] .leading,
+.menu[data-variant='vertical'] .item[aria-disabled='true'] .trailing {
   color: inherit;
 }
 
