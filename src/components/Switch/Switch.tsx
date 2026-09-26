@@ -4,6 +4,7 @@ import {
   useState,
   type ChangeEvent,
   type InputHTMLAttributes,
+  type KeyboardEvent,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
@@ -43,6 +44,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       icons = false,
       disabled = false,
       className,
+      onKeyDown,
       ...rest
     },
     forwardedRef,
@@ -60,8 +62,24 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       [isSelected, isControlled, onChange],
     )
 
+    // Switches toggle on Enter in addition to Space (docs/specs/switch.md
+    // Behavior — m3 a11y / APG switch pattern; the native checkbox lacks
+    // Enter, so add it manually like material-web does).
+    const handleKeyDown = useCallback(
+      (event: KeyboardEvent<HTMLInputElement>) => {
+        onKeyDown?.(event)
+        if (event.key === 'Enter' && !event.defaultPrevented && !event.repeat) {
+          event.currentTarget.click()
+        }
+      },
+      [onKeyDown],
+    )
+
     const showIcons = icons || selectedIcon != null
-    const withIcon = showIcons && (isSelected || (icons && unselectedIcon != null))
+    // The handle is 24dp whenever an icon is showing (spec anatomy: Compose
+    // `hasContent || checked`): when selected with any icon, or whenever
+    // `icons` renders the unselected icon too (including the built-in ones).
+    const withIcon = showIcons && (isSelected || icons)
 
     return (
       <span
@@ -81,6 +99,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
           checked={isSelected}
           disabled={disabled}
           onChange={handleChange}
+          onKeyDown={handleKeyDown}
         />
         <span className={styles.track} aria-hidden="true">
           <span className={styles.handleContainer}>

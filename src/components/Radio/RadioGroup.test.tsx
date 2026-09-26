@@ -54,6 +54,21 @@ describe('RadioGroup', () => {
     }
   })
 
+  it('moves selection with arrow keys inside the group (native roving)', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<Group defaultValue="a" onChange={onChange} />)
+    const a = screen.getByRole('radio', { name: 'A' })
+    const b = screen.getByRole('radio', { name: 'B' })
+    a.focus()
+
+    await user.keyboard('{ArrowDown}')
+    expect(b).toBeChecked()
+    expect(b).toHaveFocus()
+    expect(a).not.toBeChecked()
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'b')
+  })
+
   it('has no axe violations', async () => {
     const { container } = render(<Group defaultValue="a" />)
     expect(await axe(container)).toHaveNoViolations()

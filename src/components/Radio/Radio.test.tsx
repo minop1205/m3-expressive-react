@@ -74,6 +74,90 @@ describe('Radio', () => {
   })
 })
 
+describe('Radio keyboard', () => {
+  it('selects a focused unselected radio on Space', async () => {
+    const user = userEvent.setup()
+    render(
+      <>
+        <Radio name="g" value="a" aria-label="A" />
+        <Radio name="g" value="b" aria-label="B" />
+      </>,
+    )
+    const a = screen.getByRole('radio', { name: 'A' })
+    a.focus()
+
+    await user.keyboard(' ')
+    expect(a).toBeChecked()
+
+    // Space on an already-selected radio is a no-op (stays selected)
+    await user.keyboard(' ')
+    expect(a).toBeChecked()
+  })
+
+  it('moves focus AND selection with ArrowDown/ArrowUp within a same-name group', async () => {
+    const user = userEvent.setup()
+    render(
+      <>
+        <Radio name="g" value="a" defaultChecked aria-label="A" />
+        <Radio name="g" value="b" aria-label="B" />
+        <Radio name="g" value="c" aria-label="C" />
+      </>,
+    )
+    const a = screen.getByRole('radio', { name: 'A' })
+    const b = screen.getByRole('radio', { name: 'B' })
+    a.focus()
+
+    await user.keyboard('{ArrowDown}')
+    expect(b).toBeChecked()
+    expect(b).toHaveFocus()
+    expect(a).not.toBeChecked()
+
+    await user.keyboard('{ArrowUp}')
+    expect(a).toBeChecked()
+    expect(a).toHaveFocus()
+    expect(b).not.toBeChecked()
+  })
+
+  it('keeps the group mutually exclusive on pointer selection', async () => {
+    const user = userEvent.setup()
+    render(
+      <>
+        <Radio name="g" value="a" defaultChecked aria-label="A" />
+        <Radio name="g" value="b" aria-label="B" />
+        <Radio name="g" value="c" aria-label="C" />
+      </>,
+    )
+    await user.click(screen.getByRole('radio', { name: 'C' }))
+    expect(screen.getByRole('radio', { name: 'C' })).toBeChecked()
+    expect(screen.getByRole('radio', { name: 'A' })).not.toBeChecked()
+    expect(screen.getByRole('radio', { name: 'B' })).not.toBeChecked()
+  })
+})
+
+describe('Radio form submission', () => {
+  it('submits the selected radio value under the group name', () => {
+    render(
+      <form data-testid="form">
+        <Radio name="flavor" value="vanilla" aria-label="Vanilla" />
+        <Radio name="flavor" value="chocolate" defaultChecked aria-label="Chocolate" />
+      </form>,
+    )
+    const fd = new FormData(screen.getByTestId('form') as HTMLFormElement)
+    expect(fd.get('flavor')).toBe('chocolate')
+  })
+
+  it('submits nothing when no radio is selected', () => {
+    render(
+      <form data-testid="form">
+        <Radio name="flavor" value="vanilla" aria-label="Vanilla" />
+        <Radio name="flavor" value="chocolate" aria-label="Chocolate" />
+      </form>,
+    )
+    const fd = new FormData(screen.getByTestId('form') as HTMLFormElement)
+    expect(fd.has('flavor')).toBe(false)
+  })
+})
+
 describe('Radio uncontrolled mode', () => {
   it('supports defaultChecked with native group exclusivity', async () => {
     const user = userEvent.setup()
