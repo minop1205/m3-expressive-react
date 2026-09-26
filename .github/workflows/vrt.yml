@@ -1,0 +1,91 @@
+# Visual regression testing (issue #112 — Chromatic replacement).
+#
+# Every story × light/dark is screenshotted with Playwright against a built
+# Storybook and compared to the committed baselines in vrt/__screenshots__/.
+# Baselines are LINUX-CANONICAL: they must be produced by the
+# `update-baselines` job below, never on a dev machine (font rasterization
+# differs per platform).
+#
+# Workflow for an intentional visual change:
+#   1. The `vrt` job fails on the PR; download the `vrt-diff` artifact to
+#      review expected/actual/diff images.
+#   2. If the change is intended, add the `update-vrt-baselines` label to the
+#      PR. The `update-baselines` job regenerates baselines on Linux, commits
+#      them to the PR branch, and removes the label. The next `vrt` run is
+#      green and the baseline diff is reviewable in the PR like any code.
+name: VRT
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened, labeled]
+
+concurrency:
+  group: vrt-${{ github.ref }}-${{ github.event.action == 'labeled' && 'update' || 'test' }}
+  cancel-in-progress: true
+
+jobs:
+  vrt:
+    if: github.event.action != 'labeled'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build-storybook
+      - run: npm run vrt
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: vrt-diff
+          path: |
+            test-results/
+            vrt-report/
+          retention-days: 14
+
+  update-baselines:
+    if: >-
+      github.event.action == 'labeled' &&
+      github.event.label.name == 'update-vrt-baselines' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build-storybook
+      - run: npm run vrt:update
+      - name: Commit updated baselines
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add vrt/__screenshots__
+          if git diff --cached --quiet; then
+            echo "No baseline changes."
+          else
+            # No [skip ci]: the push must re-run the vrt job so the PR goes
+            # green against the fresh baselines.
+            git commit -m "test(vrt): update visual baselines" \
+              -m "Regenerated on Linux CI via the update-vrt-baselines label."
+            git push
+          fi
+      - name: Remove trigger label
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api -X DELETE \
+            "repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/update-vrt-baselines" || true

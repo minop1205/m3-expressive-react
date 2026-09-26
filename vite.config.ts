@@ -41,5 +41,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    // vrt/ is a Playwright suite (npm run vrt), not a Vitest one.
+    exclude: ['node_modules/**', 'vrt/**'],
   },
 })

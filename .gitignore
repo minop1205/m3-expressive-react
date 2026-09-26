@@ -13,3 +13,7 @@ coverage
 .env
 .env.*
 src/components/**/*.mp4
+
+# VRT (Playwright) output
+test-results
+vrt-report
