@@ -74,6 +74,28 @@ describe('Checkbox', () => {
     expect(container.querySelector('rect')).toBeInTheDocument()
   })
 
+  it('exposes indeterminate to assistive tech', () => {
+    render(<Checkbox aria-label="Toggle" indeterminate />)
+    const input = screen.getByRole('checkbox') as HTMLInputElement
+    expect(input.indeterminate).toBe(true)
+    expect(input).toHaveAttribute('aria-checked', 'mixed')
+  })
+
+  it('removes aria-checked when not indeterminate (native semantics win)', () => {
+    const { rerender } = render(<Checkbox aria-label="Toggle" indeterminate />)
+    const input = screen.getByRole('checkbox') as HTMLInputElement
+    expect(input).toHaveAttribute('aria-checked', 'mixed')
+
+    rerender(<Checkbox aria-label="Toggle" />)
+    expect(input).not.toHaveAttribute('aria-checked')
+    expect(input.indeterminate).toBe(false)
+  })
+
+  it('has no axe violations (indeterminate)', async () => {
+    const { container } = render(<Checkbox aria-label="Toggle" indeterminate />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('has no axe violations (unchecked)', async () => {
     const { container } = render(<Checkbox aria-label="Toggle" />)
     expect(await axe(container)).toHaveNoViolations()

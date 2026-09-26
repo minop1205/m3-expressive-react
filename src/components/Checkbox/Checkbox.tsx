@@ -1,6 +1,8 @@
 import {
   forwardRef,
   useCallback,
+  useEffect,
+  useRef,
   useState,
   type ChangeEvent,
   type InputHTMLAttributes,
@@ -47,6 +49,24 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     const [internalChecked, setInternalChecked] = useState(defaultChecked)
     const isChecked = isControlled ? checked : internalChecked
 
+    const inputRef = useRef<HTMLInputElement | null>(null)
+    const setInputRef = useCallback(
+      (node: HTMLInputElement | null) => {
+        inputRef.current = node
+        if (typeof forwardedRef === 'function') forwardedRef(node)
+        else if (forwardedRef) forwardedRef.current = node
+      },
+      [forwardedRef],
+    )
+
+    // Expose the mixed state to assistive tech (spec: docs/specs/checkbox.md
+    // Behavior). The IDL property is not an attribute, so it must be set
+    // imperatively — re-assert on every render because a user click clears
+    // the native flag even when the `indeterminate` prop stays true.
+    useEffect(() => {
+      if (inputRef.current) inputRef.current.indeterminate = indeterminate
+    })
+
     const handleChange = useCallback(
       (event: ChangeEvent<HTMLInputElement>) => {
         const next = !isChecked
@@ -69,13 +89,17 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
         )}
       >
         <input
-          ref={forwardedRef}
+          ref={setInputRef}
           {...rest}
           type="checkbox"
           className={styles.input}
           checked={isChecked}
           disabled={disabled}
           onChange={handleChange}
+          // Explicit "mixed" for AT (jsdom and some AT read the attribute, not
+          // the IDL property); omit entirely otherwise so native checked
+          // semantics win (material-web's dual-exposure technique).
+          aria-checked={indeterminate ? 'mixed' : undefined}
         />
         <span className={styles.container} aria-hidden="true">
           <span className={styles.outline} />
