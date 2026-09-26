@@ -67,11 +67,19 @@ describe('Checkbox', () => {
     expect(ref.current).toBeInstanceOf(HTMLInputElement)
   })
 
-  it('renders indeterminate visual state', () => {
-    const { container } = render(
+  it('renders indeterminate visual state (dash path, morphable from the check)', () => {
+    const { container, rerender } = render(
       <Checkbox aria-label="Toggle" indeterminate />,
     )
-    expect(container.querySelector('rect')).toBeInTheDocument()
+    const mark = container.querySelector('svg path')
+    expect(mark).toHaveAttribute('d', 'M4 9L9 9L14 9')
+
+    // Same element carries the check shape so state changes morph, not swap
+    rerender(<Checkbox aria-label="Toggle" checked onChange={() => {}} />)
+    expect(container.querySelector('svg path')).toHaveAttribute(
+      'd',
+      'M3.5 9L7.5 13L14.5 5',
+    )
   })
 
   it('exposes indeterminate to assistive tech', () => {

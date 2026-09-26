@@ -1,8 +1,10 @@
 /**
- * MD3 Switch. Track 52×32dp, handle slides via margin with overshoot easing.
+ * MD3 Switch. Track 52×32dp, handle slides via logical margins.
  * Handle sizes: 16dp (unselected), 24dp (selected / with-icon), 28dp (pressed).
- * Structure and animations follow material-web (material-components/material-web).
- * Token values from m3.material.io/components/switch/specs.
+ * Structure follows material-web (material-components/material-web); motion
+ * follows Compose's FastSpatial standard spring (spring(0.9, 1400) ≈ 150ms,
+ * near-critically damped — NOT a bouncy bezier, which is Expressive-only)
+ * with changes snapping while pressed. Spec: docs/specs/switch.md.
  */
 
 /* =========================================================================== */
@@ -98,15 +100,16 @@
 }
 
 /* =========================================================================== */
-/* Handle container — positions handle via margin with overshoot easing        */
+/* Handle container — positions handle via logical margins                     */
 /* =========================================================================== */
 .handleContainer {
   display: flex;
   place-content: center;
   place-items: center;
   position: relative;
-  /* Overshoot animation matching material-web */
-  transition: margin 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  /* Slide ≈ Compose FastSpatial spring(0.9, 1400): ~150ms, no visible
+     overshoot (same mapping as Radio's dot) */
+  transition: margin 150ms var(--md-sys-motion-easing-standard);
 }
 
 /* margin = track-width - track-height = 52 - 32 = 20px */
@@ -122,6 +125,12 @@
   transition: none;
 }
 
+/* While pressed, changes snap (Compose SnapSpec) — including any press-time
+   slide */
+.switch:not(.disabled):has(.input:active) .handleContainer {
+  transition: none;
+}
+
 /* =========================================================================== */
 /* Handle                                                                      */
 /* =========================================================================== */
@@ -130,8 +139,9 @@
   height: 16px;
   width: 16px;
   transform-origin: center;
+  /* Size shares the slide's FastSpatial spec (~150ms standard) */
   transition-property: height, width;
-  transition-duration: 250ms, 250ms;
+  transition-duration: 150ms, 150ms;
   transition-timing-function:
     var(--md-sys-motion-easing-standard),
     var(--md-sys-motion-easing-standard);
@@ -175,13 +185,13 @@
   width: 24px;
 }
 
-/* -- Pressed: 28dp with fast linear timing -- */
+/* -- Pressed: 28dp, instant — Compose snaps size changes while pressed
+   (SnapSpec); the release shrink animates via the base transition -- */
 .selected:not(.disabled):has(.input:active) .handle,
 .unselected:not(.disabled):has(.input:active) .handle {
   height: 28px;
   width: 28px;
-  transition-timing-function: linear;
-  transition-duration: 100ms;
+  transition: none;
 }
 
 /* -- Disabled handle -- */

@@ -2,7 +2,9 @@
  * MD3 Checkbox. Container 18×18dp, corner-radius 2dp.
  * State layer 40dp, touch target 48dp.
  * Token values from m3.material.io/components/checkbox/specs.
- * Animation patterns from material-web (material-components/material-web).
+ * Motion follows Compose (docs/specs/checkbox.md Motion): the mark draws in
+ * ≈250ms from unchecked, morphs (not crossfades) between check and dash, and
+ * any -> unchecked snaps after a 100ms hold — never a reverse draw.
  */
 
 /* =========================================================================== */
@@ -71,7 +73,8 @@
   opacity: 0;
 }
 
-/* Background — visible when checked/indeterminate */
+/* Background — visible when checked/indeterminate. The fill grows in step
+   with the ~250ms mark draw. */
 .background {
   position: absolute;
   inset: 0;
@@ -79,12 +82,17 @@
   background-color: var(--md-sys-color-primary);
   transition:
     opacity 50ms linear,
-    transform 350ms cubic-bezier(0.05, 0.7, 0.1, 1);
+    transform 250ms var(--md-sys-motion-easing-standard);
 }
 
 .unchecked .background {
   opacity: 0;
   transform: scale(0.6);
+  /* Any -> Off: hold, then vanish — Compose snap(delayMillis = 100).
+     Never a reverse animation. */
+  transition:
+    opacity 1ms linear 100ms,
+    transform 1ms linear 100ms;
 }
 
 .checked .background,
@@ -109,14 +117,11 @@
   transition: opacity 50ms linear;
 }
 
-/* Indeterminate dash uses fill instead of stroke */
-.indeterminate .mark {
-  fill: var(--md-sys-color-on-primary);
-  stroke: none;
-}
-
 .unchecked .mark {
   opacity: 0;
+  /* Any -> Off: hold the outgoing shape, then vanish — Compose
+     snap(delayMillis = 100). Never a reverse draw. */
+  transition: opacity 1ms linear 100ms;
 }
 
 .checked .mark,
@@ -124,19 +129,57 @@
   opacity: 1;
 }
 
-/* Checkmark stroke animation */
-.checked .mark {
-  stroke-dasharray: 29.78;
-  stroke-dashoffset: 0;
-  animation: checkmark-draw 350ms cubic-bezier(0.05, 0.7, 0.1, 1);
+/* Draw-in from unchecked — the mark draws itself along its path, ~250ms
+   standard easing (Compose DefaultSpatial spring(0.9, 700) settles ≈ 250ms).
+   Gated on data-prev-state so check <-> dash changes morph instead of
+   redrawing, and initial mounts don't animate. Dasharray = path length
+   (check ≈ 16.3, dash = 10). */
+.checked[data-prev-state='unchecked'] .mark {
+  stroke-dasharray: 16.3;
+  animation: check-draw 250ms var(--md-sys-motion-easing-standard);
 }
 
-@keyframes checkmark-draw {
+.indeterminate[data-prev-state='unchecked'] .mark {
+  stroke-dasharray: 10;
+  animation: dash-draw 250ms var(--md-sys-motion-easing-standard);
+}
+
+@keyframes check-draw {
   from {
-    stroke-dashoffset: 29.78;
+    stroke-dashoffset: 16.3;
   }
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+@keyframes dash-draw {
+  from {
+    stroke-dashoffset: 10;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Check <-> dash shape morph (Compose gravitationShiftFraction lerps the
+   check's points onto the centerline) where CSS `d` is supported; other
+   engines keep the attribute paths and swap instantly — Compose semantics
+   minus the morph. */
+@supports (d: path('M0 0L1 1')) {
+  .checked .mark {
+    d: path('M3.5 9L7.5 13L14.5 5');
+  }
+
+  .indeterminate .mark {
+    d: path('M4 9L9 9L14 9');
+  }
+
+  .checked[data-prev-state='indeterminate'] .mark,
+  .indeterminate[data-prev-state='checked'] .mark {
+    transition:
+      opacity 50ms linear,
+      d 250ms var(--md-sys-motion-easing-standard);
   }
 }
 
@@ -154,10 +197,6 @@
 
 .error .mark {
   stroke: var(--md-sys-color-on-error);
-}
-
-.error.indeterminate .mark {
-  fill: var(--md-sys-color-on-error);
 }
 
 /* =========================================================================== */
@@ -188,13 +227,10 @@
   transition: none;
 }
 
-.disabled.checked .mark {
+.disabled.checked .mark,
+.disabled.indeterminate .mark {
   stroke: var(--md-sys-color-surface);
   animation: none;
-}
-
-.disabled.indeterminate .mark {
-  fill: var(--md-sys-color-surface);
 }
 
 /* =========================================================================== */
@@ -327,10 +363,6 @@
     stroke: Canvas;
   }
 
-  .indeterminate .mark {
-    fill: Canvas;
-  }
-
   .disabled .outline {
     border-color: GrayText;
   }
@@ -347,13 +379,20 @@
 @media (prefers-reduced-motion: reduce) {
   .outline,
   .background,
+  .unchecked .background,
   .mark,
+  .unchecked .mark,
+  .checked .mark,
+  .indeterminate .mark,
+  .checked[data-prev-state='indeterminate'] .mark,
+  .indeterminate[data-prev-state='checked'] .mark,
   .stateLayer,
   .stateLayer::after {
     transition: none;
   }
 
-  .checked .mark {
+  .checked[data-prev-state='unchecked'] .mark,
+  .indeterminate[data-prev-state='unchecked'] .mark {
     animation: none;
   }
 
