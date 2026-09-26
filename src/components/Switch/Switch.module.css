@@ -1,8 +1,10 @@
 /**
- * MD3 Switch. Track 52×32dp, handle slides via margin with overshoot easing.
+ * MD3 Switch. Track 52×32dp, handle slides via logical margins.
  * Handle sizes: 16dp (unselected), 24dp (selected / with-icon), 28dp (pressed).
- * Structure and animations follow material-web (material-components/material-web).
- * Token values from m3.material.io/components/switch/specs.
+ * Structure follows material-web (material-components/material-web); motion
+ * follows Compose's FastSpatial standard spring (spring(0.9, 1400) ≈ 150ms,
+ * near-critically damped — NOT a bouncy bezier, which is Expressive-only)
+ * with changes snapping while pressed. Spec: docs/specs/switch.md.
  */
 
 /* =========================================================================== */
@@ -98,15 +100,16 @@
 }
 
 /* =========================================================================== */
-/* Handle container — positions handle via margin with overshoot easing        */
+/* Handle container — positions handle via logical margins                     */
 /* =========================================================================== */
 .handleContainer {
   display: flex;
   place-content: center;
   place-items: center;
   position: relative;
-  /* Overshoot animation matching material-web */
-  transition: margin 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  /* Slide ≈ Compose FastSpatial spring(0.9, 1400): ~150ms, no visible
+     overshoot (same mapping as Radio's dot) */
+  transition: margin 150ms var(--md-sys-motion-easing-standard);
 }
 
 /* margin = track-width - track-height = 52 - 32 = 20px */
@@ -122,6 +125,12 @@
   transition: none;
 }
 
+/* While pressed, changes snap (Compose SnapSpec) — including any press-time
+   slide */
+.switch:not(.disabled):has(.input:active) .handleContainer {
+  transition: none;
+}
+
 /* =========================================================================== */
 /* Handle                                                                      */
 /* =========================================================================== */
@@ -130,8 +139,9 @@
   height: 16px;
   width: 16px;
   transform-origin: center;
+  /* Size shares the slide's FastSpatial spec (~150ms standard) */
   transition-property: height, width;
-  transition-duration: 250ms, 250ms;
+  transition-duration: 150ms, 150ms;
   transition-timing-function:
     var(--md-sys-motion-easing-standard),
     var(--md-sys-motion-easing-standard);
@@ -175,13 +185,13 @@
   width: 24px;
 }
 
-/* -- Pressed: 28dp with fast linear timing -- */
+/* -- Pressed: 28dp, instant — Compose snaps size changes while pressed
+   (SnapSpec); the release shrink animates via the base transition -- */
 .selected:not(.disabled):has(.input:active) .handle,
 .unselected:not(.disabled):has(.input:active) .handle {
   height: 28px;
   width: 28px;
-  transition-timing-function: linear;
-  transition-duration: 100ms;
+  transition: none;
 }
 
 /* -- Disabled handle -- */
@@ -200,12 +210,22 @@
   opacity: 1;
 }
 
-/* -- Hover handle color -- */
-.unselected:not(.disabled):has(.input:hover) .handle::before {
+/* -- Interaction handle colors — shift on hover/focus-visible/pressed
+   (spec S1): selected -> primary-container, unselected -> on-surface-variant.
+   The track stays unchanged. -- */
+.unselected:not(.disabled):has(
+    .input:hover,
+    .input:focus-visible,
+    .input:active
+  ) .handle::before {
   background-color: var(--md-sys-color-on-surface-variant);
 }
 
-.selected:not(.disabled):has(.input:hover) .handle::before {
+.selected:not(.disabled):has(
+    .input:hover,
+    .input:focus-visible,
+    .input:active
+  ) .handle::before {
   background-color: var(--md-sys-color-primary-container);
 }
 
@@ -240,9 +260,42 @@
   opacity: var(--md-sys-state-hover-state-layer-opacity);
 }
 
+/* Focus — 0.10 layer on keyboard focus, in addition to the focus ring
+   (spec S2 / Radio R2 follow-up). NO pressed color cross-over on Switch
+   (explicit spec-sheet note) — the layer colors above stay put. */
+.switch:not(.disabled):has(.input:focus-visible) .stateLayer {
+  opacity: var(--md-sys-state-focus-state-layer-opacity);
+}
+
+/* Press ripple — an expanding circle inside the 40dp state layer (audit SC2;
+   Compose ripple(bounded = false, radius = 20.dp)). CSS-only sibling of the
+   flat hover layer: pressing scales it in with the Ripple primitive's enter
+   spec; releasing fades it with the leave spec, then it snaps back to
+   scale(0) invisibly (delayed 1ms transform) ready for the next press. It
+   inherits the state layer's per-state color and travels with the handle. */
+.stateLayer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: inherit;
+  opacity: 0;
+  transform: scale(0);
+  transform-origin: center;
+  transition:
+    opacity var(--md-sys-motion-duration-short4)
+      var(--md-sys-motion-easing-standard),
+    transform 1ms linear var(--md-sys-motion-duration-short4);
+}
+
 /* Pressed */
-.switch:not(.disabled):has(.input:active) .stateLayer {
+.switch:not(.disabled):has(.input:active) .stateLayer::after {
   opacity: var(--md-sys-state-pressed-state-layer-opacity);
+  transform: scale(1);
+  transition:
+    opacity 1ms linear,
+    transform var(--md-sys-motion-duration-long2)
+      var(--md-sys-motion-easing-emphasized-decelerate);
 }
 
 /* Disabled — no state layer */
@@ -371,7 +424,9 @@
   .handle,
   .handle::before,
   .track::before,
-  .icon {
+  .icon,
+  .stateLayer,
+  .stateLayer::after {
     transition: none;
   }
 

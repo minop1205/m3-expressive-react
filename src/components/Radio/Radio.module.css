@@ -149,12 +149,38 @@
   opacity: var(--md-sys-state-focus-state-layer-opacity);
 }
 
-/* Pressed — colors cross over to the target state's color (spec R1 table):
-   pressing an unchecked radio shows primary, a checked one shows on-surface */
-.radio:not(.disabled):has(.input:active) .stateLayer {
-  opacity: var(--md-sys-state-pressed-state-layer-opacity);
+/* Press ripple — an expanding circle inside the 40dp state layer (audit SC2;
+   Compose ripple(bounded = false, radius = 20.dp)). CSS-only sibling of the
+   flat hover/focus layer: pressing scales it in with the Ripple primitive's
+   enter spec; releasing fades it with the leave spec, then it snaps back to
+   scale(0) invisibly (delayed 1ms transform) ready for the next press. It
+   inherits the state layer's color, including the pressed cross-over below. */
+.stateLayer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: inherit;
+  opacity: 0;
+  transform: scale(0);
+  transform-origin: center;
+  transition:
+    opacity var(--md-sys-motion-duration-short4)
+      var(--md-sys-motion-easing-standard),
+    transform 1ms linear var(--md-sys-motion-duration-short4);
 }
 
+.radio:not(.disabled):has(.input:active) .stateLayer::after {
+  opacity: var(--md-sys-state-pressed-state-layer-opacity);
+  transform: scale(1);
+  transition:
+    opacity 1ms linear,
+    transform var(--md-sys-motion-duration-long2)
+      var(--md-sys-motion-easing-emphasized-decelerate);
+}
+
+/* Pressed — colors cross over to the target state's color (spec R1 table):
+   pressing an unchecked radio shows primary, a checked one shows on-surface */
 .radio:not(.disabled):not(:has(.input:checked)):has(.input:active) .stateLayer {
   background-color: var(--md-sys-color-primary);
 }
@@ -212,7 +238,8 @@
 @media (prefers-reduced-motion: reduce) {
   .outer,
   .inner,
-  .stateLayer {
+  .stateLayer,
+  .stateLayer::after {
     transition: none;
   }
 
