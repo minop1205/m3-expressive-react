@@ -240,9 +240,35 @@
   opacity: var(--md-sys-state-hover-state-layer-opacity);
 }
 
+/* Press ripple — an expanding circle inside the 40dp state layer (audit SC2;
+   Compose ripple(bounded = false, radius = 20.dp)). CSS-only sibling of the
+   flat hover layer: pressing scales it in with the Ripple primitive's enter
+   spec; releasing fades it with the leave spec, then it snaps back to
+   scale(0) invisibly (delayed 1ms transform) ready for the next press. It
+   inherits the state layer's per-state color. */
+.stateLayer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: inherit;
+  opacity: 0;
+  transform: scale(0);
+  transform-origin: center;
+  transition:
+    opacity var(--md-sys-motion-duration-short4)
+      var(--md-sys-motion-easing-standard),
+    transform 1ms linear var(--md-sys-motion-duration-short4);
+}
+
 /* Pressed */
-.checkbox:not(.disabled):has(.input:active) .stateLayer {
+.checkbox:not(.disabled):has(.input:active) .stateLayer::after {
   opacity: var(--md-sys-state-pressed-state-layer-opacity);
+  transform: scale(1);
+  transition:
+    opacity 1ms linear,
+    transform var(--md-sys-motion-duration-long2)
+      var(--md-sys-motion-easing-emphasized-decelerate);
 }
 
 /* Disabled — no state layer */
@@ -300,7 +326,8 @@
   .outline,
   .background,
   .mark,
-  .stateLayer {
+  .stateLayer,
+  .stateLayer::after {
     transition: none;
   }
 
