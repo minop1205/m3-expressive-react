@@ -134,12 +134,15 @@ Reference tokens → System tokens (--md-sys-*) → Component tokens (--_*)
   a built Storybook; every new story doubles as a VRT case — no extra config
 - CI: the `VRT` workflow runs on every PR; on failure, download the
   `vrt-diff` artifact to review expected/actual/diff images
-- Baselines live in `vrt/__screenshots__/` and are **Linux/CI-canonical** —
-  never regenerate them on macOS/Windows. For an intentional visual change,
-  add the **`update-vrt-baselines` label** to the PR: CI regenerates the
-  baselines, commits them to the branch, and removes the label
-- Local run: `npm run build-storybook && npm run vrt` (matches baselines only
-  on Linux; use the `mcr.microsoft.com/playwright` Docker image elsewhere)
+- Baselines live in `vrt/__screenshots__/` and are **canonical for the
+  GitHub Actions runner** — never regenerate them locally (even the official
+  Playwright Docker image differs in emoji/symbol fallback fonts). For an
+  intentional visual change, add the **`update-vrt-baselines` label** to the
+  PR: CI regenerates the baselines, commits them to the branch, and removes
+  the label (a bot push then needs a one-click workflow approval)
+- Local run: `npm run build-storybook && npm run vrt` inside the
+  `mcr.microsoft.com/playwright` Docker image gets close (expect a handful
+  of glyph-fallback diffs); native macOS/Windows runs will not match
 - Determinism hooks: the runner sets `window.__VRT__` (preview freezes the
   clock via MockDate) and captures with reduced motion + animations disabled
 

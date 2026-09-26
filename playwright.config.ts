@@ -3,12 +3,13 @@ import { defineConfig } from '@playwright/test'
 /**
  * Visual regression testing config (issue #112 — Chromatic replacement).
  *
- * Baselines live in vrt/__screenshots__/ and are CANONICAL FOR LINUX/CI:
- * they are generated and updated by the `update-vrt-baselines` PR label
- * (see .github/workflows/vrt.yml), never from a macOS/Windows machine —
- * font rasterization differs per platform. To run the comparison locally
- * on a non-Linux machine, use the Playwright Docker image
- * (mcr.microsoft.com/playwright) or expect cross-platform diffs.
+ * Baselines live in vrt/__screenshots__/ and are CANONICAL FOR THE GITHUB
+ * ACTIONS RUNNER: they are generated and updated ONLY by the
+ * `update-vrt-baselines` PR label (see .github/workflows/vrt.yml), never
+ * from a dev machine. Even the official Playwright Docker image is only an
+ * approximation — its emoji/symbol fallback fonts differ from the runner's
+ * (observed: ~12/350 glyph diffs in stories using emoji icons and "→"),
+ * so use Docker to eyeball changes locally, and the label to update.
  */
 export default defineConfig({
   testDir: './vrt',
