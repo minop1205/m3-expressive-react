@@ -200,12 +200,22 @@
   opacity: 1;
 }
 
-/* -- Hover handle color -- */
-.unselected:not(.disabled):has(.input:hover) .handle::before {
+/* -- Interaction handle colors — shift on hover/focus-visible/pressed
+   (spec S1): selected -> primary-container, unselected -> on-surface-variant.
+   The track stays unchanged. -- */
+.unselected:not(.disabled):has(
+    .input:hover,
+    .input:focus-visible,
+    .input:active
+  ) .handle::before {
   background-color: var(--md-sys-color-on-surface-variant);
 }
 
-.selected:not(.disabled):has(.input:hover) .handle::before {
+.selected:not(.disabled):has(
+    .input:hover,
+    .input:focus-visible,
+    .input:active
+  ) .handle::before {
   background-color: var(--md-sys-color-primary-container);
 }
 
@@ -238,6 +248,13 @@
 /* Hover */
 .switch:not(.disabled):has(.input:hover) .stateLayer {
   opacity: var(--md-sys-state-hover-state-layer-opacity);
+}
+
+/* Focus — 0.10 layer on keyboard focus, in addition to the focus ring
+   (spec S2 / Radio R2 follow-up). NO pressed color cross-over on Switch
+   (explicit spec-sheet note) — the layer colors above stay put. */
+.switch:not(.disabled):has(.input:focus-visible) .stateLayer {
+  opacity: var(--md-sys-state-focus-state-layer-opacity);
 }
 
 /* Press ripple — an expanding circle inside the 40dp state layer (audit SC2;

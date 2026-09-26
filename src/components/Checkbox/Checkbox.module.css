@@ -198,10 +198,14 @@
 }
 
 /* =========================================================================== */
-/* Hover colors                                                                */
+/* Interaction colors — unselected outline shifts to on-surface on             */
+/* hover/focus-visible/pressed (spec C3); the error outline stays `error`      */
 /* =========================================================================== */
-.unchecked:not(.disabled):not(.error):has(.input:hover) .outline,
-.unchecked:not(.disabled):not(.error):has(.input:active) .outline {
+.unchecked:not(.disabled):not(.error):has(
+    .input:hover,
+    .input:focus-visible,
+    .input:active
+  ) .outline {
   border-color: var(--md-sys-color-on-surface);
 }
 
@@ -240,6 +244,12 @@
   opacity: var(--md-sys-state-hover-state-layer-opacity);
 }
 
+/* Focus — 0.10 layer on keyboard focus, in addition to the focus ring
+   (spec C4 / Radio R2 follow-up) */
+.checkbox:not(.disabled):has(.input:focus-visible) .stateLayer {
+  opacity: var(--md-sys-state-focus-state-layer-opacity);
+}
+
 /* Press ripple — an expanding circle inside the 40dp state layer (audit SC2;
    Compose ripple(bounded = false, radius = 20.dp)). CSS-only sibling of the
    flat hover layer: pressing scales it in with the Ripple primitive's enter
@@ -269,6 +279,18 @@
     opacity 1ms linear,
     transform var(--md-sys-motion-duration-long2)
       var(--md-sys-motion-easing-emphasized-decelerate);
+}
+
+/* Pressed — colors cross over to the target state's color (spec table, same
+   rule as Radio): pressing unchecked shows primary, pressing checked or
+   indeterminate shows on-surface. The error layer stays `error`. */
+.unchecked:not(.disabled):not(.error):has(.input:active) .stateLayer {
+  background-color: var(--md-sys-color-primary);
+}
+
+.checked:not(.disabled):not(.error):has(.input:active) .stateLayer,
+.indeterminate:not(.disabled):not(.error):has(.input:active) .stateLayer {
+  background-color: var(--md-sys-color-on-surface);
 }
 
 /* Disabled — no state layer */
