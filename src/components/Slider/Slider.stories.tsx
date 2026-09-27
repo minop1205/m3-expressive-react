@@ -44,7 +44,7 @@ export const Range: Story = {
     const [value, setValue] = useState<SliderValue>([20, 70])
     return (
       <div style={{ width: 320 }}>
-        <Slider {...args} value={value} onChange={setValue} showValueLabel aria-label="Price range" />
+        <Slider {...args} value={value} onChange={(_event, next) => setValue(next)} showValueLabel aria-label="Price range" />
         <p>{Array.isArray(value) ? `${value[0]} – ${value[1]}` : value}</p>
       </div>
     )

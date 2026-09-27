@@ -18,8 +18,8 @@ export interface SearchBarProps
   value?: string
   /** Uncontrolled initial value. */
   defaultValue?: string
-  /** Fires with the new query. */
-  onChange?: (value: string, event: ChangeEvent<HTMLInputElement>) => void
+  /** Fires with the native event and the new query. */
+  onChange?: (event: ChangeEvent<HTMLInputElement>, value: string) => void
   /** Fires when the user submits (Enter). */
   onSearch?: (value: string) => void
   /** Leading icon (defaults to a search glyph). */
@@ -94,7 +94,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
       if (!isControlled) setInternal(event.target.value)
-      onChange?.(event.target.value, event)
+      onChange?.(event, event.target.value)
     }
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {

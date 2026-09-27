@@ -17,7 +17,7 @@ describe('Slider', () => {
     const onChange = vi.fn()
     render(<Slider aria-label="Vol" defaultValue={40} step={5} onChange={onChange} />)
     fireEvent.change(screen.getByRole('slider'), { target: { value: '45' } })
-    expect(onChange).toHaveBeenCalledWith(45, expect.anything())
+    expect(onChange).toHaveBeenCalledWith(expect.anything(), 45)
     expect(screen.getByRole('slider')).toHaveValue('45')
   })
 
@@ -40,7 +40,7 @@ describe('Slider', () => {
     expect(maxInput).toHaveValue('60')
     // Moving the min thumb past the max is clamped to the max.
     fireEvent.change(minInput, { target: { value: '80' } })
-    expect(onChange).toHaveBeenCalledWith([60, 60], expect.anything())
+    expect(onChange).toHaveBeenCalledWith(expect.anything(), [60, 60])
   })
 
   it('supports vertical orientation and centered mode', () => {
@@ -147,10 +147,10 @@ describe('Slider keyboard (SL4)', () => {
     const input = screen.getByRole('slider')
     input.focus()
     fireEvent.keyDown(input, { key: 'PageUp' })
-    expect(onChange).toHaveBeenLastCalledWith(50, expect.anything())
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 50)
     expect(input).toHaveValue('50')
     fireEvent.keyDown(input, { key: 'PageDown' })
-    expect(onChange).toHaveBeenLastCalledWith(40, expect.anything())
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 40)
     expect(input).toHaveValue('40')
   })
 
@@ -196,10 +196,10 @@ describe('Slider keyboard (SL4)', () => {
     render(<Slider aria-label="Vol" defaultValue={40} min={10} max={90} onChange={onChange} />)
     const input = screen.getByRole('slider')
     fireEvent.keyDown(input, { key: 'End' })
-    expect(onChange).toHaveBeenLastCalledWith(90, expect.anything())
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 90)
     expect(input).toHaveValue('90')
     fireEvent.keyDown(input, { key: 'Home' })
-    expect(onChange).toHaveBeenLastCalledWith(10, expect.anything())
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 10)
     expect(input).toHaveValue('10')
   })
 
@@ -218,12 +218,12 @@ describe('Slider keyboard (SL4)', () => {
     const [start, end] = screen.getAllByRole('slider')
     // Start thumb paging past the end thumb clamps to it.
     fireEvent.keyDown(start, { key: 'PageUp' })
-    expect(onChange).toHaveBeenLastCalledWith([65, 65], expect.anything())
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), [65, 65])
     // End thumb pages within its own bound.
     fireEvent.keyDown(end, { key: 'PageUp' })
-    expect(onChange).toHaveBeenLastCalledWith([65, 75], expect.anything())
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), [65, 75])
     fireEvent.keyDown(end, { key: 'End' })
-    expect(onChange).toHaveBeenLastCalledWith([65, 100], expect.anything())
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), [65, 100])
   })
 
   it('leaves arrow keys to the native range input', () => {

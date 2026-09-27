@@ -27,9 +27,9 @@ export const Playground: Story = {
   render: ({ onChange: onChangeProp, ...args }) => {
     const [checked, setChecked] = useState(false)
     const handleChange = useCallback(
-      (next: boolean, event: React.ChangeEvent<HTMLInputElement>) => {
+      (event: React.ChangeEvent<HTMLInputElement>, next: boolean) => {
         setChecked(next)
-        onChangeProp?.(next, event)
+        onChangeProp?.(event, next)
       },
       [onChangeProp],
     )
@@ -73,9 +73,9 @@ export const WithLabel: Story = {
   render: ({ onChange: onChangeProp, ...args }) => {
     const [checked, setChecked] = useState(false)
     const handleChange = useCallback(
-      (next: boolean, event: React.ChangeEvent<HTMLInputElement>) => {
+      (event: React.ChangeEvent<HTMLInputElement>, next: boolean) => {
         setChecked(next)
-        onChangeProp?.(next, event)
+        onChangeProp?.(event, next)
       },
       [onChangeProp],
     )

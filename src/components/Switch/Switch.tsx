@@ -16,8 +16,8 @@ export interface SwitchProps
   selected?: boolean
   /** Uncontrolled initial selected state. @default false */
   defaultSelected?: boolean
-  /** Fires with the next selected state and the native event on toggle. */
-  onChange?: (selected: boolean, event: ChangeEvent<HTMLInputElement>) => void
+  /** Fires with the native event and the next selected state on toggle. */
+  onChange?: (event: ChangeEvent<HTMLInputElement>, selected: boolean) => void
   /** Icon shown when selected. */
   selectedIcon?: ReactNode
   /** Icon shown when unselected. */
@@ -57,7 +57,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       (event: ChangeEvent<HTMLInputElement>) => {
         const next = !isSelected
         if (!isControlled) setInternalSelected(next)
-        onChange?.(next, event)
+        onChange?.(event, next)
       },
       [isSelected, isControlled, onChange],
     )

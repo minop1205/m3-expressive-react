@@ -18,6 +18,7 @@ describe('SearchBar', () => {
     render(<SearchBar aria-label="Search" onChange={onChange} />)
     await user.type(screen.getByRole('searchbox'), 'hi')
     expect(onChange).toHaveBeenCalledTimes(2)
+    expect(onChange).toHaveBeenLastCalledWith(expect.any(Object), 'hi')
     expect(screen.getByRole('searchbox')).toHaveValue('hi')
   })
 

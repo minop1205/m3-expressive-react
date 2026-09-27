@@ -20,13 +20,13 @@ describe('Radio', () => {
     expect(screen.getByRole('radio')).toBeChecked()
   })
 
-  it('fires onChange on click', async () => {
+  it('fires onChange with (event, value) on click', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<Radio aria-label="Option" name="g" onChange={onChange} />)
+    render(<Radio aria-label="Option" name="g" value="opt" onChange={onChange} />)
 
     await user.click(screen.getByRole('radio'))
-    expect(onChange).toHaveBeenCalledWith(expect.any(Object))
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'opt')
   })
 
   it('does not fire onChange when disabled', async () => {
@@ -56,9 +56,11 @@ describe('Radio', () => {
 
     await user.click(a)
     expect(onChange).toHaveBeenCalledTimes(1)
+    expect(onChange).toHaveBeenLastCalledWith(expect.any(Object), 'a')
 
     await user.click(b)
     expect(onChange).toHaveBeenCalledTimes(2)
+    expect(onChange).toHaveBeenLastCalledWith(expect.any(Object), 'b')
   })
 
   it('has no axe violations (unchecked)', async () => {

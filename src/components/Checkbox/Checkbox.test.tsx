@@ -29,11 +29,11 @@ describe('Checkbox', () => {
 
     await user.click(input)
     expect(input).toBeChecked()
-    expect(onChange).toHaveBeenCalledWith(true, expect.any(Object))
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), true)
 
     await user.click(input)
     expect(input).not.toBeChecked()
-    expect(onChange).toHaveBeenCalledWith(false, expect.any(Object))
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), false)
   })
 
   it('works as controlled component', async () => {
@@ -45,7 +45,7 @@ describe('Checkbox', () => {
     const input = screen.getByRole('checkbox')
 
     await user.click(input)
-    expect(onChange).toHaveBeenCalledWith(true, expect.any(Object))
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), true)
     // Still unchecked because controlled
     expect(input).not.toBeChecked()
 
@@ -204,7 +204,7 @@ describe('Checkbox indeterminate interaction', () => {
     render(<Checkbox aria-label="Toggle" indeterminate onChange={onChange} />)
 
     await user.click(screen.getByRole('checkbox'))
-    expect(onChange).toHaveBeenCalledWith(true, expect.any(Object))
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), true)
   })
 
   it('keeps exposing mixed while the indeterminate prop stays true', async () => {

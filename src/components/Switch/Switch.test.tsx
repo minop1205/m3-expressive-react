@@ -30,11 +30,11 @@ describe('Switch', () => {
 
     await user.click(input)
     expect(input).toBeChecked()
-    expect(onChange).toHaveBeenCalledWith(true, expect.any(Object))
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), true)
 
     await user.click(input)
     expect(input).not.toBeChecked()
-    expect(onChange).toHaveBeenCalledWith(false, expect.any(Object))
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), false)
   })
 
   it('works as controlled component', async () => {
@@ -46,7 +46,7 @@ describe('Switch', () => {
     const input = screen.getByRole('switch')
 
     await user.click(input)
-    expect(onChange).toHaveBeenCalledWith(true, expect.any(Object))
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), true)
     // Still unchecked because controlled
     expect(input).not.toBeChecked()
 
@@ -136,11 +136,11 @@ describe('Switch keyboard', () => {
     await user.tab()
     await user.keyboard('{Enter}')
     expect(input).toBeChecked()
-    expect(onChange).toHaveBeenCalledWith(true, expect.any(Object))
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), true)
 
     await user.keyboard('{Enter}')
     expect(input).not.toBeChecked()
-    expect(onChange).toHaveBeenCalledWith(false, expect.any(Object))
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), false)
   })
 
   it('calls a user-supplied onKeyDown and respects preventDefault on Enter', async () => {
