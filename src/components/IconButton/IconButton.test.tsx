@@ -45,7 +45,7 @@ describe('IconButton', () => {
     expect(btn).toHaveAttribute('aria-pressed', 'false')
     await user.click(btn)
     expect(btn).toHaveAttribute('aria-pressed', 'true')
-    expect(onChange).toHaveBeenCalledWith(true)
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), true)
   })
 
   it('respects controlled selected and swaps the aria-label', () => {

@@ -53,14 +53,14 @@ describe('Chip', () => {
       )
     })
 
-    it('fires onSelectionChange on click', async () => {
+    it('fires onChange with (event, selected) on click', async () => {
       const user = userEvent.setup()
-      const onSelectionChange = vi.fn()
+      const onChange = vi.fn()
       render(
-        <Chip variant="filter" label="Tag" onSelectionChange={onSelectionChange} />,
+        <Chip variant="filter" label="Tag" onChange={onChange} />,
       )
       await user.click(screen.getByRole('button', { name: 'Tag' }))
-      expect(onSelectionChange).toHaveBeenCalledWith(true)
+      expect(onChange).toHaveBeenCalledWith(expect.any(Object), true)
     })
 
     it('shows checkmark when selected', () => {
@@ -156,12 +156,12 @@ describe('Chip', () => {
 describe('Chip uncontrolled selection', () => {
   it('toggles from defaultSelected without a selected prop', async () => {
     const user = userEvent.setup()
-    const onSelectionChange = vi.fn()
-    render(<Chip variant="filter" label="Tag" defaultSelected onSelectionChange={onSelectionChange} />)
+    const onChange = vi.fn()
+    render(<Chip variant="filter" label="Tag" defaultSelected onChange={onChange} />)
     const chip = screen.getByRole('button', { name: /Tag/ })
     expect(chip).toHaveAttribute('aria-pressed', 'true')
     await user.click(chip)
     expect(chip).toHaveAttribute('aria-pressed', 'false')
-    expect(onSelectionChange).toHaveBeenCalledWith(false)
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), false)
   })
 })

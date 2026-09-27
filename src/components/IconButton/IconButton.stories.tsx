@@ -75,9 +75,9 @@ export const Toggle: Story = {
   render: ({ onChange: onChangeProp, ...args }) => {
     const [on, setOn] = useState(false)
     const handleChange = useCallback(
-      (next: boolean) => {
+      (event: React.MouseEvent<HTMLButtonElement>, next: boolean) => {
         setOn(next)
-        onChangeProp?.(next)
+        onChangeProp?.(event, next)
       },
       [onChangeProp],
     )
