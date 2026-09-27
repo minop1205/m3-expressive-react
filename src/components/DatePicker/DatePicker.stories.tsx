@@ -13,7 +13,7 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 // Fixed dates keep snapshots idempotent. June 2026 matches the frozen clock in
-// .storybook/preview.tsx (Chromatic), so the today marker (15th) is visible
+// .storybook/preview.tsx (VRT captures), so the today marker (15th) is visible
 // alongside the selection.
 export const Modal: Story = {
   render: () => {

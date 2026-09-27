@@ -1,6 +1,5 @@
 import type { Preview, Decorator } from '@storybook/react'
 import React from 'react'
-import isChromatic from 'chromatic/isChromatic'
 import MockDate from 'mockdate'
 // Roboto (Storybook preview only). Library consumers load Roboto themselves —
 // see README. Weights 400 (regular) / 500 (medium) are the only ones the
@@ -12,33 +11,20 @@ import '../src/styles/tokens.css'
 import '../src/styles/typescale.css'
 import './preview.css'
 
-// Chromatic pauses CSS animations automatically but NOT rAF-driven ones.
-// Our animated components honor prefers-reduced-motion, so emulate it in
-// Chromatic's capture browsers to freeze JS animations deterministically.
-if (isChromatic() && typeof window !== 'undefined') {
-  const originalMatchMedia = window.matchMedia.bind(window)
-  window.matchMedia = (query: string): MediaQueryList => {
-    const mql = originalMatchMedia(query)
-    if (!query.includes('prefers-reduced-motion')) return mql
-    return {
-      matches: true,
-      media: mql.media,
-      onchange: null,
-      addListener: mql.addListener.bind(mql),
-      removeListener: mql.removeListener.bind(mql),
-      addEventListener: mql.addEventListener.bind(mql),
-      removeEventListener: mql.removeEventListener.bind(mql),
-      dispatchEvent: mql.dispatchEvent.bind(mql),
-    }
-  }
-}
+// The VRT runner (vrt/vrt.spec.ts) sets window.__VRT__ via addInitScript
+// before the preview loads. rAF-driven animation is frozen there through the
+// browser context's native prefers-reduced-motion emulation, so no matchMedia
+// patching is needed.
+const isVRT =
+  typeof window !== 'undefined' &&
+  (window as unknown as { __VRT__?: boolean }).__VRT__ === true
 
-// Freeze the clock in Chromatic captures. Components that read the real time
+// Freeze the clock in VRT captures. Components that read the real time
 // (DatePicker's today marker / default visible month) would otherwise produce
 // spurious diffs whenever the calendar date changes. Mid-month, mid-day to
 // stay clear of timezone and month boundaries. Keep in sync with the fixed
 // dates used in date-dependent stories.
-if (isChromatic()) {
+if (isVRT) {
   MockDate.set(new Date(2026, 5, 15, 10, 30, 0))
 }
 
@@ -97,16 +83,11 @@ const preview: Preview = {
   },
   parameters: {
     controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },
-    // Snapshot every story in both color schemes. Each mode sets the
-    // `colorScheme` global, which the withTheme decorator feeds into
-    // ThemeProvider. Seed-color modes are deliberately left out to keep the
-    // snapshot count at 2x (add them per-story if a component needs it).
-    chromatic: {
-      modes: {
-        light: { colorScheme: 'light' },
-        dark: { colorScheme: 'dark' },
-      },
-    },
+    // VRT (vrt/vrt.spec.ts) snapshots every story in both color schemes by
+    // setting the `colorScheme` global per capture, which the withTheme
+    // decorator feeds into ThemeProvider. Seed-color variations are
+    // deliberately left out to keep the snapshot count at 2x (add a
+    // dedicated story if a component needs one).
   },
 }
 

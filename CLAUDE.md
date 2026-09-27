@@ -128,12 +128,23 @@ Reference tokens → System tokens (--md-sys-*) → Component tokens (--_*)
 - Every component must have an axe a11y test
 - Use `userEvent.setup({ pointerEventsCheck: 0 })` for disabled button click tests
 
-### Visual Regression Testing (Chromatic)
+### Visual Regression Testing (Playwright)
 
-- Chromatic runs against every Storybook story automatically
-- Run locally: `npm run chromatic` (requires `CHROMATIC_PROJECT_TOKEN`)
-- CI: set `CHROMATIC_PROJECT_TOKEN` as a repository secret
-- Every new component story doubles as a visual regression test — no extra config needed
+- `vrt/vrt.spec.ts` screenshots **every Storybook story × light/dark** against
+  a built Storybook; every new story doubles as a VRT case — no extra config
+- CI: the `VRT` workflow runs on every PR; on failure, download the
+  `vrt-diff` artifact to review expected/actual/diff images
+- Baselines live in `vrt/__screenshots__/` and are **canonical for the
+  GitHub Actions runner** — never regenerate them locally (even the official
+  Playwright Docker image differs in emoji/symbol fallback fonts). For an
+  intentional visual change, add the **`update-vrt-baselines` label** to the
+  PR: CI regenerates the baselines, commits them to the branch, and removes
+  the label (a bot push then needs a one-click workflow approval)
+- Local run: `npm run build-storybook && npm run vrt` inside the
+  `mcr.microsoft.com/playwright` Docker image gets close (expect a handful
+  of glyph-fallback diffs); native macOS/Windows runs will not match
+- Determinism hooks: the runner sets `window.__VRT__` (preview freezes the
+  clock via MockDate) and captures with reduced motion + animations disabled
 
 ## Commands
 
@@ -142,7 +153,7 @@ npm run dev        # Storybook dev server
 npm test           # Vitest (all tests)
 npm run build      # Library build (dist/)
 npm run typecheck  # tsc --noEmit
-npm run chromatic  # Visual regression (needs CHROMATIC_PROJECT_TOKEN)
+npm run vrt        # Visual regression (build-storybook first; baselines are CI-canonical)
 ```
 
 `dev`, `test`, `build`, `typecheck` must pass before committing.
