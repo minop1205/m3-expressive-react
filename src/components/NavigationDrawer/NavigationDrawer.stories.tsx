@@ -19,7 +19,7 @@ export const Standard: Story = {
     const [value, setValue] = useState('inbox')
     return (
       <div style={{ height: 480 }}>
-        <NavigationDrawer value={value} onChange={setValue}>
+        <NavigationDrawer value={value} onChange={(_event, v) => setValue(v)}>
           <NavigationDrawerItem value="inbox" icon={<Inbox />} label="Inbox" badge="24" />
           <NavigationDrawerItem value="starred" icon={<Star />} label="Starred" />
         </NavigationDrawer>
@@ -40,7 +40,7 @@ export const Modal: Story = {
           open={open}
           onClose={() => setOpen(false)}
           value={value}
-          onChange={(v) => {
+          onChange={(_event, v) => {
             setValue(v)
             setOpen(false)
           }}

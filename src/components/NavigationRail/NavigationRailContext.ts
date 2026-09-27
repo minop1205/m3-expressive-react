@@ -1,11 +1,11 @@
-import { createContext } from 'react'
+import { createContext, type MouseEvent } from 'react'
 
 export type NavigationRailVariant = 'collapsed' | 'expanded'
 export type NavigationRailArrangement = 'top' | 'center' | 'bottom'
 
 export interface RailContextValue {
   value: string
-  onChange: (value: string) => void
+  onChange: (event: MouseEvent<HTMLButtonElement>, value: string) => void
 }
 
 /** Shared by `NavigationRail` and `NavigationRailItem`. Null when an item is

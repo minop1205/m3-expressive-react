@@ -6,6 +6,7 @@ import {
   useRef,
   type ButtonHTMLAttributes,
   type HTMLAttributes,
+  type MouseEvent,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
@@ -17,7 +18,7 @@ export type NavigationDrawerVariant = 'standard' | 'modal'
 
 interface DrawerContextValue {
   value?: string
-  onChange?: (value: string) => void
+  onChange?: (event: MouseEvent<HTMLButtonElement>, value: string) => void
 }
 
 const DrawerContext = createContext<DrawerContextValue>({})
@@ -32,8 +33,8 @@ export interface NavigationDrawerProps
   onClose?: () => void
   /** Selected destination value (shared with items). */
   value?: string
-  /** Fires with the newly selected destination value. */
-  onChange?: (value: string) => void
+  /** Fires with the triggering event and the newly selected destination value. */
+  onChange?: (event: MouseEvent<HTMLButtonElement>, value: string) => void
   children?: ReactNode
 }
 
@@ -139,7 +140,7 @@ export const NavigationDrawerItem = forwardRef<HTMLButtonElement, NavigationDraw
         className={clsx(styles.item, className)}
         onClick={(event) => {
           onClick?.(event)
-          ctx.onChange?.(value)
+          ctx.onChange?.(event, value)
         }}
       >
         {icon != null && (

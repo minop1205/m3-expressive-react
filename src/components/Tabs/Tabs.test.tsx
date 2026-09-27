@@ -11,7 +11,7 @@ function Example({
   variant,
 }: {
   value?: string
-  onChange?: (v: string) => void
+  onChange?: (event: React.MouseEvent<HTMLButtonElement>, v: string) => void
   variant?: 'primary' | 'secondary'
 }) {
   return (
@@ -42,7 +42,7 @@ describe('Tabs', () => {
     const onChange = vi.fn()
     render(<Example value="a" onChange={onChange} />)
     await user.click(screen.getByRole('tab', { name: 'Gamma' }))
-    expect(onChange).toHaveBeenCalledWith('c')
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'c')
   })
 
   it('moves with arrow keys', async () => {
@@ -51,7 +51,7 @@ describe('Tabs', () => {
     render(<Example value="a" onChange={onChange} />)
     screen.getByRole('tab', { name: 'Alpha' }).focus()
     await user.keyboard('{ArrowRight}')
-    expect(onChange).toHaveBeenCalledWith('b')
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'b')
   })
 
   it('supports the secondary variant', () => {

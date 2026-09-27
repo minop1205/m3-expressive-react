@@ -5,6 +5,7 @@ import {
   type ButtonHTMLAttributes,
   type HTMLAttributes,
   type KeyboardEvent,
+  type MouseEvent,
   type ReactNode,
   useState,
 } from 'react'
@@ -17,7 +18,7 @@ export type TabsVariant = 'primary' | 'secondary'
 
 interface TabsContextValue {
   value: string
-  onChange: (value: string) => void
+  onChange: (event: MouseEvent<HTMLButtonElement>, value: string) => void
   variant: TabsVariant
 }
 
@@ -28,8 +29,8 @@ export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChang
   value?: string
   /** Uncontrolled initial tab value. */
   defaultValue?: string
-  /** Fires with the newly selected tab value. */
-  onChange?: (value: string) => void
+  /** Fires with the triggering event and the newly selected tab value. */
+  onChange?: (event: MouseEvent<HTMLButtonElement>, value: string) => void
   /** Indicator style. @default 'primary' */
   variant?: TabsVariant
   /** Scrollable tabs size to content and scroll horizontally instead of filling. */
@@ -78,9 +79,9 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
   const isControlled = value !== undefined
   const [uncontrolled, setUncontrolled] = useState(defaultValue ?? '')
   const current = isControlled ? value : uncontrolled
-  const handleChange = (v: string) => {
+  const handleChange = (event: MouseEvent<HTMLButtonElement>, v: string) => {
     if (!isControlled) setUncontrolled(v)
-    onChange?.(v)
+    onChange?.(event, v)
   }
 
   return (
@@ -133,7 +134,7 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
       className={clsx(styles.tab, className)}
       onClick={(event) => {
         onClick?.(event)
-        ctx.onChange(value)
+        ctx.onChange(event, value)
       }}
     >
       {icon != null && (

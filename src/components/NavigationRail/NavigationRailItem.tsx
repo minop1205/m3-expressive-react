@@ -97,7 +97,7 @@ export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailIt
         className={clsx(styles.item, className)}
         onClick={(event) => {
           onClick?.(event)
-          ctx?.onChange(value)
+          ctx?.onChange(event, value)
         }}
       >
         <span className={styles.shape} aria-hidden="true" />

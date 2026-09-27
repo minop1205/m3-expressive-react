@@ -96,7 +96,7 @@ export const Collapsed: Story = {
     const [value, setValue] = useState('inbox')
     return (
       <div style={{ height: 520, display: 'flex' }}>
-        <NavigationRail value={value} onChange={setValue} header={<Header expanded={false} />}>
+        <NavigationRail value={value} onChange={(_event, v) => setValue(v)} header={<Header expanded={false} />}>
           <Items />
         </NavigationRail>
       </div>
@@ -109,7 +109,7 @@ export const Expanded: Story = {
     const [value, setValue] = useState('inbox')
     return (
       <div style={{ height: 520, display: 'flex' }}>
-        <NavigationRail value={value} onChange={setValue} variant="expanded" header={<Header expanded />}>
+        <NavigationRail value={value} onChange={(_event, v) => setValue(v)} variant="expanded" header={<Header expanded />}>
           <Items />
         </NavigationRail>
       </div>
@@ -127,7 +127,7 @@ export const Toggle: Story = {
       <div style={{ height: 520, display: 'flex' }}>
         <NavigationRail
           value={value}
-          onChange={setValue}
+          onChange={(_event, v) => setValue(v)}
           variant={variant}
           header={
             <Header

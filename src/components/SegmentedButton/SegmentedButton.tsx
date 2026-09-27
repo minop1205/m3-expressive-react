@@ -2,6 +2,7 @@ import {
   forwardRef,
   useState,
   type HTMLAttributes,
+  type MouseEvent,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
@@ -30,8 +31,8 @@ export interface SegmentedButtonsProps
   value?: string | string[]
   /** Uncontrolled initial selection. Defaults to none (`''`, or `[]` when `multiSelect`). */
   defaultValue?: string | string[]
-  /** Fires with the next selection (string, or string[] when `multiSelect`). */
-  onChange?: (value: string | string[]) => void
+  /** Fires with the triggering event and the next selection (string, or string[] when `multiSelect`). */
+  onChange?: (event: MouseEvent<HTMLButtonElement>, value: string | string[]) => void
   /** Allow selecting multiple segments. @default false */
   multiSelect?: boolean
   /** Disable the whole group. */
@@ -72,19 +73,19 @@ export const SegmentedButtons = forwardRef<HTMLDivElement, SegmentedButtonsProps
     const selectedValues = Array.isArray(current) ? current : [current]
     const isSelected = (v: string) => selectedValues.includes(v)
 
-    const emit = (next: string | string[]) => {
+    const emit = (event: MouseEvent<HTMLButtonElement>, next: string | string[]) => {
       if (!isControlled) setUncontrolled(next)
-      onChange?.(next)
+      onChange?.(event, next)
     }
 
-    const handleClick = (v: string) => {
+    const handleClick = (event: MouseEvent<HTMLButtonElement>, v: string) => {
       if (multiSelect) {
         const set = new Set(selectedValues)
         if (set.has(v)) set.delete(v)
         else set.add(v)
-        emit([...set])
+        emit(event, [...set])
       } else {
-        emit(v)
+        emit(event, v)
       }
     }
 
@@ -109,7 +110,7 @@ export const SegmentedButtons = forwardRef<HTMLDivElement, SegmentedButtonsProps
               aria-pressed={selected}
               data-selected={selected || undefined}
               className={styles.segment}
-              onClick={() => handleClick(option.value)}
+              onClick={(event) => handleClick(event, option.value)}
             >
               {leading != null && (
                 <span className={styles.icon} aria-hidden="true">

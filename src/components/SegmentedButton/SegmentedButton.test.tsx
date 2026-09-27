@@ -24,7 +24,7 @@ describe('SegmentedButtons', () => {
     const onChange = vi.fn()
     render(<SegmentedButtons options={options} value="w" onChange={onChange} />)
     await user.click(screen.getByRole('button', { name: 'Month' }))
-    expect(onChange).toHaveBeenCalledWith('m')
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'm')
   })
 
   it('toggles membership (multi-select)', async () => {
@@ -39,9 +39,9 @@ describe('SegmentedButtons', () => {
       />,
     )
     await user.click(screen.getByRole('button', { name: 'Day' }))
-    expect(onChange).toHaveBeenCalledWith(['w', 'd'])
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), ['w', 'd'])
     await user.click(screen.getByRole('button', { name: 'Week' }))
-    expect(onChange).toHaveBeenLastCalledWith([])
+    expect(onChange).toHaveBeenLastCalledWith(expect.any(Object), [])
   })
 
   it('does not fire when disabled', async () => {
