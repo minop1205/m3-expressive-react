@@ -94,10 +94,26 @@ describe('SearchBar', () => {
     expect(screen.getByRole('searchbox')).toBeDisabled()
   })
 
-  it('forwards a ref to the input', () => {
-    const ref = createRef<HTMLInputElement>()
+  it('forwards a ref to the root element', () => {
+    const ref = createRef<HTMLDivElement>()
     render(<SearchBar ref={ref} aria-label="Search" />)
-    expect(ref.current).toBeInstanceOf(HTMLInputElement)
+    expect(ref.current).toBeInstanceOf(HTMLDivElement)
+    expect(ref.current).toBe(screen.getByRole('search'))
+  })
+
+  it('forwards inputRef to the native input', () => {
+    const inputRef = createRef<HTMLInputElement>()
+    render(<SearchBar inputRef={inputRef} aria-label="Search" />)
+    expect(inputRef.current).toBe(screen.getByRole('searchbox'))
+  })
+
+  it('spreads unknown rest props on the root element', () => {
+    render(<SearchBar aria-label="Search" data-testid="root-landing" />)
+    expect(screen.getByRole('search')).toHaveAttribute(
+      'data-testid',
+      'root-landing',
+    )
+    expect(screen.getByRole('searchbox')).not.toHaveAttribute('data-testid')
   })
 
   it('has no axe violations', async () => {

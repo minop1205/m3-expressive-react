@@ -6,9 +6,13 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type ChangeEventHandler,
   type FocusEvent,
-  type InputHTMLAttributes,
+  type FocusEventHandler,
+  type HTMLAttributes,
+  type MouseEvent,
   type ReactNode,
+  type Ref,
 } from 'react'
 import clsx from 'clsx'
 import styles from './TextField.module.css'
@@ -17,8 +21,8 @@ export type TextFieldVariant = 'filled' | 'outlined'
 
 export interface TextFieldProps
   extends Omit<
-    InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>,
-    'children'
+    HTMLAttributes<HTMLDivElement>,
+    'children' | 'defaultValue' | 'onChange' | 'onFocus' | 'onBlur'
   > {
   /** Container style. @default 'filled' */
   variant?: TextFieldVariant
@@ -44,6 +48,34 @@ export interface TextFieldProps
   multiline?: boolean
   /** Initial visible rows of the `multiline` textarea. @default 2 */
   rows?: number
+  /** Ref to the native `<input>` / `<textarea>` element (the forwarded `ref` points at the root). */
+  inputRef?: Ref<HTMLInputElement | HTMLTextAreaElement>
+  /** Applied to the native input (keeps the floating label association via `htmlFor`). */
+  id?: string
+  /** Controlled input value. */
+  value?: string
+  /** Uncontrolled initial value. */
+  defaultValue?: string
+  /** Native change handler for the input / textarea. */
+  onChange?: ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>
+  /** Focus handler for the input / textarea. */
+  onFocus?: FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>
+  /** Blur handler for the input / textarea. */
+  onBlur?: FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>
+  /** Native input `type` (single-line only). @default 'text' */
+  type?: string
+  /** Native input `name`. */
+  name?: string
+  /** Native input `placeholder`. */
+  placeholder?: string
+  /** Marks the input required and appends `*` to the label. @default false */
+  required?: boolean
+  /** Native input `readOnly`. @default false */
+  readOnly?: boolean
+  /** Native input `autoComplete`. */
+  autoComplete?: string
+  /** Disables the input and applies disabled styling. @default false */
+  disabled?: boolean
 }
 
 /**
@@ -56,221 +88,244 @@ export interface TextFieldProps
  * counter. Value follows the standard controlled (`value` + `onChange`) or
  * uncontrolled (`defaultValue`) input pattern; clicking anywhere on the
  * container focuses the input.
+ *
+ * MUI parity: the forwarded `ref` and any extra props (`{...rest}`) land on
+ * the ROOT element; input concerns are dedicated props (`type`, `name`,
+ * `placeholder`, `required`, `readOnly`, `autoComplete`, `maxLength`, …) and
+ * `inputRef` reaches the native `<input>` / `<textarea>`.
  */
-export const TextField = forwardRef<
-  HTMLInputElement | HTMLTextAreaElement,
-  TextFieldProps
->(function TextField(
-  {
-    variant = 'filled',
-    label,
-    supportingText,
-    errorText,
-    error = false,
-    startIcon,
-    endIcon,
-    prefixText,
-    suffixText,
-    maxLength,
-    multiline = false,
-    rows = 2,
-    disabled = false,
-    className,
-    value: controlledValue,
-    defaultValue,
-    onChange,
-    onFocus,
-    onBlur,
-    id: providedId,
-    ...rest
-  },
-  forwardedRef,
-) {
-  const generatedId = useId()
-  const inputId = providedId ?? generatedId
-  const supportingId = `${inputId}-supporting`
+export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
+  function TextField(
+    {
+      variant = 'filled',
+      label,
+      supportingText,
+      errorText,
+      error = false,
+      startIcon,
+      endIcon,
+      prefixText,
+      suffixText,
+      maxLength,
+      multiline = false,
+      rows = 2,
+      disabled = false,
+      className,
+      value: controlledValue,
+      defaultValue,
+      onChange,
+      onFocus,
+      onBlur,
+      onClick,
+      id: providedId,
+      inputRef,
+      type = 'text',
+      name,
+      placeholder,
+      required = false,
+      readOnly = false,
+      autoComplete,
+      autoFocus,
+      inputMode,
+      ...rest
+    },
+    forwardedRef,
+  ) {
+    const generatedId = useId()
+    const inputId = providedId ?? generatedId
+    const supportingId = `${inputId}-supporting`
 
-  const [focused, setFocused] = useState(false)
-  const [internalValue, setInternalValue] = useState(
-    (defaultValue as string) ?? '',
-  )
-  const isControlled = controlledValue !== undefined
-  const currentValue = isControlled
-    ? (controlledValue as string)
-    : internalValue
-  const populated = currentValue.length > 0
+    const [focused, setFocused] = useState(false)
+    const [internalValue, setInternalValue] = useState(defaultValue ?? '')
+    const isControlled = controlledValue !== undefined
+    const currentValue = isControlled ? controlledValue : internalValue
+    const populated = currentValue.length > 0
 
-  const internalRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
+    const internalRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
 
-  const setRefs = useCallback(
-    (el: HTMLInputElement | HTMLTextAreaElement | null) => {
-      (internalRef as React.MutableRefObject<typeof el>).current = el
-      if (typeof forwardedRef === 'function') {
-        forwardedRef(el)
-      } else if (forwardedRef) {
-        (forwardedRef as React.MutableRefObject<typeof el>).current = el
+    const setRefs = useCallback(
+      (el: HTMLInputElement | HTMLTextAreaElement | null) => {
+        (internalRef as React.MutableRefObject<typeof el>).current = el
+        if (typeof inputRef === 'function') {
+          inputRef(el)
+        } else if (inputRef) {
+          (inputRef as React.MutableRefObject<typeof el>).current = el
+        }
+      },
+      [inputRef],
+    )
+
+    const handleFocus = useCallback(
+      (event: FocusEvent<HTMLInputElement & HTMLTextAreaElement>) => {
+        setFocused(true)
+        onFocus?.(event)
+      },
+      [onFocus],
+    )
+
+    const handleBlur = useCallback(
+      (event: FocusEvent<HTMLInputElement & HTMLTextAreaElement>) => {
+        setFocused(false)
+        onBlur?.(event)
+      },
+      [onBlur],
+    )
+
+    const handleChange = useCallback(
+      (event: ChangeEvent<HTMLInputElement & HTMLTextAreaElement>) => {
+        if (!isControlled) {
+          setInternalValue(event.target.value)
+        }
+        onChange?.(event)
+      },
+      [isControlled, onChange],
+    )
+
+    // Auto-resize textarea
+    useEffect(() => {
+      if (multiline && internalRef.current) {
+        const el = internalRef.current as HTMLTextAreaElement
+        el.style.height = 'auto'
+        el.style.height = `${el.scrollHeight}px`
       }
-    },
-    [forwardedRef],
-  )
+    }, [multiline, currentValue])
 
-  const handleFocus = useCallback(
-    (event: FocusEvent<HTMLInputElement & HTMLTextAreaElement>) => {
-      setFocused(true)
-      onFocus?.(event)
-    },
-    [onFocus],
-  )
+    const handleContainerClick = useCallback(
+      (event: MouseEvent<HTMLDivElement>) => {
+        onClick?.(event)
+        internalRef.current?.focus()
+      },
+      [onClick],
+    )
 
-  const handleBlur = useCallback(
-    (event: FocusEvent<HTMLInputElement & HTMLTextAreaElement>) => {
-      setFocused(false)
-      onBlur?.(event)
-    },
-    [onBlur],
-  )
+    const showError = error && !disabled
+    const showSupportingText =
+      supportingText || (showError && errorText) || maxLength != null
+    const displaySupportingText =
+      showError && errorText ? errorText : supportingText
+    const counterText =
+      maxLength != null ? `${currentValue.length} / ${maxLength}` : undefined
 
-  const handleChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement & HTMLTextAreaElement>) => {
-      if (!isControlled) {
-        setInternalValue(event.target.value)
-      }
-      onChange?.(event)
-    },
-    [isControlled, onChange],
-  )
+    const labelText = label ? `${label}${required ? '*' : ''}` : undefined
 
-  // Auto-resize textarea
-  useEffect(() => {
-    if (multiline && internalRef.current) {
-      const el = internalRef.current as HTMLTextAreaElement
-      el.style.height = 'auto'
-      el.style.height = `${el.scrollHeight}px`
+    const inputProps = {
+      ref: setRefs,
+      id: inputId,
+      className: styles.input,
+      value: currentValue,
+      disabled,
+      name,
+      placeholder,
+      required,
+      readOnly,
+      autoComplete,
+      autoFocus,
+      inputMode,
+      onChange: handleChange,
+      onFocus: handleFocus,
+      onBlur: handleBlur,
+      'aria-invalid': showError || undefined,
+      'aria-describedby': showSupportingText ? supportingId : undefined,
+      maxLength,
     }
-  }, [multiline, currentValue])
 
-  const handleContainerClick = useCallback(() => {
-    internalRef.current?.focus()
-  }, [])
-
-  const showError = error && !disabled
-  const showSupportingText =
-    supportingText || (showError && errorText) || maxLength != null
-  const displaySupportingText =
-    showError && errorText ? errorText : supportingText
-  const counterText =
-    maxLength != null ? `${currentValue.length} / ${maxLength}` : undefined
-
-  const labelText = label
-    ? `${label}${rest.required ? '*' : ''}`
-    : undefined
-
-  const inputProps = {
-    ref: setRefs,
-    id: inputId,
-    className: styles.input,
-    value: currentValue,
-    disabled,
-    onChange: handleChange,
-    onFocus: handleFocus,
-    onBlur: handleBlur,
-    'aria-invalid': showError || undefined,
-    'aria-describedby': showSupportingText ? supportingId : undefined,
-    maxLength,
-    ...rest,
-  }
-
-  return (
-    <div
-      className={clsx(
-        styles.textField,
-        styles[variant],
-        focused && styles.focused,
-        populated && styles.populated,
-        showError && styles.error,
-        disabled && styles.disabled,
-        startIcon && styles.hasLeadingIcon,
-        endIcon && styles.hasTrailingIcon,
-        !label && styles.noLabel,
-        className,
-      )}
-      onClick={handleContainerClick}
-    >
-      <div className={styles.field}>
-        {/* Filled background */}
-        {variant === 'filled' && (
-          <>
-            <span className={styles.background} aria-hidden="true" />
-            <span className={styles.stateLayer} aria-hidden="true" />
-            <span className={styles.activeIndicator} aria-hidden="true" />
-          </>
+    return (
+      <div
+        {...rest}
+        ref={forwardedRef}
+        className={clsx(
+          styles.textField,
+          styles[variant],
+          focused && styles.focused,
+          populated && styles.populated,
+          showError && styles.error,
+          disabled && styles.disabled,
+          startIcon && styles.hasLeadingIcon,
+          endIcon && styles.hasTrailingIcon,
+          !label && styles.noLabel,
+          className,
         )}
+        onClick={handleContainerClick}
+      >
+        <div className={styles.field}>
+          {/* Filled background */}
+          {variant === 'filled' && (
+            <>
+              <span className={styles.background} aria-hidden="true" />
+              <span className={styles.stateLayer} aria-hidden="true" />
+              <span className={styles.activeIndicator} aria-hidden="true" />
+            </>
+          )}
 
-        {/* Outlined border (3-part: start / notch / end) */}
-        {variant === 'outlined' && (
-          <div className={styles.outline} aria-hidden="true">
-            <div className={styles.outlineStart} />
-            <div className={styles.outlineNotch}>
-              {labelText && (
-                <span className={styles.outlineLabel}>{labelText}</span>
+          {/* Outlined border (3-part: start / notch / end) */}
+          {variant === 'outlined' && (
+            <div className={styles.outline} aria-hidden="true">
+              <div className={styles.outlineStart} />
+              <div className={styles.outlineNotch}>
+                {labelText && (
+                  <span className={styles.outlineLabel}>{labelText}</span>
+                )}
+              </div>
+              <div className={styles.outlineEnd} />
+            </div>
+          )}
+
+          {/* Start icon */}
+          {startIcon && (
+            <span className={styles.leadingIcon}>{startIcon}</span>
+          )}
+
+          {/* Middle section: label + content */}
+          <div className={styles.middle}>
+            {/* Label (positioned absolutely within middle) */}
+            {labelText && (
+              <label className={styles.label} htmlFor={inputId}>
+                {labelText}
+              </label>
+            )}
+
+            {/* Input content */}
+            <div className={styles.content}>
+              {prefixText && (
+                <span className={styles.prefix}>{prefixText}</span>
+              )}
+              {multiline ? (
+                <textarea
+                  {...(inputProps as React.TextareaHTMLAttributes<HTMLTextAreaElement> & { ref: typeof setRefs })}
+                  rows={rows}
+                />
+              ) : (
+                <input
+                  {...(inputProps as React.InputHTMLAttributes<HTMLInputElement> & { ref: typeof setRefs })}
+                  type={type}
+                />
+              )}
+              {suffixText && (
+                <span className={styles.suffix}>{suffixText}</span>
               )}
             </div>
-            <div className={styles.outlineEnd} />
           </div>
-        )}
 
-        {/* Start icon */}
-        {startIcon && (
-          <span className={styles.leadingIcon}>{startIcon}</span>
-        )}
-
-        {/* Middle section: label + content */}
-        <div className={styles.middle}>
-          {/* Label (positioned absolutely within middle) */}
-          {labelText && (
-            <label className={styles.label} htmlFor={inputId}>
-              {labelText}
-            </label>
+          {/* End icon */}
+          {endIcon && (
+            <span className={styles.trailingIcon}>{endIcon}</span>
           )}
-
-          {/* Input content */}
-          <div className={styles.content}>
-            {prefixText && (
-              <span className={styles.prefix}>{prefixText}</span>
-            )}
-            {multiline ? (
-              <textarea
-                {...(inputProps as React.TextareaHTMLAttributes<HTMLTextAreaElement> & { ref: typeof setRefs })}
-                rows={rows}
-              />
-            ) : (
-              <input {...(inputProps as React.InputHTMLAttributes<HTMLInputElement> & { ref: typeof setRefs })} />
-            )}
-            {suffixText && (
-              <span className={styles.suffix}>{suffixText}</span>
-            )}
-          </div>
         </div>
 
-        {/* End icon */}
-        {endIcon && (
-          <span className={styles.trailingIcon}>{endIcon}</span>
+        {/* Supporting text */}
+        {showSupportingText && (
+          <div
+            className={styles.supportingText}
+            id={supportingId}
+            role={showError && errorText ? 'alert' : undefined}
+          >
+            <span>{displaySupportingText}</span>
+            {counterText && (
+              <span className={styles.counter}>{counterText}</span>
+            )}
+          </div>
         )}
       </div>
-
-      {/* Supporting text */}
-      {showSupportingText && (
-        <div
-          className={styles.supportingText}
-          id={supportingId}
-          role={showError && errorText ? 'alert' : undefined}
-        >
-          <span>{displaySupportingText}</span>
-          {counterText && (
-            <span className={styles.counter}>{counterText}</span>
-          )}
-        </div>
-      )}
-    </div>
-  )
-})
+    )
+  },
+)
