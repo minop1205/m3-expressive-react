@@ -23,10 +23,45 @@ describe('TextField', () => {
     expect(label).toHaveAttribute('for', input.id)
   })
 
-  it('forwards ref to input element', () => {
-    const ref = createRef<HTMLInputElement>()
-    render(<TextField label="Test" ref={ref} />)
-    expect(ref.current).toBe(screen.getByRole('textbox'))
+  it('forwards ref to the root element', () => {
+    const ref = createRef<HTMLDivElement>()
+    const { container } = render(<TextField label="Test" ref={ref} />)
+    expect(ref.current).toBe(container.firstElementChild)
+    expect(ref.current).toBeInstanceOf(HTMLDivElement)
+  })
+
+  it('forwards inputRef to the native input', () => {
+    const inputRef = createRef<HTMLInputElement | HTMLTextAreaElement>()
+    render(<TextField label="Test" inputRef={inputRef} />)
+    expect(inputRef.current).toBe(screen.getByRole('textbox'))
+  })
+
+  it('forwards inputRef to the textarea when multiline', () => {
+    const inputRef = createRef<HTMLInputElement | HTMLTextAreaElement>()
+    render(<TextField label="Test" multiline inputRef={inputRef} />)
+    expect(inputRef.current).toBe(screen.getByRole('textbox'))
+    expect(inputRef.current?.tagName).toBe('TEXTAREA')
+  })
+
+  it('spreads unknown rest props on the root element', () => {
+    const { container } = render(
+      <TextField label="Test" data-testid="root-landing" />,
+    )
+    expect(container.firstElementChild).toHaveAttribute(
+      'data-testid',
+      'root-landing',
+    )
+    expect(screen.getByRole('textbox')).not.toHaveAttribute('data-testid')
+  })
+
+  it('routes input concerns (placeholder, name, type) to the native input', () => {
+    render(
+      <TextField label="Test" placeholder="Type here" name="field" type="email" />,
+    )
+    const input = screen.getByRole('textbox')
+    expect(input).toHaveAttribute('placeholder', 'Type here')
+    expect(input).toHaveAttribute('name', 'field')
+    expect(input).toHaveAttribute('type', 'email')
   })
 
   it('supports controlled value', () => {

@@ -38,10 +38,12 @@ describe('Chip', () => {
     expect(container.querySelector('[data-testid="icon"]')).toBeInTheDocument()
   })
 
-  it('forwards a ref', () => {
-    const ref = { current: null as HTMLButtonElement | null }
-    render(<Chip ref={ref} label="Tag" />)
-    expect(ref.current).toBeInstanceOf(HTMLButtonElement)
+  it('forwards a ref to the root element', () => {
+    const ref = { current: null as HTMLSpanElement | null }
+    const { container } = render(<Chip ref={ref} label="Tag" />)
+    expect(ref.current).toBeInstanceOf(HTMLSpanElement)
+    expect(ref.current).toBe(container.firstElementChild)
+    expect(ref.current).not.toBeInstanceOf(HTMLButtonElement)
   })
 
   describe('filter variant', () => {

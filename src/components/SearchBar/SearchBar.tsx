@@ -4,16 +4,22 @@ import {
   useRef,
   useState,
   type ChangeEvent,
-  type InputHTMLAttributes,
+  type FocusEventHandler,
+  type HTMLAttributes,
   type KeyboardEvent,
+  type KeyboardEventHandler,
   type ReactNode,
+  type Ref,
 } from 'react'
 import clsx from 'clsx'
 import { SearchIcon } from '../../internal/icons'
 import styles from './SearchBar.module.css'
 
 export interface SearchBarProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'type' | 'children'> {
+  extends Omit<
+    HTMLAttributes<HTMLDivElement>,
+    'children' | 'defaultValue' | 'onChange' | 'onFocus' | 'onBlur' | 'onKeyDown'
+  > {
   /** Controlled query value. */
   value?: string
   /** Uncontrolled initial value. */
@@ -34,6 +40,20 @@ export interface SearchBarProps
   defaultOpen?: boolean
   /** Notified when the open state should change. */
   onOpenChange?: (open: boolean) => void
+  /** Ref to the native `<input>` element (the forwarded `ref` points at the root). */
+  inputRef?: Ref<HTMLInputElement>
+  /** Native input `placeholder`. @default 'Search' */
+  placeholder?: string
+  /** Native input `name`. */
+  name?: string
+  /** Disables the input and applies disabled styling. @default false */
+  disabled?: boolean
+  /** Focus handler for the native input. */
+  onFocus?: FocusEventHandler<HTMLInputElement>
+  /** Blur handler for the native input. */
+  onBlur?: FocusEventHandler<HTMLInputElement>
+  /** Key handler for the native input. */
+  onKeyDown?: KeyboardEventHandler<HTMLInputElement>
 }
 
 
@@ -45,8 +65,13 @@ export interface SearchBarProps
  * SearchBarTokens. Providing `children` (results) turns it into a docked search
  * view: a dropdown under the input (Outline divider) that opens on focus and
  * closes on Escape / outside click.
+ *
+ * MUI parity: the forwarded `ref` and any extra props (`{...rest}`) land on
+ * the ROOT element (the `role="search"` landmark); input concerns are
+ * dedicated props (`placeholder`, `name`, `onFocus`, `onKeyDown`, …) and
+ * `inputRef` reaches the native `<input>`.
  */
-export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
+export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
   function SearchBar(
     {
       value,
@@ -59,14 +84,19 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       open: controlledOpen,
       defaultOpen = false,
       onOpenChange,
+      inputRef,
       placeholder = 'Search',
+      name,
       disabled = false,
+      autoFocus,
+      inputMode,
       onKeyDown,
       onFocus,
+      onBlur,
       className,
       ...rest
     },
-    ref,
+    forwardedRef,
   ) {
     const isControlled = value !== undefined
     const [internal, setInternal] = useState(defaultValue ?? '')
@@ -77,6 +107,12 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
     const open = hasView && (openControlled ? controlledOpen : uncontrolledOpen)
     const wrapperRef = useRef<HTMLDivElement>(null)
+
+    const setRootRefs = (el: HTMLDivElement | null) => {
+      wrapperRef.current = el
+      if (typeof forwardedRef === 'function') forwardedRef(el)
+      else if (forwardedRef) forwardedRef.current = el
+    }
 
     const setOpen = (next: boolean) => {
       if (!openControlled) setUncontrolledOpen(next)
@@ -108,7 +144,8 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
 
     return (
       <div
-        ref={wrapperRef}
+        {...rest}
+        ref={setRootRefs}
         role="search"
         data-disabled={disabled || undefined}
         className={clsx(styles.wrapper, className)}
@@ -118,16 +155,19 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
             {startIcon ?? <SearchIcon />}
           </span>
           <input
-            ref={ref}
-            {...rest}
+            ref={inputRef}
             type="search"
             className={styles.input}
             value={current}
             placeholder={placeholder}
+            name={name}
             disabled={disabled}
+            autoFocus={autoFocus}
+            inputMode={inputMode}
             aria-expanded={hasView ? Boolean(open) : undefined}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
+            onBlur={onBlur}
             onFocus={(event) => {
               onFocus?.(event)
               if (hasView) setOpen(true)

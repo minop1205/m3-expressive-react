@@ -56,8 +56,11 @@ export interface ChipProps
  * Keyboard: Arrow keys move focus between primary and trailing actions
  * (matching material-web's multi-action chip pattern). Trailing action is
  * not in the Tab order; only reachable via arrow keys.
+ *
+ * The forwarded `ref` points at the ROOT `<span>` (MUI parity); extra props
+ * (`{...rest}`) still land on the primary action `<button>`.
  */
-export const Chip = forwardRef<HTMLButtonElement, ChipProps>(
+export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
   function Chip(
     {
       variant = 'assist',
@@ -153,21 +156,9 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(
       trailingRef.current?.addEventListener('focusout', restore, { once: true })
     }, [])
 
-    // Merge forwarded ref with internal ref
-    const setRefs = useCallback(
-      (el: HTMLButtonElement | null) => {
-        (primaryRef as React.MutableRefObject<HTMLButtonElement | null>).current = el
-        if (typeof forwardedRef === 'function') {
-          forwardedRef(el)
-        } else if (forwardedRef) {
-          (forwardedRef as React.MutableRefObject<HTMLButtonElement | null>).current = el
-        }
-      },
-      [forwardedRef],
-    )
-
     return (
       <span
+        ref={forwardedRef}
         className={clsx(
           styles.chip,
           styles[variant],
@@ -183,7 +174,7 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(
       >
         <span className={styles.outline} aria-hidden="true" />
         <button
-          ref={setRefs}
+          ref={primaryRef}
           {...rest}
           type="button"
           className={styles.action}
