@@ -11,7 +11,7 @@ import {
 import clsx from 'clsx'
 import styles from './Slider.module.css'
 
-export type SliderSize = 'xs' | 's' | 'm' | 'l' | 'xl'
+export type SliderSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 export type SliderOrientation = 'horizontal' | 'vertical'
 
 /** A single value, or a `[start, end]` pair for a range slider. */
@@ -37,7 +37,7 @@ export interface SliderProps
   orientation?: SliderOrientation
   /** Draw the active track from the center outward. @default false */
   centered?: boolean
-  /** Icon shown inside the handle (sizes m/l/xl only). */
+  /** Icon shown inside the handle (sizes md/lg/xl only). */
   insetIcon?: ReactNode
   /** Render tick marks at each step. @default false */
   showTicks?: boolean
@@ -58,9 +58,9 @@ export interface SliderProps
 /** Per-size measurements (m3.material.io slider measurements). */
 const SIZES: Record<SliderSize, { track: number; handle: number; corner: number; icon: number }> = {
   xs: { track: 16, handle: 44, corner: 8, icon: 0 },
-  s: { track: 24, handle: 44, corner: 8, icon: 0 },
-  m: { track: 40, handle: 52, corner: 12, icon: 24 },
-  l: { track: 56, handle: 68, corner: 16, icon: 24 },
+  sm: { track: 24, handle: 44, corner: 8, icon: 0 },
+  md: { track: 40, handle: 52, corner: 12, icon: 24 },
+  lg: { track: 56, handle: 68, corner: 16, icon: 24 },
   xl: { track: 96, handle: 108, corner: 28, icon: 32 },
 }
 
@@ -83,7 +83,7 @@ function pos(frac: number, gap = 0) {
  * track 16–96dp / handle 44–108dp), single or **range** (`[start, end]`),
  * **centered** (active from the midpoint), **vertical** orientation, optional
  * tick marks, value-indicator bubble, and an **inset icon** in the handle
- * (m/l/xl). Handle Primary, active track Primary, inactive SecondaryContainer;
+ * (md/lg/xl). Handle Primary, active track Primary, inactive SecondaryContainer;
  * disabled active 38% / inactive 12% — per m3.material.io & Compose SliderTokens.
  */
 export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(

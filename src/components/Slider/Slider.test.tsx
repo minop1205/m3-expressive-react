@@ -27,8 +27,8 @@ describe('Slider', () => {
   })
 
   it('applies the Expressive size', () => {
-    const { container } = render(<Slider aria-label="Vol" size="l" />)
-    expect(container.firstChild).toHaveAttribute('data-size', 'l')
+    const { container } = render(<Slider aria-label="Vol" size="lg" />)
+    expect(container.firstChild).toHaveAttribute('data-size', 'lg')
   })
 
   it('renders a range slider with two thumbs and clamps ordering', () => {
