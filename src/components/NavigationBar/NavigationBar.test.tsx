@@ -29,7 +29,7 @@ describe('NavigationBar', () => {
     const onChange = vi.fn()
     render(<Example value="a" onChange={onChange} />)
     await user.click(screen.getByRole('button', { name: /Gamma/ }))
-    expect(onChange).toHaveBeenCalledWith('c')
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'c')
   })
 
   it('renders a badge', () => {

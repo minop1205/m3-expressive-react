@@ -3,6 +3,7 @@ import {
   useCallback,
   useRef,
   type HTMLAttributes,
+  type MouseEvent,
   type ReactNode,
   useState,
 } from 'react'
@@ -24,8 +25,8 @@ export interface NavigationRailProps
   value?: string
   /** Uncontrolled initial destination value. */
   defaultValue?: string
-  /** Fires with the newly selected destination value. */
-  onChange?: (value: string) => void
+  /** Fires with the triggering event and the newly selected destination value. */
+  onChange?: (event: MouseEvent<HTMLButtonElement>, value: string) => void
   /**
    * `collapsed` (96dp, icon-over-label) or `expanded` (220dp, icon beside label
    * in a full-width pill). The change is a spring morph. @default 'collapsed'
@@ -67,9 +68,9 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
     const isControlled = value !== undefined
     const [uncontrolled, setUncontrolled] = useState(defaultValue ?? '')
     const current = isControlled ? value : uncontrolled
-    const handleChange = (v: string) => {
+    const handleChange = (event: MouseEvent<HTMLButtonElement>, v: string) => {
       if (!isControlled) setUncontrolled(v)
-      onChange?.(v)
+      onChange?.(event, v)
     }
 
     return (

@@ -12,7 +12,7 @@ const meta = {
     label: 'Chip',
     variant: 'assist',
     onClick: fn(),
-    onSelectionChange: fn(),
+    onChange: fn(),
     onRemove: fn(),
   },
   argTypes: {
@@ -26,7 +26,7 @@ const meta = {
     disabled: { control: 'boolean' },
     icon: { control: false },
     onClick: { action: 'onClick' },
-    onSelectionChange: { action: 'onSelectionChange' },
+    onChange: { action: 'onChange' },
     onRemove: { action: 'onRemove' },
   },
 } satisfies Meta<typeof Chip>
@@ -49,14 +49,14 @@ export const AssistElevated: Story = {
 }
 
 export const Filter: Story = {
-  render: ({ onClick: onClickProp, onSelectionChange: onSelectionChangeProp, ...args }) => {
+  render: ({ onClick: onClickProp, onChange: onChangeProp, ...args }) => {
     const [selected, setSelected] = useState(false)
-    const handleSelectionChange = useCallback(
-      (next: boolean) => {
+    const handleChange = useCallback(
+      (event: React.MouseEvent<HTMLButtonElement>, next: boolean) => {
         setSelected(next)
-        onSelectionChangeProp?.(next)
+        onChangeProp?.(event, next)
       },
-      [onSelectionChangeProp],
+      [onChangeProp],
     )
     return (
       <Chip
@@ -64,7 +64,7 @@ export const Filter: Story = {
         variant="filter"
         label="Filter chip"
         selected={selected}
-        onSelectionChange={handleSelectionChange}
+        onChange={handleChange}
         onClick={onClickProp}
       />
     )
@@ -72,7 +72,7 @@ export const Filter: Story = {
 }
 
 export const FilterGroup: Story = {
-  render: ({ onClick: onClickProp, onSelectionChange: onSelectionChangeProp }) => {
+  render: ({ onClick: onClickProp, onChange: onChangeProp }) => {
     const labels = ['Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free']
     const [selectedSet, setSelectedSet] = useState<Set<string>>(new Set())
     return (
@@ -83,13 +83,13 @@ export const FilterGroup: Story = {
             variant="filter"
             label={label}
             selected={selectedSet.has(label)}
-            onSelectionChange={(next) => {
+            onChange={(event, next) => {
               setSelectedSet((prev) => {
                 const s = new Set(prev)
                 next ? s.add(label) : s.delete(label)
                 return s
               })
-              onSelectionChangeProp?.(next)
+              onChangeProp?.(event, next)
             }}
             onClick={onClickProp}
           />
@@ -128,10 +128,10 @@ export const Suggestion: Story = {
 }
 
 export const AllVariants: Story = {
-  render: ({ onClick: onClickProp, onSelectionChange: onSelectionChangeProp, onRemove: onRemoveProp }) => (
+  render: ({ onClick: onClickProp, onChange: onChangeProp, onRemove: onRemoveProp }) => (
     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
       <Chip variant="assist" label="Assist" onClick={onClickProp} />
-      <Chip variant="filter" label="Filter" onClick={onClickProp} onSelectionChange={onSelectionChangeProp} />
+      <Chip variant="filter" label="Filter" onClick={onClickProp} onChange={onChangeProp} />
       <Chip variant="input" label="Input" removable onClick={onClickProp} onRemove={onRemoveProp} />
       <Chip variant="suggestion" label="Suggestion" onClick={onClickProp} />
     </div>

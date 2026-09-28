@@ -4,6 +4,7 @@ import {
   useContext,
   type ButtonHTMLAttributes,
   type HTMLAttributes,
+  type MouseEvent,
   type ReactNode,
   useState,
 } from 'react'
@@ -15,7 +16,7 @@ export type NavigationItemLayout = 'vertical' | 'horizontal'
 
 interface NavContextValue {
   value: string
-  onChange: (value: string) => void
+  onChange: (event: MouseEvent<HTMLButtonElement>, value: string) => void
   layout: NavigationItemLayout
 }
 
@@ -27,8 +28,8 @@ export interface NavigationBarProps
   value?: string
   /** Uncontrolled initial destination value. */
   defaultValue?: string
-  /** Fires with the newly selected destination value. */
-  onChange?: (value: string) => void
+  /** Fires with the triggering event and the newly selected destination value. */
+  onChange?: (event: MouseEvent<HTMLButtonElement>, value: string) => void
   /** Item layout: icon over label (`vertical`) or beside it (`horizontal`, flexible). @default 'vertical' */
   itemLayout?: NavigationItemLayout
   children?: ReactNode
@@ -50,9 +51,9 @@ export const NavigationBar = forwardRef<HTMLElement, NavigationBarProps>(
     const isControlled = value !== undefined
     const [uncontrolled, setUncontrolled] = useState(defaultValue ?? '')
     const current = isControlled ? value : uncontrolled
-    const handleChange = (v: string) => {
+    const handleChange = (event: MouseEvent<HTMLButtonElement>, v: string) => {
       if (!isControlled) setUncontrolled(v)
-      onChange?.(v)
+      onChange?.(event, v)
     }
 
     return (
@@ -104,7 +105,7 @@ export const NavigationBarItem = forwardRef<HTMLButtonElement, NavigationBarItem
         className={clsx(styles.item, className)}
         onClick={(event) => {
           onClick?.(event)
-          ctx.onChange(value)
+          ctx.onChange(event, value)
         }}
       >
         <span className={styles.indicator}>

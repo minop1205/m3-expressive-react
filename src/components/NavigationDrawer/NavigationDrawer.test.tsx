@@ -27,7 +27,7 @@ describe('NavigationDrawer', () => {
       </NavigationDrawer>,
     )
     await user.click(screen.getByRole('button', { name: /Beta/ }))
-    expect(onChange).toHaveBeenCalledWith('b')
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'b')
   })
 
   it('modal exposes a dialog and closes on Escape', async () => {

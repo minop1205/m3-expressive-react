@@ -78,7 +78,7 @@ describe('Button', () => {
     const btn = screen.getByRole('button', { pressed: false })
     await user.click(btn)
     expect(screen.getByRole('button', { pressed: true })).toBeInTheDocument()
-    expect(onChange).toHaveBeenCalledWith(true)
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), true)
   })
 
   it('respects a controlled selected value', () => {
@@ -124,7 +124,7 @@ describe('Button', () => {
     )
     const btn = screen.getByRole('button')
     await user.click(btn)
-    expect(onChange).toHaveBeenCalledWith(true)
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), true)
     expect(btn).toHaveAttribute('aria-pressed', 'false')
     expect(btn).toHaveAttribute('data-shape-state', 'round')
   })

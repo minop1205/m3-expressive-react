@@ -27,9 +27,9 @@ export const Playground: Story = {
   render: ({ onChange: onChangeProp, ...args }) => {
     const [selected, setSelected] = useState('')
     const handleChange = useCallback(
-      (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSelected(event.target.value)
-        onChangeProp?.(event)
+      (event: React.ChangeEvent<HTMLInputElement>, value: string) => {
+        setSelected(value)
+        onChangeProp?.(event, value)
       },
       [onChangeProp],
     )
@@ -77,9 +77,9 @@ export const ManualNameGroup: Story = {
   render: ({ onChange: onChangeProp, ...args }) => {
     const [selected, setSelected] = useState('option1')
     const handleChange = useCallback(
-      (event: React.ChangeEvent<HTMLInputElement>) => {
-        setSelected(event.target.value)
-        onChangeProp?.(event)
+      (event: React.ChangeEvent<HTMLInputElement>, value: string) => {
+        setSelected(value)
+        onChangeProp?.(event, value)
       },
       [onChangeProp],
     )

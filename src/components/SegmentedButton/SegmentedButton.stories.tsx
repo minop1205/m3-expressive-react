@@ -33,7 +33,7 @@ export const SingleSelect: Story = {
       <SegmentedButtons
         options={days}
         value={value}
-        onChange={(v) => setValue(v as string)}
+        onChange={(_event, v) => setValue(v as string)}
       />
     )
   },
@@ -51,7 +51,7 @@ export const MultiSelect: Story = {
           { value: 'u', label: 'Underline' },
         ]}
         value={value}
-        onChange={(v) => setValue(v as string[])}
+        onChange={(_event, v) => setValue(v as string[])}
       />
     )
   },

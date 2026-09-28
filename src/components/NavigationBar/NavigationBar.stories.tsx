@@ -19,7 +19,7 @@ export const Default: Story = {
   render: () => {
     const [value, setValue] = useState('home')
     return (
-      <NavigationBar value={value} onChange={setValue}>
+      <NavigationBar value={value} onChange={(_event, v) => setValue(v)}>
         <NavigationBarItem value="home" icon={<Home />} label="Home" />
         <NavigationBarItem value="search" icon={<Search />} label="Search" />
         <NavigationBarItem value="alerts" icon={<Bell />} label="Alerts" badge="3" />

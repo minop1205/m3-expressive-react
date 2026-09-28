@@ -82,7 +82,7 @@ export const Toggle: Story = {
             variant={variant}
             toggle
             selected={selected}
-            onChange={setSelected}
+            onChange={(_event, next) => setSelected(next)}
           >
             {variant}
           </Button>

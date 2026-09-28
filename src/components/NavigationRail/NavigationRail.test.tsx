@@ -28,7 +28,7 @@ describe('NavigationRail', () => {
     const onChange = vi.fn()
     render(<Example value="a" onChange={onChange} />)
     await user.click(screen.getByRole('button', { name: /Beta/ }))
-    expect(onChange).toHaveBeenCalledWith('b')
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'b')
   })
 
   it('forwards a ref', () => {

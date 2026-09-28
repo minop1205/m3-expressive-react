@@ -36,8 +36,8 @@ export interface ButtonProps
   selected?: boolean
   /** Uncontrolled initial selected state (toggle mode). @default false */
   defaultSelected?: boolean
-  /** Fires with the next selected state when toggled. */
-  onChange?: (selected: boolean) => void
+  /** Fires with the triggering event and the next selected state when toggled. */
+  onChange?: (event: MouseEvent<HTMLButtonElement>, selected: boolean) => void
   children?: ReactNode
 }
 
@@ -78,7 +78,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     if (toggle) {
       const next = !isSelected
       if (!isControlled) setInternalSelected(next)
-      onChange?.(next)
+      onChange?.(event, next)
     }
     onClick?.(event)
   }

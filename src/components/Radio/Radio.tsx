@@ -18,8 +18,11 @@ export interface RadioProps
    * manages group exclusivity for radios sharing a `name`).
    */
   defaultChecked?: boolean
-  /** Fires with the native event when the radio is selected. */
-  onChange?: (event: ChangeEvent<HTMLInputElement>) => void
+  /**
+   * Fires with the native event and this radio's `value` (as a string — the
+   * same value a wrapping `RadioGroup` reports) when the radio is selected.
+   */
+  onChange?: (event: ChangeEvent<HTMLInputElement>, value: string) => void
 }
 
 /**
@@ -52,7 +55,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
 
     const handleChange = useCallback(
       (event: ChangeEvent<HTMLInputElement>) => {
-        onChange?.(event)
+        onChange?.(event, event.target.value)
         if (group != null && value !== undefined) {
           group.onSelect(event, String(value))
         }

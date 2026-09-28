@@ -29,8 +29,8 @@ export interface SliderProps
   min?: number
   max?: number
   step?: number
-  /** Fires with the new value (same shape as `value`). */
-  onChange?: (value: SliderValue, event: ChangeEvent<HTMLInputElement>) => void
+  /** Fires with the native event and the new value (same shape as `value`). */
+  onChange?: (event: ChangeEvent<HTMLInputElement>, value: SliderValue) => void
   /** Expressive size (track thickness / handle height). @default 'xs' */
   size?: SliderSize
   /** Orientation. @default 'horizontal' */
@@ -151,7 +151,7 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
       out = next
     }
     if (!isControlled) setInternal(out)
-    onChange?.(out, event)
+    onChange?.(event, out)
   }
 
   /**

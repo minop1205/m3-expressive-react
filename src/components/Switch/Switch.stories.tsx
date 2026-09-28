@@ -27,9 +27,9 @@ export const Playground: Story = {
   render: ({ onChange: onChangeProp, ...args }) => {
     const [selected, setSelected] = useState(false)
     const handleChange = useCallback(
-      (next: boolean, event: React.ChangeEvent<HTMLInputElement>) => {
+      (event: React.ChangeEvent<HTMLInputElement>, next: boolean) => {
         setSelected(next)
-        onChangeProp?.(next, event)
+        onChangeProp?.(event, next)
       },
       [onChangeProp],
     )
@@ -49,9 +49,9 @@ export const WithIcons: Story = {
   render: ({ onChange: onChangeProp, ...args }) => {
     const [selected, setSelected] = useState(false)
     const handleChange = useCallback(
-      (next: boolean, event: React.ChangeEvent<HTMLInputElement>) => {
+      (event: React.ChangeEvent<HTMLInputElement>, next: boolean) => {
         setSelected(next)
-        onChangeProp?.(next, event)
+        onChangeProp?.(event, next)
       },
       [onChangeProp],
     )
@@ -71,9 +71,9 @@ export const WithIconsBothStates: Story = {
   render: ({ onChange: onChangeProp, ...args }) => {
     const [selected, setSelected] = useState(true)
     const handleChange = useCallback(
-      (next: boolean, event: React.ChangeEvent<HTMLInputElement>) => {
+      (event: React.ChangeEvent<HTMLInputElement>, next: boolean) => {
         setSelected(next)
-        onChangeProp?.(next, event)
+        onChangeProp?.(event, next)
       },
       [onChangeProp],
     )
@@ -102,9 +102,9 @@ export const WithLabel: Story = {
   render: ({ onChange: onChangeProp, ...args }) => {
     const [selected, setSelected] = useState(false)
     const handleChange = useCallback(
-      (next: boolean, event: React.ChangeEvent<HTMLInputElement>) => {
+      (event: React.ChangeEvent<HTMLInputElement>, next: boolean) => {
         setSelected(next)
-        onChangeProp?.(next, event)
+        onChangeProp?.(event, next)
       },
       [onChangeProp],
     )

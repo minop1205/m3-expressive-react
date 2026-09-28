@@ -17,7 +17,7 @@ import styles from './Chip.module.css'
 export type ChipVariant = 'assist' | 'filter' | 'input' | 'suggestion'
 
 export interface ChipProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
+  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'onChange'> {
   /** Visual variant. @default 'assist' */
   variant?: ChipVariant
   /** Whether the chip uses elevated styling (no outline, shadow). @default false */
@@ -30,8 +30,8 @@ export interface ChipProps
   selected?: boolean
   /** Uncontrolled initial selected state. @default false */
   defaultSelected?: boolean
-  /** Fires when selection state changes (filter chip). */
-  onSelectionChange?: (selected: boolean) => void
+  /** Fires with the triggering event and the next selected state (filter chip). */
+  onChange?: (event: MouseEvent<HTMLButtonElement>, selected: boolean) => void
   /** Whether a trailing remove button is shown (input / filter removable). */
   removable?: boolean
   /** Fires when the remove button is clicked. */
@@ -66,7 +66,7 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(
       icon,
       selected: controlledSelected,
       defaultSelected = false,
-      onSelectionChange,
+      onChange,
       removable = false,
       onRemove,
       showSelectedIcon = true,
@@ -93,11 +93,11 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(
         if (isSelectable) {
           const next = !selected
           if (!isControlled) setUncontrolledSelected(next)
-          onSelectionChange?.(next)
+          onChange?.(event, next)
         }
         onClick?.(event)
       },
-      [isSelectable, isControlled, selected, onSelectionChange, onClick],
+      [isSelectable, isControlled, selected, onChange, onClick],
     )
 
     const handleRemove = useCallback(

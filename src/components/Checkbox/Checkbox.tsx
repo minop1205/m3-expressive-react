@@ -18,8 +18,8 @@ export interface CheckboxProps
   defaultChecked?: boolean
   /** Indeterminate (mixed) state. @default false */
   indeterminate?: boolean
-  /** Fires with the next checked state and the native event on toggle. */
-  onChange?: (checked: boolean, event: ChangeEvent<HTMLInputElement>) => void
+  /** Fires with the native event and the next checked state on toggle. */
+  onChange?: (event: ChangeEvent<HTMLInputElement>, checked: boolean) => void
   /** Error state. @default false */
   error?: boolean
 }
@@ -71,7 +71,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       (event: ChangeEvent<HTMLInputElement>) => {
         const next = !isChecked
         if (!isControlled) setInternalChecked(next)
-        onChange?.(next, event)
+        onChange?.(event, next)
       },
       [isChecked, isControlled, onChange],
     )

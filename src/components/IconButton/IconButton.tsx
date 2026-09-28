@@ -40,8 +40,8 @@ export interface IconButtonProps
   selected?: boolean
   /** Uncontrolled initial selected state (toggle mode). @default false */
   defaultSelected?: boolean
-  /** Fires with the next selected state when toggled. */
-  onChange?: (selected: boolean) => void
+  /** Fires with the triggering event and the next selected state when toggled. */
+  onChange?: (event: MouseEvent<HTMLButtonElement>, selected: boolean) => void
   /** Accessible label swapped in when selected (toggle mode). */
   selectedAriaLabel?: string
 }
@@ -85,7 +85,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       if (toggle) {
         const next = !isSelected
         if (!isControlled) setInternalSelected(next)
-        onChange?.(next)
+        onChange?.(event, next)
       }
       onClick?.(event)
     }
