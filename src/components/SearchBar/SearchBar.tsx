@@ -22,10 +22,10 @@ export interface SearchBarProps
   onChange?: (event: ChangeEvent<HTMLInputElement>, value: string) => void
   /** Fires when the user submits (Enter). */
   onSearch?: (value: string) => void
-  /** Leading icon (defaults to a search glyph). */
-  leadingIcon?: ReactNode
-  /** Trailing icon / control. */
-  trailingIcon?: ReactNode
+  /** Icon at the start of the bar (defaults to a search glyph). */
+  startIcon?: ReactNode
+  /** Icon / control at the end of the bar. */
+  endIcon?: ReactNode
   /** Suggestion / result content shown in the expanded search view. */
   children?: ReactNode
   /** Controlled expanded (search-view) state. */
@@ -51,8 +51,8 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       defaultValue,
       onChange,
       onSearch,
-      leadingIcon,
-      trailingIcon,
+      startIcon,
+      endIcon,
       children,
       expanded,
       onExpandedChange,
@@ -112,7 +112,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       >
         <div className={styles.bar}>
           <span className={styles.leading} aria-hidden="true">
-            {leadingIcon ?? <SearchIcon />}
+            {startIcon ?? <SearchIcon />}
           </span>
           <input
             ref={ref}
@@ -130,7 +130,7 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
               if (hasView) setOpen(true)
             }}
           />
-          {trailingIcon != null && <span className={styles.trailing}>{trailingIcon}</span>}
+          {endIcon != null && <span className={styles.trailing}>{endIcon}</span>}
         </div>
         {hasView && (
           <div className={styles.view} data-open={open || undefined}>

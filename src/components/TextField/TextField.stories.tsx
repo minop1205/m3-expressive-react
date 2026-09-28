@@ -69,8 +69,8 @@ export const WithIcons: Story = {
   args: {
     variant: 'filled',
     label: 'Search',
-    leadingIcon: <SearchIcon />,
-    trailingIcon: <ClearIcon />,
+    startIcon: <SearchIcon />,
+    endIcon: <ClearIcon />,
   },
 }
 
@@ -134,7 +134,7 @@ export const Password: Story = {
       <TextField
         {...args}
         type={visible ? 'text' : 'password'}
-        trailingIcon={
+        endIcon={
           <button
             type="button"
             onClick={() => setVisible((v) => !v)}
@@ -165,8 +165,8 @@ export const AllVariants: Story = {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       <TextField {...args} variant="filled" label="Filled" />
       <TextField {...args} variant="outlined" label="Outlined" />
-      <TextField {...args} variant="filled" label="Filled with icons" leadingIcon={<SearchIcon />} trailingIcon={<ClearIcon />} />
-      <TextField {...args} variant="outlined" label="Outlined with icons" leadingIcon={<SearchIcon />} trailingIcon={<ClearIcon />} />
+      <TextField {...args} variant="filled" label="Filled with icons" startIcon={<SearchIcon />} endIcon={<ClearIcon />} />
+      <TextField {...args} variant="outlined" label="Outlined with icons" startIcon={<SearchIcon />} endIcon={<ClearIcon />} />
       <TextField {...args} variant="filled" label="Filled error" error errorText="Error" />
       <TextField {...args} variant="outlined" label="Outlined error" error errorText="Error" />
       <TextField {...args} variant="filled" label="Filled disabled" disabled />

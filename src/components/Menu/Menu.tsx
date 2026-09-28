@@ -289,8 +289,10 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
 })
 
 export interface MenuItemProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  leadingIcon?: ReactNode
-  trailingIcon?: ReactNode
+  /** Icon at the start of the item (decorative). */
+  startIcon?: ReactNode
+  /** Icon at the end of the item (decorative). */
+  endIcon?: ReactNode
   /**
    * Selection state (for the menu's `vertical` variant). When set (even to
    * `false`) the item becomes a `role="menuitemcheckbox"` with `aria-checked`;
@@ -305,8 +307,8 @@ export interface MenuItemProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export const MenuItem = forwardRef<HTMLButtonElement, MenuItemProps>(
   function MenuItem(
     {
-      leadingIcon,
-      trailingIcon,
+      startIcon,
+      endIcon,
       selected,
       disabled = false,
       className,
@@ -336,15 +338,15 @@ export const MenuItem = forwardRef<HTMLButtonElement, MenuItemProps>(
           ctx?.close()
         }}
       >
-        {leadingIcon != null && (
+        {startIcon != null && (
           <span className={styles.leading} aria-hidden="true">
-            {leadingIcon}
+            {startIcon}
           </span>
         )}
         <span className={styles.label}>{children}</span>
-        {trailingIcon != null && (
+        {endIcon != null && (
           <span className={styles.trailing} aria-hidden="true">
-            {trailingIcon}
+            {endIcon}
           </span>
         )}
         {!disabled && <Ripple />}
