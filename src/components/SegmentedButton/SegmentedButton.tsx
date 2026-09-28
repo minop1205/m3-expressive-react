@@ -11,7 +11,7 @@ import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { CheckIcon } from '../../internal/icons'
 import styles from './SegmentedButton.module.css'
 
-/** One segment of a {@link SegmentedButtons} group. */
+/** One segment of a {@link SegmentedButton} group. */
 export interface SegmentedButtonOption {
   /** Unique value identifying the segment within the group. */
   value: string
@@ -23,7 +23,7 @@ export interface SegmentedButtonOption {
   disabled?: boolean
 }
 
-export interface SegmentedButtonsProps
+export interface SegmentedButtonProps
   extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange'> {
   /** The segments. */
   options: SegmentedButtonOption[]
@@ -50,8 +50,8 @@ export interface SegmentedButtonsProps
  * unselected are transparent with OnSurface content — per Compose
  * OutlinedSegmentedButtonTokens. Segments are toggle buttons (aria-pressed).
  */
-export const SegmentedButtons = forwardRef<HTMLDivElement, SegmentedButtonsProps>(
-  function SegmentedButtons(
+export const SegmentedButton = forwardRef<HTMLDivElement, SegmentedButtonProps>(
+  function SegmentedButton(
     {
       options,
       value,
@@ -129,3 +129,9 @@ export const SegmentedButtons = forwardRef<HTMLDivElement, SegmentedButtonsProps
     )
   },
 )
+
+/** @deprecated Use SegmentedButton — removed in the next release. */
+export const SegmentedButtons = SegmentedButton
+
+/** @deprecated Use SegmentedButtonProps — removed in the next release. */
+export type SegmentedButtonsProps = SegmentedButtonProps

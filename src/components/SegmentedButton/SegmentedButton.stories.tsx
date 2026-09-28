@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
-import { SegmentedButtons } from './SegmentedButton'
+import { SegmentedButton } from './SegmentedButton'
 
 const meta = {
   title: 'Components/SegmentedButton',
-  component: SegmentedButtons,
+  component: SegmentedButton,
   parameters: { layout: 'centered' },
   args: {
     options: [
@@ -15,7 +15,7 @@ const meta = {
     value: 'w',
     onChange: () => {},
   },
-} satisfies Meta<typeof SegmentedButtons>
+} satisfies Meta<typeof SegmentedButton>
 
 export default meta
 type Story = StoryObj<typeof meta>
@@ -30,7 +30,7 @@ export const SingleSelect: Story = {
   render: () => {
     const [value, setValue] = useState('w')
     return (
-      <SegmentedButtons
+      <SegmentedButton
         options={days}
         value={value}
         onChange={(_event, v) => setValue(v as string)}
@@ -43,7 +43,7 @@ export const MultiSelect: Story = {
   render: () => {
     const [value, setValue] = useState<string[]>(['b', 'i'])
     return (
-      <SegmentedButtons
+      <SegmentedButton
         multiSelect
         options={[
           { value: 'b', label: 'Bold' },
@@ -59,7 +59,7 @@ export const MultiSelect: Story = {
 
 export const Disabled: Story = {
   render: () => (
-    <SegmentedButtons
+    <SegmentedButton
       disabled
       options={days}
       value="w"
