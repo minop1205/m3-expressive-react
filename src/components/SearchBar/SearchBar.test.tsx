@@ -50,6 +50,44 @@ describe('SearchBar', () => {
     expect(input).toHaveAttribute('aria-expanded', 'false')
   })
 
+  it('renders the view open initially with defaultOpen (uncontrolled)', () => {
+    render(
+      <SearchBar aria-label="Search" defaultOpen>
+        <ul>
+          <li>Result one</li>
+        </ul>
+      </SearchBar>,
+    )
+    expect(screen.getByRole('searchbox')).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('notifies onOpenChange and follows the controlled open prop', async () => {
+    const user = userEvent.setup()
+    const onOpenChange = vi.fn()
+    const { rerender } = render(
+      <SearchBar aria-label="Search" open={false} onOpenChange={onOpenChange}>
+        <ul>
+          <li>Result one</li>
+        </ul>
+      </SearchBar>,
+    )
+    const input = screen.getByRole('searchbox')
+    await user.click(input)
+    expect(onOpenChange).toHaveBeenLastCalledWith(true)
+    // Controlled: stays closed until the prop changes.
+    expect(input).toHaveAttribute('aria-expanded', 'false')
+    rerender(
+      <SearchBar aria-label="Search" open onOpenChange={onOpenChange}>
+        <ul>
+          <li>Result one</li>
+        </ul>
+      </SearchBar>,
+    )
+    expect(input).toHaveAttribute('aria-expanded', 'true')
+    await user.keyboard('{Escape}')
+    expect(onOpenChange).toHaveBeenLastCalledWith(false)
+  })
+
   it('marks the wrapper and disables the input when disabled', () => {
     render(<SearchBar aria-label="Search" disabled />)
     expect(screen.getByRole('search')).toHaveAttribute('data-disabled')
