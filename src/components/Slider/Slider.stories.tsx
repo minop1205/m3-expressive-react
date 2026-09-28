@@ -10,7 +10,7 @@ const meta = {
   parameters: { layout: 'padded' },
   args: { defaultValue: 40, onChange: fn() },
   argTypes: {
-    size: { control: 'inline-radio', options: ['xs', 's', 'm', 'l', 'xl'] },
+    size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
     orientation: { control: 'inline-radio', options: ['horizontal', 'vertical'] },
     centered: { control: 'boolean' },
     showTicks: { control: 'boolean' },
@@ -32,7 +32,7 @@ export const Continuous: Story = {}
 export const Sizes: Story = {
   render: (args) => (
     <div style={{ display: 'grid', gap: 28, width: 320 }}>
-      {(['xs', 's', 'm', 'l', 'xl'] as SliderSize[]).map((size) => (
+      {(['xs', 'sm', 'md', 'lg', 'xl'] as SliderSize[]).map((size) => (
         <Slider key={size} {...args} size={size} defaultValue={60} aria-label={size} />
       ))}
     </div>
@@ -61,7 +61,7 @@ export const Stepped: Story = {
 
 export const WithInsetIcon: Story = {
   args: {
-    size: 'l',
+    size: 'lg',
     defaultValue: 60,
     insetIcon: <VolumeIcon />,
   },
