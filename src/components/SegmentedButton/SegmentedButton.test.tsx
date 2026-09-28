@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
-import { SegmentedButtons } from './SegmentedButton'
+import { SegmentedButton } from './SegmentedButton'
 
 const options = [
   { value: 'd', label: 'Day' },
@@ -11,9 +11,9 @@ const options = [
   { value: 'm', label: 'Month' },
 ]
 
-describe('SegmentedButtons', () => {
+describe('SegmentedButton', () => {
   it('renders a group of toggle buttons with aria-pressed', () => {
-    render(<SegmentedButtons options={options} value="w" onChange={() => {}} />)
+    render(<SegmentedButton options={options} value="w" onChange={() => {}} />)
     expect(screen.getByRole('group')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Week', pressed: true })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Day', pressed: false })).toBeInTheDocument()
@@ -22,7 +22,7 @@ describe('SegmentedButtons', () => {
   it('selects a segment on click (single-select)', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<SegmentedButtons options={options} value="w" onChange={onChange} />)
+    render(<SegmentedButton options={options} value="w" onChange={onChange} />)
     await user.click(screen.getByRole('button', { name: 'Month' }))
     expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'm')
   })
@@ -31,7 +31,7 @@ describe('SegmentedButtons', () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(
-      <SegmentedButtons
+      <SegmentedButton
         multiSelect
         options={options}
         value={['w']}
@@ -47,20 +47,20 @@ describe('SegmentedButtons', () => {
   it('does not fire when disabled', async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 })
     const onChange = vi.fn()
-    render(<SegmentedButtons disabled options={options} value="w" onChange={onChange} />)
+    render(<SegmentedButton disabled options={options} value="w" onChange={onChange} />)
     await user.click(screen.getByRole('button', { name: 'Day' }))
     expect(onChange).not.toHaveBeenCalled()
   })
 
   it('forwards a ref', () => {
     const ref = createRef<HTMLDivElement>()
-    render(<SegmentedButtons ref={ref} options={options} value="w" onChange={() => {}} />)
+    render(<SegmentedButton ref={ref} options={options} value="w" onChange={() => {}} />)
     expect(ref.current).toBeInstanceOf(HTMLDivElement)
   })
 
   it('has no axe violations', async () => {
     const { container } = render(
-      <SegmentedButtons
+      <SegmentedButton
         aria-label="View"
         options={options}
         value="w"
@@ -71,11 +71,11 @@ describe('SegmentedButtons', () => {
   })
 })
 
-describe('SegmentedButtons uncontrolled mode', () => {
+describe('SegmentedButton uncontrolled mode', () => {
   it('single-select updates from defaultValue', async () => {
     const user = userEvent.setup()
     render(
-      <SegmentedButtons
+      <SegmentedButton
         aria-label="View"
         defaultValue="day"
         options={[
@@ -93,7 +93,7 @@ describe('SegmentedButtons uncontrolled mode', () => {
   it('multi-select accumulates from an empty default', async () => {
     const user = userEvent.setup()
     render(
-      <SegmentedButtons
+      <SegmentedButton
         aria-label="Toppings"
         multiSelect
         options={[
