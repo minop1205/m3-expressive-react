@@ -26,12 +26,14 @@ export interface SearchBarProps
   startIcon?: ReactNode
   /** Icon / control at the end of the bar. */
   endIcon?: ReactNode
-  /** Suggestion / result content shown in the expanded search view. */
+  /** Suggestion / result content shown in the open search view. */
   children?: ReactNode
-  /** Controlled expanded (search-view) state. */
-  expanded?: boolean
-  /** Notified when the expanded state should change. */
-  onExpandedChange?: (expanded: boolean) => void
+  /** Controlled open (search-view) state. */
+  open?: boolean
+  /** Uncontrolled initial open state. @default false */
+  defaultOpen?: boolean
+  /** Notified when the open state should change. */
+  onOpenChange?: (open: boolean) => void
 }
 
 
@@ -54,8 +56,9 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
       startIcon,
       endIcon,
       children,
-      expanded,
-      onExpandedChange,
+      open: controlledOpen,
+      defaultOpen = false,
+      onOpenChange,
       placeholder = 'Search',
       disabled = false,
       onKeyDown,
@@ -70,14 +73,14 @@ export const SearchBar = forwardRef<HTMLInputElement, SearchBarProps>(
     const current = isControlled ? value : internal
 
     const hasView = children != null
-    const expandControlled = expanded !== undefined
-    const [uncontrolledOpen, setUncontrolledOpen] = useState(false)
-    const open = hasView && (expandControlled ? expanded : uncontrolledOpen)
+    const openControlled = controlledOpen !== undefined
+    const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
+    const open = hasView && (openControlled ? controlledOpen : uncontrolledOpen)
     const wrapperRef = useRef<HTMLDivElement>(null)
 
     const setOpen = (next: boolean) => {
-      if (!expandControlled) setUncontrolledOpen(next)
-      onExpandedChange?.(next)
+      if (!openControlled) setUncontrolledOpen(next)
+      onOpenChange?.(next)
     }
 
     useEffect(() => {
