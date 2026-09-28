@@ -115,7 +115,7 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
           value={text}
           disabled={disabled}
           onChange={handleInput}
-          trailingIcon={
+          endIcon={
             <button
               type="button"
               className={styles.toggle}

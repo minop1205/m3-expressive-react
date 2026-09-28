@@ -22,11 +22,11 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {}
 
 export const WithTrailingIcon: Story = {
-  args: { trailingIcon: <Mic /> },
+  args: { endIcon: <Mic /> },
 }
 
 export const Disabled: Story = {
-  args: { disabled: true, trailingIcon: <Mic /> },
+  args: { disabled: true, endIcon: <Mic /> },
 }
 
 export const SearchView: Story = {

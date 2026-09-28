@@ -31,9 +31,9 @@ export interface TextFieldProps
   /** Error state — error colors, `aria-invalid`, and `errorText`. Ignored while `disabled`. @default false */
   error?: boolean
   /** Icon at the start of the field (decorative). */
-  leadingIcon?: ReactNode
+  startIcon?: ReactNode
   /** Icon at the end of the field (decorative). */
-  trailingIcon?: ReactNode
+  endIcon?: ReactNode
   /** Static text before the input value (e.g. currency symbol). */
   prefixText?: string
   /** Static text after the input value (e.g. unit). */
@@ -51,7 +51,7 @@ export interface TextFieldProps
  *
  * A single-line `<input>` — or auto-growing `<textarea>` with `multiline` —
  * wrapped in the MD3 field anatomy: floating label (outlined variant notches
- * the border), leading/trailing icons, prefix/suffix text, and a supporting
+ * the border), start/end icons, prefix/suffix text, and a supporting
  * line that holds helper text, the error message, and the `maxLength`
  * counter. Value follows the standard controlled (`value` + `onChange`) or
  * uncontrolled (`defaultValue`) input pattern; clicking anywhere on the
@@ -67,8 +67,8 @@ export const TextField = forwardRef<
     supportingText,
     errorText,
     error = false,
-    leadingIcon,
-    trailingIcon,
+    startIcon,
+    endIcon,
     prefixText,
     suffixText,
     maxLength,
@@ -189,8 +189,8 @@ export const TextField = forwardRef<
         populated && styles.populated,
         showError && styles.error,
         disabled && styles.disabled,
-        leadingIcon && styles.hasLeadingIcon,
-        trailingIcon && styles.hasTrailingIcon,
+        startIcon && styles.hasLeadingIcon,
+        endIcon && styles.hasTrailingIcon,
         !label && styles.noLabel,
         className,
       )}
@@ -219,9 +219,9 @@ export const TextField = forwardRef<
           </div>
         )}
 
-        {/* Leading icon */}
-        {leadingIcon && (
-          <span className={styles.leadingIcon}>{leadingIcon}</span>
+        {/* Start icon */}
+        {startIcon && (
+          <span className={styles.leadingIcon}>{startIcon}</span>
         )}
 
         {/* Middle section: label + content */}
@@ -252,9 +252,9 @@ export const TextField = forwardRef<
           </div>
         </div>
 
-        {/* Trailing icon */}
-        {trailingIcon && (
-          <span className={styles.trailingIcon}>{trailingIcon}</span>
+        {/* End icon */}
+        {endIcon && (
+          <span className={styles.trailingIcon}>{endIcon}</span>
         )}
       </div>
 

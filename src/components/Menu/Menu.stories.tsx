@@ -19,8 +19,8 @@ type Story = StoryObj<typeof meta>
 export const Default: Story = {
   render: () => (
     <Menu trigger={<Button variant="outlined">Open menu</Button>}>
-      <MenuItem leadingIcon={<ContentCopy />}>Copy</MenuItem>
-      <MenuItem leadingIcon={<Share />}>Share</MenuItem>
+      <MenuItem startIcon={<ContentCopy />}>Copy</MenuItem>
+      <MenuItem startIcon={<Share />}>Share</MenuItem>
       <MenuItem disabled>Archive</MenuItem>
     </Menu>
   ),
@@ -31,8 +31,8 @@ export const Open: Story = {
   render: () => (
     <div style={{ paddingBottom: 200 }}>
       <Menu defaultOpen trigger={<Button variant="outlined">Open menu</Button>}>
-        <MenuItem leadingIcon={<ContentCopy />}>Copy</MenuItem>
-        <MenuItem leadingIcon={<Share />}>Share</MenuItem>
+        <MenuItem startIcon={<ContentCopy />}>Copy</MenuItem>
+        <MenuItem startIcon={<Share />}>Share</MenuItem>
         <MenuItem disabled>Archive</MenuItem>
       </Menu>
     </div>
@@ -52,16 +52,16 @@ export const Vertical: Story = {
         trigger={<Button variant="outlined">Open menu</Button>}
       >
         <MenuGroup label="Format">
-          <MenuItem selected leadingIcon={<FormatBold />}>
+          <MenuItem selected startIcon={<FormatBold />}>
             Bold
           </MenuItem>
-          <MenuItem selected={false} leadingIcon={<FormatItalic />}>
+          <MenuItem selected={false} startIcon={<FormatItalic />}>
             Italic
           </MenuItem>
         </MenuGroup>
         <MenuGroup>
-          <MenuItem leadingIcon={<ContentCopy />}>Copy</MenuItem>
-          <MenuItem leadingIcon={<Share />}>Share</MenuItem>
+          <MenuItem startIcon={<ContentCopy />}>Copy</MenuItem>
+          <MenuItem startIcon={<Share />}>Share</MenuItem>
           <MenuDivider />
           <MenuItem disabled>Archive</MenuItem>
         </MenuGroup>
@@ -81,16 +81,16 @@ export const VerticalVibrant: Story = {
         trigger={<Button variant="outlined">Open menu</Button>}
       >
         <MenuGroup label="Format">
-          <MenuItem selected leadingIcon={<FormatBold />}>
+          <MenuItem selected startIcon={<FormatBold />}>
             Bold
           </MenuItem>
-          <MenuItem selected={false} leadingIcon={<FormatItalic />}>
+          <MenuItem selected={false} startIcon={<FormatItalic />}>
             Italic
           </MenuItem>
           <MenuItem disabled>Underline</MenuItem>
         </MenuGroup>
         <MenuGroup>
-          <MenuItem leadingIcon={<ContentCopy />}>Copy</MenuItem>
+          <MenuItem startIcon={<ContentCopy />}>Copy</MenuItem>
         </MenuGroup>
       </Menu>
     </div>

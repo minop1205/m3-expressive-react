@@ -93,7 +93,7 @@ describe('TextField', () => {
     render(
       <TextField
         label="Search"
-        leadingIcon={<svg data-testid="lead-icon" />}
+        startIcon={<svg data-testid="lead-icon" />}
       />,
     )
     expect(screen.getByTestId('lead-icon')).toBeInTheDocument()
@@ -103,7 +103,7 @@ describe('TextField', () => {
     render(
       <TextField
         label="Password"
-        trailingIcon={<svg data-testid="trail-icon" />}
+        endIcon={<svg data-testid="trail-icon" />}
       />,
     )
     expect(screen.getByTestId('trail-icon')).toBeInTheDocument()
