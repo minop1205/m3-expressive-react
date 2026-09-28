@@ -12,22 +12,17 @@ const meta = {
   args: {
     icon: <EditIcon />,
     'aria-label': 'Edit',
-    color: 'primary-container',
+    color: 'primary',
+    tonal: true,
     size: 'regular',
     onClick: fn(),
   },
   argTypes: {
     color: {
       control: 'inline-radio',
-      options: [
-        'primary-container',
-        'secondary-container',
-        'tertiary-container',
-        'primary',
-        'secondary',
-        'tertiary',
-      ],
+      options: ['primary', 'secondary', 'tertiary'],
     },
+    tonal: { control: 'boolean' },
     size: {
       control: 'inline-radio',
       options: ['small', 'regular', 'medium', 'large'],
@@ -58,12 +53,12 @@ export const Sizes: Story = {
 export const Colors: Story = {
   render: (args) => (
     <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-      <Fab {...args} color="primary-container" aria-label="Primary container" />
-      <Fab {...args} color="secondary-container" aria-label="Secondary container" />
-      <Fab {...args} color="tertiary-container" aria-label="Tertiary container" />
-      <Fab {...args} color="primary" aria-label="Primary" />
-      <Fab {...args} color="secondary" aria-label="Secondary" />
-      <Fab {...args} color="tertiary" aria-label="Tertiary" />
+      <Fab {...args} color="primary" aria-label="Primary container" />
+      <Fab {...args} color="secondary" aria-label="Secondary container" />
+      <Fab {...args} color="tertiary" aria-label="Tertiary container" />
+      <Fab {...args} color="primary" tonal={false} aria-label="Primary" />
+      <Fab {...args} color="secondary" tonal={false} aria-label="Secondary" />
+      <Fab {...args} color="tertiary" tonal={false} aria-label="Tertiary" />
     </div>
   ),
 }
@@ -72,8 +67,8 @@ export const Extended: Story = {
   render: (args) => (
     <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
       <Fab {...args} icon={<AddIcon />} label="Create" />
-      <Fab {...args} icon={<NavigationIcon />} label="Navigate" color="secondary-container" />
-      <Fab {...args} icon={<EditIcon />} label="Compose" color="tertiary-container" />
+      <Fab {...args} icon={<NavigationIcon />} label="Navigate" color="secondary" />
+      <Fab {...args} icon={<EditIcon />} label="Compose" color="tertiary" />
     </div>
   ),
 }
