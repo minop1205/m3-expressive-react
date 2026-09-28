@@ -12,14 +12,8 @@ import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { useFabMorph } from './useFabMorph'
 import styles from './Fab.module.css'
 
-/** FAB color style. @default 'primary-container' */
-export type FabColor =
-  | 'primary-container'
-  | 'secondary-container'
-  | 'tertiary-container'
-  | 'primary'
-  | 'secondary'
-  | 'tertiary'
+/** FAB color set. @default 'primary' */
+export type FabColor = 'primary' | 'secondary' | 'tertiary'
 
 /** FAB size. @default 'regular' */
 export type FabSize = 'small' | 'regular' | 'medium' | 'large'
@@ -40,8 +34,15 @@ export interface FabProps
    * Ignored without `label`.
    */
   expanded?: boolean | 'container'
-  /** Container color style. @default 'primary-container' */
+  /** Color set for the container/content roles. @default 'primary' */
   color?: FabColor
+  /**
+   * `true` (the default) renders the tonal palette — the `*-container` /
+   * `on-*-container` roles (e.g. `primary-container`). `false` renders the
+   * high-emphasis accent palette — the base color roles (e.g. `primary` with
+   * `on-primary` content). @default true
+   */
+  tonal?: boolean
   /** Container size. @default 'regular' (56dp) */
   size?: FabSize
   /**
@@ -55,8 +56,10 @@ export interface FabProps
  * Material Design 3 (Expressive) Floating Action Button.
  *
  * A native `<button>` (MUI-idiomatic `onClick`) supporting 4 sizes
- * (small 40dp, regular 56dp, medium 80dp, large 96dp), 6 color styles, and an
- * optional label for the Extended FAB. With `expanded` the Extended FAB morphs
+ * (small 40dp, regular 56dp, medium 80dp, large 96dp), 3 color sets
+ * (`primary` / `secondary` / `tertiary`, each tonal by default or
+ * high-emphasis via `tonal={false}`), and an optional label for the Extended
+ * FAB. With `expanded` the Extended FAB morphs
  * between icon-only and icon + label: the label row's measured width
  * (`--_label-total`) scales with the spring-driven `--_ext` while the label
  * cross-fades via `--_label-o`. Elevation lifts on hover (level 3 → 4) and the
@@ -67,7 +70,8 @@ export const Fab = forwardRef<HTMLButtonElement, FabProps>(function Fab(
     icon,
     label,
     expanded,
-    color = 'primary-container',
+    color = 'primary',
+    tonal = true,
     size = 'regular',
     disableElevation = false,
     disabled = false,
@@ -118,6 +122,7 @@ export const Fab = forwardRef<HTMLButtonElement, FabProps>(function Fab(
       type={type}
       disabled={disabled}
       data-color={color}
+      data-tonal={tonal || undefined}
       data-size={size}
       data-disable-elevation={disableElevation || undefined}
       data-extended={(isExtended && !morph) || undefined}

@@ -75,7 +75,7 @@ function Header({ expanded, onMenuClick }: { expanded: boolean; onMenuClick?: ()
       />
       {/* expanded="container": the FAB follows the rail's --_t spring, in
           exact sync with the rail width and the items' morphs. */}
-      <Fab icon={<Edit />} label="Compose" expanded="container" color="primary-container" disableElevation />
+      <Fab icon={<Edit />} label="Compose" expanded="container" color="primary" disableElevation />
     </>
   )
 }

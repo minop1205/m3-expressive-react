@@ -23,6 +23,20 @@ describe('Fab', () => {
     expect(btn).toHaveAttribute('data-size', 'large')
   })
 
+  it('defaults to the tonal primary color set', () => {
+    render(<Fab icon={Icon} aria-label="x" />)
+    const btn = screen.getByRole('button')
+    expect(btn).toHaveAttribute('data-color', 'primary')
+    expect(btn).toHaveAttribute('data-tonal', 'true')
+  })
+
+  it('omits data-tonal for the high-emphasis palette (tonal={false})', () => {
+    render(<Fab icon={Icon} aria-label="x" color="secondary" tonal={false} />)
+    const btn = screen.getByRole('button')
+    expect(btn).toHaveAttribute('data-color', 'secondary')
+    expect(btn).not.toHaveAttribute('data-tonal')
+  })
+
   it('fires onClick when activated', async () => {
     const user = userEvent.setup()
     const onClick = vi.fn()

@@ -1,6 +1,8 @@
 /**
- * MD3 FAB. 3 sizes (regular / medium / large), 6 color styles, optional
- * label for Extended FAB. Elevation level 3 at rest, level 4 on hover.
+ * MD3 FAB. 4 sizes (small / regular / medium / large), 3 color sets
+ * (primary / secondary / tertiary) x tonal (container roles, default) or
+ * high-emphasis (base roles, `data-tonal` absent), optional label for
+ * Extended FAB. Elevation level 3 at rest, level 4 on hover.
  * Values: m3.material.io/components/floating-action-button/specs
  */
 
@@ -24,7 +26,7 @@
   min-width: var(--_min-width);
   padding-inline: var(--_pad-inline);
 
-  /* Default color = primary-container */
+  /* Default color set = primary, tonal (primary-container roles) */
   --_container-color: var(--md-sys-color-primary-container);
   --_content-color: var(--md-sys-color-on-primary-container);
   --_state-layer-color: var(--md-sys-color-on-primary-container);
@@ -159,29 +161,36 @@
 }
 
 /* --------------------------------------------------------------------------- */
-/* Color styles                                                                */
+/* Color sets — `data-color` picks the set, `data-tonal` (present = tonal,     */
+/* the default) picks container roles vs high-emphasis base roles. `:where()`  */
+/* keeps every rule at the base .fab specificity so `.fab:disabled` below      */
+/* still overrides the color vars (as it did with the single-attribute rules). */
 /* --------------------------------------------------------------------------- */
-.fab[data-color='secondary-container'] {
+
+/* Tonal (container roles); tonal primary is the .fab base above. */
+.fab:where([data-tonal][data-color='secondary']) {
   --_container-color: var(--md-sys-color-secondary-container);
   --_content-color: var(--md-sys-color-on-secondary-container);
   --_state-layer-color: var(--md-sys-color-on-secondary-container);
 }
-.fab[data-color='tertiary-container'] {
+.fab:where([data-tonal][data-color='tertiary']) {
   --_container-color: var(--md-sys-color-tertiary-container);
   --_content-color: var(--md-sys-color-on-tertiary-container);
   --_state-layer-color: var(--md-sys-color-on-tertiary-container);
 }
-.fab[data-color='primary'] {
+
+/* High-emphasis (base roles, `tonal={false}`) */
+.fab:where(:not([data-tonal])[data-color='primary']) {
   --_container-color: var(--md-sys-color-primary);
   --_content-color: var(--md-sys-color-on-primary);
   --_state-layer-color: var(--md-sys-color-on-primary);
 }
-.fab[data-color='secondary'] {
+.fab:where(:not([data-tonal])[data-color='secondary']) {
   --_container-color: var(--md-sys-color-secondary);
   --_content-color: var(--md-sys-color-on-secondary);
   --_state-layer-color: var(--md-sys-color-on-secondary);
 }
-.fab[data-color='tertiary'] {
+.fab:where(:not([data-tonal])[data-color='tertiary']) {
   --_container-color: var(--md-sys-color-tertiary);
   --_content-color: var(--md-sys-color-on-tertiary);
   --_state-layer-color: var(--md-sys-color-on-tertiary);
