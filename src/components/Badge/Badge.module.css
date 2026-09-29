@@ -1,0 +1,81 @@
+/* =========================================================================== */
+/* Badge — Material Design 3                                                  */
+/* Small (dot) & Large (label) variants                                       */
+/* =========================================================================== */
+
+/* --- Private tokens ------------------------------------------------------ */
+.badge {
+  --_container-color: var(--md-sys-color-error);
+  --_label-text-color: var(--md-sys-color-on-error);
+  --_small-size: 6px;
+  --_large-height: 16px;
+  --_large-shape: 8px;
+  --_large-padding: 4px;
+  --_large-offset-bottom: 14px;
+  --_large-offset-start: 12px;
+  --_easing: var(--md-sys-motion-easing-standard);
+}
+
+.anchor {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+/* --- Base badge ---------------------------------------------------------- */
+.badge {
+  position: absolute;
+  box-sizing: border-box;
+  background-color: var(--_container-color);
+  pointer-events: none;
+  z-index: 1;
+
+  /* Hidden by default; .visible triggers scale-in */
+  transform: scale(0);
+  transition: transform 150ms var(--_easing);
+}
+
+.visible {
+  transform: scale(1);
+}
+
+/* --- Small (dot) --------------------------------------------------------- */
+/* Dot top = icon top, dot trailing edge = icon trailing edge */
+.small {
+  width: var(--_small-size);
+  height: var(--_small-size);
+  border-radius: calc(var(--_small-size) / 2);
+  top: 0;
+  inset-inline-end: 0;
+}
+
+/* --- Large (label) ------------------------------------------------------- */
+/* Badge bottom = icon top + 14dp, badge leading edge = icon trailing edge − 12dp */
+.large {
+  height: var(--_large-height);
+  min-width: var(--_large-height);
+  border-radius: var(--_large-shape);
+  padding-inline: var(--_large-padding);
+
+  /* Label Small typescale */
+  font-family: var(--md-sys-typescale-label-small-font);
+  font-size: var(--md-sys-typescale-label-small-size);
+  line-height: var(--md-sys-typescale-label-small-line-height);
+  font-weight: var(--md-sys-typescale-label-small-weight);
+  letter-spacing: var(--md-sys-typescale-label-small-tracking);
+  color: var(--_label-text-color);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+
+  /* top = bottom offset − height */
+  top: calc(var(--_large-offset-bottom) - var(--_large-height));
+  /* Leading edge offset from trailing edge of icon */
+  inset-inline-start: calc(100% - var(--_large-offset-start));
+  transform-origin: left center;
+}

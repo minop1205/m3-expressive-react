@@ -1,0 +1,36 @@
+/**
+ * MD3 Swipe-to-dismiss. Compose SwipeToDismissBox is pure layout (no color
+ * tokens): a draggable content row over a caller-provided background, dismissed
+ * past a 56dp threshold in either direction.
+ */
+
+.root {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.background {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+}
+
+.content {
+  position: relative;
+  background-color: var(--md-sys-color-surface);
+  will-change: transform;
+  touch-action: pan-y;
+}
+
+.content:not([data-dragging]) {
+  transition: transform var(--md-sys-motion-duration-medium2)
+    var(--md-sys-motion-easing-emphasized);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content:not([data-dragging]) {
+    transition: none;
+  }
+}

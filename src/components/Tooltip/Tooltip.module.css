@@ -1,0 +1,119 @@
+/**
+ * MD3 Tooltip. Values from androidx.compose.material3 tooltip tokens:
+ * Plain — InverseSurface container, InverseOnSurface text (BodySmall), corner
+ * 4dp, min-height 24dp, padding 8/4, max-width 200dp.
+ * Rich — SurfaceContainer container, corner 12dp, elevation Level2, max-width
+ * 320dp; subhead OnSurfaceVariant (TitleSmall), text OnSurfaceVariant
+ * (BodyMedium), action Primary (LabelLarge).
+ */
+
+.wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip {
+  position: absolute;
+  left: 50%;
+  z-index: 10;
+  box-sizing: border-box;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(-50%) scale(0.9);
+  transform-origin: center bottom;
+  transition:
+    opacity 100ms var(--md-sys-motion-easing-standard),
+    transform 100ms var(--md-sys-motion-easing-standard),
+    visibility 0s linear 100ms;
+}
+
+.tooltip[data-placement='top'] {
+  bottom: calc(100% + 4px);
+}
+
+.tooltip[data-placement='bottom'] {
+  top: calc(100% + 4px);
+  transform-origin: center top;
+}
+
+.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) scale(1);
+  transition-delay: 0s;
+}
+
+/* --------------------------------------------------------------------------- */
+/* Plain                                                                       */
+/* --------------------------------------------------------------------------- */
+.tooltip[data-variant='plain'] {
+  min-height: 24px;
+  max-width: 200px;
+  padding: 4px 8px;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  background-color: var(--md-sys-color-inverse-surface);
+  color: var(--md-sys-color-inverse-on-surface);
+}
+
+.tooltip[data-variant='plain'] .text {
+  color: var(--md-sys-color-inverse-on-surface);
+  font-family: var(--md-sys-typescale-body-small-font);
+  font-size: var(--md-sys-typescale-body-small-size);
+  font-weight: var(--md-sys-typescale-body-small-weight);
+  line-height: var(--md-sys-typescale-body-small-line-height);
+  letter-spacing: var(--md-sys-typescale-body-small-tracking);
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------- */
+/* Rich                                                                        */
+/* --------------------------------------------------------------------------- */
+.tooltip[data-variant='rich'] {
+  max-width: 320px;
+  min-width: 40px;
+  padding: 16px;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background-color: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface-variant);
+  box-shadow: var(--md-sys-elevation-shadow-level2);
+  text-align: start;
+}
+
+.tooltip[data-variant='rich'].open {
+  pointer-events: auto;
+}
+
+.subhead {
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-title-small-font);
+  font-size: var(--md-sys-typescale-title-small-size);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+  line-height: var(--md-sys-typescale-title-small-line-height);
+  letter-spacing: var(--md-sys-typescale-title-small-tracking);
+  margin-bottom: 4px;
+}
+
+.tooltip[data-variant='rich'] .text {
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-body-medium-font);
+  font-size: var(--md-sys-typescale-body-medium-size);
+  font-weight: var(--md-sys-typescale-body-medium-weight);
+  line-height: var(--md-sys-typescale-body-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-body-medium-tracking);
+}
+
+.action {
+  margin-top: 12px;
+  color: var(--md-sys-color-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tooltip {
+    transition: opacity 100ms linear, visibility 0s linear 100ms;
+    transform: translateX(-50%);
+  }
+  .open {
+    transform: translateX(-50%);
+  }
+}

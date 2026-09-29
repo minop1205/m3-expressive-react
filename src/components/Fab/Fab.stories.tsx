@@ -1,49 +1,36 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { fn } from 'storybook/test'
 import { Fab } from './Fab'
-
-const EditIcon = (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
-  </svg>
-)
-
-const AddIcon = (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6z" />
-  </svg>
-)
-
-const NavigationIcon = (
-  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z" />
-  </svg>
-)
+import EditIcon from '@material-symbols/svg-400/outlined/edit.svg?react'
+import AddIcon from '@material-symbols/svg-400/outlined/add.svg?react'
+import NavigationIcon from '@material-symbols/svg-400/outlined/navigation.svg?react'
 
 const meta = {
   title: 'Components/FAB',
   component: Fab,
   parameters: { layout: 'centered' },
   args: {
-    icon: EditIcon,
+    icon: <EditIcon />,
     'aria-label': 'Edit',
-    color: 'primary-container',
+    color: 'primary',
+    tonal: true,
     size: 'regular',
+    onClick: fn(),
   },
   argTypes: {
     color: {
       control: 'inline-radio',
-      options: [
-        'primary-container',
-        'secondary-container',
-        'tertiary-container',
-        'primary',
-        'secondary',
-        'tertiary',
-      ],
+      options: ['primary', 'secondary', 'tertiary'],
     },
-    size: { control: 'inline-radio', options: ['regular', 'medium', 'large'] },
+    tonal: { control: 'boolean' },
+    size: {
+      control: 'inline-radio',
+      options: ['small', 'regular', 'medium', 'large'],
+    },
+    disableElevation: { control: 'boolean' },
     disabled: { control: 'boolean' },
     icon: { control: false },
+    onClick: { action: 'onClick' },
   },
 } satisfies Meta<typeof Fab>
 
@@ -55,6 +42,7 @@ export const Playground: Story = {}
 export const Sizes: Story = {
   render: (args) => (
     <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+      <Fab {...args} size="small" aria-label="Small" />
       <Fab {...args} size="regular" aria-label="Regular" />
       <Fab {...args} size="medium" aria-label="Medium" />
       <Fab {...args} size="large" aria-label="Large" />
@@ -65,12 +53,12 @@ export const Sizes: Story = {
 export const Colors: Story = {
   render: (args) => (
     <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-      <Fab {...args} color="primary-container" aria-label="Primary container" />
-      <Fab {...args} color="secondary-container" aria-label="Secondary container" />
-      <Fab {...args} color="tertiary-container" aria-label="Tertiary container" />
-      <Fab {...args} color="primary" aria-label="Primary" />
-      <Fab {...args} color="secondary" aria-label="Secondary" />
-      <Fab {...args} color="tertiary" aria-label="Tertiary" />
+      <Fab {...args} color="primary" aria-label="Primary container" />
+      <Fab {...args} color="secondary" aria-label="Secondary container" />
+      <Fab {...args} color="tertiary" aria-label="Tertiary container" />
+      <Fab {...args} color="primary" tonal={false} aria-label="Primary" />
+      <Fab {...args} color="secondary" tonal={false} aria-label="Secondary" />
+      <Fab {...args} color="tertiary" tonal={false} aria-label="Tertiary" />
     </div>
   ),
 }
@@ -78,11 +66,34 @@ export const Colors: Story = {
 export const Extended: Story = {
   render: (args) => (
     <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-      <Fab {...args} icon={AddIcon} label="Create" />
-      <Fab {...args} icon={NavigationIcon} label="Navigate" color="secondary-container" />
-      <Fab {...args} icon={EditIcon} label="Compose" color="tertiary-container" />
+      <Fab {...args} icon={<AddIcon />} label="Create" />
+      <Fab {...args} icon={<NavigationIcon />} label="Navigate" color="secondary" />
+      <Fab {...args} icon={<EditIcon />} label="Compose" color="tertiary" />
     </div>
   ),
+}
+
+/**
+ * Toggle `expanded` to morph between the icon-only FAB and the Extended FAB —
+ * the label row springs open (FastSpatial, slight overshoot) and collapses
+ * (DefaultSpatial) while the label cross-fades, per Compose
+ * `ExtendedFloatingActionButton(expanded=)`.
+ */
+export const Morph: Story = {
+  render: (args) => <Fab {...args} icon={<EditIcon />} label="Compose" />,
+  args: { expanded: false },
+  argTypes: { expanded: { control: 'boolean' } },
+}
+
+/** Flat FAB (elevation 0) — as used inside a Navigation rail / drawer. */
+export const DisableElevation: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+      <Fab {...args} aria-label="Flat" />
+      <Fab {...args} icon={<AddIcon />} label="Create" />
+    </div>
+  ),
+  args: { disableElevation: true },
 }
 
 export const Disabled: Story = {
@@ -90,7 +101,7 @@ export const Disabled: Story = {
     <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
       <Fab {...args} size="regular" aria-label="Regular" />
       <Fab {...args} size="medium" aria-label="Medium" />
-      <Fab {...args} label="Create" icon={AddIcon} />
+      <Fab {...args} label="Create" icon={<AddIcon />} />
     </div>
   ),
   args: { disabled: true },

@@ -1,0 +1,246 @@
+/**
+ * MD3 Radio Button. Icon 20dp, state layer 40dp, touch target 48dp.
+ * Spec: docs/specs/radio-button.md (adjudicated from m3.material.io /
+ * Compose androidx-main / material-web). Motion follows Compose's
+ * FastSpatial standard spring (~150ms, both directions).
+ */
+
+/* =========================================================================== */
+/* Host                                                                        */
+/* =========================================================================== */
+.radio {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.disabled {
+  cursor: default;
+}
+
+/* =========================================================================== */
+/* Input — visually hidden but accessible, also serves as touch target (48dp)  */
+/* =========================================================================== */
+.input {
+  appearance: none;
+  width: 48px;
+  height: 48px;
+  outline: none;
+  margin: 0;
+  position: absolute;
+  z-index: 1;
+  cursor: inherit;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* =========================================================================== */
+/* Container                                                                   */
+/* =========================================================================== */
+.container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+}
+
+/* =========================================================================== */
+/* Icon (outer ring + inner dot)                                               */
+/* =========================================================================== */
+.icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Outer ring — color ≈ Compose DefaultEffects spring (no overshoot), in
+   sync with the dot's 150ms scale */
+.outer {
+  stroke: var(--md-sys-color-on-surface-variant);
+  transition: stroke 150ms var(--md-sys-motion-easing-standard);
+}
+
+/* :not(.disabled) keeps this below `.disabled .outer` so a disabled+checked
+   ring gets on-surface @ 0.38 (and GrayText in forced colors), not primary */
+.radio:not(.disabled):has(.input:checked) .outer {
+  stroke: var(--md-sys-color-primary);
+}
+
+/* Inner dot — scales 0 ↔ 1 in both directions (Compose animates the dot
+   radius on uncheck too; damping 0.9 ⇒ no visible overshoot) */
+.inner {
+  fill: var(--md-sys-color-primary);
+  transform: scale(0);
+  transform-origin: center;
+  transition: transform 150ms var(--md-sys-motion-easing-standard);
+}
+
+.radio:has(.input:checked) .inner {
+  transform: scale(1);
+}
+
+/* =========================================================================== */
+/* Interaction colors — unselected ring shifts to on-surface on               */
+/* hover/focus/pressed (spec R1); the selected ring stays primary             */
+/* =========================================================================== */
+.radio:not(:has(.input:checked)):not(.disabled):has(
+    .input:hover,
+    .input:focus-visible,
+    .input:active
+  ) .outer {
+  stroke: var(--md-sys-color-on-surface);
+}
+
+/* =========================================================================== */
+/* Disabled state                                                              */
+/* =========================================================================== */
+.disabled .outer {
+  stroke: var(--md-sys-color-on-surface);
+  opacity: 0.38;
+  transition: none;
+}
+
+/* Color snaps on disable (spec: no enabled/disabled animation) but the dot
+   scale still animates — only .outer needs transition: none */
+.disabled .inner {
+  fill: var(--md-sys-color-on-surface);
+  opacity: 0.38;
+}
+
+/* =========================================================================== */
+/* State layer — 40dp circle, CSS-driven via :has()                            */
+/* =========================================================================== */
+.stateLayer {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--md-sys-shape-corner-full);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-short3)
+    var(--md-sys-motion-easing-standard);
+}
+
+/* Hover/focus layer color: unchecked = on-surface, checked = primary */
+.radio:not(:has(.input:checked)) .stateLayer {
+  background-color: var(--md-sys-color-on-surface);
+}
+
+.radio:has(.input:checked) .stateLayer {
+  background-color: var(--md-sys-color-primary);
+}
+
+/* Hover */
+.radio:not(.disabled):has(.input:hover) .stateLayer {
+  opacity: var(--md-sys-state-hover-state-layer-opacity);
+}
+
+/* Focus */
+.radio:not(.disabled):has(.input:focus-visible) .stateLayer {
+  opacity: var(--md-sys-state-focus-state-layer-opacity);
+}
+
+/* Press ripple — an expanding circle inside the 40dp state layer (audit SC2;
+   Compose ripple(bounded = false, radius = 20.dp)). CSS-only sibling of the
+   flat hover/focus layer: pressing scales it in with the Ripple primitive's
+   enter spec; releasing fades it with the leave spec, then it snaps back to
+   scale(0) invisibly (delayed 1ms transform) ready for the next press. It
+   inherits the state layer's color, including the pressed cross-over below. */
+.stateLayer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: inherit;
+  opacity: 0;
+  transform: scale(0);
+  transform-origin: center;
+  transition:
+    opacity var(--md-sys-motion-duration-short4)
+      var(--md-sys-motion-easing-standard),
+    transform 1ms linear var(--md-sys-motion-duration-short4);
+}
+
+.radio:not(.disabled):has(.input:active) .stateLayer::after {
+  opacity: var(--md-sys-state-pressed-state-layer-opacity);
+  transform: scale(1);
+  transition:
+    opacity 1ms linear,
+    transform var(--md-sys-motion-duration-long2)
+      var(--md-sys-motion-easing-emphasized-decelerate);
+}
+
+/* Pressed — colors cross over to the target state's color (spec R1 table):
+   pressing an unchecked radio shows primary, a checked one shows on-surface */
+.radio:not(.disabled):not(:has(.input:checked)):has(.input:active) .stateLayer {
+  background-color: var(--md-sys-color-primary);
+}
+
+.radio:not(.disabled):has(.input:checked):has(.input:active) .stateLayer {
+  background-color: var(--md-sys-color-on-surface);
+}
+
+/* Disabled — no state layer */
+.disabled .stateLayer {
+  display: none;
+}
+
+/* =========================================================================== */
+/* Focus ring                                                                  */
+/* =========================================================================== */
+/* Shared ring (paint + pulse animation from the FocusRing primitive); rings
+   the 40dp state layer (not the 20dp icon), centered by the host's flex
+   alignment like .stateLayer */
+.focusRing {
+  composes: ring from '../../primitives/FocusRing/FocusRing.module.css';
+  width: 40px;
+  height: 40px;
+  border-radius: var(--md-sys-shape-corner-full);
+}
+
+.radio:has(.input:focus-visible) .focusRing {
+  display: flex;
+}
+
+/* =========================================================================== */
+/* High contrast mode                                                          */
+/* =========================================================================== */
+@media (forced-colors: active) {
+  .outer {
+    stroke: CanvasText;
+  }
+
+  .inner {
+    fill: CanvasText;
+  }
+
+  .disabled .outer {
+    stroke: GrayText;
+  }
+
+  .disabled .inner {
+    fill: GrayText;
+  }
+}
+
+/* =========================================================================== */
+/* Reduced motion                                                              */
+/* =========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .outer,
+  .inner,
+  .stateLayer,
+  .stateLayer::after {
+    transition: none;
+  }
+
+}

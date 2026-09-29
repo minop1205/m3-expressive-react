@@ -1,11 +1,20 @@
+import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
+import { fn } from 'storybook/test'
+import Add from '@material-symbols/svg-400/outlined/add.svg?react'
 import { Button } from './Button'
 
 const meta = {
   title: 'Components/Button',
   component: Button,
   parameters: { layout: 'centered' },
-  args: { children: 'Button', variant: 'filled', size: 'sm', shape: 'round' },
+  args: {
+    children: 'Button',
+    variant: 'filled',
+    size: 'sm',
+    shape: 'round',
+    onClick: fn(),
+  },
   argTypes: {
     variant: {
       control: 'inline-radio',
@@ -14,6 +23,7 @@ const meta = {
     size: { control: 'inline-radio', options: ['xs', 'sm', 'md', 'lg', 'xl'] },
     shape: { control: 'inline-radio', options: ['round', 'square'] },
     disabled: { control: 'boolean' },
+    onClick: { action: 'onClick' },
   },
 } satisfies Meta<typeof Button>
 
@@ -21,12 +31,6 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Playground: Story = {}
-
-const PlusIcon = (
-  <svg viewBox="0 0 24 24" fill="currentColor">
-    <path d="M11 13H5v-2h6V5h2v6h6v2h-6v6h-2z" />
-  </svg>
-)
 
 export const Variants: Story = {
   render: (args) => (
@@ -53,7 +57,7 @@ export const Sizes: Story = {
 }
 
 export const WithIcon: Story = {
-  args: { icon: PlusIcon, children: 'Add item' },
+  args: { startIcon: <Add />, children: 'Add item' },
 }
 
 export const Shapes: Story = {
@@ -64,6 +68,50 @@ export const Shapes: Story = {
     </div>
   ),
   args: { size: 'md' },
+}
+
+export const Toggle: Story = {
+  render: (args) => {
+    const [selected, setSelected] = useState(false)
+    return (
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        {(['elevated', 'filled', 'tonal', 'outlined'] as const).map((variant) => (
+          <Button
+            key={variant}
+            {...args}
+            variant={variant}
+            toggle
+            selected={selected}
+            onChange={(_event, next) => setSelected(next)}
+          >
+            {variant}
+          </Button>
+        ))}
+      </div>
+    )
+  },
+  args: { size: 'md' },
+}
+
+/** Selected toggles swap their resting shape (round → square, square → round). */
+export const ToggleSelectedShapes: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Button {...args} toggle>
+        round
+      </Button>
+      <Button {...args} toggle defaultSelected>
+        round selected
+      </Button>
+      <Button {...args} toggle shape="square">
+        square
+      </Button>
+      <Button {...args} toggle shape="square" defaultSelected>
+        square selected
+      </Button>
+    </div>
+  ),
+  args: { size: 'md', variant: 'tonal' },
 }
 
 export const Disabled: Story = {

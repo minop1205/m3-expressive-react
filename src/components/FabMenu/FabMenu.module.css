@@ -1,0 +1,183 @@
+/**
+ * MD3 (Expressive) FAB menu. A FAB anchored bottom-trailing that opens a
+ * vertical stack of labelled action items above it. Per m3.material.io /
+ * Compose FloatingActionButtonMenu: items are fully-rounded pills at medium-
+ * button size (56dp), container/on-container of the chosen color set; the FAB
+ * morphs into a 56dp close button (primaryContainer → primary). Items stagger
+ * in from the FAB. 16dp screen margins are the caller's responsibility.
+ */
+
+.root {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  width: fit-content;
+
+  /* Color sets map container / on-container roles. */
+  --_container: var(--md-sys-color-primary-container);
+  --_on-container: var(--md-sys-color-on-primary-container);
+  --_fab-open: var(--md-sys-color-primary);
+  --_fab-open-icon: var(--md-sys-color-on-primary);
+}
+
+.root[data-color='secondary'] {
+  --_container: var(--md-sys-color-secondary-container);
+  --_on-container: var(--md-sys-color-on-secondary-container);
+  --_fab-open: var(--md-sys-color-secondary);
+  --_fab-open-icon: var(--md-sys-color-on-secondary);
+}
+
+.root[data-color='tertiary'] {
+  --_container: var(--md-sys-color-tertiary-container);
+  --_on-container: var(--md-sys-color-on-tertiary-container);
+  --_fab-open: var(--md-sys-color-tertiary);
+  --_fab-open-icon: var(--md-sys-color-on-tertiary);
+}
+
+/* ---- Item list (stacks upward, right-aligned) ---- */
+.list {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.list[data-open] {
+  pointer-events: auto;
+}
+
+.itemSlot {
+  opacity: 0;
+  transform: translateY(12px) scale(0.9);
+  transition:
+    opacity var(--md-sys-motion-duration-short2) linear var(--_stagger, 0ms),
+    transform var(--md-sys-motion-duration-medium1)
+      cubic-bezier(0.34, 1.4, 0.5, 1) var(--_stagger, 0ms);
+}
+
+.list[data-open] .itemSlot {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* ---- Menu item pill ---- */
+.item {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: 56px;
+  min-width: 56px;
+  gap: 8px;
+  padding-inline: 24px;
+  appearance: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  white-space: nowrap;
+  border-radius: var(--md-sys-shape-corner-full);
+  background-color: var(--_container);
+  color: var(--_on-container);
+  box-shadow: var(--md-sys-elevation-shadow-level1);
+
+  font-family: var(--md-sys-typescale-title-medium-font);
+  font-size: var(--md-sys-typescale-title-medium-size);
+  line-height: var(--md-sys-typescale-title-medium-line-height);
+  font-weight: var(--md-sys-typescale-title-medium-weight);
+  letter-spacing: var(--md-sys-typescale-title-medium-tracking);
+
+  --md-ripple-color: var(--_on-container);
+  --md-focus-ring-color: var(--md-sys-color-secondary);
+}
+
+.itemIcon {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 24px;
+}
+
+.itemIcon svg,
+.itemIcon img {
+  width: 100%;
+  height: 100%;
+}
+
+.itemLabel {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- FAB / close button ---- */
+.fab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 56px;
+  height: 56px;
+  appearance: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  border-radius: var(--md-sys-shape-corner-large);
+  background-color: var(--_container);
+  color: var(--_on-container);
+  box-shadow: var(--md-sys-elevation-shadow-level3);
+
+  --md-ripple-color: var(--_on-container);
+  --md-focus-ring-color: var(--md-sys-color-secondary);
+
+  transition:
+    background-color var(--md-sys-motion-duration-medium1)
+      var(--md-sys-motion-easing-standard),
+    color var(--md-sys-motion-duration-medium1)
+      var(--md-sys-motion-easing-standard),
+    border-radius var(--md-sys-motion-duration-medium1)
+      cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+.root[data-open] .fab {
+  background-color: var(--_fab-open);
+  color: var(--_fab-open-icon);
+  border-radius: var(--md-sys-shape-corner-full);
+  --md-ripple-color: var(--_fab-open-icon);
+}
+
+.fab:hover {
+  box-shadow: var(--md-sys-elevation-shadow-level4);
+}
+
+.fabIcon {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 24px;
+}
+
+.fabIcon svg,
+.fabIcon img {
+  width: 100%;
+  height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .itemSlot,
+  .fab {
+    transition: none;
+  }
+}

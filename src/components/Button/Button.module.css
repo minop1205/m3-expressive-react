@@ -36,7 +36,7 @@
   font-weight: var(--_font-weight);
   letter-spacing: var(--_tracking);
 
-  color: var(--_label-color);
+  color: var(--_label-text-color);
   background-color: var(--_container-color);
   box-shadow: var(--_shadow, none);
 
@@ -48,15 +48,27 @@
   border-radius: var(--_shape-round);
 
   /* Drives Ripple + FocusRing tint. */
-  --md-ripple-color: var(--_state-color);
+  --md-ripple-color: var(--_state-layer-color);
   --md-focus-ring-color: var(--md-sys-color-secondary);
 
-  /* Spring-like overshoot on the shape morph for the Expressive "squish". */
+  /* Press morph ≈ spec spring (damping 0.9 / stiffness 1400 → ~150ms with no
+     visible bounce; Compose regular buttons use the equally bounce-free
+     DefaultEffects). Toggle buttons override these vars below with the
+     springy FastSpatial-like curve. */
+  --_shape-morph-duration: var(--md-sys-motion-duration-short3);
+  --_shape-morph-easing: var(--md-sys-motion-easing-standard);
   transition:
-    box-shadow var(--md-sys-motion-duration-short3, 150ms)
-      var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
-    border-radius var(--md-sys-motion-duration-medium1, 250ms)
-      cubic-bezier(0.34, 1.4, 0.5, 1);
+    box-shadow var(--md-sys-motion-duration-short3)
+      var(--md-sys-motion-easing-standard),
+    border-radius var(--_shape-morph-duration) var(--_shape-morph-easing);
+}
+
+/* Toggle buttons morph with a springy overshoot for both press and
+   selected-shape changes (Compose FastSpatial, Expressive scheme:
+   damping 0.6 / stiffness 800). data-selected exists only in toggle mode. */
+.button[data-selected] {
+  --_shape-morph-duration: var(--md-sys-motion-duration-medium3);
+  --_shape-morph-easing: cubic-bezier(0.34, 1.4, 0.5, 1);
 }
 
 /* Expanded 48dp touch target without changing visual height. */
@@ -70,11 +82,13 @@
   transform: translateY(-50%);
 }
 
-.button[data-shape='square'] {
+/* data-shape-state is resolved in JS: the shape prop, swapped when a toggle
+   button is selected (round ⇄ square). */
+.button[data-shape-state='square'] {
   border-radius: var(--_shape-square);
 }
 
-.button[data-pressed='true'] {
+.button:active:not(:disabled) {
   border-radius: var(--_shape-pressed);
 }
 
@@ -110,9 +124,9 @@
 /* --------------------------------------------------------------------------- */
 .button[data-size='xs'] {
   --_height: 32px;
-  --_padding-leading: 16px;
-  --_padding-trailing: 16px;
-  --_icon-label-gap: 8px;
+  --_padding-leading: 12px;
+  --_padding-trailing: 12px;
+  --_icon-label-gap: 4px;
   --_icon-size: 20px;
   --_font-size: var(--md-sys-typescale-label-large-size);
   --_line-height: var(--md-sys-typescale-label-large-line-height);
@@ -183,32 +197,34 @@
 /* --------------------------------------------------------------------------- */
 .button[data-variant='filled'] {
   --_container-color: var(--md-sys-color-primary);
-  --_label-color: var(--md-sys-color-on-primary);
-  --_state-color: var(--md-sys-color-on-primary);
+  --_label-text-color: var(--md-sys-color-on-primary);
+  --_state-layer-color: var(--md-sys-color-on-primary);
   --_shadow: var(--md-sys-elevation-shadow-level0);
   --_shadow-hover: var(--md-sys-elevation-shadow-level1);
 }
 
 .button[data-variant='tonal'] {
   --_container-color: var(--md-sys-color-secondary-container);
-  --_label-color: var(--md-sys-color-on-secondary-container);
-  --_state-color: var(--md-sys-color-on-secondary-container);
+  --_label-text-color: var(--md-sys-color-on-secondary-container);
+  --_state-layer-color: var(--md-sys-color-on-secondary-container);
   --_shadow: var(--md-sys-elevation-shadow-level0);
   --_shadow-hover: var(--md-sys-elevation-shadow-level1);
 }
 
 .button[data-variant='elevated'] {
   --_container-color: var(--md-sys-color-surface-container-low);
-  --_label-color: var(--md-sys-color-primary);
-  --_state-color: var(--md-sys-color-primary);
+  --_label-text-color: var(--md-sys-color-primary);
+  --_state-layer-color: var(--md-sys-color-primary);
   --_shadow: var(--md-sys-elevation-shadow-level1);
   --_shadow-hover: var(--md-sys-elevation-shadow-level2);
 }
 
 .button[data-variant='outlined'] {
   --_container-color: transparent;
-  --_label-color: var(--md-sys-color-primary);
-  --_state-color: var(--md-sys-color-primary);
+  /* Expressive changed outlined content from primary to on-surface-variant
+     (m3.material.io color tokens + Compose OutlinedButtonTokens v0_11_0). */
+  --_label-text-color: var(--md-sys-color-on-surface-variant);
+  --_state-layer-color: var(--md-sys-color-on-surface-variant);
   --_outline-color: var(--md-sys-color-outline-variant);
   --_outline-width: 1px;
 }
@@ -222,8 +238,8 @@
 
 .button[data-variant='text'] {
   --_container-color: transparent;
-  --_label-color: var(--md-sys-color-primary);
-  --_state-color: var(--md-sys-color-primary);
+  --_label-text-color: var(--md-sys-color-primary);
+  --_state-layer-color: var(--md-sys-color-primary);
 }
 
 /* Text button has tighter padding. */
@@ -238,24 +254,60 @@
 }
 
 /* --------------------------------------------------------------------------- */
+/* Toggle (selectable) — m3.material.io button color table                     */
+/* Elevated/Tonal/Outlined unselected == their default colors; only the deltas */
+/* below are needed.                                                           */
+/* --------------------------------------------------------------------------- */
+.button[data-variant='filled'][data-selected='false'] {
+  --_container-color: var(--md-sys-color-surface-container);
+  --_label-text-color: var(--md-sys-color-on-surface-variant);
+  --_state-layer-color: var(--md-sys-color-on-surface-variant);
+  --_shadow: var(--md-sys-elevation-shadow-level0);
+}
+
+.button[data-variant='elevated'][data-selected='true'],
+.button[data-variant='filled'][data-selected='true'] {
+  --_container-color: var(--md-sys-color-primary);
+  --_label-text-color: var(--md-sys-color-on-primary);
+  --_state-layer-color: var(--md-sys-color-on-primary);
+}
+
+.button[data-variant='tonal'][data-selected='true'] {
+  --_container-color: var(--md-sys-color-secondary);
+  --_label-text-color: var(--md-sys-color-on-secondary);
+  --_state-layer-color: var(--md-sys-color-on-secondary);
+}
+
+.button[data-variant='outlined'][data-selected='true'] {
+  --_container-color: var(--md-sys-color-inverse-surface);
+  --_label-text-color: var(--md-sys-color-inverse-on-surface);
+  --_state-layer-color: var(--md-sys-color-inverse-on-surface);
+  --_outline-width: 0;
+}
+
+/* --------------------------------------------------------------------------- */
 /* Disabled                                                                    */
 /* --------------------------------------------------------------------------- */
 .button:disabled {
   cursor: default;
   pointer-events: none;
   box-shadow: none;
-  --_label-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
-  --_state-color: transparent;
+  --_label-text-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  --_state-layer-color: transparent;
 }
 
+/* Current spec: disabled container = on-surface 10% (m3.material.io 0.1,
+   Compose v0_11_0 tokens 0.10 — the classic 0.12 is outdated). */
 .button[data-variant='filled']:disabled,
 .button[data-variant='tonal']:disabled,
 .button[data-variant='elevated']:disabled {
-  --_container-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  --_container-color: color-mix(in srgb, var(--md-sys-color-on-surface) 10%, transparent);
 }
 
+/* Disabled outline keeps the outline-variant hue at container opacity
+   (Compose outlinedButtonBorder(enabled=false)). */
 .button[data-variant='outlined']:disabled {
-  --_outline-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  --_outline-color: color-mix(in srgb, var(--md-sys-color-outline-variant) 10%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,0 +1,95 @@
+/**
+ * MD3 (Expressive) Button group. An invisible layout container. `standard`
+ * spaces buttons by the size's between-space (Compose ButtonGroupSmallTokens
+ * BetweenSpace = 12dp at sm) and pops the pressed button (ExpandedRatio 0.15).
+ * `connected` joins buttons with a 2dp gap (ConnectedButtonGroupSmallTokens),
+ * rounding the outer corners fully and the inner corners a small amount.
+ */
+
+.group {
+  display: inline-flex;
+  align-items: center;
+}
+
+.group[data-orientation='vertical'] {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* ---- Standard: visible gap + press pop ---- */
+.group[data-variant='standard'] {
+  gap: var(--_gap);
+}
+
+.group[data-variant='standard'][data-size='xs'] {
+  --_gap: 8px;
+}
+.group[data-variant='standard'][data-size='sm'] {
+  --_gap: 12px;
+}
+.group[data-variant='standard'][data-size='md'] {
+  --_gap: 16px;
+}
+.group[data-variant='standard'][data-size='lg'] {
+  --_gap: 20px;
+}
+.group[data-variant='standard'][data-size='xl'] {
+  --_gap: 24px;
+}
+
+/* The pressed button briefly grows — approximates the neighbour squish with a
+   FastSpatial-style spring. */
+.group[data-variant='standard'] > button {
+  transition: transform var(--md-sys-motion-duration-short4)
+    cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+.group[data-variant='standard'] > button:active:not(:disabled) {
+  transform: scale(1.06);
+  z-index: 1;
+}
+
+/* ---- Connected: 2dp gap, joined shape ---- */
+.group[data-variant='connected'] {
+  gap: 2px;
+  --_inner: var(--md-sys-shape-corner-small);
+  --_outer: var(--md-sys-shape-corner-full);
+}
+
+/* Horizontal joined corners (specificity > Button's own :active rule). */
+.group[data-variant='connected'][data-orientation='horizontal'] > button:first-child {
+  border-start-end-radius: var(--_inner);
+  border-end-end-radius: var(--_inner);
+}
+
+.group[data-variant='connected'][data-orientation='horizontal'] > button:last-child {
+  border-start-start-radius: var(--_inner);
+  border-end-start-radius: var(--_inner);
+}
+
+.group[data-variant='connected'][data-orientation='horizontal']
+  > button:not(:first-child):not(:last-child) {
+  border-radius: var(--_inner);
+}
+
+/* Vertical joined corners. */
+.group[data-variant='connected'][data-orientation='vertical'] > button:first-child {
+  border-end-start-radius: var(--_inner);
+  border-end-end-radius: var(--_inner);
+}
+
+.group[data-variant='connected'][data-orientation='vertical'] > button:last-child {
+  border-start-start-radius: var(--_inner);
+  border-start-end-radius: var(--_inner);
+}
+
+.group[data-variant='connected'][data-orientation='vertical']
+  > button:not(:first-child):not(:last-child) {
+  border-radius: var(--_inner);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .group[data-variant='standard'] > button {
+    transition: none;
+  }
+}

@@ -1,0 +1,363 @@
+/**
+ * MD3 (Expressive) Slider. Sizes from m3.material.io measurements; colors/gap
+ * from Compose SliderTokens. Per-size: --_track (16/24/40/56/96), --_handle
+ * (44/44/52/68/108), --_corner (8/8/12/16/28), --_icon (0/0/24/24/32). Handle
+ * width is 4dp, squeezed to 2dp while focused/pressed/dragged (SliderTokens
+ * FocusHandleWidth/PressedHandleWidth = 2dp, HoverHandleWidth = 4dp; the switch
+ * is instant — Compose Slider has no animation). Active Primary, inactive
+ * SecondaryContainer; 6dp clear gap (8px incl. half-handle). Supports single/
+ * range/centered, horizontal/vertical, ticks, value bubble, and an inset icon.
+ * `--_p` positions handles/ticks; `--_s`/`--_e` bound each track segment.
+ */
+
+.slider {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  --_track: 16px;
+  --_handle: 44px;
+  --_corner: 8px;
+  --_icon: 0px;
+  /* Compose TrackInsideCornerSize (hardcoded 2dp) — handle-facing track ends. */
+  --_track-inside-corner: 2px;
+}
+
+.slider[data-orientation='horizontal'] {
+  width: 100%;
+  height: var(--_handle);
+}
+
+.slider[data-orientation='vertical'] {
+  height: 240px;
+  width: var(--_handle);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Track + segments                                                            */
+/* --------------------------------------------------------------------------- */
+.track {
+  position: absolute;
+  border-radius: var(--_corner);
+}
+
+.slider[data-orientation='horizontal'] .track {
+  inset-inline: 0;
+  height: var(--_track);
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.slider[data-orientation='vertical'] .track {
+  inset-block: 0;
+  width: var(--_track);
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.inactive,
+.active {
+  position: absolute;
+  border-radius: inherit;
+}
+
+.inactive {
+  background-color: var(--md-sys-color-secondary-container);
+}
+
+.active {
+  background-color: var(--md-sys-color-primary);
+}
+
+.slider[data-orientation='horizontal'] :where(.inactive, .active) {
+  inset-block: 0;
+  inset-inline-start: var(--_s);
+  width: max(0px, calc(var(--_e) - var(--_s)));
+}
+
+.slider[data-orientation='vertical'] :where(.inactive, .active) {
+  inset-inline: 0;
+  bottom: var(--_s);
+  height: max(0px, calc(var(--_e) - var(--_s)));
+}
+
+/*
+ * Inside corners — a segment end that faces a handle (data-inside-start/end,
+ * set where the segment has a handle gap) gets the small 2dp corner; outer
+ * ends keep the per-size radius. Horizontal `start` = inline-start; vertical
+ * `start` = bottom (segments grow bottom-up).
+ */
+.slider[data-orientation='horizontal'] :where(.inactive, .active)[data-inside-start] {
+  border-start-start-radius: var(--_track-inside-corner);
+  border-end-start-radius: var(--_track-inside-corner);
+}
+
+.slider[data-orientation='horizontal'] :where(.inactive, .active)[data-inside-end] {
+  border-start-end-radius: var(--_track-inside-corner);
+  border-end-end-radius: var(--_track-inside-corner);
+}
+
+.slider[data-orientation='vertical'] :where(.inactive, .active)[data-inside-start] {
+  border-bottom-left-radius: var(--_track-inside-corner);
+  border-bottom-right-radius: var(--_track-inside-corner);
+}
+
+.slider[data-orientation='vertical'] :where(.inactive, .active)[data-inside-end] {
+  border-top-left-radius: var(--_track-inside-corner);
+  border-top-right-radius: var(--_track-inside-corner);
+}
+
+/*
+ * Stop indicators — on-secondary-container on the inactive track, on-primary
+ * on the active track (m3.material.io current tokens; ruled over Compose —
+ * see docs/audits/slider.md SL8). 4dp trailing space (site; Compose token 6dp).
+ */
+.stop {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--md-sys-color-on-secondary-container);
+}
+
+.slider[data-orientation='horizontal'] .stop {
+  top: 50%;
+  inset-inline-end: 4px;
+  transform: translateY(-50%);
+}
+
+.slider[data-orientation='vertical'] .stop {
+  left: 50%;
+  top: 4px;
+  transform: translateX(-50%);
+}
+
+/* Ticks (stop indicators at each step). */
+.tick {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: var(--md-sys-color-on-secondary-container);
+}
+
+.tick[data-active] {
+  background-color: var(--md-sys-color-on-primary);
+}
+
+.slider[data-orientation='horizontal'] .tick {
+  top: 50%;
+  inset-inline-start: var(--_p);
+  transform: translate(-50%, -50%);
+}
+
+.slider[data-orientation='vertical'] .tick {
+  left: 50%;
+  bottom: var(--_p);
+  transform: translate(-50%, 50%);
+}
+
+/* Inset icon (thick tracks — m/l/xl). */
+.insetIcon {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_icon);
+  height: var(--_icon);
+  color: var(--md-sys-color-on-primary);
+}
+
+.slider[data-orientation='horizontal'] .insetIcon {
+  top: 50%;
+  inset-inline-start: 12px;
+  transform: translateY(-50%);
+}
+
+.slider[data-orientation='vertical'] .insetIcon {
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+}
+
+.insetIcon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+/* --------------------------------------------------------------------------- */
+/* Handle                                                                      */
+/* --------------------------------------------------------------------------- */
+.thumb {
+  position: absolute;
+  border-radius: var(--md-sys-shape-corner-full);
+  background-color: var(--md-sys-color-primary);
+  pointer-events: none;
+  transition: transform 100ms var(--md-sys-motion-easing-standard);
+}
+
+.slider[data-orientation='horizontal'] .thumb {
+  width: 4px;
+  height: var(--_handle);
+  inset-inline-start: var(--_p);
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.slider[data-orientation='vertical'] .thumb {
+  width: var(--_handle);
+  height: 4px;
+  bottom: var(--_p);
+  left: 50%;
+  transform: translate(-50%, 50%);
+}
+
+/*
+ * Handle squeeze — 4 → 2dp while the paired input is keyboard-focused or the
+ * handle is pressed/dragged (SliderTokens.FocusHandleWidth = 2dp,
+ * PressedHandleWidth = 2dp; hover stays 4dp per HoverHandleWidth). Instant, no
+ * transition (Compose Slider has no motion APIs). Each thumb pairs with its
+ * input via data-index so range handles squeeze independently.
+ */
+.slider[data-orientation='horizontal'] .thumb[data-pressed],
+.slider[data-orientation='horizontal']:has(.input[data-index='0']:focus-visible)
+  .thumb[data-index='0'],
+.slider[data-orientation='horizontal']:has(.input[data-index='1']:focus-visible)
+  .thumb[data-index='1'] {
+  width: 2px;
+}
+
+.slider[data-orientation='vertical'] .thumb[data-pressed],
+.slider[data-orientation='vertical']:has(.input[data-index='0']:focus-visible)
+  .thumb[data-index='0'],
+.slider[data-orientation='vertical']:has(.input[data-index='1']:focus-visible)
+  .thumb[data-index='1'] {
+  height: 2px;
+}
+
+/*
+ * Focus ring — matches the FocusRing primitive styling (two-phase pulse,
+ * constant 2px offset). CSS-driven via :has() since input focus doesn't bubble
+ * to the host (same pattern as Switch/Checkbox). Wraps the handle: Compose
+ * draws an inset focus ring around the (squeezed) handle with 4dp padding.
+ */
+.focusRing {
+  composes: ring fill from '../../primitives/FocusRing/FocusRing.module.css';
+}
+
+.slider:has(.input[data-index='0']:focus-visible) .thumb[data-index='0'] .focusRing,
+.slider:has(.input[data-index='1']:focus-visible) .thumb[data-index='1'] .focusRing {
+  display: flex;
+}
+
+/* --------------------------------------------------------------------------- */
+/* Value indicator bubble                                                      */
+/* --------------------------------------------------------------------------- */
+.valueLabel {
+  position: absolute;
+  padding: 4px 12px;
+  border-radius: var(--md-sys-shape-corner-full);
+  background-color: var(--md-sys-color-inverse-surface);
+  color: var(--md-sys-color-inverse-on-surface);
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 100ms var(--md-sys-motion-easing-standard);
+}
+
+.slider[data-orientation='horizontal'] .valueLabel {
+  bottom: calc(50% + var(--_handle) / 2 + 8px);
+  inset-inline-start: var(--_p);
+  transform: translateX(-50%);
+}
+
+.slider[data-orientation='vertical'] .valueLabel {
+  inset-inline-start: calc(50% + var(--_handle) / 2 + 8px);
+  bottom: var(--_p);
+  transform: translateY(50%);
+}
+
+.slider:hover .valueLabel,
+.slider:has(.input:focus-visible) .valueLabel,
+.slider:has(.input:active) .valueLabel {
+  opacity: 1;
+}
+
+/* --------------------------------------------------------------------------- */
+/* Native range input(s)                                                       */
+/* --------------------------------------------------------------------------- */
+.input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+  opacity: 0;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.slider[data-orientation='vertical'] .input {
+  writing-mode: vertical-lr;
+  direction: rtl;
+}
+
+.input:disabled {
+  cursor: default;
+}
+
+.input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 24px;
+}
+
+.input::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border: none;
+}
+
+/* Range: overlap two inputs, only their thumbs stay grabbable. */
+.slider[data-range] .input {
+  pointer-events: none;
+}
+
+.slider[data-range] .input::-webkit-slider-thumb {
+  pointer-events: auto;
+}
+
+.slider[data-range] .input::-moz-range-thumb {
+  pointer-events: auto;
+}
+
+/* --------------------------------------------------------------------------- */
+/* Disabled                                                                    */
+/* --------------------------------------------------------------------------- */
+.slider[data-disabled] .active {
+  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+.slider[data-disabled] .inactive {
+  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+}
+
+.slider[data-disabled] .thumb,
+.slider[data-disabled] .stop,
+.slider[data-disabled] .tick {
+  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thumb,
+  .valueLabel {
+    transition: none;
+  }
+
+}

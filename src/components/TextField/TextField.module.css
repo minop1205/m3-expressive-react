@@ -1,0 +1,627 @@
+/* =========================================================================== */
+/* TextField — Material Design 3                                              */
+/* Filled & Outlined variants                                                 */
+/* =========================================================================== */
+
+/* --- Private tokens (defaults: filled variant, enabled state) ------------- */
+.textField {
+  --_container-color: var(--md-sys-color-surface-container-highest);
+  --_container-height: 56px;
+  --_container-shape: var(--md-sys-shape-corner-extra-small);
+
+  /* Label (body-large → body-small when populated) */
+  --_label-text-color: var(--md-sys-color-on-surface-variant);
+  --_label-text-font: var(--md-sys-typescale-body-large-font);
+  --_label-text-size: var(--md-sys-typescale-body-large-size);
+  --_label-text-line-height: var(--md-sys-typescale-body-large-line-height);
+  --_label-text-weight: var(--md-sys-typescale-body-large-weight);
+  --_label-text-tracking: var(--md-sys-typescale-body-large-tracking);
+  --_label-text-populated-size: var(--md-sys-typescale-body-small-size);
+  --_label-text-populated-line-height: var(--md-sys-typescale-body-small-line-height);
+
+  /* Spacing */
+  --_top-space: 16px;                 /* no-label: vertically centers 24px content in 56px */
+  --_bottom-space: 16px;
+  --_with-label-top-space: 8px;       /* filled: floating label top offset */
+  --_with-label-bottom-space: 8px;
+  --_leading-space: 16px;
+  --_trailing-space: 16px;
+  --_with-leading-icon-leading-space: 12px;
+  --_with-trailing-icon-trailing-space: 12px;
+  --_icon-input-space: 16px;         /* padding between icons and text */
+
+  /* Input text (body-large) */
+  --_input-text-color: var(--md-sys-color-on-surface);
+  --_input-text-font: var(--md-sys-typescale-body-large-font);
+  --_input-text-size: var(--md-sys-typescale-body-large-size);
+  --_input-text-line-height: var(--md-sys-typescale-body-large-line-height);
+  --_input-text-weight: var(--md-sys-typescale-body-large-weight);
+  --_input-text-tracking: var(--md-sys-typescale-body-large-tracking);
+  --_input-text-prefix-color: var(--md-sys-color-on-surface-variant);
+  --_input-text-suffix-color: var(--md-sys-color-on-surface-variant);
+  --_input-text-placeholder-color: var(--md-sys-color-on-surface-variant);
+
+  /* Caret */
+  --_caret-color: var(--md-sys-color-primary);
+
+  /* Focus */
+  --_focus-label-text-color: var(--md-sys-color-primary);
+
+  /* Icons */
+  --_leading-icon-color: var(--md-sys-color-on-surface-variant);
+  --_trailing-icon-color: var(--md-sys-color-on-surface-variant);
+  --_icon-size: 24px;
+
+  /* Active indicator (filled) */
+  --_active-indicator-color: var(--md-sys-color-on-surface-variant);
+  --_active-indicator-height: 1px;
+  --_focus-active-indicator-color: var(--md-sys-color-primary);
+  --_focus-active-indicator-height: 2px;
+
+  /* Outline (outlined) */
+  --_outline-color: var(--md-sys-color-outline);
+  --_outline-width: 1px;
+  --_focus-outline-width: 2px;
+
+  /* Supporting text (body-small) */
+  --_supporting-text-color: var(--md-sys-color-on-surface-variant);
+  --_supporting-text-font: var(--md-sys-typescale-body-small-font);
+  --_supporting-text-size: var(--md-sys-typescale-body-small-size);
+  --_supporting-text-line-height: var(--md-sys-typescale-body-small-line-height);
+  --_supporting-text-weight: var(--md-sys-typescale-body-small-weight);
+  --_supporting-text-tracking: var(--md-sys-typescale-body-small-tracking);
+
+  /* State layer */
+  --_hover-state-layer-color: var(--md-sys-color-on-surface);
+  --_hover-state-layer-opacity: 0.08;
+
+  /* Disabled */
+  --_disabled-color: color-mix(
+    in srgb,
+    var(--md-sys-color-on-surface) 38%,
+    transparent
+  );
+
+  /* Animation */
+  --_label-duration: 150ms;
+  --_label-easing: var(--md-sys-motion-easing-standard);
+
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  min-width: 210px;
+}
+
+/* =========================================================================== */
+/* Field container                                                             */
+/* =========================================================================== */
+.field {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  min-height: var(--_container-height);
+  cursor: text;
+  border-radius: var(--_container-shape) var(--_container-shape) 0 0;
+}
+
+.outlined .field {
+  border-radius: var(--_container-shape);
+}
+
+/* =========================================================================== */
+/* Filled background & state layer                                             */
+/* =========================================================================== */
+.background {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--_container-color);
+  pointer-events: none;
+}
+
+.stateLayer {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--_hover-state-layer-color);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms;
+}
+
+.filled:not(.disabled):hover .stateLayer {
+  opacity: var(--_hover-state-layer-opacity);
+}
+
+/* =========================================================================== */
+/* Active indicator (filled)                                                   */
+/* =========================================================================== */
+.activeIndicator {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.activeIndicator::before,
+.activeIndicator::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  width: 100%;
+}
+
+.activeIndicator::before {
+  border-bottom: var(--_active-indicator-height) solid var(--_active-indicator-color);
+}
+
+.activeIndicator::after {
+  border-bottom: var(--_focus-active-indicator-height) solid var(--_focus-active-indicator-color);
+  opacity: 0;
+  transition: opacity var(--_label-duration) var(--_label-easing);
+}
+
+.focused .activeIndicator::after {
+  opacity: 1;
+}
+
+/* =========================================================================== */
+/* Outlined border (3-part: start / notch / end)                              */
+/* Based on material-web's outline structure with scaleX notch animation      */
+/* =========================================================================== */
+.outline {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  pointer-events: none;
+  border-radius: var(--_container-shape);
+}
+
+.outlineStart,
+.outlineNotch,
+.outlineEnd {
+  box-sizing: border-box;
+  transition:
+    border-color 150ms,
+    border-width 150ms;
+}
+
+/* Left segment: left + top + bottom borders, left corners rounded */
+.outlineStart {
+  width: calc(var(--_leading-space) - 4px);
+  border: var(--_outline-width) solid var(--_outline-color);
+  border-inline-end: none;
+  border-start-start-radius: inherit;
+  border-end-start-radius: inherit;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+
+/* Center segment: bottom border only; top border drawn by ::before (animated) */
+.outlineNotch {
+  position: relative;
+  padding: 0 4px;
+  border-bottom: var(--_outline-width) solid var(--_outline-color);
+}
+
+/* Notch top border — two halves for asymmetric open/close animation:
+   Focus-in: both shrink toward their edges → gap opens from center
+   Blur: both grow from edges toward center → gap closes from outside */
+.outlineNotch::before,
+.outlineNotch::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 50%;
+  border-top: var(--_outline-width) solid var(--_outline-color);
+  transition:
+    transform 150ms var(--_label-easing),
+    border-color 150ms,
+    border-width 150ms;
+}
+
+.outlineNotch::before {
+  left: 0;
+  transform-origin: left;
+}
+
+.outlineNotch::after {
+  right: 0;
+  transform-origin: right;
+}
+
+.outlined.focused .outlineNotch::before,
+.outlined.focused .outlineNotch::after,
+.outlined.populated .outlineNotch::before,
+.outlined.populated .outlineNotch::after {
+  transform: scaleX(0);
+}
+
+/* Right segment: right + top + bottom borders, right corners rounded */
+.outlineEnd {
+  flex: 1;
+  border: var(--_outline-width) solid var(--_outline-color);
+  border-inline-start: none;
+  border-start-end-radius: inherit;
+  border-end-end-radius: inherit;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+
+/* Notch label (invisible, provides width for the gap) */
+.outlineLabel {
+  display: inline-block;
+  font-family: var(--_label-text-font);
+  font-size: var(--_label-text-populated-size);
+  line-height: 0;
+  font-weight: var(--_label-text-weight);
+  letter-spacing: var(--_label-text-tracking);
+  visibility: hidden;
+  white-space: nowrap;
+}
+
+/* No label: collapse the notch */
+.noLabel .outlineNotch {
+  padding: 0;
+}
+
+/* Hover */
+.outlined:not(.disabled):not(.focused):not(.error):hover {
+  --_outline-color: var(--md-sys-color-on-surface);
+}
+
+/* Focus: primary color via variable, border-width set directly for transition */
+.outlined.focused {
+  --_outline-color: var(--md-sys-color-primary);
+}
+
+.outlined.focused .outlineStart,
+.outlined.focused .outlineEnd {
+  border-width: var(--_focus-outline-width);
+}
+
+.outlined.focused .outlineNotch {
+  border-bottom-width: var(--_focus-outline-width);
+}
+
+.outlined.focused .outlineNotch::before,
+.outlined.focused .outlineNotch::after {
+  border-top-width: var(--_focus-outline-width);
+}
+
+/* =========================================================================== */
+/* Middle section (label + content wrapper)                                    */
+/* material-web: .middle has NO padding; spacing applied to label & input      */
+/* =========================================================================== */
+.middle {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-self: stretch;
+  min-width: 0;
+}
+
+/* =========================================================================== */
+/* Label                                                                       */
+/* material-web: absolute within label-wrapper (inset:0 of middle),            */
+/*   label-wrapper has margin-inline matching leading/trailing space            */
+/* Our approach: absolute within middle, margin provides horizontal offset     */
+/* =========================================================================== */
+.label {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--_label-text-font);
+  font-size: var(--_label-text-size);
+  line-height: var(--_label-text-line-height);
+  font-weight: var(--_label-text-weight);
+  letter-spacing: var(--_label-text-tracking);
+  color: var(--_label-text-color);
+
+  /* Resting: vertically centered in 56px container — (56 - 24) / 2 = 16px */
+  top: var(--_top-space);
+  /* Horizontal: align with input text */
+  left: var(--_leading-space);
+  right: var(--_trailing-space);
+
+  transition:
+    top var(--_label-duration) var(--_label-easing),
+    left var(--_label-duration) var(--_label-easing),
+    font-size var(--_label-duration) var(--_label-easing),
+    line-height var(--_label-duration) var(--_label-easing),
+    color var(--_label-duration);
+}
+
+/* With icons: adjust label horizontal position */
+.textField.hasLeadingIcon .label {
+  left: 0;
+}
+
+.textField.hasTrailingIcon .label {
+  right: 0;
+}
+
+/* Filled floating: label at top of container (8px from top) */
+.filled.focused .label,
+.filled.populated .label {
+  top: var(--_with-label-top-space);
+  font-size: var(--_label-text-populated-size);
+  line-height: var(--_label-text-populated-line-height);
+}
+
+/* Outlined floating: label centered on top border of field */
+/* Field top = 0. Label (16px tall) centered at 0 → top = -8px */
+.outlined.focused .label,
+.outlined.populated .label {
+  top: calc(-1 * var(--_label-text-populated-line-height) / 2);
+  left: var(--_leading-space);
+  font-size: var(--_label-text-populated-size);
+  line-height: var(--_label-text-populated-line-height);
+}
+
+/* With leading icon: floating label must stay at the no-icon position (16px from field edge) */
+.outlined.hasLeadingIcon.focused .label,
+.outlined.hasLeadingIcon.populated .label {
+  left: calc(
+    var(--_leading-space) - var(--_with-leading-icon-leading-space) - var(--_icon-size) - var(--_icon-input-space)
+  );
+}
+
+/* Focused label color */
+.focused:not(.error) .label {
+  color: var(--_focus-label-text-color);
+}
+
+/* =========================================================================== */
+/* Content (input + prefix/suffix)                                             */
+/* material-web: padding applied to input via ::slotted()                      */
+/* Our approach: padding on .content wrapper                                   */
+/* =========================================================================== */
+.content {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  align-self: stretch;
+  min-width: 0;
+  color: var(--_input-text-color);
+
+  /* Horizontal padding to match label position */
+  padding-inline-start: var(--_leading-space);
+  padding-inline-end: var(--_trailing-space);
+
+  /* Content is invisible when empty+unfocused, fades in on focus/populate */
+  opacity: 0;
+  transition: opacity 83ms var(--_label-easing);
+}
+
+/* With icons: remove horizontal padding (icons provide spacing) */
+.textField.hasLeadingIcon .content {
+  padding-inline-start: 0;
+}
+
+.textField.hasTrailingIcon .content {
+  padding-inline-end: 0;
+}
+
+.noLabel .content,
+.focused .content,
+.populated .content {
+  opacity: 1;
+  transition-delay: 67ms;
+}
+
+.disabled .content {
+  transition: none;
+}
+
+/* Vertical padding: filled with label */
+.filled:not(.noLabel) .content {
+  /* Top = floating-label-top (8px) + floating-label-height (16px) = 24px */
+  padding-top: calc(var(--_with-label-top-space) + var(--_label-text-populated-line-height));
+  padding-bottom: var(--_with-label-bottom-space);
+}
+
+/* Vertical padding: filled without label */
+.filled.noLabel .content {
+  padding-top: var(--_top-space);
+  padding-bottom: var(--_bottom-space);
+}
+
+/* Vertical padding: outlined (with or without label) */
+.outlined .content {
+  padding-top: var(--_top-space);
+  padding-bottom: var(--_bottom-space);
+}
+
+/* =========================================================================== */
+/* Input                                                                       */
+/* =========================================================================== */
+.input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  font-family: var(--_input-text-font);
+  font-size: var(--_input-text-size);
+  line-height: var(--_input-text-line-height);
+  font-weight: var(--_input-text-weight);
+  letter-spacing: var(--_input-text-tracking);
+  color: inherit;
+  caret-color: var(--_caret-color);
+}
+
+.input::placeholder {
+  color: var(--_input-text-placeholder-color);
+  opacity: 0;
+  transition: opacity 83ms var(--_label-easing);
+}
+
+.noLabel .input::placeholder,
+.focused .input::placeholder {
+  opacity: 1;
+  transition-delay: 67ms;
+}
+
+/* Textarea */
+textarea.input {
+  resize: none;
+  overflow: hidden;
+}
+
+/* =========================================================================== */
+/* Prefix / Suffix                                                             */
+/* =========================================================================== */
+.prefix,
+.suffix {
+  font-family: var(--_input-text-font);
+  font-size: var(--_input-text-size);
+  line-height: var(--_input-text-line-height);
+  font-weight: var(--_input-text-weight);
+  letter-spacing: var(--_input-text-tracking);
+  white-space: nowrap;
+}
+
+.prefix {
+  color: var(--_input-text-prefix-color);
+  padding-inline-end: var(--_input-text-prefix-trailing-space, 2px);
+}
+
+.suffix {
+  color: var(--_input-text-suffix-color);
+  padding-inline-start: var(--_input-text-suffix-leading-space, 2px);
+}
+
+/* =========================================================================== */
+/* Icons                                                                       */
+/* =========================================================================== */
+.leadingIcon,
+.trailingIcon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.leadingIcon {
+  color: var(--_leading-icon-color);
+  margin-inline-start: var(--_with-leading-icon-leading-space);
+  margin-inline-end: var(--_icon-input-space);
+}
+
+.trailingIcon {
+  color: var(--_trailing-icon-color);
+  margin-inline-start: var(--_icon-input-space);
+  margin-inline-end: var(--_with-trailing-icon-trailing-space);
+}
+
+.leadingIcon svg,
+.trailingIcon svg {
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+  fill: currentColor;
+}
+
+/* =========================================================================== */
+/* Supporting text                                                             */
+/* =========================================================================== */
+.supportingText {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px var(--_leading-space) 0;
+  font-family: var(--_supporting-text-font);
+  font-size: var(--_supporting-text-size);
+  line-height: var(--_supporting-text-line-height);
+  font-weight: var(--_supporting-text-weight);
+  letter-spacing: var(--_supporting-text-tracking);
+  color: var(--_supporting-text-color);
+}
+
+.counter {
+  margin-inline-start: var(--_leading-space);
+  white-space: nowrap;
+}
+
+/* =========================================================================== */
+/* Hover state (filled)                                                        */
+/* =========================================================================== */
+.filled:not(.disabled):hover {
+  --_active-indicator-color: var(--md-sys-color-on-surface);
+}
+
+/* =========================================================================== */
+/* Error state                                                                 */
+/* =========================================================================== */
+.error {
+  --_label-text-color: var(--md-sys-color-error);
+  --_active-indicator-color: var(--md-sys-color-error);
+  --_focus-active-indicator-color: var(--md-sys-color-error);
+  --_outline-color: var(--md-sys-color-error);
+  --_trailing-icon-color: var(--md-sys-color-error);
+  --_supporting-text-color: var(--md-sys-color-error);
+  --_caret-color: var(--md-sys-color-error);
+}
+
+.error:not(.disabled):hover {
+  --_active-indicator-color: var(--md-sys-color-on-error-container);
+  --_outline-color: var(--md-sys-color-on-error-container);
+  --_label-text-color: var(--md-sys-color-on-error-container);
+  --_trailing-icon-color: var(--md-sys-color-on-error-container);
+}
+
+/* Error + focus: override hover back to error color */
+.error.focused,
+.outlined.error.focused {
+  --_label-text-color: var(--md-sys-color-error);
+  --_outline-color: var(--md-sys-color-error);
+}
+
+/* =========================================================================== */
+/* Disabled state                                                              */
+/* =========================================================================== */
+.disabled {
+  pointer-events: none;
+}
+
+.disabled .background {
+  background-color: color-mix(
+    in srgb,
+    var(--md-sys-color-on-surface) 4%,
+    transparent
+  );
+}
+
+.disabled .activeIndicator::before {
+  border-bottom-color: var(--_disabled-color);
+}
+
+.outlined.disabled {
+  --_outline-color: color-mix(
+    in srgb,
+    var(--md-sys-color-on-surface) 12%,
+    transparent
+  );
+}
+
+.disabled .label,
+.disabled .content,
+.disabled .input::placeholder,
+.disabled .leadingIcon,
+.disabled .trailingIcon,
+.disabled .supportingText,
+.disabled .prefix,
+.disabled .suffix {
+  color: var(--_disabled-color);
+}

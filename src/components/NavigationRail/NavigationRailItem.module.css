@@ -1,0 +1,222 @@
+/**
+ * MD3 (Expressive) Navigation rail item — a single stable layout that morphs
+ * between collapsed and expanded via the inherited `--_t` (0→1). Every position
+ * / size is a calc() of `--_t`, so the spring driving it yields a continuous
+ * morph (no reflow):
+ *   collapsed (t=0): 96dp-wide item, icon-over-label, 56×32 pill around the icon
+ *   expanded  (t=1): wide item, icon + label in a full-width 56dp pill
+ * Tokens from Compose WideNavigationRail: active indicator SecondaryContainer,
+ * active icon OnSecondaryContainer, active label Secondary, inactive
+ * OnSurfaceVariant; icon 24dp; label LabelMedium → LabelLarge.
+ */
+
+.item {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  /* Collapsed height = 6 (top pad) + 32 (pill) + 4 (gap) + label + 6 (bottom
+     pad) = 48 + label height (the label wraps, so `--_label-h` is measured).
+     Expanded height = 56. Per Figma: 6dp top/bottom padding, 0 horizontal. */
+  height: calc((48px + var(--_label-h, 16px)) * (1 - var(--_t, 0)) + 56px * var(--_t, 0));
+  padding: 0; /* reset the native <button> UA padding (1px 6px) */
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+
+  --md-focus-ring-color: var(--md-sys-color-secondary);
+  --_icon-color: var(--md-sys-color-on-surface-variant);
+  --_label-color: var(--md-sys-color-on-surface-variant);
+
+  /* Active-indicator pill — HUGS its content (not full width). Left edge stays
+     fixed at 20px; width grows from 56 (icon only) to 64 + label width (leading
+     16 + icon 24 + gap 8 + label + trailing 16), so it wraps icon + label when
+     expanded. Height 32 → 56. `--_label-w` is measured per item in JS. */
+  --_pill-left: 20px;
+  /* 6dp top padding collapsed → 0 expanded (pill fills the 56dp item). */
+  --_pill-top: calc(6px * (1 - var(--_t, 0)));
+  --_pill-w: calc(56px + (8px + var(--_label-w, 56px)) * var(--_t, 0));
+  --_pill-h: calc(32px + 24px * var(--_t, 0));
+  --_pill-r: calc(var(--_pill-h) / 2);
+  /* Icon left is constant too: collapsed centered (96−24)/2 = 36 ≡ expanded
+     leading position. Vertically it sits centered in the pill: 6+(32−24)/2 = 10
+     collapsed → (56−24)/2 = 16 expanded. */
+  --_icon-left: 36px;
+  --_icon-top: calc(10px + 6px * var(--_t, 0));
+}
+
+.item[data-selected] {
+  --_icon-color: var(--md-sys-color-on-secondary-container);
+  --_label-color: var(--md-sys-color-secondary);
+}
+
+.item:disabled {
+  cursor: default;
+  pointer-events: none;
+  --_icon-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  --_label-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+/* The morphing rounded rect: active-indicator background (::before) + state
+   layer (::after). */
+.shape {
+  position: absolute;
+  left: var(--_pill-left);
+  top: var(--_pill-top);
+  width: var(--_pill-w);
+  height: var(--_pill-h);
+  border-radius: var(--_pill-r);
+  z-index: 0;
+}
+
+.shape::before,
+.shape::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+}
+
+.shape::before {
+  background-color: var(--md-sys-color-secondary-container);
+  transition: opacity 100ms var(--md-sys-motion-easing-standard);
+}
+
+.item[data-selected] .shape::before {
+  opacity: 1;
+}
+
+.shape::after {
+  background-color: var(--md-sys-color-on-secondary-container);
+  transition: opacity var(--md-sys-motion-duration-short3)
+    var(--md-sys-motion-easing-standard);
+}
+
+.item:hover:not(:disabled) .shape::after {
+  opacity: var(--md-sys-state-hover-state-layer-opacity);
+}
+.item:active:not(:disabled) .shape::after {
+  opacity: var(--md-sys-state-pressed-state-layer-opacity);
+}
+
+.icon {
+  position: absolute;
+  left: var(--_icon-left);
+  top: var(--_icon-top);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--_icon-color);
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+/* Compose BadgedBox placement relative to the 24dp icon: the large badge
+   overlaps the icon top by 14dp (top = 14 − 16 = −2px) with its leading edge
+   at icon-width − 12dp; the 6dp dot sits at the icon's top-end corner. */
+.badge {
+  position: absolute;
+  top: -2px;
+  inset-inline-start: 12px;
+  z-index: 3;
+  box-sizing: border-box;
+  /* BadgeTokens.LargeSize (16dp) minimum — a single digit is a circle */
+  min-width: 16px;
+  height: 16px;
+  padding-inline: 4px;
+  border-radius: 8px;
+  background-color: var(--md-sys-color-error);
+  color: var(--md-sys-color-on-error);
+  font-family: var(--md-sys-typescale-label-small-font);
+  font-size: var(--md-sys-typescale-label-small-size);
+  line-height: 16px;
+  text-align: center;
+}
+
+.badgeDot {
+  position: absolute;
+  top: 0;
+  inset-inline-start: 18px;
+  z-index: 3;
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background-color: var(--md-sys-color-error);
+}
+
+/* Two labels. The collapsed one (below the icon) fades out early; the expanded
+   one (beside the icon) fades in over the second half while sliding slightly
+   left→right into place — so the label disappears, then slides in on expand. */
+.labelCollapsed,
+.labelExpanded {
+  position: absolute;
+  z-index: 2;
+  color: var(--_label-color);
+  pointer-events: none;
+}
+
+.labelCollapsed {
+  /* centered on the icon (constant x=48), NOT 50% of the shrinking item — else
+     it drifts right→left as the rail collapses. Anchored by its top (below the
+     pill) so it can grow downward when the text wraps. */
+  left: 48px;
+  top: 42px;
+  transform: translateX(-50%);
+  /* Per Figma: label wraps at the container width (96dp, no horizontal pad). */
+  max-width: 96px;
+  white-space: normal;
+  overflow-wrap: break-word;
+  text-align: center;
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+  /* 60fps: gone almost immediately — fades out over t ≈ [0, 0.15] */
+  opacity: calc(1 - var(--_t, 0) * 6.7);
+}
+
+.labelExpanded {
+  /* beside the icon (icon-left 36 + 24 + 8 = 68) */
+  left: 68px;
+  /* aligned to the icon's vertical center (icon-top 10..16 + 12) */
+  top: calc(22px + 6px * var(--_t, 0));
+  white-space: nowrap;
+  /* slides left→right into place on expand only (−11px at t≈0.77 → 0 at t=1);
+     collapsing sets --_slide:0 so the label just cross-fades, no slide. */
+  transform: translate(calc((var(--_t, 0) - 1) * var(--_slide, 1) * 48px), -50%);
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  /* 60fps: appears late — fades in over t ≈ [0.77, 0.95] */
+  opacity: calc((var(--_t, 0) - 0.77) * 5.5);
+}
+
+/* Focus ring traces the morphing pill (not the full item box). */
+.focus {
+  inset: auto;
+  left: var(--_pill-left);
+  top: var(--_pill-top);
+  width: var(--_pill-w);
+  height: var(--_pill-h);
+  border-radius: var(--_pill-r);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shape::before,
+  .shape::after {
+    transition: none;
+  }
+}

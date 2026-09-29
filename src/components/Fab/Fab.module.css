@@ -1,6 +1,8 @@
 /**
- * MD3 FAB. 3 sizes (regular / medium / large), 6 color styles, optional
- * label for Extended FAB. Elevation level 3 at rest, level 4 on hover.
+ * MD3 FAB. 4 sizes (small / regular / medium / large), 3 color sets
+ * (primary / secondary / tertiary) x tonal (container roles, default) or
+ * high-emphasis (base roles, `data-tonal` absent), optional label for
+ * Extended FAB. Elevation level 3 at rest, level 4 on hover.
  * Values: m3.material.io/components/floating-action-button/specs
  */
 
@@ -24,20 +26,20 @@
   min-width: var(--_min-width);
   padding-inline: var(--_pad-inline);
 
-  /* Default color = primary-container */
-  --_container: var(--md-sys-color-primary-container);
-  --_content: var(--md-sys-color-on-primary-container);
-  --_state-color: var(--md-sys-color-on-primary-container);
+  /* Default color set = primary, tonal (primary-container roles) */
+  --_container-color: var(--md-sys-color-primary-container);
+  --_content-color: var(--md-sys-color-on-primary-container);
+  --_state-layer-color: var(--md-sys-color-on-primary-container);
 
   --_elevation: var(--md-fab-container-elevation, var(--md-sys-elevation-shadow-level3));
   --_elevation-hover: var(--md-fab-hover-container-elevation, var(--md-sys-elevation-shadow-level4));
 
   border-radius: var(--_shape);
-  background-color: var(--_container);
-  color: var(--_content);
+  background-color: var(--_container-color);
+  color: var(--_content-color);
   box-shadow: var(--_elevation);
 
-  --md-ripple-color: var(--_state-color);
+  --md-ripple-color: var(--_state-layer-color);
   --md-focus-ring-color: var(--md-sys-color-secondary);
 
   font-family: var(--md-sys-typescale-label-large-font);
@@ -47,9 +49,9 @@
   letter-spacing: var(--md-sys-typescale-label-large-tracking);
 
   transition:
-    box-shadow var(--md-sys-motion-duration-short3, 150ms)
-      var(--md-sys-motion-easing-standard, cubic-bezier(0.2, 0, 0, 1)),
-    border-radius var(--md-sys-motion-duration-medium1, 250ms)
+    box-shadow var(--md-sys-motion-duration-short3)
+      var(--md-sys-motion-easing-standard),
+    border-radius var(--md-sys-motion-duration-medium1)
       cubic-bezier(0.34, 1.4, 0.5, 1);
 }
 
@@ -60,14 +62,27 @@
   box-shadow: var(--_elevation-hover);
 }
 
-.fab:active,
-.fab[data-pressed] {
+.fab:active {
   box-shadow: var(--_elevation);
+}
+
+/* No shadow at all (MD3: a FAB inside a Navigation rail / drawer is flat). */
+.fab[data-disable-elevation] {
+  --_elevation: none;
+  --_elevation-hover: none;
 }
 
 /* --------------------------------------------------------------------------- */
 /* Sizes                                                                       */
 /* --------------------------------------------------------------------------- */
+.fab[data-size='small'] {
+  --_height: 40px;
+  --_min-width: 40px;
+  --_icon-size: 24px;
+  --_pad-inline: 8px;
+  --_shape: var(--md-sys-shape-corner-medium);
+  --_shape-pressed: var(--md-sys-shape-corner-small);
+}
 .fab[data-size='regular'] {
   --_height: 56px;
   --_min-width: 56px;
@@ -107,38 +122,78 @@
   padding-inline-end: 24px;
 }
 
+/* Morphing Extended FAB (`expanded` prop): keeps the per-size square padding,
+   so at --_ext: 0 it is exactly the icon-only FAB; the label row (gap + label
+   + trailing padding) carries the rest of the extended width and scales with
+   the spring-driven --_ext (may overshoot slightly past 1). */
+.fab[data-morph] {
+  gap: 0;
+}
+
+.labelWrap {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  justify-content: flex-start;
+  overflow: hidden;
+  /* Spring-driven morphs (`expanded` boolean) write --_ext/--_label-o inline;
+     container-driven morphs (`expanded="container"`) fall back to the
+     inherited --_t, so the label row tracks the container's spring exactly.
+     The fallback opacity fades in over the first ~30% of the morph (per the
+     m3.material.io rail demo; the clip does the rest of the reveal). */
+  width: calc(var(--_ext, var(--_t, 1)) * var(--_label-total, 0px));
+  opacity: var(--_label-o, calc(var(--_t, 1) * 3.4));
+}
+
+/* Regular size: 16 (pad) + 24 (icon) + 12 (gap) + label + 4 + 16 (pad) —
+   the extended 16/20 paddings and 12dp icon–label gap from the spec. */
+.labelInner {
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: max-content;
+  padding-inline-start: 12px;
+  padding-inline-end: 4px;
+}
+
 /* Shape morph on press */
-.fab[data-pressed] {
+.fab:active:not(:disabled) {
   border-radius: var(--_shape-pressed);
 }
 
 /* --------------------------------------------------------------------------- */
-/* Color styles                                                                */
+/* Color sets — `data-color` picks the set, `data-tonal` (present = tonal,     */
+/* the default) picks container roles vs high-emphasis base roles. `:where()`  */
+/* keeps every rule at the base .fab specificity so `.fab:disabled` below      */
+/* still overrides the color vars (as it did with the single-attribute rules). */
 /* --------------------------------------------------------------------------- */
-.fab[data-color='secondary-container'] {
-  --_container: var(--md-sys-color-secondary-container);
-  --_content: var(--md-sys-color-on-secondary-container);
-  --_state-color: var(--md-sys-color-on-secondary-container);
+
+/* Tonal (container roles); tonal primary is the .fab base above. */
+.fab:where([data-tonal][data-color='secondary']) {
+  --_container-color: var(--md-sys-color-secondary-container);
+  --_content-color: var(--md-sys-color-on-secondary-container);
+  --_state-layer-color: var(--md-sys-color-on-secondary-container);
 }
-.fab[data-color='tertiary-container'] {
-  --_container: var(--md-sys-color-tertiary-container);
-  --_content: var(--md-sys-color-on-tertiary-container);
-  --_state-color: var(--md-sys-color-on-tertiary-container);
+.fab:where([data-tonal][data-color='tertiary']) {
+  --_container-color: var(--md-sys-color-tertiary-container);
+  --_content-color: var(--md-sys-color-on-tertiary-container);
+  --_state-layer-color: var(--md-sys-color-on-tertiary-container);
 }
-.fab[data-color='primary'] {
-  --_container: var(--md-sys-color-primary);
-  --_content: var(--md-sys-color-on-primary);
-  --_state-color: var(--md-sys-color-on-primary);
+
+/* High-emphasis (base roles, `tonal={false}`) */
+.fab:where(:not([data-tonal])[data-color='primary']) {
+  --_container-color: var(--md-sys-color-primary);
+  --_content-color: var(--md-sys-color-on-primary);
+  --_state-layer-color: var(--md-sys-color-on-primary);
 }
-.fab[data-color='secondary'] {
-  --_container: var(--md-sys-color-secondary);
-  --_content: var(--md-sys-color-on-secondary);
-  --_state-color: var(--md-sys-color-on-secondary);
+.fab:where(:not([data-tonal])[data-color='secondary']) {
+  --_container-color: var(--md-sys-color-secondary);
+  --_content-color: var(--md-sys-color-on-secondary);
+  --_state-layer-color: var(--md-sys-color-on-secondary);
 }
-.fab[data-color='tertiary'] {
-  --_container: var(--md-sys-color-tertiary);
-  --_content: var(--md-sys-color-on-tertiary);
-  --_state-color: var(--md-sys-color-on-tertiary);
+.fab:where(:not([data-tonal])[data-color='tertiary']) {
+  --_container-color: var(--md-sys-color-tertiary);
+  --_content-color: var(--md-sys-color-on-tertiary);
+  --_state-layer-color: var(--md-sys-color-on-tertiary);
 }
 
 /* --------------------------------------------------------------------------- */
@@ -179,9 +234,9 @@
 .fab:disabled {
   cursor: default;
   pointer-events: none;
-  --_container: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
-  --_content: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
-  --_state-color: transparent;
+  --_container-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  --_content-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  --_state-layer-color: transparent;
   box-shadow: none;
 }
 

@@ -1,0 +1,51 @@
+/**
+ * MD3 (Expressive) Toolbar. Docked = full-width 64dp bar; floating = rounded
+ * pill with 8dp padding and 4dp gaps (Compose FloatingToolbarTokens: CornerFull,
+ * ContainerLeadingSpace/TrailingSpace 8dp, ContainerBetweenSpace 4dp). Standard
+ * color = SurfaceContainer / OnSurface, vibrant = PrimaryContainer /
+ * OnPrimaryContainer.
+ */
+
+.toolbar {
+  display: flex;
+  box-sizing: border-box;
+  align-items: center;
+}
+
+/* ---- Color schemes ---- */
+.toolbar[data-color='standard'] {
+  background-color: var(--md-sys-color-surface-container);
+  color: var(--md-sys-color-on-surface);
+}
+
+.toolbar[data-color='vibrant'] {
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+
+/* ---- Docked: full-width bottom bar ---- */
+.toolbar[data-variant='docked'] {
+  width: 100%;
+  min-height: 64px;
+  flex-direction: row;
+  justify-content: center;
+  gap: 8px;
+  padding-inline: 16px;
+}
+
+/* ---- Floating: rounded, elevated pill ---- */
+.toolbar[data-variant='floating'] {
+  width: fit-content;
+  gap: 4px;
+  padding: 8px;
+  border-radius: var(--md-sys-shape-corner-full);
+  box-shadow: var(--md-sys-elevation-shadow-level3);
+}
+
+.toolbar[data-variant='floating'][data-orientation='horizontal'] {
+  flex-direction: row;
+}
+
+.toolbar[data-variant='floating'][data-orientation='vertical'] {
+  flex-direction: column;
+}

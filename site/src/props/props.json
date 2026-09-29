@@ -1,0 +1,2461 @@
+{
+ "TopAppBar": {
+  "description": "Material Design 3 Top app bar.\n\nSurface container, 64dp (small / center) or two-row 112dp (medium) / 152dp\n(large). Title uses TitleLarge (small/center), HeadlineSmall (medium) or\nHeadlineMedium (large); OnSurface title, OnSurface nav icon,\nOnSurfaceVariant actions; 16dp title inset — per Compose AppBar tokens.",
+  "props": [
+   {
+    "name": "actions",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Trailing action controls."
+   },
+   {
+    "name": "navigationIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Leading navigation control (e.g. a back or menu IconButton)."
+   },
+   {
+    "name": "title",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "The bar title."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "small",
+    "description": "Size / layout."
+   }
+  ]
+ },
+ "BottomAppBar": {
+  "description": "Material Design 3 Bottom app bar.\n\n80dp SurfaceContainer bar hosting action icons (OnSurfaceVariant) at the\nstart and an optional FAB at the end, per Compose BottomAppBarTokens.",
+  "props": [
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Action controls (icon buttons)."
+   },
+   {
+    "name": "floatingActionButton",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Optional trailing floating action button."
+   }
+  ]
+ },
+ "Badge": {
+  "description": "",
+  "props": [
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Content the badge is attached to (e.g. an icon)."
+   },
+   {
+    "name": "max",
+    "type": "number",
+    "required": false,
+    "defaultValue": "999",
+    "description": "Maximum value. Values above this show `{max}+`."
+   },
+   {
+    "name": "size",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "large",
+    "description": "Badge size. `\"small\"` renders a dot; `\"large\"` renders a label."
+   },
+   {
+    "name": "value",
+    "type": "number",
+    "required": false,
+    "defaultValue": null,
+    "description": "Number to display inside the badge. Ignored when `size=\"small\"`."
+   },
+   {
+    "name": "visible",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "true",
+    "description": "Whether the badge is visible."
+   }
+  ]
+ },
+ "BottomSheet": {
+  "description": "Material Design 3 Modal bottom sheet.\n\nSurfaceContainerLow container, 28dp top corners, elevation 1, max-width\n640dp, an OnSurfaceVariant 32×4 drag handle — per Compose SheetBottomTokens.\nSlides up over a 0.32 Scrim; role=\"dialog\" aria-modal, Escape-to-close.\n\nThe drag handle is an accessible button (click/Enter dismisses) and the\npointer can drag the sheet down: release past 56px, or a downward fling\nfaster than 125px/s, dismisses; otherwise the sheet settles back (Compose\nModalBottomSheet thresholds).",
+  "props": [
+   {
+    "name": "dragHandleLabel",
+    "type": "string",
+    "required": false,
+    "defaultValue": "Close",
+    "description": "Accessible label for the drag handle button."
+   },
+   {
+    "name": "onClose",
+    "type": "(() => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Called on scrim click, Escape, drag-to-dismiss, or the drag handle."
+   },
+   {
+    "name": "open",
+    "type": "boolean",
+    "required": true,
+    "defaultValue": null,
+    "description": "Whether the sheet is shown."
+   },
+   {
+    "name": "showDragHandle",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "true",
+    "description": "Show the top drag handle."
+   }
+  ]
+ },
+ "Button": {
+  "description": "Material Design 3 (Expressive) Button.\n\nA native `<button>` — activation, keyboard, and `onClick` are standard DOM\nbehavior (MUI-idiomatic). The MD3 state layer, press ripple, and focus ring\ncome from the shared primitives; the corner morphs to a tighter shape while\npressed via CSS `:active` (Expressive). Set `toggle` for a selectable button\n(`aria-pressed`); the `text` variant has no toggle styling.",
+  "props": [
+   {
+    "name": "defaultSelected",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Uncontrolled initial selected state (toggle mode)."
+   },
+   {
+    "name": "endIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Trailing icon (decorative)."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, selected: boolean) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the triggering event and the next selected state when toggled."
+   },
+   {
+    "name": "selected",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected state (toggle mode)."
+   },
+   {
+    "name": "shape",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "round",
+    "description": "Resting shape; both shapes morph to a tighter corner while pressed."
+   },
+   {
+    "name": "size",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "sm",
+    "description": "Container size on the Expressive scale."
+   },
+   {
+    "name": "startIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Leading icon (decorative)."
+   },
+   {
+    "name": "toggle",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Enable toggle (selectable) behavior with `aria-pressed` (Expressive)."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "filled",
+    "description": "Visual emphasis."
+   }
+  ]
+ },
+ "ButtonGroup": {
+  "description": "Material Design 3 (Expressive) Button group — an invisible container that adds\npadding between buttons and modifies their shape.\n\n`standard` spaces buttons by the size's between-space (12dp at sm, per Compose\nButtonGroupSmallTokens) and pops the pressed button. `connected` joins buttons\nwith a 2dp gap (ConnectedButtonGroupSmallTokens), fully rounding the outer\ncorners and giving the inner corners a small radius. Wraps `Button` /\n`IconButton` children — it has no color of its own.",
+  "props": [
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "`Button` / `IconButton` children."
+   },
+   {
+    "name": "orientation",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "horizontal",
+    "description": "Layout direction."
+   },
+   {
+    "name": "size",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "sm",
+    "description": "Controls the between-space to match the child button size."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "standard",
+    "description": "`standard` spaces buttons and pops the pressed one; `connected` joins them\ninto a single shape with small inner corners."
+   }
+  ]
+ },
+ "Card": {
+  "description": "Material Design 3 Card.\n\nA container `<div>` with the three MD3 styles (filled / elevated / outlined),\ncorner-medium (12dp) shape. Passing `onClick` makes the whole card\ninteractive — it gains `role=\"button\"`, keyboard activation, a hover\nelevation bump, the state-layer ripple, and the focus ring.",
+  "props": [
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disable interaction and dim the card (only meaningful when `onClick` is set)."
+   },
+   {
+    "name": "dragged",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Apply the MD3 dragged appearance (raised elevation) — for drag-and-drop."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "filled",
+    "description": "Container style."
+   }
+  ]
+ },
+ "Carousel": {
+  "description": "Material Design 3 (Expressive) Carousel.\n\nA horizontally scroll-snapping row of 28dp-rounded items (16dp side / 8dp\nblock padding, 8dp between items — per m3.material.io carousel specs). Items\ndynamically shrink as they move out of the focus zone at either edge, giving\nthe M3 \"large / medium / small\" mask. `multi-browse` snaps items to the start,\n`hero` centres a large item with a peek of the next, `uncontained` scrolls\nuniform items to the edge.",
+  "props": [
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "`CarouselItem`s."
+   },
+   {
+    "name": "itemHeight",
+    "type": "number",
+    "required": false,
+    "defaultValue": "200",
+    "description": "Item height in px."
+   },
+   {
+    "name": "itemWidth",
+    "type": "number",
+    "required": false,
+    "defaultValue": "260 (`hero`: 320)",
+    "description": "Preferred (large) item width in px."
+   },
+   {
+    "name": "spacing",
+    "type": "number",
+    "required": false,
+    "defaultValue": "8",
+    "description": "Gap between items in px."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "multi-browse",
+    "description": "Layout. `multi-browse` mixes large/medium/small items, `uncontained`\nscrolls uniform items to the edge, `hero` centres one large item with a\npeek of the next."
+   }
+  ]
+ },
+ "Checkbox": {
+  "description": "Material Design 3 Checkbox.\n\nUses a native `<input type=\"checkbox\">` for proper form integration and\naccessibility. The visual container, checkmark, and state layer are rendered\nvia CSS on sibling spans. Structure mirrors material-web.\n\nMUI parity: the forwarded `ref` points at the ROOT `<span>`; `inputRef`\nreaches the native `<input>`.",
+  "props": [
+   {
+    "name": "checked",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled checked state."
+   },
+   {
+    "name": "defaultChecked",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Uncontrolled initial checked state."
+   },
+   {
+    "name": "error",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Error state."
+   },
+   {
+    "name": "indeterminate",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Indeterminate (mixed) state."
+   },
+   {
+    "name": "inputRef",
+    "type": "Ref<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Ref to the native `<input>` element (the forwarded `ref` points at the root)."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: ChangeEvent<HTMLInputElement, Element>, checked: boolean) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the native event and the next checked state on toggle."
+   }
+  ]
+ },
+ "Chip": {
+  "description": "Material Design 3 Chip.\n\nSupports assist, filter, input, and suggestion variants.\nUses a native `<button>` for the primary action. Filter chips toggle\nselection. Input chips support a trailing remove button.\n\nStructure mirrors material-web: each action has its own Ripple/FocusRing.\nPrimary Ripple is scoped to the action button. The trailing remove button\nhas its own circular 24dp Ripple/FocusRing.\n\nKeyboard: Arrow keys move focus between primary and trailing actions\n(matching material-web's multi-action chip pattern). Trailing action is\nnot in the Tab order; only reachable via arrow keys.\n\nThe forwarded `ref` points at the ROOT `<span>` (MUI parity); extra props\n(`{...rest}`) still land on the primary action `<button>`.",
+  "props": [
+   {
+    "name": "defaultSelected",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Uncontrolled initial selected state."
+   },
+   {
+    "name": "dragged",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Apply the MD3 dragged appearance (state layer + elevation) — for drag-and-drop."
+   },
+   {
+    "name": "elevated",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Whether the chip uses elevated styling (no outline, shadow)."
+   },
+   {
+    "name": "icon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Leading icon."
+   },
+   {
+    "name": "label",
+    "type": "string",
+    "required": true,
+    "defaultValue": null,
+    "description": "Chip label text."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, selected: boolean) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the triggering event and the next selected state (filter chip)."
+   },
+   {
+    "name": "onRemove",
+    "type": "(() => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires when the remove button is clicked."
+   },
+   {
+    "name": "removable",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Whether a trailing remove button is shown (input / filter removable)."
+   },
+   {
+    "name": "selected",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected state (filter / input chips)."
+   },
+   {
+    "name": "showSelectedIcon",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "true",
+    "description": "Whether to show a leading checkmark when selected (filter chip)."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "assist",
+    "description": "Visual variant."
+   }
+  ]
+ },
+ "DatePicker": {
+  "description": "Material Design 3 Date picker (modal calendar).\n\nSurfaceContainerHigh panel, 28dp corners, 360dp wide, elevation 3. Day cells\nare 40dp round; selected fills Primary / OnPrimary, today shows a 1dp Primary\noutline. In `range` mode two dates are picked and the span is highlighted with\nSecondaryContainer — per Compose DatePickerModalTokens. Wrap in a `Dialog`\nfor a full modal experience, or use `DatePickerField` for the docked variant.",
+  "props": [
+   {
+    "name": "defaultValue",
+    "type": "Date | DateRange | null",
+    "required": false,
+    "defaultValue": null,
+    "description": "Uncontrolled initial value."
+   },
+   {
+    "name": "locale",
+    "type": "string",
+    "required": false,
+    "defaultValue": "en-US",
+    "description": "BCP-47 locale for month / weekday names."
+   },
+   {
+    "name": "max",
+    "type": "Date",
+    "required": false,
+    "defaultValue": null,
+    "description": "Latest selectable date (inclusive)."
+   },
+   {
+    "name": "min",
+    "type": "Date",
+    "required": false,
+    "defaultValue": null,
+    "description": "Earliest selectable date (inclusive)."
+   },
+   {
+    "name": "onChange",
+    "type": "((value: Date | DateRange) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the new value (`Date` in single mode, `[start, end]` in range)."
+   },
+   {
+    "name": "range",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Select a start/end range instead of a single date."
+   },
+   {
+    "name": "value",
+    "type": "Date | DateRange | null",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled value — a `Date` (single) or `[start, end]` (range)."
+   }
+  ]
+ },
+ "DatePickerField": {
+  "description": "Material Design 3 Docked date picker.\n\nAn outlined text field (type a date directly) with a trailing calendar button\nthat opens the `DatePicker` in a dropdown — the docked / input variant per\nm3.material.io. Closes on selection, outside click, or Escape.",
+  "props": [
+   {
+    "name": "className",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": ""
+   },
+   {
+    "name": "defaultValue",
+    "type": "Date | null",
+    "required": false,
+    "defaultValue": null,
+    "description": "Uncontrolled initial date."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": ""
+   },
+   {
+    "name": "label",
+    "type": "string",
+    "required": false,
+    "defaultValue": "Date",
+    "description": "Field label."
+   },
+   {
+    "name": "locale",
+    "type": "string",
+    "required": false,
+    "defaultValue": "en-US",
+    "description": "BCP-47 locale."
+   },
+   {
+    "name": "max",
+    "type": "Date",
+    "required": false,
+    "defaultValue": null,
+    "description": "Latest selectable date."
+   },
+   {
+    "name": "min",
+    "type": "Date",
+    "required": false,
+    "defaultValue": null,
+    "description": "Earliest selectable date."
+   },
+   {
+    "name": "onChange",
+    "type": "((date: Date | null) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the newly selected/parsed date (or null when cleared)."
+   },
+   {
+    "name": "value",
+    "type": "Date | null",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected date."
+   }
+  ]
+ },
+ "Dialog": {
+  "description": "Material Design 3 Dialog (basic / alert).\n\nSurfaceContainerHigh container, 28dp corners, elevation 3, 280–560dp wide,\n24dp padding; Secondary icon, OnSurface HeadlineSmall title, OnSurfaceVariant\nBodyMedium text — per Compose DialogTokens. Modal with a 0.32 Scrim,\nrole=\"dialog\" aria-modal, and Escape-to-close.",
+  "props": [
+   {
+    "name": "actions",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Trailing action buttons (typically text Buttons)."
+   },
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Supporting content / body."
+   },
+   {
+    "name": "fullScreen",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Full-screen dialog: a top bar (close + title + action) over full-bleed content."
+   },
+   {
+    "name": "icon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Optional hero icon (Secondary, 24dp, centers the title)."
+   },
+   {
+    "name": "onClose",
+    "type": "(() => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Called on scrim click or Escape."
+   },
+   {
+    "name": "open",
+    "type": "boolean",
+    "required": true,
+    "defaultValue": null,
+    "description": "Whether the dialog is shown."
+   },
+   {
+    "name": "title",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Dialog headline."
+   }
+  ]
+ },
+ "Divider": {
+  "description": "",
+  "props": [
+   {
+    "name": "orientation",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "horizontal",
+    "description": "Orientation."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "full-width",
+    "description": "Layout variant."
+   }
+  ]
+ },
+ "Fab": {
+  "description": "Material Design 3 (Expressive) Floating Action Button.\n\nA native `<button>` (MUI-idiomatic `onClick`) supporting 4 sizes\n(small 40dp, regular 56dp, medium 80dp, large 96dp), 3 color sets\n(`primary` / `secondary` / `tertiary`, each tonal by default or\nhigh-emphasis via `tonal={false}`), and an optional label for the Extended\nFAB. With `expanded` the Extended FAB morphs\nbetween icon-only and icon + label: the label row's measured width\n(`--_label-total`) scales with the spring-driven `--_ext` while the label\ncross-fades via `--_label-o` — or, with `followContainer`, both follow a\nmorphing container's inherited `--_t` instead. Elevation lifts on hover\n(level 3 → 4) and the corner morphs while pressed (CSS `:active`).",
+  "props": [
+   {
+    "name": "color",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "primary",
+    "description": "Color set for the container/content roles."
+   },
+   {
+    "name": "disableElevation",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Removes the container shadow. Per the MD3 spec a FAB inside a Navigation\nrail (or drawer) has no elevation."
+   },
+   {
+    "name": "expanded",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "For an Extended FAB (with `label`): `true` shows the label, `false`\ncollapses it to the plain icon-only FAB. Toggling runs the MD3 Expressive\nspring morph (Compose `ExtendedFloatingActionButton(expanded=)`).\nOmit for a static Extended FAB. Ignored without `label`, and ignored\nwhile `followContainer` drives the morph."
+   },
+   {
+    "name": "followContainer",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Follows the `--_t` morph value inherited from a morphing container\n(e.g. a `NavigationRail` header) instead of running the FAB's own\nspring, staying exactly in sync with the container's spring. While\n`true`, `expanded` is ignored. Requires `label`."
+   },
+   {
+    "name": "icon",
+    "type": "ReactNode",
+    "required": true,
+    "defaultValue": null,
+    "description": "The icon displayed in the FAB."
+   },
+   {
+    "name": "label",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Optional label — turns the FAB into an Extended FAB."
+   },
+   {
+    "name": "size",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "regular",
+    "description": "Container size."
+   },
+   {
+    "name": "tonal",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "true",
+    "description": "`true` (the default) renders the tonal palette — the `*-container` /\n`on-*-container` roles (e.g. `primary-container`). `false` renders the\nhigh-emphasis accent palette — the base color roles (e.g. `primary` with\n`on-primary` content)."
+   }
+  ]
+ },
+ "FabMenu": {
+  "description": "Material Design 3 (Expressive) FAB menu.\n\nA FAB that opens into a vertical stack of labelled action items anchored to\nits top-trailing edge. The FAB morphs into a 56dp close button (container\nprimaryContainer → primary, icon onPrimaryContainer → onPrimary) and the items\nstagger in — per m3.material.io / Compose FloatingActionButtonMenu. Items use\nthe container/on-container roles of the chosen color set (primary / secondary\n/ tertiary). Closes on outside click, Escape, or item selection.",
+  "props": [
+   {
+    "name": "ariaLabel",
+    "type": "string",
+    "required": true,
+    "defaultValue": null,
+    "description": "Accessible label for the FAB (closed state)."
+   },
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "`FabMenuItem`s (up to six)."
+   },
+   {
+    "name": "closeAriaLabel",
+    "type": "string",
+    "required": false,
+    "defaultValue": "Close menu",
+    "description": "Accessible label for the close button (open state)."
+   },
+   {
+    "name": "color",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "primary",
+    "description": "Color set."
+   },
+   {
+    "name": "defaultOpen",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Uncontrolled initial open state."
+   },
+   {
+    "name": "icon",
+    "type": "ReactNode",
+    "required": true,
+    "defaultValue": null,
+    "description": "FAB icon shown while the menu is closed."
+   },
+   {
+    "name": "onOpenChange",
+    "type": "((open: boolean) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Notified when the open state changes."
+   },
+   {
+    "name": "open",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled open state."
+   }
+  ]
+ },
+ "FabMenuItem": {
+  "description": "A labelled action inside a `FabMenu`.",
+  "props": [
+   {
+    "name": "icon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Leading icon (decorative)."
+   }
+  ]
+ },
+ "IconButton": {
+  "description": "Material Design 3 (Expressive) Icon Button.\n\nA native `<button>` (MUI-idiomatic `onClick`) supporting the 4 variants, the\nExpressive size/width scale, and toggle mode. The state layer, ripple, and\nfocus ring come from shared primitives. The shape morphs to a tighter corner\nwhile pressed (CSS `:active`) and round⇄square on toggle selection.",
+  "props": [
+   {
+    "name": "defaultSelected",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Uncontrolled initial selected state (toggle mode)."
+   },
+   {
+    "name": "icon",
+    "type": "ReactNode",
+    "required": true,
+    "defaultValue": null,
+    "description": "The icon (decorative; the button is labelled via aria-label)."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, selected: boolean) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the triggering event and the next selected state when toggled."
+   },
+   {
+    "name": "selected",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected state (toggle mode)."
+   },
+   {
+    "name": "selectedAriaLabel",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Accessible label swapped in when selected (toggle mode)."
+   },
+   {
+    "name": "selectedIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Alternate icon shown while selected in toggle mode."
+   },
+   {
+    "name": "shape",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "round",
+    "description": "Resting shape; morphs on press and on toggle selection."
+   },
+   {
+    "name": "size",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "sm",
+    "description": "Container size on the Expressive scale."
+   },
+   {
+    "name": "toggle",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Enable toggle (selectable) behavior with aria-pressed."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "filled",
+    "description": "Visual emphasis."
+   },
+   {
+    "name": "width",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "default",
+    "description": "Container width footprint."
+   }
+  ]
+ },
+ "ListItem": {
+  "description": "Material Design 3 list item.\n\nAuto-sizes to one- (56dp), two- (72dp) or three-line (88dp) based on the\npresence of `overline` / `supportingText`. Passing `onClick` makes the row\ninteractive (role=\"button\", keyboard activation, ripple, focus ring).\nColors follow ListTokens: headline OnSurface / BodyLarge, supporting &\noverline OnSurfaceVariant, leading/trailing OnSurfaceVariant.",
+  "props": [
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disable the item and dim its content to 38%."
+   },
+   {
+    "name": "headline",
+    "type": "ReactNode",
+    "required": true,
+    "defaultValue": null,
+    "description": "Primary text (headline)."
+   },
+   {
+    "name": "leading",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Leading element (icon, avatar, image, control)."
+   },
+   {
+    "name": "onClick",
+    "type": "MouseEventHandler<HTMLElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Click handler. Providing it makes the row interactive (role=\"button\")."
+   },
+   {
+    "name": "overline",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Small label above the headline."
+   },
+   {
+    "name": "selected",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Marks the item selected (secondary-container fill)."
+   },
+   {
+    "name": "supportingText",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Secondary text below the headline."
+   },
+   {
+    "name": "trailing",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Trailing element (icon, control, metadata)."
+   },
+   {
+    "name": "trailingSupportingText",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Trailing metadata text (right-aligned label)."
+   }
+  ]
+ },
+ "LoadingIndicator": {
+  "description": "Material Design 3 (Expressive) Loading indicator.\n\nA 48dp indicator whose 38dp active shape morphs through the seven Material\nshapes (SoftBurst → Cookie9 → Pentagon → Pill → Sunny → Cookie4 → Oval) while\nspinning. The shapes are traced from the official Material 3 Design Kit\nvectors; the morph + per-step 90° kick run on a spring (dampingRatio 0.6) over\na linear global rotation, with cadence measured from the m3.material.io\nreference. `contained` puts the OnPrimaryContainer shape on a PrimaryContainer\ncircle; `value` gives the determinate form (Circle → SoftBurst).",
+  "props": [
+   {
+    "name": "color",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Active shape color (overrides the token default)."
+   },
+   {
+    "name": "containerColor",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Container fill for the `contained` variant (overrides PrimaryContainer)."
+   },
+   {
+    "name": "size",
+    "type": "number",
+    "required": false,
+    "defaultValue": "48",
+    "description": "Rendered diameter in px."
+   },
+   {
+    "name": "value",
+    "type": "number",
+    "required": false,
+    "defaultValue": null,
+    "description": "Progress `0..1` for the determinate indicator. Omit for indeterminate."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "uncontained",
+    "description": "`uncontained` (shape only) or `contained` (shape on a PrimaryContainer circle)."
+   }
+  ]
+ },
+ "Menu": {
+  "description": "Material Design 3 Menu (dropdown).\n\nAnchors a `role=\"menu\"` popup to a trigger. SurfaceContainer container, 4dp\ncorners, elevation 2, 112–280dp wide, 8dp vertical padding — per Compose\nMenuTokens. Closes on outside click, Escape, Tab-out, or item selection.\n\n`variant=\"vertical\"` renders the MD3 Expressive vertical menu (Compose\n`DropdownMenuPopup`/`DropdownMenuGroup`): a transparent popup that stacks\n`MenuGroup` containers (surface-container-low, elevation 2, 2dp gap) with\n44dp items, 20dp icons, positional corner shapes, and a tertiary-based\nselected state with a springy shape morph. `color=\"vibrant\"` switches the\ngroups and items to the tertiary-container based high-emphasis mapping.\n\nKeyboard (WAI-ARIA APG menu-button pattern): Enter/Space/ArrowDown open and\nfocus the first item (ArrowUp: the last); ArrowUp/Down cycle with wrap;\nHome/End jump; printable characters move focus by typeahead; Escape and\nitem activation close and return focus to the trigger. Items use a roving\ntabindex (-1) so the closed/open menu never pollutes the page Tab order;\ndisabled items are focusable but inert (`aria-disabled`).",
+  "props": [
+   {
+    "name": "align",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "start",
+    "description": "Horizontal alignment to the trigger."
+   },
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": true,
+    "defaultValue": null,
+    "description": "`MenuItem`s — or, for the `vertical` variant, `MenuGroup`s."
+   },
+   {
+    "name": "color",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "standard",
+    "description": "Color option for the `vertical` variant: `'standard'` (surface based) or\n`'vibrant'` (tertiary based, higher emphasis)."
+   },
+   {
+    "name": "defaultOpen",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Uncontrolled initial open state."
+   },
+   {
+    "name": "onOpenChange",
+    "type": "((open: boolean) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Notified when the open state should change."
+   },
+   {
+    "name": "open",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled open state."
+   },
+   {
+    "name": "trigger",
+    "type": "ReactElement<unknown, string | JSXElementConstructor<any>>",
+    "required": true,
+    "defaultValue": null,
+    "description": "The element that opens the menu (a single button-like element)."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "standard",
+    "description": "`'standard'` is the baseline dropdown menu; `'vertical'` is the MD3\nExpressive vertical menu (segmented `MenuGroup` containers, 44dp items,\nselected states with shape morph)."
+   }
+  ]
+ },
+ "MenuItem": {
+  "description": "A selectable item inside a `Menu`.",
+  "props": [
+   {
+    "name": "endIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon at the end of the item (decorative)."
+   },
+   {
+    "name": "selected",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Selection state (for the menu's `vertical` variant). When set (even to\n`false`) the item becomes a `role=\"menuitemcheckbox\"` with `aria-checked`;\na selected item shows the tertiary-container mapping and morphs to a 12dp\ncorner shape."
+   },
+   {
+    "name": "startIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon at the start of the item (decorative)."
+   }
+  ]
+ },
+ "MenuGroup": {
+  "description": "A visually distinct group of items inside a `variant=\"vertical\"` `Menu`\n(Compose `DropdownMenuGroup`): a surface-container-low container at\nelevation 2 whose corner shape depends on its position in the menu (single\ngroup 16dp; first 16/8dp, middle 8dp, last 8/16dp), morphing to the 8dp\ninactive shape while another group is hovered.",
+  "props": [
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": true,
+    "defaultValue": null,
+    "description": "`MenuItem`s (and `MenuDivider`s)."
+   },
+   {
+    "name": "label",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Optional section label rendered above the group's items."
+   }
+  ]
+ },
+ "NavigationBar": {
+  "description": "Material Design 3 Navigation bar (bottom).\n\n80dp SurfaceContainer bar of destinations. The active item shows a 56×32\nSecondaryContainer pill behind its 24dp icon (OnSecondaryContainer), a\nSecondary LabelMedium label; inactive items are OnSurfaceVariant — per\nCompose NavigationBarTokens.",
+  "props": [
+   {
+    "name": "defaultValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Uncontrolled initial destination value."
+   },
+   {
+    "name": "itemLayout",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "vertical",
+    "description": "Item layout: icon over label (`vertical`) or beside it (`horizontal`, flexible)."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the triggering event and the newly selected destination value."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected destination value."
+   }
+  ]
+ },
+ "NavigationBarItem": {
+  "description": "A destination inside a `NavigationBar`.",
+  "props": [
+   {
+    "name": "badge",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Badge on the icon: content (e.g. `\"3\"`) for a large badge, `true` for a small dot."
+   },
+   {
+    "name": "icon",
+    "type": "ReactNode",
+    "required": true,
+    "defaultValue": null,
+    "description": "The item icon."
+   },
+   {
+    "name": "label",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "The item label."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": true,
+    "defaultValue": null,
+    "description": "Identifies the destination; matched against the parent value."
+   }
+  ]
+ },
+ "NavigationDrawer": {
+  "description": "Material Design 3 Navigation drawer (standard or modal).\n\n360dp SurfaceContainerLow (modal) / Surface (standard) panel, rounded 16dp on\nthe trailing edge. Items are 56dp full pills (CornerFull): active =\nSecondaryContainer / OnSecondaryContainer, inactive transparent /\nOnSurfaceVariant, LabelLarge — per Compose NavigationDrawerTokens. Modal adds\na 0.32 Scrim, Escape-to-close, and `role=\"dialog\" aria-modal`.",
+  "props": [
+   {
+    "name": "onChange",
+    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the triggering event and the newly selected destination value."
+   },
+   {
+    "name": "onClose",
+    "type": "(() => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Called when the modal scrim is clicked or Escape is pressed."
+   },
+   {
+    "name": "open",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Modal open state."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Selected destination value (shared with items)."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "standard",
+    "description": "Standard (inline) or modal (overlay + scrim)."
+   }
+  ]
+ },
+ "NavigationDrawerItem": {
+  "description": "A destination inside a `NavigationDrawer`.",
+  "props": [
+   {
+    "name": "badge",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": ""
+   },
+   {
+    "name": "icon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": ""
+   },
+   {
+    "name": "label",
+    "type": "ReactNode",
+    "required": true,
+    "defaultValue": null,
+    "description": ""
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": true,
+    "defaultValue": null,
+    "description": ""
+   }
+  ]
+ },
+ "NavigationRailItem": {
+  "description": "A destination inside a `NavigationRail`.\n\nThe whole row is the (full-width) click target; the active indicator is a\npill that hugs its content — a 56×32 pill around the icon when collapsed,\ngrowing to wrap icon + label when expanded. Layout is a single stable DOM\nwhose pill, icon and label are absolutely positioned and interpolated from\nthe inherited `--_t` morph value (0 = collapsed, 1 = expanded), so the tween\ndriving `--_t` produces a continuous morph with no reflow. The label's\nnatural width is measured into `--_label-w` so the pill can hug it.",
+  "props": [
+   {
+    "name": "badge",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Badge on the icon: content (e.g. `\"3\"`) for a large badge, `true` for a small dot."
+   },
+   {
+    "name": "expanded",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Layout when used standalone (outside a `NavigationRail`): `false` =\ncollapsed (icon over label), `true` = expanded (icon beside label in a\npill). Toggling runs the same spring morph the rail uses. Inside a\n`NavigationRail` this is ignored — the rail's `variant` governs."
+   },
+   {
+    "name": "icon",
+    "type": "ReactNode",
+    "required": true,
+    "defaultValue": null,
+    "description": ""
+   },
+   {
+    "name": "label",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": ""
+   },
+   {
+    "name": "selected",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Selected state when used standalone (outside a `NavigationRail`)."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": true,
+    "defaultValue": null,
+    "description": "Destination value; selected state is derived from the parent rail."
+   }
+  ]
+ },
+ "NavigationRail": {
+  "description": "Material Design 3 (Expressive) Navigation rail — the Compose\n`WideNavigationRail` with `collapsed` / `expanded` variants that morph on a\nspring. Collapsed is a 96dp Surface column of icon-over-label destinations\nwith a 56×32 SecondaryContainer pill on the active item; expanded grows to\n220dp and lays each destination out as icon + label in a full-width pill.\nThe whole transition (width, item spacing, and every item's icon/label/pill)\nis interpolated from a single spring value. An optional `header` (menu button,\nFAB) is pinned at the top.",
+  "props": [
+   {
+    "name": "arrangement",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "top",
+    "description": "Vertical placement of the destinations below the header."
+   },
+   {
+    "name": "defaultValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Uncontrolled initial destination value."
+   },
+   {
+    "name": "header",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Optional header content (e.g. a menu button and/or FAB) pinned at the top."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the triggering event and the newly selected destination value."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected destination value."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "collapsed",
+    "description": "`collapsed` (96dp, icon-over-label) or `expanded` (220dp, icon beside label\nin a full-width pill). The change is a spring morph."
+   }
+  ]
+ },
+ "CircularProgressIndicator": {
+  "description": "",
+  "props": [
+   {
+    "name": "shape",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "flat",
+    "description": "Indicator shape."
+   },
+   {
+    "name": "size",
+    "type": "number",
+    "required": false,
+    "defaultValue": "48",
+    "description": "Diameter of the indicator in pixels."
+   },
+   {
+    "name": "thickness",
+    "type": "number",
+    "required": false,
+    "defaultValue": "4",
+    "description": "Indicator thickness in dp."
+   },
+   {
+    "name": "value",
+    "type": "number",
+    "required": false,
+    "defaultValue": null,
+    "description": "Progress value from 0 to 1. Omit for indeterminate progress."
+   }
+  ]
+ },
+ "LinearProgressIndicator": {
+  "description": "",
+  "props": [
+   {
+    "name": "shape",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "flat",
+    "description": "Indicator shape."
+   },
+   {
+    "name": "thickness",
+    "type": "number",
+    "required": false,
+    "defaultValue": "4",
+    "description": "Indicator thickness in dp."
+   },
+   {
+    "name": "value",
+    "type": "number",
+    "required": false,
+    "defaultValue": null,
+    "description": "Progress value from 0 to 1. Omit for indeterminate progress."
+   }
+  ]
+ },
+ "Radio": {
+  "description": "Material Design 3 Radio Button.\n\nUses a native `<input type=\"radio\">` for proper form integration and\naccessibility. The visual outer ring, inner dot, and state layer are rendered\nvia CSS on sibling spans. Structure mirrors material-web.\n\nMUI parity: the forwarded `ref` points at the ROOT `<span>`; `inputRef`\nreaches the native `<input>`.",
+  "props": [
+   {
+    "name": "checked",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled checked state."
+   },
+   {
+    "name": "defaultChecked",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Uncontrolled initial checked state (native input behavior — the browser\nmanages group exclusivity for radios sharing a `name`)."
+   },
+   {
+    "name": "inputRef",
+    "type": "Ref<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Ref to the native `<input>` element (the forwarded `ref` points at the root)."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: ChangeEvent<HTMLInputElement, Element>, value: string) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the native event and this radio's `value` (as a string — the\nsame value a wrapping `RadioGroup` reports) when the radio is selected."
+   }
+  ]
+ },
+ "RadioGroup": {
+  "description": "Groups `Radio` components: distributes a shared `name`, manages the selected\nvalue (controlled via `value` or uncontrolled via `defaultValue`), and\nexposes a `role=\"radiogroup\"` landmark. Label the group with `aria-label` or\n`aria-labelledby`. Arrow-key navigation between radios comes from the native\ninputs sharing the group name.",
+  "props": [
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "`Radio` elements (any depth)."
+   },
+   {
+    "name": "defaultValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Uncontrolled initial selected value."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disable every radio in the group."
+   },
+   {
+    "name": "name",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Shared input name for the group. Auto-generated when omitted."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: ChangeEvent<HTMLInputElement, Element>, value: string) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the native event and the newly selected value."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected value."
+   }
+  ]
+ },
+ "SearchBar": {
+  "description": "Material Design 3 Search bar (docked field + search view).\n\n56dp SurfaceContainerHigh stadium field; OnSurface BodyLarge input,\nOnSurfaceVariant placeholder, OnSurface leading icon — per Compose\nSearchBarTokens. Providing `children` (results) turns it into a docked search\nview: a dropdown under the input (Outline divider) that opens on focus and\ncloses on Escape / outside click.\n\nMUI parity: the forwarded `ref` and any extra props (`{...rest}`) land on\nthe ROOT element (the `role=\"search\"` landmark); input concerns are\ndedicated props (`placeholder`, `name`, `onFocus`, `onKeyDown`, …),\n`inputRef` reaches the native `<input>`, and `inputProps` spreads extra\nattributes on it (the component's own wiring wins).",
+  "props": [
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Suggestion / result content shown in the open search view."
+   },
+   {
+    "name": "defaultOpen",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Uncontrolled initial open state."
+   },
+   {
+    "name": "defaultValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Uncontrolled initial value."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disables the input and applies disabled styling."
+   },
+   {
+    "name": "endIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon / control at the end of the bar."
+   },
+   {
+    "name": "inputProps",
+    "type": "InputHTMLAttributes<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Extra attributes spread on the native `<input>` — the escape hatch for\nattributes without a dedicated prop (e.g. a distinct `aria-label` for\nthe searchbox, `maxLength`, `pattern`, extra `aria-*`, …).\nPrecedence: the component's own wiring always wins over conflicting\n`inputProps` keys — the controlled `value` / `onChange` and internal\n`onFocus` / `onKeyDown` handling, `type=\"search\"`, `className`, and\nevery dedicated input prop the component sets (`placeholder`, `name`,\n`disabled`, …)."
+   },
+   {
+    "name": "inputRef",
+    "type": "Ref<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Ref to the native `<input>` element (the forwarded `ref` points at the root)."
+   },
+   {
+    "name": "name",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Native input `name`."
+   },
+   {
+    "name": "onBlur",
+    "type": "FocusEventHandler<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Blur handler for the native input."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: ChangeEvent<HTMLInputElement, Element>, value: string) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the native event and the new query."
+   },
+   {
+    "name": "onFocus",
+    "type": "FocusEventHandler<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Focus handler for the native input."
+   },
+   {
+    "name": "onKeyDown",
+    "type": "KeyboardEventHandler<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Key handler for the native input."
+   },
+   {
+    "name": "onOpenChange",
+    "type": "((open: boolean) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Notified when the open state should change."
+   },
+   {
+    "name": "onSearch",
+    "type": "((value: string) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires when the user submits (Enter)."
+   },
+   {
+    "name": "open",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled open (search-view) state."
+   },
+   {
+    "name": "placeholder",
+    "type": "string",
+    "required": false,
+    "defaultValue": "Search",
+    "description": "Native input `placeholder`."
+   },
+   {
+    "name": "startIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon at the start of the bar (defaults to a search glyph)."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled query value."
+   }
+  ]
+ },
+ "SegmentedButton": {
+  "description": "Material Design 3 Segmented Buttons (single- or multi-select).\n\nA 40dp stadium row of outlined segments (Outline 1dp). Selected segments fill\nwith SecondaryContainer / OnSecondaryContainer and show an 18dp check;\nunselected are transparent with OnSurface content — per Compose\nOutlinedSegmentedButtonTokens. Segments are toggle buttons (aria-pressed).",
+  "props": [
+   {
+    "name": "defaultValue",
+    "type": "string | string[]",
+    "required": false,
+    "defaultValue": null,
+    "description": "Uncontrolled initial selection. Defaults to none (`''`, or `[]` when `multiSelect`)."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disable the whole group."
+   },
+   {
+    "name": "multiSelect",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Allow selecting multiple segments."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string | string[]) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the triggering event and the next selection (string, or string[] when `multiSelect`)."
+   },
+   {
+    "name": "options",
+    "type": "SegmentedButtonOption[]",
+    "required": true,
+    "defaultValue": null,
+    "description": "The segments."
+   },
+   {
+    "name": "showSelectedCheck",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "true",
+    "description": "Show a check icon on selected segments."
+   },
+   {
+    "name": "value",
+    "type": "string | string[]",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected value (string) — or an array of values when `multiSelect`."
+   }
+  ]
+ },
+ "SegmentedButtons": {
+  "description": "",
+  "props": [
+   {
+    "name": "defaultValue",
+    "type": "string | string[]",
+    "required": false,
+    "defaultValue": null,
+    "description": "Uncontrolled initial selection. Defaults to none (`''`, or `[]` when `multiSelect`)."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disable the whole group."
+   },
+   {
+    "name": "multiSelect",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Allow selecting multiple segments."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string | string[]) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the triggering event and the next selection (string, or string[] when `multiSelect`)."
+   },
+   {
+    "name": "options",
+    "type": "SegmentedButtonOption[]",
+    "required": true,
+    "defaultValue": null,
+    "description": "The segments."
+   },
+   {
+    "name": "showSelectedCheck",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "true",
+    "description": "Show a check icon on selected segments."
+   },
+   {
+    "name": "value",
+    "type": "string | string[]",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected value (string) — or an array of values when `multiSelect`."
+   }
+  ]
+ },
+ "SideSheet": {
+  "description": "Material Design 3 Side sheet (standard or modal).\n\nA 400dp max-width panel anchored to the trailing (or leading) edge. Standard\n= inline Surface panel; modal = SurfaceContainerLow over a 0.32 Scrim with\n`role=\"dialog\" aria-modal` and Escape-to-close — per m3.material.io specs.\nHeader uses 24dp side padding (16dp with a back icon), 12dp gaps, a Title\nLarge headline, and optional back/close IconButtons. Bottom actions are a\n72dp left-aligned bar.",
+  "props": [
+   {
+    "name": "actions",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Bottom action bar content (left-aligned buttons)."
+   },
+   {
+    "name": "anchor",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "right",
+    "description": "Edge the sheet is anchored to."
+   },
+   {
+    "name": "backLabel",
+    "type": "string",
+    "required": false,
+    "defaultValue": "Back",
+    "description": "Accessible label for the back button."
+   },
+   {
+    "name": "closeLabel",
+    "type": "string",
+    "required": false,
+    "defaultValue": "Close",
+    "description": "Accessible label for the close button."
+   },
+   {
+    "name": "headline",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Title shown in the header."
+   },
+   {
+    "name": "onBack",
+    "type": "(() => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Called when the back button is clicked."
+   },
+   {
+    "name": "onClose",
+    "type": "(() => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Called on close-button click, scrim click, or Escape."
+   },
+   {
+    "name": "open",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "true",
+    "description": "Whether the sheet is shown."
+   },
+   {
+    "name": "showBackButton",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Show a leading back button (modal)."
+   },
+   {
+    "name": "showCloseButton",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "true",
+    "description": "Show the trailing close button."
+   },
+   {
+    "name": "showDivider",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Show a divider between the header and content."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "standard",
+    "description": "Standard (inline) or modal (overlay + scrim)."
+   }
+  ]
+ },
+ "Slider": {
+  "description": "Material Design 3 (Expressive) Slider.\n\nNative `<input type=\"range\">`(s) overlaid on MD3 visuals: five sizes (XS–XL,\ntrack 16–96dp / handle 44–108dp), single or **range** (`[start, end]`),\n**centered** (active from the midpoint), **vertical** orientation, optional\ntick marks, value-indicator bubble, and an **inset icon** in the handle\n(md/lg/xl). Handle Primary, active track Primary, inactive SecondaryContainer;\ndisabled active 38% / inactive 12% — per m3.material.io & Compose SliderTokens.\n\nMUI parity: the forwarded `ref` and `{...rest}` land on the ROOT element;\n`inputRef` reaches the first native `<input type=\"range\">`.",
+  "props": [
+   {
+    "name": "centered",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Draw the active track from the center outward."
+   },
+   {
+    "name": "defaultValue",
+    "type": "SliderValue",
+    "required": false,
+    "defaultValue": "min (or `[min, max]` for range)",
+    "description": "Uncontrolled initial value."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": ""
+   },
+   {
+    "name": "inputRef",
+    "type": "Ref<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Ref to the native `<input type=\"range\">` element (the forwarded `ref`\npoints at the root). A range slider renders two inputs; `inputRef`\nreaches the FIRST (start / minimum) one — query its siblings for the end\ninput if needed."
+   },
+   {
+    "name": "insetIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon shown inside the handle (sizes md/lg/xl only)."
+   },
+   {
+    "name": "max",
+    "type": "number",
+    "required": false,
+    "defaultValue": "100",
+    "description": ""
+   },
+   {
+    "name": "min",
+    "type": "number",
+    "required": false,
+    "defaultValue": "0",
+    "description": ""
+   },
+   {
+    "name": "onChange",
+    "type": "((event: ChangeEvent<HTMLInputElement, Element>, value: SliderValue) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the native event and the new value (same shape as `value`)."
+   },
+   {
+    "name": "orientation",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "horizontal",
+    "description": "Orientation."
+   },
+   {
+    "name": "rangeEndLabel",
+    "type": "string",
+    "required": false,
+    "defaultValue": "Maximum",
+    "description": "Accessible label for the end (maximum) thumb of a range slider."
+   },
+   {
+    "name": "rangeStartLabel",
+    "type": "string",
+    "required": false,
+    "defaultValue": "Minimum",
+    "description": "Accessible label for the start (minimum) thumb of a range slider."
+   },
+   {
+    "name": "showTicks",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Render tick marks at each step."
+   },
+   {
+    "name": "showValueLabel",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Show the value-indicator bubble on hover / focus / drag."
+   },
+   {
+    "name": "size",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "xs",
+    "description": "Expressive size (track thickness / handle height)."
+   },
+   {
+    "name": "step",
+    "type": "number",
+    "required": false,
+    "defaultValue": "1",
+    "description": ""
+   },
+   {
+    "name": "value",
+    "type": "SliderValue",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled value (`number`, or `[start, end]` for range)."
+   },
+   {
+    "name": "valueLabelFormat",
+    "type": "((value: number) => ReactNode)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Format the value-indicator label. A `string` / `number` result is also\nannounced via `aria-valuetext` so AT reads what the label shows."
+   }
+  ]
+ },
+ "Snackbar": {
+  "description": "Material Design 3 Snackbar (the visual bar).\n\nPresentational surface — pair it with your own positioning / auto-hide logic.\nColors follow SnackbarTokens: InverseSurface container, InverseOnSurface\nmessage (BodyMedium), InversePrimary action (LabelLarge), corner 4dp,\nelevation level 3.",
+  "props": [
+   {
+    "name": "action",
+    "type": "ReactNode | SnackbarAction",
+    "required": false,
+    "defaultValue": null,
+    "description": "Optional action — an `{ label, onClick }` button or a custom node."
+   },
+   {
+    "name": "message",
+    "type": "ReactNode",
+    "required": true,
+    "defaultValue": null,
+    "description": "The message text (supporting text)."
+   },
+   {
+    "name": "onDismiss",
+    "type": "(() => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "When provided, shows a trailing dismiss (close) icon button."
+   }
+  ]
+ },
+ "SplitButton": {
+  "description": "Material Design 3 (Expressive) Split button.\n\nA leading action button joined to a trailing menu button (2dp gap). Both share\nthe standard button color schemes; the outer corners are round (CornerFull)\nand the inner corners small. Opening the menu morphs the trailing button's\ninner corner to round and rotates its chevron 180° — the signature split-button\ninteraction (per m3.material.io split-button specs). Reuses `Menu` for the\ndropdown and the shared Ripple / FocusRing primitives.",
+  "props": [
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Leading action button label."
+   },
+   {
+    "name": "defaultOpen",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Uncontrolled initial open state."
+   },
+   {
+    "name": "menu",
+    "type": "ReactNode",
+    "required": true,
+    "defaultValue": null,
+    "description": "`MenuItem`s shown when the trailing button opens the menu."
+   },
+   {
+    "name": "menuAlign",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "end",
+    "description": "Menu alignment to the trailing button."
+   },
+   {
+    "name": "onOpenChange",
+    "type": "((open: boolean) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Notified when the menu open state changes."
+   },
+   {
+    "name": "open",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled menu open state."
+   },
+   {
+    "name": "size",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "sm",
+    "description": "Container size on the Expressive scale."
+   },
+   {
+    "name": "startIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Leading icon (decorative)."
+   },
+   {
+    "name": "trailingAriaLabel",
+    "type": "string",
+    "required": false,
+    "defaultValue": "More options",
+    "description": "Accessible label for the trailing menu button."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "filled",
+    "description": "Visual emphasis (shared by both buttons)."
+   }
+  ]
+ },
+ "SwipeToDismiss": {
+  "description": "Material Design 3 Swipe-to-dismiss row.\n\nA pointer-draggable row that dismisses when released past the threshold\n(Compose default 56dp), in either direction by default. The dismissed\ndirection (`startToEnd` / `endToStart`) is reported via `onDismiss`; the\nrevealed `background` is entirely caller-provided (Compose ships no color).",
+  "props": [
+   {
+    "name": "background",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Content revealed behind the row while swiping."
+   },
+   {
+    "name": "enableEndToStart",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "true",
+    "description": "Allow end→start (right→left) dismissal."
+   },
+   {
+    "name": "enableStartToEnd",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "true",
+    "description": "Allow start→end (left→right) dismissal."
+   },
+   {
+    "name": "onDismiss",
+    "type": "((direction: SwipeDismissDirection) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires when the row is swiped past the threshold in an enabled direction."
+   },
+   {
+    "name": "threshold",
+    "type": "number",
+    "required": false,
+    "defaultValue": "56",
+    "description": "Distance (px) past which release dismisses."
+   }
+  ]
+ },
+ "Switch": {
+  "description": "Material Design 3 Switch.\n\nUses a native `<input type=\"checkbox\" role=\"switch\">` for proper form\nintegration and accessibility. The visual track, handle, and icons are\nrendered via CSS on sibling spans. Structure mirrors material-web.\n\nMUI parity: the forwarded `ref` points at the ROOT `<span>`; `inputRef`\nreaches the native `<input>`.",
+  "props": [
+   {
+    "name": "defaultSelected",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Uncontrolled initial selected state."
+   },
+   {
+    "name": "icons",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Show icons on both states."
+   },
+   {
+    "name": "inputRef",
+    "type": "Ref<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Ref to the native `<input>` element (the forwarded `ref` points at the root)."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: ChangeEvent<HTMLInputElement, Element>, selected: boolean) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the native event and the next selected state on toggle."
+   },
+   {
+    "name": "selected",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected (on) state."
+   },
+   {
+    "name": "selectedIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon shown when selected."
+   },
+   {
+    "name": "unselectedIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon shown when unselected."
+   }
+  ]
+ },
+ "Tabs": {
+  "description": "Material Design 3 Tabs (a `role=\"tablist\"` row of `Tab`s).\n\nPrimary tabs use a Primary content-width rounded (3dp) indicator with Primary\nactive content; secondary tabs use a full-width 3dp line with OnSurface active\ncontent. Both sit above an OutlineVariant 1dp divider, per Compose\nPrimary/SecondaryNavigationTabTokens. Arrow keys move between tabs.",
+  "props": [
+   {
+    "name": "defaultValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Uncontrolled initial tab value."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the triggering event and the newly selected tab value."
+   },
+   {
+    "name": "scrollable",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Scrollable tabs size to content and scroll horizontally instead of filling."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected tab value."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "primary",
+    "description": "Indicator style."
+   }
+  ]
+ },
+ "Tab": {
+  "description": "A single tab; must be rendered inside `Tabs`.",
+  "props": [
+   {
+    "name": "icon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Optional icon (shown above the label)."
+   },
+   {
+    "name": "label",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Tab label."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": true,
+    "defaultValue": null,
+    "description": "Identifies the tab; matched against the parent `Tabs` value."
+   }
+  ]
+ },
+ "TextField": {
+  "description": "Material Design 3 Text field (filled / outlined).\n\nA single-line `<input>` — or auto-growing `<textarea>` with `multiline` —\nwrapped in the MD3 field anatomy: floating label (outlined variant notches\nthe border), start/end icons, prefix/suffix text, and a supporting\nline that holds helper text, the error message, and the `maxLength`\ncounter. Value follows the standard controlled (`value` + `onChange`) or\nuncontrolled (`defaultValue`) input pattern; clicking anywhere on the\ncontainer focuses the input.\n\nMUI parity: the forwarded `ref` and any extra props (`{...rest}`) land on\nthe ROOT element; input concerns are dedicated props (`type`, `name`,\n`placeholder`, `required`, `readOnly`, `autoComplete`, `maxLength`, …),\n`inputRef` reaches the native `<input>` / `<textarea>`, and `inputProps`\nspreads extra attributes on it (the component's own wiring wins).",
+  "props": [
+   {
+    "name": "autoComplete",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Native input `autoComplete`."
+   },
+   {
+    "name": "defaultValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Uncontrolled initial value."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disables the input and applies disabled styling."
+   },
+   {
+    "name": "endIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon at the end of the field (decorative)."
+   },
+   {
+    "name": "error",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Error state — error colors, `aria-invalid`, and `errorText`. Ignored while `disabled`."
+   },
+   {
+    "name": "errorText",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Shown instead of `supportingText` (with `role=\"alert\"`) when `error` is set."
+   },
+   {
+    "name": "id",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Applied to the native input (keeps the floating label association via `htmlFor`)."
+   },
+   {
+    "name": "inputProps",
+    "type": "InputHTMLAttributes<HTMLInputElement> | TextareaHTMLAttributes<HTMLTextAreaElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Extra attributes spread on the native `<input>` (or `<textarea>` when\n`multiline`) — the escape hatch for attributes without a dedicated prop\n(`pattern`, `min`, `max`, `step`, `onKeyDown`, extra `aria-*`, …).\nPrecedence: the component's own wiring always wins over conflicting\n`inputProps` keys — the controlled `value` / `onChange` / `onFocus` /\n`onBlur`, `id`, `className`, and every dedicated input prop the\ncomponent sets (`type`, `name`, `placeholder`, `required`, `readOnly`,\n`autoComplete`, `maxLength`, `rows`, …)."
+   },
+   {
+    "name": "inputRef",
+    "type": "Ref<HTMLInputElement | HTMLTextAreaElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Ref to the native `<input>` / `<textarea>` element (the forwarded `ref` points at the root)."
+   },
+   {
+    "name": "label",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Floating label; rendered with a trailing `*` when `required`."
+   },
+   {
+    "name": "maxLength",
+    "type": "number",
+    "required": false,
+    "defaultValue": null,
+    "description": "Native input `maxLength`; also shows a `length / maxLength` counter in the supporting line."
+   },
+   {
+    "name": "multiline",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Render a `<textarea>` that auto-grows with its content."
+   },
+   {
+    "name": "name",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Native input `name`."
+   },
+   {
+    "name": "onBlur",
+    "type": "FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Blur handler for the input / textarea."
+   },
+   {
+    "name": "onChange",
+    "type": "ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Native change handler for the input / textarea."
+   },
+   {
+    "name": "onFocus",
+    "type": "FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Focus handler for the input / textarea."
+   },
+   {
+    "name": "placeholder",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Native input `placeholder`."
+   },
+   {
+    "name": "prefixText",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Static text before the input value (e.g. currency symbol)."
+   },
+   {
+    "name": "readOnly",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Native input `readOnly`."
+   },
+   {
+    "name": "required",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Marks the input required and appends `*` to the label."
+   },
+   {
+    "name": "rows",
+    "type": "number",
+    "required": false,
+    "defaultValue": "2",
+    "description": "Initial visible rows of the `multiline` textarea."
+   },
+   {
+    "name": "startIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon at the start of the field (decorative)."
+   },
+   {
+    "name": "suffixText",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Static text after the input value (e.g. unit)."
+   },
+   {
+    "name": "supportingText",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Helper line below the field. Replaced by `errorText` while in error."
+   },
+   {
+    "name": "type",
+    "type": "string",
+    "required": false,
+    "defaultValue": "text",
+    "description": "Native input `type` (single-line only)."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled input value."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "filled",
+    "description": "Container style."
+   }
+  ]
+ },
+ "TimePicker": {
+  "description": "Material Design 3 Time picker (dial + input).\n\nSurfaceContainerHigh surface with hour/minute selector fields (PrimaryContainer\nwhen active), an AM/PM toggle (TertiaryContainer selected), and either a 256dp\nSurfaceContainerHighest clock dial with a Primary selector, or editable input\nfields — toggled with the keyboard/clock button, per Compose TimePickerTokens.",
+  "props": [
+   {
+    "name": "defaultValue",
+    "type": "TimeValue",
+    "required": false,
+    "defaultValue": "{ hour: 12, minute: 0 }",
+    "description": "Uncontrolled initial value."
+   },
+   {
+    "name": "mode",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "dial",
+    "description": "Initial entry mode: clock `dial` or keyboard `input`."
+   },
+   {
+    "name": "onChange",
+    "type": "((value: TimeValue) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the new value."
+   },
+   {
+    "name": "value",
+    "type": "TimeValue",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled value."
+   }
+  ]
+ },
+ "Toolbar": {
+  "description": "Material Design 3 (Expressive) Toolbar — a container of action slots.\n\n`docked` renders a full-width 64dp bar (SurfaceContainer / PrimaryContainer),\ncenter-aligned with a 16dp minimum outside padding. `floating` renders a\nrounded, elevated pill (CornerFull) with 8dp inner padding and 4dp gaps that\ncan flow horizontally or vertically — per m3.material.io / Compose\nFloatingToolbarTokens. Standard = SurfaceContainer, vibrant = PrimaryContainer.",
+  "props": [
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Slots — usually icon buttons, buttons, or text fields."
+   },
+   {
+    "name": "color",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "standard",
+    "description": "Color scheme."
+   },
+   {
+    "name": "orientation",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "horizontal",
+    "description": "Item flow direction (floating only)."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "docked",
+    "description": "Docked (full-width bar) or floating (rounded, elevated)."
+   }
+  ]
+ },
+ "Tooltip": {
+  "description": "Material Design 3 Tooltip.\n\nWraps a single trigger element and shows a tooltip on hover / focus.\nPlain (InverseSurface, 4dp, BodySmall) or rich (SurfaceContainer, 12dp,\nelevation 2, with a subhead and an optional action). Sets `aria-describedby`\non the trigger and `role=\"tooltip\"` on the popup; Escape dismisses.",
+  "props": [
+   {
+    "name": "action",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Rich tooltip action node (e.g. a text button)."
+   },
+   {
+    "name": "children",
+    "type": "ReactElement<unknown, string | JSXElementConstructor<any>>",
+    "required": true,
+    "defaultValue": null,
+    "description": "The trigger element (a single focusable/hoverable element)."
+   },
+   {
+    "name": "defaultOpen",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Uncontrolled initial visibility."
+   },
+   {
+    "name": "onOpenChange",
+    "type": "((open: boolean) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Notified when visibility should change."
+   },
+   {
+    "name": "open",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled visibility."
+   },
+   {
+    "name": "placement",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "top",
+    "description": "Preferred placement relative to the trigger."
+   },
+   {
+    "name": "subhead",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Rich tooltip subhead (title)."
+   },
+   {
+    "name": "text",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Body / supporting text."
+   },
+   {
+    "name": "variant",
+    "type": "enum",
+    "required": false,
+    "defaultValue": "plain",
+    "description": "Plain style or rich (with subhead + action)."
+   }
+  ]
+ }
+}

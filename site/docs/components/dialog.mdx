@@ -1,0 +1,59 @@
+---
+title: Dialog
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Dialog, Button } from 'm3-expressive-react'
+
+# Dialog
+
+MD3 basic dialog: focus is trapped inside, <kbd>Escape</kbd> and scrim
+click close it, and focus returns to the opener on close.
+
+export function DialogDemo() {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button variant="filled" onClick={() => setOpen(true)}>
+        Open dialog
+      </Button>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Reset settings?"
+        actions={
+          <>
+            <Button variant="text" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button variant="text" onClick={() => setOpen(false)}>Reset</Button>
+          </>
+        }
+      >
+        This restores the default configuration. Your data is kept.
+      </Dialog>
+    </>
+  )
+}
+
+<Demo>
+  <DialogDemo />
+</Demo>
+
+```tsx
+const [open, setOpen] = useState(false)
+
+<Button onClick={() => setOpen(true)}>Open dialog</Button>
+<Dialog
+  open={open}
+  onClose={() => setOpen(false)}
+  title="Reset settings?"
+  actions={<Button variant="text" onClick={() => setOpen(false)}>OK</Button>}
+>
+  This restores the default configuration.
+</Dialog>
+```
+
+## Props
+
+<PropsTable component="Dialog" />

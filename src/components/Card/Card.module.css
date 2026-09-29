@@ -1,0 +1,109 @@
+/**
+ * MD3 Card — filled / elevated / outlined. Corner-medium (12dp).
+ * Values from androidx.compose.material3 FilledCardTokens / ElevatedCardTokens /
+ * OutlinedCardTokens: filled = SurfaceContainerHighest @ Level0, elevated =
+ * SurfaceContainerLow @ Level1, outlined = Surface @ Level0 + OutlineVariant 1dp.
+ * Interactive (clickable) cards bump elevation one level on hover.
+ */
+
+.card {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  border-radius: var(--_container-shape);
+  background-color: var(--_container-color);
+  color: var(--_content-color);
+  box-shadow: var(--_elevation);
+
+  --_container-shape: var(--md-sys-shape-corner-medium);
+  --_content-color: var(--md-sys-color-on-surface);
+  --md-ripple-color: var(--md-sys-color-on-surface);
+  --md-focus-ring-color: var(--md-sys-color-secondary);
+
+  transition: box-shadow var(--md-sys-motion-duration-short3)
+    var(--md-sys-motion-easing-standard);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Variants                                                                    */
+/* --------------------------------------------------------------------------- */
+.card[data-variant='filled'] {
+  --_container-color: var(--md-sys-color-surface-container-highest);
+  --_elevation: var(--md-sys-elevation-shadow-level0);
+}
+
+.card[data-variant='elevated'] {
+  --_container-color: var(--md-sys-color-surface-container-low);
+  --_elevation: var(--md-sys-elevation-shadow-level1);
+}
+
+.card[data-variant='outlined'] {
+  --_container-color: var(--md-sys-color-surface);
+  --_elevation: var(--md-sys-elevation-shadow-level0);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Interactive (clickable) — hover elevation bump                              */
+/* --------------------------------------------------------------------------- */
+.card[data-interactive] {
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.card[data-interactive][data-variant='filled']:hover {
+  --_elevation: var(--md-sys-elevation-shadow-level1);
+}
+
+.card[data-interactive][data-variant='elevated']:hover {
+  --_elevation: var(--md-sys-elevation-shadow-level2);
+}
+/* Outlined interactive stays at Level0 on hover (Compose). */
+
+/* Dragged (drag-and-drop): raised elevation per Compose card dragged tokens. */
+.card[data-dragged] {
+  --_elevation: var(--md-sys-elevation-shadow-level3);
+  cursor: grabbing;
+}
+
+.card[data-dragged][data-variant='elevated'] {
+  --_elevation: var(--md-sys-elevation-shadow-level4);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Disabled                                                                    */
+/* --------------------------------------------------------------------------- */
+.card[data-disabled] {
+  cursor: default;
+  pointer-events: none;
+  --_content-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+.card[data-disabled][data-variant='filled'] {
+  --_container-color: color-mix(
+    in srgb,
+    var(--md-sys-color-surface-container-highest) 38%,
+    transparent
+  );
+  --_elevation: var(--md-sys-elevation-shadow-level0);
+}
+
+.card[data-disabled][data-variant='elevated'] {
+  --_container-color: color-mix(
+    in srgb,
+    var(--md-sys-color-surface-container-low) 38%,
+    transparent
+  );
+  --_elevation: var(--md-sys-elevation-shadow-level1);
+}
+
+.card[data-disabled][data-variant='outlined'] {
+  border-color: color-mix(in srgb, var(--md-sys-color-outline) 12%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+}

@@ -1,10 +1,10 @@
-import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import {
-  useButton,
-  useObjectRef,
-  mergeProps,
-  type PressEvent,
-} from 'react-aria'
+  forwardRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type MouseEvent,
+  type ReactNode,
+} from 'react'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
@@ -19,7 +19,7 @@ export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 export type ButtonShape = 'round' | 'square'
 
 export interface ButtonProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'color'> {
+  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'color' | 'onChange'> {
   /** Visual emphasis. @default 'filled' */
   variant?: ButtonVariant
   /** Container size on the Expressive scale. @default 'sm' (40dp) */
@@ -27,63 +27,90 @@ export interface ButtonProps
   /** Resting shape; both shapes morph to a tighter corner while pressed. @default 'round' */
   shape?: ButtonShape
   /** Leading icon (decorative). */
-  icon?: ReactNode
+  startIcon?: ReactNode
   /** Trailing icon (decorative). */
-  trailingIcon?: ReactNode
-  /** react-aria press handler (fires for pointer, keyboard, and touch). */
-  onPress?: (event: PressEvent) => void
+  endIcon?: ReactNode
+  /** Enable toggle (selectable) behavior with `aria-pressed` (Expressive). */
+  toggle?: boolean
+  /** Controlled selected state (toggle mode). */
+  selected?: boolean
+  /** Uncontrolled initial selected state (toggle mode). @default false */
+  defaultSelected?: boolean
+  /** Fires with the triggering event and the next selected state when toggled. */
+  onChange?: (event: MouseEvent<HTMLButtonElement>, selected: boolean) => void
   children?: ReactNode
 }
 
 /**
  * Material Design 3 (Expressive) Button.
  *
- * Press handling is normalized via react-aria across pointer/keyboard/touch;
- * the MD3 state layer, press ripple, and focus ring come from the shared
- * primitives. On press the corner morphs to a tighter shape (Expressive).
+ * A native `<button>` — activation, keyboard, and `onClick` are standard DOM
+ * behavior (MUI-idiomatic). The MD3 state layer, press ripple, and focus ring
+ * come from the shared primitives; the corner morphs to a tighter shape while
+ * pressed via CSS `:active` (Expressive). Set `toggle` for a selectable button
+ * (`aria-pressed`); the `text` variant has no toggle styling.
  */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   {
     variant = 'filled',
     size = 'sm',
     shape = 'round',
-    icon,
-    trailingIcon,
+    startIcon,
+    endIcon,
+    toggle = false,
+    selected,
+    defaultSelected = false,
+    onChange,
+    onClick,
     disabled = false,
     type = 'button',
     className,
     children,
-    onPress,
     ...rest
   },
-  forwardedRef,
+  ref,
 ) {
-  const ref = useObjectRef(forwardedRef)
-  const { buttonProps, isPressed } = useButton(
-    { elementType: 'button', isDisabled: disabled, onPress, type },
-    ref,
-  )
+  const isControlled = selected !== undefined
+  const [internalSelected, setInternalSelected] = useState(defaultSelected)
+  const isSelected = toggle ? (isControlled ? selected : internalSelected) : false
+
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    if (toggle) {
+      const next = !isSelected
+      if (!isControlled) setInternalSelected(next)
+      onChange?.(event, next)
+    }
+    onClick?.(event)
+  }
+
+  // Toggle buttons swap their resting shape when selected: round → square and
+  // square → round (Expressive). Resolved in JS to a single data-shape-state
+  // attribute; the pressed shape still wins via CSS :active.
+  const shapeState = toggle && isSelected ? (shape === 'round' ? 'square' : 'round') : shape
 
   return (
     <button
       ref={ref}
-      {...mergeProps(buttonProps, rest)}
+      {...rest}
+      type={type}
       disabled={disabled}
+      onClick={handleClick}
+      aria-pressed={toggle ? isSelected : undefined}
       data-variant={variant}
       data-size={size}
-      data-shape={shape}
-      data-pressed={isPressed || undefined}
+      data-shape-state={shapeState}
+      data-selected={toggle ? String(isSelected) : undefined}
       className={clsx(styles.button, className)}
     >
-      {icon != null && (
+      {startIcon != null && (
         <span className={styles.icon} aria-hidden="true">
-          {icon}
+          {startIcon}
         </span>
       )}
       {children != null && <span className={styles.label}>{children}</span>}
-      {trailingIcon != null && (
+      {endIcon != null && (
         <span className={styles.icon} aria-hidden="true">
-          {trailingIcon}
+          {endIcon}
         </span>
       )}
       {!disabled && <Ripple />}

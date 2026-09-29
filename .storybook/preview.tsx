@@ -1,16 +1,50 @@
 import type { Preview, Decorator } from '@storybook/react'
 import React from 'react'
+import MockDate from 'mockdate'
+// Roboto (Storybook preview only). Library consumers load Roboto themselves —
+// see README. Weights 400 (regular) / 500 (medium) are the only ones the
+// typescale tokens use.
+import '@fontsource/roboto/400.css'
+import '@fontsource/roboto/500.css'
 import { ThemeProvider } from '../src/theme/ThemeProvider'
 import '../src/styles/tokens.css'
 import '../src/styles/typescale.css'
 import './preview.css'
+
+// The VRT runner (vrt/vrt.spec.ts) sets window.__VRT__ via addInitScript
+// before the preview loads. rAF-driven animation is frozen there through the
+// browser context's native prefers-reduced-motion emulation, so no matchMedia
+// patching is needed.
+const isVRT =
+  typeof window !== 'undefined' &&
+  (window as unknown as { __VRT__?: boolean }).__VRT__ === true
+
+// Freeze the clock in VRT captures. Components that read the real time
+// (DatePicker's today marker / default visible month) would otherwise produce
+// spurious diffs whenever the calendar date changes. Mid-month, mid-day to
+// stay clear of timezone and month boundaries. Keep in sync with the fixed
+// dates used in date-dependent stories.
+if (isVRT) {
+  MockDate.set(new Date(2026, 5, 15, 10, 30, 0))
+}
 
 const withTheme: Decorator = (Story, context) => {
   const mode = context.globals.colorScheme === 'dark' ? 'dark' : 'light'
   const seed = context.globals.seedColor ?? '#6750A4'
   return (
     <ThemeProvider seedColor={seed} mode={mode}>
-      <div style={{ padding: 24, background: 'var(--md-sys-color-background)', minHeight: '100vh' }}>
+      {/* color must be set here (inside ThemeProvider) — the --md-sys-color-*
+          vars live on ThemeProvider's div, so the body-level rule in
+          preview.css can't resolve them and currentColor icons stayed black
+          in dark mode. */}
+      <div
+        style={{
+          padding: 24,
+          background: 'var(--md-sys-color-background)',
+          color: 'var(--md-sys-color-on-background)',
+          minHeight: '100vh',
+        }}
+      >
         <Story />
       </div>
     </ThemeProvider>
@@ -49,6 +83,11 @@ const preview: Preview = {
   },
   parameters: {
     controls: { matchers: { color: /(background|color)$/i, date: /Date$/i } },
+    // VRT (vrt/vrt.spec.ts) snapshots every story in both color schemes by
+    // setting the `colorScheme` global per capture, which the withTheme
+    // decorator feeds into ThemeProvider. Seed-color variations are
+    // deliberately left out to keep the snapshot count at 2x (add a
+    // dedicated story if a component needs one).
   },
 }
 

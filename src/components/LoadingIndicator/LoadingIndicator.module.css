@@ -1,0 +1,24 @@
+/**
+ * MD3 (Expressive) Loading indicator. 48dp container, 38dp morphing active
+ * shape. Uncontained = Primary shape; contained = OnPrimaryContainer shape on a
+ * PrimaryContainer circle. Values from Compose LoadingIndicatorTokens. The shape
+ * morph and rotation are driven in JS (spring: damping 0.6 / stiffness 200) —
+ * this file only wires colors and the rotation pivot.
+ */
+
+.svg {
+  display: inline-block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.container {
+  fill: var(--_container-color);
+}
+
+.shape {
+  fill: var(--_shape-color);
+}
+
+/* Rotation is applied per-frame via the SVG `transform="rotate(a cx cy)"`
+   attribute, pivoting on the viewBox center (= each shape's centroid). */

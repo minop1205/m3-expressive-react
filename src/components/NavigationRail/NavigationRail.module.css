@@ -1,0 +1,50 @@
+/**
+ * MD3 (Expressive) Navigation rail container. Width, inline padding and item
+ * spacing interpolate from the spring `--_t` (0 = collapsed 96dp, 1 = expanded
+ * 220dp); the per-item morph lives in NavigationRailItem.module.css. Header
+ * (menu button / FAB) is pinned at the top. Surface container, 44dp top space.
+ */
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  height: 100%;
+  /* 96dp (collapsed) → 220dp (expanded). No inline padding: items span the full
+     width and position their pill/icon at fixed x (see NavigationRailItem). */
+  width: calc(96px + 124px * var(--_t, 0));
+  padding-block: 44px 8px;
+  background-color: var(--md-sys-color-surface);
+}
+
+/* Header (menu button / FAB) pinned to the top. Start-aligned with a constant
+   20dp inset in BOTH variants (Compose places the header slot at the start
+   edge): a 56dp child (FAB, md icon button) at inset 20 is also exactly
+   centered in the collapsed 96dp rail, so nothing jumps when the alignment
+   would otherwise flip mid-morph. Narrower children that should be centered
+   while collapsed can interpolate their own offset from the inherited --_t. */
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-bottom: 40px;
+  padding-inline-start: 20px;
+}
+
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: calc(4px * (1 - var(--_t, 0)));
+  width: 100%;
+}
+
+/* Arrangement of destinations below the header. */
+.rail[data-arrangement='center'] .items {
+  flex: 1;
+  justify-content: center;
+}
+.rail[data-arrangement='bottom'] .items {
+  flex: 1;
+  justify-content: flex-end;
+}

@@ -1,0 +1,436 @@
+/**
+ * MD3 Switch. Track 52×32dp, handle slides via logical margins.
+ * Handle sizes: 16dp (unselected), 24dp (selected / with-icon), 28dp (pressed).
+ * Structure follows material-web (material-components/material-web); motion
+ * follows Compose's FastSpatial standard spring (spring(0.9, 1400) ≈ 150ms,
+ * near-critically damped — NOT a bouncy bezier, which is Expressive-only)
+ * with changes snapping while pressed. Spec: docs/specs/switch.md.
+ */
+
+/* =========================================================================== */
+/* Host                                                                        */
+/* =========================================================================== */
+.switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 52px;
+  height: 32px;
+  border-radius: var(--md-sys-shape-corner-full);
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.disabled {
+  cursor: default;
+}
+
+/* =========================================================================== */
+/* Input — visually hidden but accessible, also serves as touch target (48dp)  */
+/* =========================================================================== */
+.input {
+  appearance: none;
+  height: max(100%, 48px);
+  width: max(100%, 48px);
+  outline: none;
+  margin: 0;
+  position: absolute;
+  z-index: 1;
+  cursor: inherit;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* =========================================================================== */
+/* Track                                                                       */
+/* =========================================================================== */
+.track {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border-radius: inherit;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Track colors via ::before for independent opacity transitions */
+.track::before {
+  content: '';
+  display: flex;
+  position: absolute;
+  height: 100%;
+  width: 100%;
+  border-radius: inherit;
+  box-sizing: border-box;
+  transition-property: opacity, background-color;
+  transition-timing-function: linear;
+  transition-duration: 67ms;
+}
+
+/* -- Unselected track -- */
+.unselected .track::before {
+  background-color: var(--md-sys-color-surface-container-highest);
+  border: 2px solid var(--md-sys-color-outline);
+}
+
+/* -- Selected track -- */
+.selected .track::before {
+  background-color: var(--md-sys-color-primary);
+}
+
+/* -- Disabled track -- */
+.disabled .track::before {
+  transition: none;
+  opacity: 0.12;
+}
+
+.disabled.selected .track::before {
+  background-color: var(--md-sys-color-on-surface);
+  border-color: transparent;
+}
+
+.disabled.unselected .track::before {
+  background-color: var(--md-sys-color-surface-container-highest);
+  border-color: var(--md-sys-color-on-surface);
+}
+
+/* =========================================================================== */
+/* Handle container — positions handle via logical margins                     */
+/* =========================================================================== */
+.handleContainer {
+  display: flex;
+  place-content: center;
+  place-items: center;
+  position: relative;
+  /* Slide ≈ Compose FastSpatial spring(0.9, 1400): ~150ms, no visible
+     overshoot (same mapping as Radio's dot) */
+  transition: margin 150ms var(--md-sys-motion-easing-standard);
+}
+
+/* margin = track-width - track-height = 52 - 32 = 20px */
+.selected .handleContainer {
+  margin-inline-start: 20px;
+}
+
+.unselected .handleContainer {
+  margin-inline-end: 20px;
+}
+
+.disabled .handleContainer {
+  transition: none;
+}
+
+/* While pressed, changes snap (Compose SnapSpec) — including any press-time
+   slide */
+.switch:not(.disabled):has(.input:active) .handleContainer {
+  transition: none;
+}
+
+/* =========================================================================== */
+/* Handle                                                                      */
+/* =========================================================================== */
+.handle {
+  border-radius: var(--md-sys-shape-corner-full);
+  height: 16px;
+  width: 16px;
+  transform-origin: center;
+  /* Size shares the slide's FastSpatial spec (~150ms standard) */
+  transition-property: height, width;
+  transition-duration: 150ms, 150ms;
+  transition-timing-function:
+    var(--md-sys-motion-easing-standard),
+    var(--md-sys-motion-easing-standard);
+  z-index: 0;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Handle color via ::before for independent opacity/color transitions */
+.handle::before {
+  content: '';
+  display: flex;
+  inset: 0;
+  position: absolute;
+  border-radius: inherit;
+  box-sizing: border-box;
+  transition: background-color 67ms linear;
+}
+
+/* -- Unselected handle color -- */
+.unselected .handle::before {
+  background-color: var(--md-sys-color-outline);
+}
+
+/* -- Selected handle color -- */
+.selected .handle::before {
+  background-color: var(--md-sys-color-on-primary);
+}
+
+/* -- Selected handle: 24dp -- */
+.selected .handle {
+  height: 24px;
+  width: 24px;
+}
+
+/* -- With icon: 24dp -- */
+.handle.withIcon {
+  height: 24px;
+  width: 24px;
+}
+
+/* -- Pressed: 28dp, instant — Compose snaps size changes while pressed
+   (SnapSpec); the release shrink animates via the base transition -- */
+.selected:not(.disabled):has(.input:active) .handle,
+.unselected:not(.disabled):has(.input:active) .handle {
+  height: 28px;
+  width: 28px;
+  transition: none;
+}
+
+/* -- Disabled handle -- */
+.disabled .handle,
+.disabled .handle::before {
+  transition: none;
+}
+
+.disabled.unselected .handle::before {
+  background-color: var(--md-sys-color-on-surface);
+  opacity: 0.38;
+}
+
+.disabled.selected .handle::before {
+  background-color: var(--md-sys-color-surface);
+  opacity: 1;
+}
+
+/* -- Interaction handle colors — shift on hover/focus-visible/pressed
+   (spec S1): selected -> primary-container, unselected -> on-surface-variant.
+   The track stays unchanged. -- */
+.unselected:not(.disabled):has(
+    .input:hover,
+    .input:focus-visible,
+    .input:active
+  ) .handle::before {
+  background-color: var(--md-sys-color-on-surface-variant);
+}
+
+.selected:not(.disabled):has(
+    .input:hover,
+    .input:focus-visible,
+    .input:active
+  ) .handle::before {
+  background-color: var(--md-sys-color-primary-container);
+}
+
+/* =========================================================================== */
+/* State layer — 40dp circle centered on handle, CSS-driven via :has()         */
+/* The input steals pointer events (z-index:1), so Ripple can't listen to the  */
+/* handle-container. We detect hover/active on the input instead.              */
+/* =========================================================================== */
+.stateLayer {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--md-sys-shape-corner-full);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-short3)
+    var(--md-sys-motion-easing-standard);
+}
+
+/* Unselected: on-surface state layer */
+.unselected .stateLayer {
+  background-color: var(--md-sys-color-on-surface);
+}
+
+/* Selected: primary state layer */
+.selected .stateLayer {
+  background-color: var(--md-sys-color-primary);
+}
+
+/* Hover */
+.switch:not(.disabled):has(.input:hover) .stateLayer {
+  opacity: var(--md-sys-state-hover-state-layer-opacity);
+}
+
+/* Focus — 0.10 layer on keyboard focus, in addition to the focus ring
+   (spec S2 / Radio R2 follow-up). NO pressed color cross-over on Switch
+   (explicit spec-sheet note) — the layer colors above stay put. */
+.switch:not(.disabled):has(.input:focus-visible) .stateLayer {
+  opacity: var(--md-sys-state-focus-state-layer-opacity);
+}
+
+/* Press ripple — an expanding circle inside the 40dp state layer (audit SC2;
+   Compose ripple(bounded = false, radius = 20.dp)). CSS-only sibling of the
+   flat hover layer: pressing scales it in with the Ripple primitive's enter
+   spec; releasing fades it with the leave spec, then it snaps back to
+   scale(0) invisibly (delayed 1ms transform) ready for the next press. It
+   inherits the state layer's per-state color and travels with the handle. */
+.stateLayer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: inherit;
+  opacity: 0;
+  transform: scale(0);
+  transform-origin: center;
+  transition:
+    opacity var(--md-sys-motion-duration-short4)
+      var(--md-sys-motion-easing-standard),
+    transform 1ms linear var(--md-sys-motion-duration-short4);
+}
+
+/* Pressed */
+.switch:not(.disabled):has(.input:active) .stateLayer::after {
+  opacity: var(--md-sys-state-pressed-state-layer-opacity);
+  transform: scale(1);
+  transition:
+    opacity 1ms linear,
+    transform var(--md-sys-motion-duration-long2)
+      var(--md-sys-motion-easing-emphasized-decelerate);
+}
+
+/* Disabled — no state layer */
+.disabled .stateLayer {
+  display: none;
+}
+
+/* =========================================================================== */
+/* Icons                                                                       */
+/* =========================================================================== */
+.icons {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.icon {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  fill: currentColor;
+  z-index: 1;
+  transition:
+    fill 67ms linear,
+    opacity 33ms linear,
+    transform 167ms var(--md-sys-motion-easing-standard);
+  opacity: 0;
+}
+
+.icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+.disabled .icon {
+  transition: none;
+}
+
+/* Show selected icon when selected, unselected icon when unselected */
+.selected .iconOn,
+.unselected .iconOff {
+  opacity: 1;
+}
+
+/* Rotate selected icon out of view when handle has no icon class */
+.unselected .handle:not(.withIcon) .iconOn {
+  transform: rotate(-45deg);
+}
+
+/* -- Icon sizes and colors -- */
+.iconOn {
+  width: 16px;
+  height: 16px;
+  color: var(--md-sys-color-on-primary-container);
+}
+
+.iconOff {
+  width: 16px;
+  height: 16px;
+  color: var(--md-sys-color-surface-container-highest);
+}
+
+/* Disabled icon colors */
+.disabled.selected .iconOn {
+  color: var(--md-sys-color-on-surface);
+  opacity: 0.38;
+}
+
+.disabled.unselected .iconOff {
+  color: var(--md-sys-color-surface-container-highest);
+  opacity: 0.38;
+}
+
+/* =========================================================================== */
+/* Focus ring — CSS-driven via :has() since input focus doesn't bubble to host */
+/* Matches FocusRing primitive styling (two-phase pulse animation).            */
+/* =========================================================================== */
+.focusRing {
+  composes: ring fill from '../../primitives/FocusRing/FocusRing.module.css';
+}
+
+.switch:has(.input:focus-visible) .focusRing {
+  display: flex;
+}
+
+/* =========================================================================== */
+/* High contrast mode                                                          */
+/* =========================================================================== */
+@media (forced-colors: active) {
+  .selected .track::before {
+    background: ButtonText;
+    border-color: ButtonText;
+  }
+
+  .disabled .track::before {
+    border-color: GrayText;
+    opacity: 1;
+  }
+
+  .disabled.selected .track::before {
+    background: GrayText;
+  }
+
+  .unselected .handle::before {
+    background: ButtonText;
+  }
+
+  .disabled .handle::before {
+    opacity: 1;
+  }
+
+  .disabled.unselected .handle::before {
+    background: GrayText;
+  }
+}
+
+/* =========================================================================== */
+/* Reduced motion                                                              */
+/* =========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .handleContainer,
+  .handle,
+  .handle::before,
+  .track::before,
+  .icon,
+  .stateLayer,
+  .stateLayer::after {
+    transition: none;
+  }
+
+  .switch:has(.input:focus-visible) .focusRing {
+    animation: none;
+  }
+}

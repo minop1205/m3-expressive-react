@@ -1,0 +1,365 @@
+/**
+ * MD3 Chip. Height 32dp, 8dp corner radius.
+ * Variants: assist, filter, input, suggestion.
+ * Tokens from m3.material.io/components/chips/specs.
+ * Structure mirrors material-web: Ripple/FocusRing at container level,
+ * trailing action has its own circular Ripple/FocusRing (24dp).
+ */
+
+/* =========================================================================== */
+/* Host / Container                                                            */
+/* =========================================================================== */
+.chip {
+  --_height: 32px;
+  --_shape: var(--md-sys-shape-corner-small);
+  --_icon-size: 18px;
+  --_outline-color: var(--md-sys-color-outline-variant);
+  --_outline-width: 1px;
+  --_label-text-color: var(--md-sys-color-on-surface-variant);
+  --_leading-icon-color: var(--md-sys-color-primary);
+  --_trailing-icon-color: var(--md-sys-color-on-surface-variant);
+  --_container-color: transparent;
+  --_hover-state-layer-color: var(--md-sys-color-on-surface-variant);
+  --_hover-state-layer-opacity: var(--md-sys-state-hover-state-layer-opacity);
+  --_pressed-state-layer-color: var(--md-sys-color-on-surface-variant);
+  --_pressed-state-layer-opacity: var(--md-sys-state-pressed-state-layer-opacity);
+
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: var(--_height);
+  border-radius: var(--_shape);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+/* Container background via ::before */
+.chip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--_container-color);
+  pointer-events: none;
+}
+
+.disabled {
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Elevated container */
+.elevated::before {
+  background-color: var(--md-sys-color-surface-container-low);
+  box-shadow: var(--md-sys-elevation-shadow-level1);
+}
+
+.elevated:not(.disabled):hover::before {
+  box-shadow: var(--md-sys-elevation-shadow-level2);
+}
+
+.elevated.disabled::before {
+  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  box-shadow: none;
+}
+
+/* Selected container */
+.selected::before {
+  background-color: var(--md-sys-color-secondary-container);
+}
+
+/* Dragged (drag-and-drop): level-4 elevation + 0.16 state layer per MD3. */
+.dragged {
+  cursor: grabbing;
+}
+
+.dragged::before {
+  box-shadow: var(--md-sys-elevation-shadow-level4);
+}
+
+.dragged .action::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--_label-text-color);
+  opacity: var(--md-sys-state-dragged-state-layer-opacity);
+  pointer-events: none;
+}
+
+.selected.disabled::before {
+  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+}
+
+/* =========================================================================== */
+/* Outline                                                                     */
+/* =========================================================================== */
+.outline {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  border: var(--_outline-width) solid var(--_outline-color);
+}
+
+.disabled .outline {
+  border-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+}
+
+/* Elevated variant: no outline, add shadow */
+.elevated .outline {
+  border-width: 0;
+}
+
+/* Selected: no outline */
+.selected .outline {
+  border-width: 0;
+}
+
+/* =========================================================================== */
+/* Primary action — fills the entire chip so its Ripple covers the full surface*/
+/* When a trailing action exists, extra end-padding reserves space for it.     */
+/* =========================================================================== */
+.action {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  border: none;
+  background: none;
+  cursor: inherit;
+  font: inherit;
+  color: inherit;
+  outline: none;
+  padding: 0;
+  position: relative;
+  border-radius: inherit;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+  padding-inline-start: 16px;
+  padding-inline-end: 16px;
+  z-index: 0;
+}
+
+.hasLeadingIcon .action {
+  padding-inline-start: 8px;
+}
+
+/* 8dp gap + 24dp trailing button + 8dp margin = 40px */
+.hasTrailingAction .action {
+  padding-inline-end: 40px;
+}
+
+/* =========================================================================== */
+/* Label                                                                       */
+/* =========================================================================== */
+.label {
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  color: var(--_label-text-color);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.disabled .label {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+.selected .label {
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.selected.disabled .label {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+/* Assist chip uses on-surface for label */
+.assist .label {
+  color: var(--md-sys-color-on-surface);
+}
+
+.assist.disabled .label {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+/* =========================================================================== */
+/* Leading icon                                                                */
+/* =========================================================================== */
+.leadingIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+  margin-inline-end: 8px;
+  color: var(--_leading-icon-color);
+  flex-shrink: 0;
+}
+
+.leadingIcon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+.disabled .leadingIcon {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+.selected .leadingIcon {
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.selected.disabled .leadingIcon {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+/* Input chip: unselected leading icon stays neutral until interacted (Compose
+   InputChipTokens — Primary only on hover/focus/pressed). */
+.input:not(.selected):not(.disabled) .leadingIcon {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.input:not(.selected):not(.disabled):has(.action:hover) .leadingIcon,
+.input:not(.selected):not(.disabled):has(.action:focus-visible) .leadingIcon,
+.input:not(.selected):not(.disabled):has(.action:active) .leadingIcon {
+  color: var(--md-sys-color-primary);
+}
+
+/* =========================================================================== */
+/* Trailing action (remove button) — 24dp circle (4/3 × icon-size)            */
+/* Ripple/FocusRing inherit from the button, so the button itself must be the  */
+/* 24dp circle. Outer padding is handled by the chip container.                */
+/* =========================================================================== */
+.trailingAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  inset-inline-end: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  color: var(--_trailing-icon-color);
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.trailingAction:disabled {
+  cursor: default;
+  pointer-events: none;
+}
+
+.trailingIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+  flex-shrink: 0;
+}
+
+.trailingIcon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+.disabled .trailingAction {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+.selected .trailingAction {
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.selected.disabled .trailingAction {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+/* =========================================================================== */
+/* Ripple customization                                                        */
+/* =========================================================================== */
+.chip {
+  --md-ripple-hover-color: var(--_hover-state-layer-color);
+  --md-ripple-hover-opacity: var(--_hover-state-layer-opacity);
+  --md-ripple-pressed-color: var(--_pressed-state-layer-color);
+  --md-ripple-pressed-opacity: var(--_pressed-state-layer-opacity);
+}
+
+.selected {
+  --md-ripple-hover-color: var(--md-sys-color-on-secondary-container);
+  --md-ripple-pressed-color: var(--md-sys-color-on-secondary-container);
+}
+
+/* =========================================================================== */
+/* Touch target — 48dp minimum                                                 */
+/* =========================================================================== */
+.action::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  min-height: 48px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.trailingAction::after {
+  content: '';
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* =========================================================================== */
+/* High contrast mode                                                          */
+/* =========================================================================== */
+@media (forced-colors: active) {
+  .outline {
+    border-color: CanvasText;
+  }
+
+  .disabled .outline {
+    border-color: GrayText;
+  }
+
+  .disabled .label,
+  .disabled .leadingIcon,
+  .disabled .trailingAction {
+    color: GrayText;
+  }
+
+  .selected::before {
+    background-color: Highlight;
+  }
+
+  .selected .label,
+  .selected .leadingIcon,
+  .selected .trailingAction {
+    color: HighlightText;
+  }
+}
+
+/* =========================================================================== */
+/* Reduced motion                                                              */
+/* =========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .chip::before {
+    transition: none;
+  }
+}

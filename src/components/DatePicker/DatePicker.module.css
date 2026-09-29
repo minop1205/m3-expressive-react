@@ -1,0 +1,191 @@
+/**
+ * MD3 Date picker. Values from androidx.compose.material3 DatePickerModalTokens:
+ * SurfaceContainerHigh, CornerExtraLarge (28dp), 360dp, elevation 3; headline
+ * OnSurfaceVariant HeadlineLarge; day cell 40dp round, BodyLarge; selected
+ * Primary / OnPrimary, today 1dp Primary outline + Primary label, unselected
+ * OnSurface; weekday OnSurface BodyLarge.
+ */
+
+.picker {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 360px;
+  max-width: 100%;
+  padding-bottom: 8px;
+  border-radius: var(--md-sys-shape-corner-extra-large);
+  background-color: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  box-shadow: var(--md-sys-elevation-shadow-level3);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  padding: 16px 24px 12px;
+  border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.supporting {
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+}
+
+.headline {
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-sys-typescale-headline-large-font);
+  font-size: var(--md-sys-typescale-headline-large-size);
+  font-weight: var(--md-sys-typescale-headline-large-weight);
+  line-height: var(--md-sys-typescale-headline-large-line-height);
+  letter-spacing: var(--md-sys-typescale-headline-large-tracking);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding-inline: 12px 12px;
+}
+
+.monthLabel {
+  padding-inline-start: 12px;
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+}
+
+.navButtons {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.navButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  color: var(--md-sys-color-on-surface-variant);
+  outline: none;
+}
+
+.navButton:hover {
+  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+}
+
+.navButton:focus-visible {
+  outline: 2px solid var(--md-sys-color-secondary);
+}
+
+.navButton svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  padding-inline: 12px;
+  justify-items: center;
+}
+
+.weekday {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-sys-typescale-body-large-font);
+  font-size: var(--md-sys-typescale-body-large-size);
+}
+
+.empty {
+  width: 48px;
+  height: 48px;
+}
+
+.day {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: 4px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-sys-typescale-body-large-font);
+  font-size: var(--md-sys-typescale-body-large-size);
+}
+
+.day:hover:not(:disabled):not([data-selected]) {
+  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+}
+
+.day:focus-visible {
+  outline: 2px solid var(--md-sys-color-secondary);
+}
+
+.day[data-today]:not([data-selected]) {
+  box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
+  color: var(--md-sys-color-primary);
+}
+
+.day[data-selected] {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+
+/* Range highlight — a SecondaryContainer band connecting the endpoints. */
+.day[data-in-range] {
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.day[data-in-range]::before,
+.day[data-range-start]::before,
+.day[data-range-end]::before {
+  content: '';
+  position: absolute;
+  inset: 0 -4px;
+  z-index: -1;
+  background-color: var(--md-sys-color-secondary-container);
+}
+
+.day[data-range-start]::before {
+  inset-inline-start: 50%;
+}
+
+.day[data-range-end]::before {
+  inset-inline-end: 50%;
+}
+
+/* A single selected endpoint (no other end yet) shows no band. */
+.day[data-range-start][data-range-end]::before {
+  display: none;
+}
+
+.day:disabled {
+  cursor: default;
+  pointer-events: none;
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}

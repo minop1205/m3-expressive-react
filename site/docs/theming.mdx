@@ -1,0 +1,54 @@
+---
+sidebar_position: 2
+title: Theming
+---
+
+import Demo from '@site/src/components/Demo'
+import { Button, Switch, Chip } from 'm3-expressive-react'
+
+# Theming
+
+```
+Reference tokens  →  System tokens (--md-sys-*)  →  Component tokens (--_*)
+```
+
+- **Static foundations** (type scale, shape, elevation, motion, state-layer
+  opacities) ship in `styles.css` as CSS custom properties.
+- **Color is dynamic**: `ThemeProvider` derives every `--md-sys-color-*`
+  role from `seedColor` using
+  [`@material/material-color-utilities`](https://github.com/material-foundation/material-color-utilities),
+  for `mode="light" | "dark"`.
+
+## Seed color
+
+Any CSS hex works as the seed — the full tonal palette is generated from it:
+
+<Demo seedColor="#006A6A">
+  <Button variant="filled">Teal seed</Button>
+  <Chip variant="assist">Assist</Chip>
+  <Switch defaultSelected aria-label="demo switch" />
+</Demo>
+
+```tsx
+<ThemeProvider seedColor="#006A6A" mode="light">…</ThemeProvider>
+```
+
+## Dark mode
+
+Pass `mode="dark"`. This site's demos follow the docs color scheme — use the
+toggle in the navbar to see every demo in dark.
+
+## Fine-tuning contracts
+
+Focus rings and ripples expose small contract variables you may override:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `--md-focus-ring-width` | `3px` | resting ring width |
+| `--md-focus-ring-offset` | `2px` | constant ring offset |
+| `--md-focus-ring-color` | `--md-sys-color-secondary` | ring color |
+| `--md-ripple-*` | — | press-ripple tuning |
+
+Everything else is intentionally driven by the token pipeline — override
+`--md-sys-*` values (scoped to a subtree if you like) rather than component
+internals.
