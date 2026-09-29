@@ -41,7 +41,9 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
-    // vrt/ is a Playwright suite (npm run vrt), not a Vitest one.
-    exclude: ['node_modules/**', 'vrt/**'],
+    // vrt/ is a Playwright suite (npm run vrt), not a Vitest one; .claude/
+    // can hold agent worktrees (full repo copies incl. their node_modules),
+    // and the node_modules/dist patterns must match at ANY depth.
+    exclude: ['**/node_modules/**', '**/dist/**', 'vrt/**', '.claude/**'],
   },
 })

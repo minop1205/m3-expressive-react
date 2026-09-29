@@ -1,14 +1,15 @@
 {
-  "name": "md3-react",
-  "version": "0.0.0",
-  "description": "Material Design 3 (Expressive) component library for React",
+  "name": "m3-expressive-react",
+  "version": "1.0.0",
+  "description": "Material Design 3 (Expressive) component library for React — token-first, spec-driven, MUI-idiomatic API",
   "type": "module",
   "license": "MIT",
   "sideEffects": [
     "**/*.css"
   ],
   "files": [
-    "dist"
+    "dist",
+    "CHANGELOG.md"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -70,5 +71,26 @@
     "vite-plugin-svgr": "^5.2.0",
     "vitest": "^5.0.1",
     "vitest-axe": "^0.1.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/minop1205/md3-react.git"
+  },
+  "homepage": "https://github.com/minop1205/md3-react#readme",
+  "bugs": {
+    "url": "https://github.com/minop1205/md3-react/issues"
+  },
+  "author": "Minoru Okuyama",
+  "keywords": [
+    "react",
+    "material-design",
+    "material-design-3",
+    "md3",
+    "material-you",
+    "expressive",
+    "components",
+    "ui",
+    "design-system",
+    "design-tokens"
+  ]
 }
