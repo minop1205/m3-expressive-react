@@ -74,11 +74,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/minop1205/md3-react.git"
+    "url": "git+https://github.com/minop1205/m3-expressive-react.git"
   },
-  "homepage": "https://github.com/minop1205/md3-react#readme",
+  "homepage": "https://github.com/minop1205/m3-expressive-react#readme",
   "bugs": {
-    "url": "https://github.com/minop1205/md3-react/issues"
+    "url": "https://github.com/minop1205/m3-expressive-react/issues"
   },
   "author": "Minoru Okuyama",
   "keywords": [

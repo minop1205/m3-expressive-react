@@ -8,9 +8,9 @@ const config: Config = {
   favicon: 'img/favicon.ico',
 
   url: 'https://minop1205.github.io',
-  baseUrl: '/md3-react/',
+  baseUrl: '/m3-expressive-react/',
   organizationName: 'minop1205',
-  projectName: 'md3-react',
+  projectName: 'm3-expressive-react',
   trailingSlash: false,
 
   onBrokenLinks: 'throw',
@@ -25,7 +25,7 @@ const config: Config = {
         docs: {
           routeBasePath: '/', // docs-only site
           sidebarPath: './sidebars.ts',
-          editUrl: 'https://github.com/minop1205/md3-react/tree/develop/site/',
+          editUrl: 'https://github.com/minop1205/m3-expressive-react/tree/develop/site/',
         },
         blog: false,
         theme: { customCss: './src/css/custom.css' },
@@ -40,7 +40,7 @@ const config: Config = {
         { type: 'docSidebar', sidebarId: 'docs', position: 'left', label: 'Docs' },
         { to: '/components', label: 'Components', position: 'left' },
         {
-          href: 'https://github.com/minop1205/md3-react',
+          href: 'https://github.com/minop1205/m3-expressive-react',
           label: 'GitHub',
           position: 'right',
         },
