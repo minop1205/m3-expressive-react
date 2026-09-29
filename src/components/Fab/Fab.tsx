@@ -28,12 +28,17 @@ export interface FabProps
    * For an Extended FAB (with `label`): `true` shows the label, `false`
    * collapses it to the plain icon-only FAB. Toggling runs the MD3 Expressive
    * spring morph (Compose `ExtendedFloatingActionButton(expanded=)`).
-   * `'container'` follows the `--_t` morph value inherited from a morphing
-   * container instead (e.g. a `NavigationRail` header), staying exactly in
-   * sync with the container's own spring. Omit for a static Extended FAB.
-   * Ignored without `label`.
+   * Omit for a static Extended FAB. Ignored without `label`, and ignored
+   * while `followContainer` drives the morph.
    */
-  expanded?: boolean | 'container'
+  expanded?: boolean
+  /**
+   * Follows the `--_t` morph value inherited from a morphing container
+   * (e.g. a `NavigationRail` header) instead of running the FAB's own
+   * spring, staying exactly in sync with the container's spring. While
+   * `true`, `expanded` is ignored. Requires `label`. @default false
+   */
+  followContainer?: boolean
   /** Color set for the container/content roles. @default 'primary' */
   color?: FabColor
   /**
@@ -62,14 +67,16 @@ export interface FabProps
  * FAB. With `expanded` the Extended FAB morphs
  * between icon-only and icon + label: the label row's measured width
  * (`--_label-total`) scales with the spring-driven `--_ext` while the label
- * cross-fades via `--_label-o`. Elevation lifts on hover (level 3 → 4) and the
- * corner morphs while pressed (CSS `:active`).
+ * cross-fades via `--_label-o` — or, with `followContainer`, both follow a
+ * morphing container's inherited `--_t` instead. Elevation lifts on hover
+ * (level 3 → 4) and the corner morphs while pressed (CSS `:active`).
  */
 export const Fab = forwardRef<HTMLButtonElement, FabProps>(function Fab(
   {
     icon,
     label,
     expanded,
+    followContainer = false,
     color = 'primary',
     tonal = true,
     size = 'regular',
@@ -82,7 +89,7 @@ export const Fab = forwardRef<HTMLButtonElement, FabProps>(function Fab(
   ref,
 ) {
   const isExtended = label != null
-  const morph = isExtended && expanded !== undefined
+  const morph = isExtended && (followContainer || expanded !== undefined)
 
   const buttonRef = useRef<HTMLButtonElement | null>(null)
   const labelRef = useRef<HTMLSpanElement>(null)
@@ -95,9 +102,10 @@ export const Fab = forwardRef<HTMLButtonElement, FabProps>(function Fab(
     [ref],
   )
 
-  // 'container' renders the morph DOM but writes no inline --_ext/--_label-o,
-  // so the CSS falls back to the inherited --_t (the container's spring).
-  useFabMorph(expanded === true, buttonRef, morph && typeof expanded === 'boolean')
+  // `followContainer` renders the morph DOM but writes no inline
+  // --_ext/--_label-o, so the CSS falls back to the inherited --_t (the
+  // container's spring).
+  useFabMorph(expanded === true, buttonRef, morph && !followContainer)
 
   // Measure the label row's natural width (gap + label + trailing padding) so
   // the morph can scale it without reflowing the text.
