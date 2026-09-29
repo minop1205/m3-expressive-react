@@ -107,6 +107,31 @@ describe('SearchBar', () => {
     expect(inputRef.current).toBe(screen.getByRole('searchbox'))
   })
 
+  it('names the searchbox via inputProps aria-label, distinct from the landmark', () => {
+    render(
+      <SearchBar
+        aria-label="Site search"
+        inputProps={{ 'aria-label': 'Search query' }}
+      />,
+    )
+    expect(screen.getByRole('search')).toHaveAccessibleName('Site search')
+    expect(screen.getByRole('searchbox', { name: 'Search query' })).toBeInTheDocument()
+  })
+
+  it('does not let inputProps clobber the controlled value or type', () => {
+    render(
+      <SearchBar
+        aria-label="Search"
+        value="controlled"
+        onChange={() => {}}
+        inputProps={{ value: 'clobbered', type: 'text' } as never}
+      />,
+    )
+    const input = screen.getByRole('searchbox')
+    expect(input).toHaveValue('controlled')
+    expect(input).toHaveAttribute('type', 'search')
+  })
+
   it('spreads unknown rest props on the root element', () => {
     render(<SearchBar aria-label="Search" data-testid="root-landing" />)
     expect(screen.getByRole('search')).toHaveAttribute(

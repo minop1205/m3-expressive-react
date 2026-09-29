@@ -7,6 +7,7 @@ import {
   type HTMLAttributes,
   type KeyboardEvent,
   type ReactNode,
+  type Ref,
 } from 'react'
 import clsx from 'clsx'
 import styles from './Slider.module.css'
@@ -52,6 +53,13 @@ export interface SliderProps
   rangeStartLabel?: string
   /** Accessible label for the end (maximum) thumb of a range slider. @default 'Maximum' */
   rangeEndLabel?: string
+  /**
+   * Ref to the native `<input type="range">` element (the forwarded `ref`
+   * points at the root). A range slider renders two inputs; `inputRef`
+   * reaches the FIRST (start / minimum) one — query its siblings for the end
+   * input if needed.
+   */
+  inputRef?: Ref<HTMLInputElement>
   disabled?: boolean
 }
 
@@ -85,6 +93,9 @@ function pos(frac: number, gap = 0) {
  * tick marks, value-indicator bubble, and an **inset icon** in the handle
  * (md/lg/xl). Handle Primary, active track Primary, inactive SecondaryContainer;
  * disabled active 38% / inactive 12% — per m3.material.io & Compose SliderTokens.
+ *
+ * MUI parity: the forwarded `ref` and `{...rest}` land on the ROOT element;
+ * `inputRef` reaches the first native `<input type="range">`.
  */
 export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
   {
@@ -103,6 +114,7 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
     valueLabelFormat,
     rangeStartLabel = 'Minimum',
     rangeEndLabel = 'Maximum',
+    inputRef,
     disabled = false,
     className,
     style,
@@ -308,6 +320,7 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
       {values.map((_, i) => (
         <input
           key={i}
+          ref={i === 0 ? inputRef : undefined}
           type="range"
           className={styles.input}
           data-index={i}

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
+import { createRef } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'vitest-axe'
@@ -37,10 +38,17 @@ describe('Radio', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  it('forwards a ref', () => {
-    const ref = { current: null as HTMLInputElement | null }
-    render(<Radio ref={ref} aria-label="Option" name="g" />)
-    expect(ref.current).toBeInstanceOf(HTMLInputElement)
+  it('forwards a ref to the root element', () => {
+    const ref = createRef<HTMLSpanElement>()
+    const { container } = render(<Radio ref={ref} aria-label="Option" name="g" />)
+    expect(ref.current).toBe(container.firstElementChild)
+    expect(ref.current).toBeInstanceOf(HTMLSpanElement)
+  })
+
+  it('forwards inputRef to the native input', () => {
+    const inputRef = createRef<HTMLInputElement>()
+    render(<Radio inputRef={inputRef} aria-label="Option" name="g" />)
+    expect(inputRef.current).toBe(screen.getByRole('radio'))
   })
 
   it('works in a radio group', async () => {

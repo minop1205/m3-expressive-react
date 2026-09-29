@@ -6,6 +6,7 @@ import {
   type InputHTMLAttributes,
   type KeyboardEvent,
   type ReactNode,
+  type Ref,
 } from 'react'
 import clsx from 'clsx'
 import styles from './Switch.module.css'
@@ -24,6 +25,8 @@ export interface SwitchProps
   unselectedIcon?: ReactNode
   /** Show icons on both states. @default false */
   icons?: boolean
+  /** Ref to the native `<input>` element (the forwarded `ref` points at the root). */
+  inputRef?: Ref<HTMLInputElement>
 }
 
 /**
@@ -32,8 +35,11 @@ export interface SwitchProps
  * Uses a native `<input type="checkbox" role="switch">` for proper form
  * integration and accessibility. The visual track, handle, and icons are
  * rendered via CSS on sibling spans. Structure mirrors material-web.
+ *
+ * MUI parity: the forwarded `ref` points at the ROOT `<span>`; `inputRef`
+ * reaches the native `<input>`.
  */
-export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
+export const Switch = forwardRef<HTMLSpanElement, SwitchProps>(
   function Switch(
     {
       selected,
@@ -45,6 +51,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
       disabled = false,
       className,
       onKeyDown,
+      inputRef,
       ...rest
     },
     forwardedRef,
@@ -83,6 +90,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
 
     return (
       <span
+        ref={forwardedRef}
         className={clsx(
           styles.switch,
           isSelected ? styles.selected : styles.unselected,
@@ -91,7 +99,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(
         )}
       >
         <input
-          ref={forwardedRef}
+          ref={inputRef}
           {...rest}
           type="checkbox"
           role="switch"

@@ -6,6 +6,7 @@ import {
   type ChangeEvent,
   type FocusEventHandler,
   type HTMLAttributes,
+  type InputHTMLAttributes,
   type KeyboardEvent,
   type KeyboardEventHandler,
   type ReactNode,
@@ -42,6 +43,17 @@ export interface SearchBarProps
   onOpenChange?: (open: boolean) => void
   /** Ref to the native `<input>` element (the forwarded `ref` points at the root). */
   inputRef?: Ref<HTMLInputElement>
+  /**
+   * Extra attributes spread on the native `<input>` — the escape hatch for
+   * attributes without a dedicated prop (e.g. a distinct `aria-label` for
+   * the searchbox, `maxLength`, `pattern`, extra `aria-*`, …).
+   * Precedence: the component's own wiring always wins over conflicting
+   * `inputProps` keys — the controlled `value` / `onChange` and internal
+   * `onFocus` / `onKeyDown` handling, `type="search"`, `className`, and
+   * every dedicated input prop the component sets (`placeholder`, `name`,
+   * `disabled`, …).
+   */
+  inputProps?: InputHTMLAttributes<HTMLInputElement>
   /** Native input `placeholder`. @default 'Search' */
   placeholder?: string
   /** Native input `name`. */
@@ -68,8 +80,9 @@ export interface SearchBarProps
  *
  * MUI parity: the forwarded `ref` and any extra props (`{...rest}`) land on
  * the ROOT element (the `role="search"` landmark); input concerns are
- * dedicated props (`placeholder`, `name`, `onFocus`, `onKeyDown`, …) and
- * `inputRef` reaches the native `<input>`.
+ * dedicated props (`placeholder`, `name`, `onFocus`, `onKeyDown`, …),
+ * `inputRef` reaches the native `<input>`, and `inputProps` spreads extra
+ * attributes on it (the component's own wiring wins).
  */
 export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
   function SearchBar(
@@ -85,6 +98,7 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
       defaultOpen = false,
       onOpenChange,
       inputRef,
+      inputProps,
       placeholder = 'Search',
       name,
       disabled = false,
@@ -154,20 +168,25 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
           <span className={styles.leading} aria-hidden="true">
             {startIcon ?? <SearchIcon />}
           </span>
+          {/* `inputProps` (the escape hatch) is spread FIRST; the component's
+              own wiring wins. Optional dedicated props are spread only when
+              defined so they don't clobber an `inputProps` key the component
+              isn't actually setting. */}
           <input
+            {...inputProps}
             ref={inputRef}
             type="search"
             className={styles.input}
             value={current}
             placeholder={placeholder}
-            name={name}
+            {...(name !== undefined && { name })}
             disabled={disabled}
-            autoFocus={autoFocus}
-            inputMode={inputMode}
-            aria-expanded={hasView ? Boolean(open) : undefined}
+            {...(autoFocus !== undefined && { autoFocus })}
+            {...(inputMode !== undefined && { inputMode })}
+            {...(hasView && { 'aria-expanded': Boolean(open) })}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            onBlur={onBlur}
+            {...(onBlur !== undefined && { onBlur })}
             onFocus={(event) => {
               onFocus?.(event)
               if (hasView) setOpen(true)

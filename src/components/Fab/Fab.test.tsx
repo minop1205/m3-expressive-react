@@ -93,11 +93,19 @@ describe('Fab', () => {
     expect(screen.getByRole('button')).toHaveAttribute('data-disable-elevation', 'true')
   })
 
-  it("renders the morph DOM without inline morph values for expanded='container'", () => {
-    render(<Fab icon={Icon} label="Create" expanded="container" />)
+  it('renders the morph DOM without inline morph values for followContainer', () => {
+    render(<Fab icon={Icon} label="Create" followContainer />)
     const btn = screen.getByRole('button', { name: 'Create' })
     expect(btn).toHaveAttribute('data-morph', 'true')
     // No inline --_ext / --_label-o: the CSS falls back to the inherited --_t.
+    expect(btn.style.getPropertyValue('--_ext')).toBe('')
+    expect(btn.style.getPropertyValue('--_label-o')).toBe('')
+  })
+
+  it('ignores expanded for the morph machinery while followContainer is set', () => {
+    render(<Fab icon={Icon} label="Create" followContainer expanded />)
+    const btn = screen.getByRole('button', { name: 'Create' })
+    expect(btn).toHaveAttribute('data-morph', 'true')
     expect(btn.style.getPropertyValue('--_ext')).toBe('')
     expect(btn.style.getPropertyValue('--_label-o')).toBe('')
   })
