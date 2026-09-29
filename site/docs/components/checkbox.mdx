@@ -1,0 +1,48 @@
+---
+title: Checkbox
+---
+
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Checkbox } from 'm3-expressive-react'
+
+# Checkbox
+
+MD3 checkbox with checked, indeterminate, and error states. Built on a
+native `<input type="checkbox">` — label association, keyboard, and form
+submission behave natively.
+
+## States
+
+<Demo>
+  <Checkbox aria-label="Unchecked" />
+  <Checkbox defaultChecked aria-label="Checked" />
+  <Checkbox indeterminate aria-label="Indeterminate" />
+  <Checkbox disabled aria-label="Disabled" />
+  <Checkbox defaultChecked disabled aria-label="Disabled checked" />
+</Demo>
+
+```tsx
+<Checkbox checked={checked} onChange={(event, next) => setChecked(next)} />
+```
+
+## Indeterminate
+
+The mixed state is exposed to assistive technology via the native
+`indeterminate` property and `aria-checked="mixed"`. An indeterminate
+checkbox submits nothing on form submission, matching the platform.
+
+<Demo>
+  <Checkbox indeterminate aria-label="Parent" />
+</Demo>
+
+## Error
+
+<Demo>
+  <Checkbox error aria-label="Error unchecked" />
+  <Checkbox error defaultChecked aria-label="Error checked" />
+</Demo>
+
+## Props
+
+<PropsTable component="Checkbox" />

@@ -1,0 +1,60 @@
+---
+sidebar_position: 1
+title: Getting started
+slug: /
+---
+
+import Demo from '@site/src/components/Demo'
+import { Button } from 'm3-expressive-react'
+
+# Getting started
+
+**m3-expressive-react** is a Material Design 3 (Expressive) component
+library for React with a deliberately MUI-idiomatic API. Appearance,
+defaults, and motion follow the MD3 spec and Jetpack Compose `material3`.
+
+## Installation
+
+```bash
+npm install m3-expressive-react
+```
+
+Requires React 18 or 19.
+
+## Usage
+
+Wrap your app in `ThemeProvider` and import the token stylesheet once:
+
+```tsx
+import { ThemeProvider, Button } from 'm3-expressive-react'
+import 'm3-expressive-react/styles.css'
+
+export function App() {
+  return (
+    <ThemeProvider seedColor="#6750A4" mode="light">
+      <Button variant="filled" onClick={() => console.log('clicked')}>
+        Hello MD3
+      </Button>
+    </ThemeProvider>
+  )
+}
+```
+
+<Demo>
+  <Button variant="filled">Hello MD3</Button>
+  <Button variant="tonal">Tonal</Button>
+  <Button variant="outlined">Outlined</Button>
+</Demo>
+
+:::info The stylesheet import is required
+`styles.css` carries the design tokens (shape, motion, state, typescale)
+every component references. Colors come from `ThemeProvider`, which derives
+the full MD3 color-role map (light and dark) from your `seedColor` at
+runtime via Dynamic Color.
+:::
+
+## Next steps
+
+- Browse the [component gallery](/components)
+- Set up [theming](/theming) and [icons](/icons)
+- Coming from the 0.x line? See the [v1 migration guide](/migration-v1)

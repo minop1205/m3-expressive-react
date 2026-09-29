@@ -1,0 +1,57 @@
+---
+title: Button
+---
+
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Button } from 'm3-expressive-react'
+
+# Button
+
+MD3 common button: five variants, five sizes, round/square shapes with the
+Expressive press morph.
+
+## Variants
+
+<Demo>
+  <Button variant="elevated">Elevated</Button>
+  <Button variant="filled">Filled</Button>
+  <Button variant="tonal">Tonal</Button>
+  <Button variant="outlined">Outlined</Button>
+  <Button variant="text">Text</Button>
+</Demo>
+
+```tsx
+<Button variant="filled">Filled</Button>
+```
+
+## Sizes
+
+<Demo>
+  <Button size="xs">XS</Button>
+  <Button size="sm">SM</Button>
+  <Button size="md">MD</Button>
+  <Button size="lg">LG</Button>
+  <Button size="xl">XL</Button>
+</Demo>
+
+## Shapes
+
+Press a square button and hold — the corner radius morphs per the
+Expressive spec.
+
+<Demo>
+  <Button shape="round">Round</Button>
+  <Button shape="square">Square</Button>
+</Demo>
+
+## Disabled
+
+<Demo>
+  <Button variant="filled" disabled>Filled</Button>
+  <Button variant="outlined" disabled>Outlined</Button>
+</Demo>
+
+## Props
+
+<PropsTable component="Button" />
