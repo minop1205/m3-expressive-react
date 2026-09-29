@@ -115,6 +115,13 @@ container palette — the old default):
 
 Rendered colors are pixel-identical for every equivalent pair.
 
+The Extended FAB's container-follow mode also moved out of `expanded`,
+which is a plain `boolean` again:
+
+| Before | After |
+|---|---|
+| `expanded="container"` | `followContainer` (new boolean prop, default `false`; `expanded` is ignored while it is set) |
+
 ## 7. Refs point at the root; composite inputs gain `inputRef`
 
 MUI parity: the forwarded `ref` is always the root element, and `{...rest}`
@@ -125,6 +132,16 @@ also lands on the root.
 | TextField | root `<div>` (was the input/textarea) | new `inputRef` |
 | SearchBar | root `<div role="search">` (was the input) | new `inputRef` |
 | Chip | root `<span>` (was the primary-action button) | — |
+| Checkbox | root `<span>` (was the input) | new `inputRef` |
+| Radio | root `<span>` (was the input) | new `inputRef` |
+| Switch | root `<span>` (was the input) | new `inputRef` |
+| Slider | root `<span>` (unchanged) | new `inputRef` — the **first** range input (the start/minimum thumb of a range slider) |
+
+Unlike TextField/SearchBar, `{...rest}` on the selection controls
+(Checkbox, Radio, Switch) still lands on the **native input** — their props
+extend `InputHTMLAttributes`, so `name` / `value` / form wiring keep flowing
+through rest as before. Only the forwarded `ref` moved. (Slider's rest
+already landed on the root and is unchanged.)
 
 ```tsx
 // Before: ref reached the native input
@@ -141,12 +158,21 @@ Because `{...rest}` moved to the root on TextField/SearchBar:
   `placeholder`, `required`, `readOnly`, `autoComplete` (TextField), plus
   `id` / `autoFocus` / `inputMode` which still route to the input.
 - Attributes without a dedicated prop (`pattern`, `min`, `max`, `step`,
-  TextField `onKeyDown`, …) **no longer reach the input** via rest — same as
-  MUI without slot props. If you relied on these, file an issue; an
-  `inputProps`-style escape hatch is under consideration.
+  TextField `onKeyDown`, …) no longer reach the input via rest — route them
+  through the new **`inputProps`** escape hatch instead, which spreads extra
+  attributes on the native control:
+
+  ```tsx
+  <TextField inputProps={{ pattern: '[0-9]*', onKeyDown: handleKey }} />
+  ```
+
+  `inputProps` never overrides the component's own wiring: the controlled
+  `value` / `onChange`, `type`, and every dedicated prop you set win over
+  conflicting `inputProps` keys.
 - `className` / `style` / `data-*` / `aria-*` from rest style or annotate
   the **root** now. On SearchBar, `aria-label` names the search landmark;
-  the input itself is named by `placeholder`.
+  give the searchbox itself a distinct name via
+  `inputProps={{ 'aria-label': … }}` (or rely on `placeholder`).
 
 ## Quick checklist
 
@@ -157,6 +183,9 @@ Because `{...rest}` moved to the root on TextField/SearchBar:
 3. `Slider size`: `s`→`sm`, `m`→`md`, `l`→`lg`.
 4. `SegmentedButtons` → `SegmentedButton` (alias still works this release).
 5. SearchBar: `expanded`→`open`, `onExpandedChange`→`onOpenChange`.
-6. Fab: map token-string colors per the table above.
-7. TextField/SearchBar `ref` users: switch to `inputRef` for the native
-   control; move input-only rest attributes to dedicated props.
+6. Fab: map token-string colors per the table above;
+   `expanded="container"` → `followContainer`.
+7. TextField/SearchBar/Checkbox/Radio/Switch `ref` users: switch to
+   `inputRef` for the native control; move input-only rest attributes to
+   dedicated props, or to `inputProps` (TextField/SearchBar) when no
+   dedicated prop exists.
