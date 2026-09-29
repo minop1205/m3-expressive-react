@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'vitest-axe'
 import { describe, expect, it, vi } from 'vitest'
@@ -41,6 +41,47 @@ describe('TextField', () => {
     render(<TextField label="Test" multiline inputRef={inputRef} />)
     expect(inputRef.current).toBe(screen.getByRole('textbox'))
     expect(inputRef.current?.tagName).toBe('TEXTAREA')
+  })
+
+  it('routes inputProps attributes (pattern, min/max/step, onKeyDown) to the native input', () => {
+    const onKeyDown = vi.fn()
+    render(
+      <TextField
+        label="Code"
+        inputProps={{ pattern: '[0-9]*', min: 0, max: 10, step: 2, onKeyDown }}
+      />,
+    )
+    const input = screen.getByRole('textbox')
+    expect(input).toHaveAttribute('pattern', '[0-9]*')
+    expect(input).toHaveAttribute('min', '0')
+    expect(input).toHaveAttribute('max', '10')
+    expect(input).toHaveAttribute('step', '2')
+    fireEvent.keyDown(input, { key: 'a' })
+    expect(onKeyDown).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not let inputProps clobber the controlled value', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <TextField
+        label="Test"
+        value="controlled"
+        onChange={onChange}
+        inputProps={{ value: 'clobbered', onChange: () => {} } as never}
+      />,
+    )
+    const input = screen.getByRole('textbox')
+    expect(input).toHaveValue('controlled')
+    await user.type(input, 'x')
+    // The component's own onChange wiring still drives the controlled value.
+    expect(onChange).toHaveBeenCalled()
+    expect(input).toHaveValue('controlled')
+  })
+
+  it('spreads inputProps on the textarea when multiline', () => {
+    render(<TextField label="Notes" multiline inputProps={{ maxLength: 5 }} />)
+    expect(screen.getByRole('textbox')).toHaveAttribute('maxlength', '5')
   })
 
   it('spreads unknown rest props on the root element', () => {

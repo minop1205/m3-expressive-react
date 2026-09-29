@@ -10,9 +10,11 @@ import {
   type FocusEvent,
   type FocusEventHandler,
   type HTMLAttributes,
+  type InputHTMLAttributes,
   type MouseEvent,
   type ReactNode,
   type Ref,
+  type TextareaHTMLAttributes,
 } from 'react'
 import clsx from 'clsx'
 import styles from './TextField.module.css'
@@ -50,6 +52,19 @@ export interface TextFieldProps
   rows?: number
   /** Ref to the native `<input>` / `<textarea>` element (the forwarded `ref` points at the root). */
   inputRef?: Ref<HTMLInputElement | HTMLTextAreaElement>
+  /**
+   * Extra attributes spread on the native `<input>` (or `<textarea>` when
+   * `multiline`) — the escape hatch for attributes without a dedicated prop
+   * (`pattern`, `min`, `max`, `step`, `onKeyDown`, extra `aria-*`, …).
+   * Precedence: the component's own wiring always wins over conflicting
+   * `inputProps` keys — the controlled `value` / `onChange` / `onFocus` /
+   * `onBlur`, `id`, `className`, and every dedicated input prop the
+   * component sets (`type`, `name`, `placeholder`, `required`, `readOnly`,
+   * `autoComplete`, `maxLength`, `rows`, …).
+   */
+  inputProps?:
+    | InputHTMLAttributes<HTMLInputElement>
+    | TextareaHTMLAttributes<HTMLTextAreaElement>
   /** Applied to the native input (keeps the floating label association via `htmlFor`). */
   id?: string
   /** Controlled input value. */
@@ -91,8 +106,9 @@ export interface TextFieldProps
  *
  * MUI parity: the forwarded `ref` and any extra props (`{...rest}`) land on
  * the ROOT element; input concerns are dedicated props (`type`, `name`,
- * `placeholder`, `required`, `readOnly`, `autoComplete`, `maxLength`, …) and
- * `inputRef` reaches the native `<input>` / `<textarea>`.
+ * `placeholder`, `required`, `readOnly`, `autoComplete`, `maxLength`, …),
+ * `inputRef` reaches the native `<input>` / `<textarea>`, and `inputProps`
+ * spreads extra attributes on it (the component's own wiring wins).
  */
 export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
   function TextField(
@@ -119,6 +135,7 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
       onClick,
       id: providedId,
       inputRef,
+      inputProps,
       type = 'text',
       name,
       placeholder,
@@ -208,7 +225,7 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
 
     const labelText = label ? `${label}${required ? '*' : ''}` : undefined
 
-    const inputProps = {
+    const controlProps = {
       ref: setRefs,
       id: inputId,
       className: styles.input,
@@ -228,6 +245,15 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
       'aria-describedby': showSupportingText ? supportingId : undefined,
       maxLength,
     }
+
+    // `inputProps` (the escape hatch) is spread FIRST on the native control;
+    // every entry the component defines here wins over it. Undefined entries
+    // are dropped so they don't clobber an `inputProps` key the component
+    // isn't actually setting (e.g. `aria-describedby` without supporting
+    // text, or `name` without the `name` prop).
+    const definedControlProps = Object.fromEntries(
+      Object.entries(controlProps).filter(([, v]) => v !== undefined),
+    ) as typeof controlProps
 
     return (
       <div
@@ -291,12 +317,14 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
               )}
               {multiline ? (
                 <textarea
-                  {...(inputProps as React.TextareaHTMLAttributes<HTMLTextAreaElement> & { ref: typeof setRefs })}
+                  {...(inputProps as TextareaHTMLAttributes<HTMLTextAreaElement> | undefined)}
+                  {...(definedControlProps as TextareaHTMLAttributes<HTMLTextAreaElement> & { ref: typeof setRefs })}
                   rows={rows}
                 />
               ) : (
                 <input
-                  {...(inputProps as React.InputHTMLAttributes<HTMLInputElement> & { ref: typeof setRefs })}
+                  {...(inputProps as InputHTMLAttributes<HTMLInputElement> | undefined)}
+                  {...(definedControlProps as InputHTMLAttributes<HTMLInputElement> & { ref: typeof setRefs })}
                   type={type}
                 />
               )}
