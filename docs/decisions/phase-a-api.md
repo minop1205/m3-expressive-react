@@ -22,3 +22,12 @@ Issue #12〜#21 での検討を経て以下のとおり決定した。破壊的�
   マイグレーションガイド(docs/migration-v1.md)にまとめる
 - 非破壊(A4 の default* 追加、RadioGroup、G2、G5)は先行して個別 PR 可
 - 各決定の実装 Issue は phase-a ラベルの実装 Issue 群を参照
+
+## v1 前の追加裁定(2026-09-29 — Phase A 実装中に浮上した未解決事項)
+
+| # | 発端 | 決定 | 要点 |
+|---|---|---|---|
+| A8 | #114 (#86) | **DatePicker/TimePicker の onChange は値ファーストを正式採用** | MUI X ピッカーが `onChange(value, context)` の値ファーストであり、event ファースト化はむしろ MUI 非忠実になる。A2 の意図的例外として記録(TextField のネイティブ onChange と並ぶ例外) |
+| A9 | #119 (#92) | **Fab の `expanded: boolean \| 'container'` を分離 — `expanded?: boolean` + `followContainer?: boolean`(既定 false)** | 型の単純化。`followContainer` 有効時はコンテナ由来の morph に追従し `expanded` は無視。旧 `'container'` と DOM/CSS 同一 |
+| A10 | #120 (#96) | **選択コントロール(Checkbox/Radio/Switch/Slider)も ref はルート + `inputRef` 新設** | #21 を全面適用し「ref は常にルート」が全コンポーネントで成立。Slider の `inputRef` は先頭(start)input への単一 Ref(MUI Slider の単一 input 慣習に整合)。`{...rest}` の着地先は現状維持(input)— name/value のフォーム配線を壊すため今回の裁定対象外、必要になれば別途決定 |
+| A11 | #120 (#96) | **TextField/SearchBar に `inputProps` エスケープハッチを追加(非破壊)** | rest のルート統一で input に届かなくなった `pattern`/`min`/`max`/`step`/`onKeyDown` 等の受け皿。controlled 必須 prop(value/onChange/type 等)は inputProps では上書き不可(コンポーネント側が後勝ち)。SearchBar の searchbox 個別命名もこれで解決。将来 slotProps 形式に拡張する場合はこの prop を包含する形で |
