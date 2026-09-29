@@ -1,0 +1,24 @@
+---
+sidebar_position: 3
+title: Icons
+---
+
+# Icons
+
+The library is **icon-agnostic**: every icon prop (`icon`, `startIcon`,
+`endIcon`, …) takes a `ReactNode`, so any icon set works — nothing is
+bundled or required.
+
+For Material Design 3 we recommend
+[Material Symbols](https://fonts.google.com/icons). With the SVG package and
+[`vite-plugin-svgr`](https://github.com/pd4d10/vite-plugin-svgr):
+
+```tsx
+import Search from '@material-symbols/svg-400/outlined/search.svg?react'
+import { IconButton } from 'm3-expressive-react'
+
+;<IconButton icon={<Search />} aria-label="Search" />
+```
+
+Icons inherit color via `currentColor` and are sized by the component, so
+plain SVGs, icon fonts, or emoji all work.

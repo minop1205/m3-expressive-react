@@ -1,0 +1,52 @@
+---
+title: TextField
+---
+
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { TextField } from 'm3-expressive-react'
+
+# TextField
+
+MD3 text field in filled and outlined variants, with floating label,
+supporting text, character counter, and multiline mode.
+
+## Variants
+
+<Demo>
+  <TextField variant="filled" label="Filled" />
+  <TextField variant="outlined" label="Outlined" />
+</Demo>
+
+```tsx
+<TextField
+  variant="outlined"
+  label="Email"
+  value={email}
+  onChange={(event) => setEmail(event.target.value)}
+/>
+```
+
+## Supporting text & error
+
+<Demo>
+  <TextField label="Username" supportingText="Visible to everyone" />
+  <TextField label="Password" error supportingText="Too short" />
+</Demo>
+
+## The native input
+
+`ref` points at the root element; use `inputRef` for the native control,
+and `inputProps` for attributes without a dedicated prop:
+
+```tsx
+<TextField
+  label="Amount"
+  inputRef={inputRef}
+  inputProps={{ inputMode: 'decimal', pattern: '[0-9]*' }}
+/>
+```
+
+## Props
+
+<PropsTable component="TextField" />
