@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
+import { createRef } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'vitest-axe'
@@ -62,10 +63,17 @@ describe('Checkbox', () => {
     expect(onChange).not.toHaveBeenCalled()
   })
 
-  it('forwards a ref', () => {
-    const ref = { current: null as HTMLInputElement | null }
-    render(<Checkbox ref={ref} aria-label="Toggle" />)
-    expect(ref.current).toBeInstanceOf(HTMLInputElement)
+  it('forwards a ref to the root element', () => {
+    const ref = createRef<HTMLSpanElement>()
+    const { container } = render(<Checkbox ref={ref} aria-label="Toggle" />)
+    expect(ref.current).toBe(container.firstElementChild)
+    expect(ref.current).toBeInstanceOf(HTMLSpanElement)
+  })
+
+  it('forwards inputRef to the native input', () => {
+    const inputRef = createRef<HTMLInputElement>()
+    render(<Checkbox inputRef={inputRef} aria-label="Toggle" />)
+    expect(inputRef.current).toBe(screen.getByRole('checkbox'))
   })
 
   it('renders indeterminate visual state (dash path, morphable from the check)', () => {

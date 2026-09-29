@@ -6,6 +6,8 @@ import {
   useState,
   type ChangeEvent,
   type InputHTMLAttributes,
+  type MutableRefObject,
+  type Ref,
 } from 'react'
 import clsx from 'clsx'
 import styles from './Checkbox.module.css'
@@ -22,6 +24,8 @@ export interface CheckboxProps
   onChange?: (event: ChangeEvent<HTMLInputElement>, checked: boolean) => void
   /** Error state. @default false */
   error?: boolean
+  /** Ref to the native `<input>` element (the forwarded `ref` points at the root). */
+  inputRef?: Ref<HTMLInputElement>
 }
 
 /**
@@ -30,8 +34,11 @@ export interface CheckboxProps
  * Uses a native `<input type="checkbox">` for proper form integration and
  * accessibility. The visual container, checkmark, and state layer are rendered
  * via CSS on sibling spans. Structure mirrors material-web.
+ *
+ * MUI parity: the forwarded `ref` points at the ROOT `<span>`; `inputRef`
+ * reaches the native `<input>`.
  */
-export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
+export const Checkbox = forwardRef<HTMLSpanElement, CheckboxProps>(
   function Checkbox(
     {
       checked,
@@ -41,6 +48,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
       error = false,
       disabled = false,
       className,
+      inputRef,
       ...rest
     },
     forwardedRef,
@@ -49,14 +57,16 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     const [internalChecked, setInternalChecked] = useState(defaultChecked)
     const isChecked = isControlled ? checked : internalChecked
 
-    const inputRef = useRef<HTMLInputElement | null>(null)
+    const internalInputRef = useRef<HTMLInputElement | null>(null)
     const setInputRef = useCallback(
       (node: HTMLInputElement | null) => {
-        inputRef.current = node
-        if (typeof forwardedRef === 'function') forwardedRef(node)
-        else if (forwardedRef) forwardedRef.current = node
+        internalInputRef.current = node
+        if (typeof inputRef === 'function') inputRef(node)
+        else if (inputRef) {
+          (inputRef as MutableRefObject<HTMLInputElement | null>).current = node
+        }
       },
-      [forwardedRef],
+      [inputRef],
     )
 
     // Expose the mixed state to assistive tech (spec: docs/specs/checkbox.md
@@ -64,7 +74,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
     // imperatively — re-assert on every render because a user click clears
     // the native flag even when the `indeterminate` prop stays true.
     useEffect(() => {
-      if (inputRef.current) inputRef.current.indeterminate = indeterminate
+      if (internalInputRef.current) internalInputRef.current.indeterminate = indeterminate
     })
 
     const handleChange = useCallback(
@@ -91,6 +101,7 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
 
     return (
       <span
+        ref={forwardedRef}
         className={clsx(
           styles.checkbox,
           styles[state],

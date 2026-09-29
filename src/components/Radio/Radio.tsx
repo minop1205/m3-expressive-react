@@ -4,6 +4,7 @@ import {
   useContext,
   type ChangeEvent,
   type InputHTMLAttributes,
+  type Ref,
 } from 'react'
 import clsx from 'clsx'
 import { RadioGroupContext } from './RadioGroup'
@@ -23,6 +24,8 @@ export interface RadioProps
    * same value a wrapping `RadioGroup` reports) when the radio is selected.
    */
   onChange?: (event: ChangeEvent<HTMLInputElement>, value: string) => void
+  /** Ref to the native `<input>` element (the forwarded `ref` points at the root). */
+  inputRef?: Ref<HTMLInputElement>
 }
 
 /**
@@ -31,8 +34,11 @@ export interface RadioProps
  * Uses a native `<input type="radio">` for proper form integration and
  * accessibility. The visual outer ring, inner dot, and state layer are rendered
  * via CSS on sibling spans. Structure mirrors material-web.
+ *
+ * MUI parity: the forwarded `ref` points at the ROOT `<span>`; `inputRef`
+ * reaches the native `<input>`.
  */
-export const Radio = forwardRef<HTMLInputElement, RadioProps>(
+export const Radio = forwardRef<HTMLSpanElement, RadioProps>(
   function Radio(
     {
       checked,
@@ -41,6 +47,7 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
       value,
       name,
       className,
+      inputRef,
       ...rest
     },
     forwardedRef,
@@ -65,10 +72,11 @@ export const Radio = forwardRef<HTMLInputElement, RadioProps>(
 
     return (
       <span
+        ref={forwardedRef}
         className={clsx(styles.radio, disabled && styles.disabled, className)}
       >
         <input
-          ref={forwardedRef}
+          ref={inputRef}
           {...rest}
           type="radio"
           className={styles.input}

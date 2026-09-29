@@ -61,6 +61,18 @@ describe('Slider', () => {
     expect(ref.current).toBeInstanceOf(HTMLSpanElement)
   })
 
+  it('forwards inputRef to the native range input', () => {
+    const inputRef = createRef<HTMLInputElement>()
+    render(<Slider inputRef={inputRef} aria-label="Vol" />)
+    expect(inputRef.current).toBe(screen.getByRole('slider'))
+  })
+
+  it('forwards inputRef to the start input of a range slider', () => {
+    const inputRef = createRef<HTMLInputElement>()
+    render(<Slider inputRef={inputRef} aria-label="Range" defaultValue={[10, 40]} />)
+    expect(inputRef.current).toBe(screen.getByRole('slider', { name: 'Minimum' }))
+  })
+
   it('has no axe violations (single and range)', async () => {
     const { container } = render(
       <div>
