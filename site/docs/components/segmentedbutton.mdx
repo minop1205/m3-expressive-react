@@ -1,0 +1,178 @@
+---
+title: SegmentedButton
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { SegmentedButton } from 'm3-expressive-react'
+import {
+  AlignLeftIcon,
+  AlignCenterIcon,
+  AlignRightIcon,
+  EventIcon,
+} from '@site/src/components/icons/ActionIcons'
+
+# SegmentedButton
+
+MD3 segmented buttons: a row of equal-width outlined segments for choosing
+one option or several. Selected segments fill with the secondary container
+and show a check in an always-reserved icon slot, so the row never jumps.
+
+:::tip Expressive alternative
+In Material 3 Expressive, connected button groups replace segmented buttons.
+For new designs prefer
+[`<ButtonGroup variant="connected" selectionMode="single">`](./buttongroup.mdx#single-select).
+`SegmentedButton` stays available and is not deprecated.
+:::
+
+## Single select
+
+Pass the segments as `options`; control the selection with `value` /
+`onChange(event, value)` or leave it uncontrolled with `defaultValue`.
+
+export function SingleDemo() {
+  const [value, setValue] = useState('week')
+  return (
+    <SegmentedButton
+      aria-label="Calendar view"
+      value={value}
+      onChange={(event, next) => setValue(next)}
+      options={[
+        { value: 'day', label: 'Day' },
+        { value: 'week', label: 'Week' },
+        { value: 'month', label: 'Month' },
+        { value: 'year', label: 'Year' },
+      ]}
+    />
+  )
+}
+
+<Demo>
+  <SingleDemo />
+</Demo>
+
+```tsx
+const [value, setValue] = useState('week')
+
+<SegmentedButton
+  aria-label="Calendar view"
+  value={value}
+  onChange={(event, next) => setValue(next as string)}
+  options={[
+    { value: 'day', label: 'Day' },
+    { value: 'week', label: 'Week' },
+    { value: 'month', label: 'Month' },
+  ]}
+/>
+```
+
+## Multi select
+
+With `multiSelect` the value is a `string[]`.
+
+<Demo>
+  <SegmentedButton
+    multiSelect
+    aria-label="Sizes"
+    defaultValue={['s', 'm']}
+    options={[
+      { value: 'xs', label: 'XS' },
+      { value: 's', label: 'S' },
+      { value: 'm', label: 'M' },
+      { value: 'l', label: 'L' },
+      { value: 'xl', label: 'XL' },
+    ]}
+  />
+</Demo>
+
+```tsx
+<SegmentedButton
+  multiSelect
+  defaultValue={['s', 'm']}
+  onChange={(event, values) => setSizes(values as string[])}
+  options={sizes}
+  aria-label="Sizes"
+/>
+```
+
+## Icons
+
+A segment with both `icon` and `label` shows the icon, which crossfades to
+the check while selected. Without a `label` the segment is **icon-only**: the
+icon stays and the check appears beside it — give each such segment an
+`ariaLabel`.
+
+<Demo>
+  <SegmentedButton
+    aria-label="Schedule"
+    defaultValue="today"
+    options={[
+      { value: 'today', label: 'Today', icon: <EventIcon /> },
+      { value: 'week', label: 'This week', icon: <EventIcon /> },
+    ]}
+  />
+  <SegmentedButton
+    aria-label="Text alignment"
+    defaultValue="left"
+    options={[
+      { value: 'left', icon: <AlignLeftIcon />, ariaLabel: 'Align left' },
+      { value: 'center', icon: <AlignCenterIcon />, ariaLabel: 'Align center' },
+      { value: 'right', icon: <AlignRightIcon />, ariaLabel: 'Align right' },
+    ]}
+  />
+</Demo>
+
+```tsx
+<SegmentedButton
+  aria-label="Text alignment"
+  defaultValue="left"
+  options={[
+    { value: 'left', icon: <AlignLeftIcon />, ariaLabel: 'Align left' },
+    { value: 'center', icon: <AlignCenterIcon />, ariaLabel: 'Align center' },
+    { value: 'right', icon: <AlignRightIcon />, ariaLabel: 'Align right' },
+  ]}
+/>
+```
+
+`showSelectedCheck={false}` hides the check on selected segments.
+
+## Disabled
+
+Disable the whole group with `disabled`, or a single segment with the
+option's `disabled`.
+
+<Demo>
+  <SegmentedButton
+    aria-label="Disabled group"
+    disabled
+    defaultValue="a"
+    options={[
+      { value: 'a', label: 'Alpha' },
+      { value: 'b', label: 'Beta' },
+    ]}
+  />
+  <SegmentedButton
+    aria-label="One disabled segment"
+    defaultValue="a"
+    options={[
+      { value: 'a', label: 'Alpha' },
+      { value: 'b', label: 'Beta', disabled: true },
+      { value: 'c', label: 'Gamma' },
+    ]}
+  />
+</Demo>
+
+## Accessibility
+
+- Single select renders a `radiogroup` of `radio`s (`aria-checked`) with
+  **one** Tab stop: arrow keys move focus, <kbd>Space</kbd> /
+  <kbd>Enter</kbd> select.
+- Multi select renders a `group` of toggle buttons (`aria-pressed`); each
+  segment is a Tab stop, and arrow keys also move focus.
+- Name the group with `aria-label` / `aria-labelledby`, and give icon-only
+  segments an `ariaLabel` describing the option.
+
+## Props
+
+<PropsTable component="SegmentedButton" />

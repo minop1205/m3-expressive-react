@@ -1,0 +1,186 @@
+---
+title: ButtonGroup
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { ButtonGroup, Button, IconButton } from 'm3-expressive-react'
+import {
+  BoldIcon,
+  ItalicIcon,
+  UnderlineIcon,
+  EditIcon,
+  SearchIcon,
+  FavoriteBorderIcon,
+} from '@site/src/components/icons/ActionIcons'
+
+# ButtonGroup
+
+MD3 Expressive button group: an invisible container that spaces `Button` /
+`IconButton` children and reshapes them on press. It can also own a
+single- or multi-select model — a connected single-select group is the
+Expressive replacement for the segmented button.
+
+## Standard
+
+`standard` (the default) spaces the buttons by the size's between-space
+(18 / 12 / 8 / 8 / 8dp for `xs`–`xl`). Pressing a button widens it by 15%
+and squeezes its neighbours — press and hold to see it.
+
+<Demo>
+  <ButtonGroup aria-label="Actions">
+    <IconButton variant="tonal" icon={<EditIcon />} aria-label="Edit" />
+    <Button variant="filled">Share</Button>
+    <IconButton variant="tonal" icon={<SearchIcon />} aria-label="Search" />
+  </ButtonGroup>
+</Demo>
+
+```tsx
+<ButtonGroup aria-label="Actions">
+  <IconButton variant="tonal" icon={<EditIcon />} aria-label="Edit" />
+  <Button variant="filled">Share</Button>
+  <IconButton variant="tonal" icon={<SearchIcon />} aria-label="Search" />
+</ButtonGroup>
+```
+
+## Connected
+
+`connected` joins the buttons with a 2dp gap: the outer corners stay fully
+round, the inner corners use a per-size radius that tightens while pressed.
+
+<Demo>
+  <ButtonGroup variant="connected" aria-label="Period">
+    <Button variant="tonal">Day</Button>
+    <Button variant="tonal">Week</Button>
+    <Button variant="tonal">Month</Button>
+  </ButtonGroup>
+</Demo>
+
+## Sizes
+
+Match `size` on the group to the size of its buttons — it sets the
+between-space (standard) or the inner corners and 48dp minimum width
+(connected).
+
+<Demo>
+  <ButtonGroup variant="connected" size="xs" aria-label="Extra small">
+    <Button variant="outlined" size="xs">One</Button>
+    <Button variant="outlined" size="xs">Two</Button>
+    <Button variant="outlined" size="xs">Three</Button>
+  </ButtonGroup>
+  <ButtonGroup variant="connected" size="md" aria-label="Medium">
+    <Button variant="outlined" size="md">One</Button>
+    <Button variant="outlined" size="md">Two</Button>
+    <Button variant="outlined" size="md">Three</Button>
+  </ButtonGroup>
+</Demo>
+
+```tsx
+<ButtonGroup variant="connected" size="md">
+  <Button size="md">One</Button>
+  …
+</ButtonGroup>
+```
+
+## Single select
+
+Set `selectionMode="single"` and give each child a `value`; the group owns
+the state through `value` / `defaultValue` / `onChange(event, value)`.
+`selectionRequired` keeps one item selected (re-activating it does nothing).
+
+export function SingleSelectDemo() {
+  const [view, setView] = useState('week')
+  return (
+    <ButtonGroup
+      variant="connected"
+      selectionMode="single"
+      selectionRequired
+      value={view}
+      onChange={(event, next) => setView(next)}
+      aria-label="Calendar view"
+    >
+      <Button variant="tonal" value="day">Day</Button>
+      <Button variant="tonal" value="week">Week</Button>
+      <Button variant="tonal" value="month">Month</Button>
+    </ButtonGroup>
+  )
+}
+
+<Demo>
+  <SingleSelectDemo />
+</Demo>
+
+```tsx
+const [view, setView] = useState<string | null>('week')
+
+<ButtonGroup
+  variant="connected"
+  selectionMode="single"
+  selectionRequired
+  value={view}
+  onChange={(event, next) => setView(next)}
+  aria-label="Calendar view"
+>
+  <Button variant="tonal" value="day">Day</Button>
+  <Button variant="tonal" value="week">Week</Button>
+  <Button variant="tonal" value="month">Month</Button>
+</ButtonGroup>
+```
+
+## Multi select
+
+`selectionMode="multiple"` turns the children into toggle buttons; the value
+is a `string[]`.
+
+<Demo>
+  <ButtonGroup
+    variant="connected"
+    selectionMode="multiple"
+    defaultValue={['bold', 'underline']}
+    aria-label="Text style"
+  >
+    <IconButton variant="tonal" value="bold" icon={<BoldIcon />} aria-label="Bold" />
+    <IconButton variant="tonal" value="italic" icon={<ItalicIcon />} aria-label="Italic" />
+    <IconButton variant="tonal" value="underline" icon={<UnderlineIcon />} aria-label="Underline" />
+  </ButtonGroup>
+</Demo>
+
+```tsx
+<ButtonGroup
+  variant="connected"
+  selectionMode="multiple"
+  defaultValue={['bold', 'underline']}
+  onChange={(event, values) => setStyles(values)}
+  aria-label="Text style"
+>
+  <IconButton value="bold" icon={<BoldIcon />} aria-label="Bold" />
+  …
+</ButtonGroup>
+```
+
+## Vertical
+
+<Demo>
+  <ButtonGroup variant="connected" orientation="vertical" aria-label="Tools">
+    <IconButton variant="tonal" icon={<EditIcon />} aria-label="Edit" />
+    <IconButton variant="tonal" icon={<SearchIcon />} aria-label="Search" />
+    <IconButton variant="tonal" icon={<FavoriteBorderIcon />} aria-label="Favorite" />
+  </ButtonGroup>
+</Demo>
+
+## Accessibility
+
+- Arrow keys move focus between the buttons: <kbd>←</kbd> / <kbd>→</kbd>
+  when horizontal (mirrored in RTL), <kbd>↑</kbd> / <kbd>↓</kbd> when
+  vertical. <kbd>Home</kbd> / <kbd>End</kbd> jump to the ends; disabled
+  buttons are skipped.
+- `selectionMode="single"` renders a `radiogroup` of `radio` items with a
+  single Tab stop — arrow keys move focus **and** selection.
+- `selectionMode="multiple"` renders toggle buttons with `aria-pressed`.
+- Name the group with `aria-label` / `aria-labelledby`, and give icon-only
+  children their own `aria-label`.
+
+## Props
+
+<PropsTable component="ButtonGroup" />

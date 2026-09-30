@@ -1,0 +1,112 @@
+---
+title: SplitButton
+---
+
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { SplitButton, MenuItem } from 'm3-expressive-react'
+import { SendIcon, EventIcon, EditIcon, DeleteIcon } from '@site/src/components/icons/ActionIcons'
+
+# SplitButton
+
+MD3 Expressive split button: a leading action button joined to a trailing
+button that opens a `Menu` of related actions. Opening the menu rounds the
+trailing button's inner corner and flips its chevron.
+
+## Variants
+
+Both halves are styled by `Button`, so the variants and colors match it.
+
+export const sendMenu = (
+  <>
+    <MenuItem startIcon={<EventIcon />}>Schedule send</MenuItem>
+    <MenuItem startIcon={<EditIcon />}>Save as draft</MenuItem>
+    <MenuItem startIcon={<DeleteIcon />}>Discard</MenuItem>
+  </>
+)
+
+<Demo>
+  <SplitButton variant="elevated" menu={sendMenu} trailingAriaLabel="More send options">Send</SplitButton>
+  <SplitButton variant="filled" menu={sendMenu} trailingAriaLabel="More send options">Send</SplitButton>
+  <SplitButton variant="tonal" menu={sendMenu} trailingAriaLabel="More send options">Send</SplitButton>
+  <SplitButton variant="outlined" menu={sendMenu} trailingAriaLabel="More send options">Send</SplitButton>
+</Demo>
+
+```tsx
+<SplitButton
+  variant="filled"
+  onClick={send}
+  trailingAriaLabel="More send options"
+  menu={
+    <>
+      <MenuItem onClick={schedule}>Schedule send</MenuItem>
+      <MenuItem onClick={saveDraft}>Save as draft</MenuItem>
+    </>
+  }
+>
+  Send
+</SplitButton>
+```
+
+## Sizes
+
+<Demo>
+  <SplitButton size="xs" menu={sendMenu} trailingAriaLabel="More send options">Send</SplitButton>
+  <SplitButton size="sm" menu={sendMenu} trailingAriaLabel="More send options">Send</SplitButton>
+  <SplitButton size="md" menu={sendMenu} trailingAriaLabel="More send options">Send</SplitButton>
+  <SplitButton size="lg" menu={sendMenu} trailingAriaLabel="More send options">Send</SplitButton>
+</Demo>
+
+## Icons
+
+`startIcon` adds a leading icon. An icon-only leading button (`startIcon`
+without `children`) needs an `aria-label`, which is forwarded to the
+leading button.
+
+<Demo>
+  <SplitButton startIcon={<SendIcon />} menu={sendMenu} trailingAriaLabel="More send options">Send</SplitButton>
+  <SplitButton variant="tonal" startIcon={<SendIcon />} aria-label="Send" menu={sendMenu} trailingAriaLabel="More send options" />
+</Demo>
+
+```tsx
+<SplitButton startIcon={<SendIcon />} aria-label="Send" menu={menu} />
+```
+
+## Controlled menu
+
+The menu is uncontrolled by default (`defaultOpen`); pass `open` +
+`onOpenChange(open)` to control it. `menuAlign` aligns it to the trailing
+button (`'end'` by default).
+
+```tsx
+const [open, setOpen] = useState(false)
+
+<SplitButton open={open} onOpenChange={setOpen} menu={menu}>
+  Send
+</SplitButton>
+```
+
+## Disabled
+
+`disabled` disables both halves.
+
+<Demo>
+  <SplitButton disabled menu={sendMenu}>Send</SplitButton>
+  <SplitButton variant="outlined" disabled menu={sendMenu}>Send</SplitButton>
+</Demo>
+
+## Accessibility
+
+- Two native `<button>`s, each its own Tab stop. The `ref`, `onClick` and
+  extra props land on the leading (action) button.
+- The trailing button follows the APG menu-button pattern: it exposes
+  `aria-haspopup` / `aria-expanded`; <kbd>Enter</kbd> / <kbd>Space</kbd> /
+  <kbd>↓</kbd> open the menu on the first item (<kbd>↑</kbd>: the last),
+  arrow keys cycle the items, <kbd>Escape</kbd> closes it and returns focus.
+- The trailing button's name defaults to "More options"; prefer a
+  `trailingAriaLabel` tied to the leading action, such as "More send
+  options".
+
+## Props
+
+<PropsTable component="SplitButton" />

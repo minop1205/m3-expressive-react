@@ -1,0 +1,155 @@
+---
+title: FabMenu
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { FabMenu, FabMenuItem } from 'm3-expressive-react'
+import {
+  AddIcon,
+  EditIcon,
+  EventIcon,
+  ImageIcon,
+  MailIcon,
+} from '@site/src/components/icons/ActionIcons'
+
+# FabMenu
+
+MD3 Expressive FAB menu: a FAB that opens into a vertical stack of up to six
+labelled actions. The FAB morphs into a 56dp close button and the items
+reveal from the trailing edge, bottom item first. It closes on outside
+click, <kbd>Escape</kbd>, or item selection.
+
+export const items = (
+  <>
+    <FabMenuItem icon={<EditIcon />}>New note</FabMenuItem>
+    <FabMenuItem icon={<EventIcon />}>Reminder</FabMenuItem>
+    <FabMenuItem icon={<ImageIcon />}>Image</FabMenuItem>
+    <FabMenuItem icon={<MailIcon />}>Message</FabMenuItem>
+  </>
+)
+
+export function Stage({ children }) {
+  return (
+    <div style={{ height: 360, display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', gap: 24, flex: 1 }}>
+      {children}
+    </div>
+  )
+}
+
+## Basic
+
+Click the FAB to open the menu.
+
+<Demo>
+  <Stage>
+    <FabMenu icon={<AddIcon />} ariaLabel="Create">
+      {items}
+    </FabMenu>
+  </Stage>
+</Demo>
+
+```tsx
+<FabMenu icon={<AddIcon />} ariaLabel="Create">
+  <FabMenuItem icon={<EditIcon />} onClick={newNote}>New note</FabMenuItem>
+  <FabMenuItem icon={<EventIcon />} onClick={newReminder}>Reminder</FabMenuItem>
+  <FabMenuItem icon={<ImageIcon />} onClick={newImage}>Image</FabMenuItem>
+</FabMenu>
+```
+
+## Colors
+
+`color` picks the `primary` / `secondary` / `tertiary` set: items use its
+`*-container` roles and the open close button its base roles.
+
+<Demo>
+  <Stage>
+    <FabMenu icon={<AddIcon />} ariaLabel="Create" color="secondary">
+      {items}
+    </FabMenu>
+  </Stage>
+  <Stage>
+    <FabMenu icon={<AddIcon />} ariaLabel="Create" color="tertiary">
+      {items}
+    </FabMenu>
+  </Stage>
+</Demo>
+
+## Sizes and tonal
+
+The menu opens from any FAB size — `size="regular"` (default), `medium` or
+`large`. The closed FAB is tonal (`*-container`) by default; `tonal={false}`
+gives it the high-emphasis base roles. The close button is always 56dp,
+pinned to the FAB's top-trailing corner.
+
+<Demo>
+  <Stage>
+    <FabMenu icon={<AddIcon />} ariaLabel="Create" size="regular">{items}</FabMenu>
+    <FabMenu icon={<AddIcon />} ariaLabel="Create" size="medium">{items}</FabMenu>
+    <FabMenu icon={<AddIcon />} ariaLabel="Create" size="large">{items}</FabMenu>
+    <FabMenu icon={<AddIcon />} ariaLabel="Create" size="large" tonal={false}>{items}</FabMenu>
+  </Stage>
+</Demo>
+
+```tsx
+<FabMenu icon={<AddIcon />} ariaLabel="Create" size="large" tonal={false}>
+  …
+</FabMenu>
+```
+
+## Controlled
+
+Use `open` + `onOpenChange(open)` to control the menu (or `defaultOpen` for
+an uncontrolled initial state).
+
+export function ControlledDemo() {
+  const [open, setOpen] = useState(false)
+  return (
+    <Stage>
+      <FabMenu icon={<AddIcon />} ariaLabel="Create" open={open} onOpenChange={setOpen}>
+        {items}
+      </FabMenu>
+      <span>Menu is {open ? 'open' : 'closed'}</span>
+    </Stage>
+  )
+}
+
+<Demo>
+  <ControlledDemo />
+</Demo>
+
+```tsx
+const [open, setOpen] = useState(false)
+
+<FabMenu icon={<AddIcon />} ariaLabel="Create" open={open} onOpenChange={setOpen}>
+  …
+</FabMenu>
+```
+
+## Accessibility
+
+- `ariaLabel` is **required**: it names the toggle and the menu, and stays
+  the same while open — the state is exposed through `aria-expanded`
+  (`closeAriaLabel` is deprecated and ignored).
+- Opening keeps focus on the toggle. <kbd>Tab</kbd> / <kbd>↓</kbd> move to
+  the top item (<kbd>↑</kbd>: the bottom one); <kbd>↑</kbd> / <kbd>↓</kbd>
+  cycle the items with wrap, <kbd>Home</kbd> / <kbd>End</kbd> jump;
+  <kbd>Shift</kbd>+<kbd>Tab</kbd> returns to the toggle; <kbd>Tab</kbd> from
+  the items closes the menu and moves on.
+- <kbd>Escape</kbd> and item selection close the menu and return focus to
+  the toggle.
+- Items are `menuitem`s. While closed the list is `inert` and `aria-hidden`,
+  so hidden items are out of the Tab order and the accessibility tree.
+
+## Props
+
+<PropsTable component="FabMenu" />
+
+### FabMenuItem
+
+A labelled action inside a `FabMenu`: `icon` (decorative), `children` (the
+label) and the native `<button>` attributes such as `onClick` and
+`disabled`.
+
+<PropsTable component="FabMenuItem" />
