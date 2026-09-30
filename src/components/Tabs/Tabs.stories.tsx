@@ -53,3 +53,33 @@ export const WithIcons: Story = {
     )
   },
 }
+
+const scrollableTabs = [
+  'Overview',
+  'Specifications',
+  'Reviews',
+  'Pricing',
+  'Accessories',
+  'Support',
+  'Downloads',
+  'Community',
+]
+
+export const Scrollable: Story = {
+  render: () => {
+    const [value, setValue] = useState('pricing')
+    return (
+      <Tabs
+        value={value}
+        onChange={(_event, v) => setValue(v)}
+        scrollable
+        aria-label="Product sections"
+        style={{ width: 420 }}
+      >
+        {scrollableTabs.map((label) => (
+          <Tab key={label} value={label.toLowerCase()} label={label} />
+        ))}
+      </Tabs>
+    )
+  },
+}

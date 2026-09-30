@@ -1,37 +1,69 @@
 /**
- * MD3 (Expressive) Toolbar. Docked = full-width 64dp bar; floating = rounded
- * pill with 8dp padding and 4dp gaps (Compose FloatingToolbarTokens: CornerFull,
- * ContainerLeadingSpace/TrailingSpace 8dp, ContainerBetweenSpace 4dp). Standard
- * color = SurfaceContainer / OnSurface, vibrant = PrimaryContainer /
- * OnPrimaryContainer.
+ * MD3 (Expressive) Toolbar. Docked = full-width 64dp bar, 16dp outside padding,
+ * items centered 32dp apart (m3 Docked `max space between actions` 32dp, min 4dp);
+ * floating = rounded 64dp pill with 8dp padding and 4dp gaps (Compose
+ * FloatingToolbarTokens: CornerFull, ContainerSize 64, Leading/TrailingSpace 8dp,
+ * ContainerBetweenSpace 4dp → item pitch 52).
+ *
+ * Items use IconButton's host-slot contract (see IconButton.module.css): each
+ * IconButton takes a 48dp layout box (Compose minimumInteractiveComponentSize),
+ * and the color scheme supplies the standard IconButton's icon / state-layer /
+ * selected colors — the CSS analogue of Compose's LocalContentColor, per the
+ * m3.material.io Toolbar - Color - Standard / Vibrant token sets.
  */
 
 .toolbar {
   display: flex;
   box-sizing: border-box;
   align-items: center;
+  --md-icon-button-layout-min-size: 48px;
 }
 
 /* ---- Color schemes ---- */
 .toolbar[data-color='standard'] {
   background-color: var(--md-sys-color-surface-container);
-  color: var(--md-sys-color-on-surface);
+  color: var(--md-sys-color-on-surface-variant);
+  --md-icon-button-icon-color: var(--md-sys-color-on-surface-variant);
+  --md-icon-button-selected-container-color: var(--md-sys-color-secondary-container);
+  --md-icon-button-selected-icon-color: var(--md-sys-color-on-secondary-container);
 }
 
 .toolbar[data-color='vibrant'] {
   background-color: var(--md-sys-color-primary-container);
   color: var(--md-sys-color-on-primary-container);
+  --md-icon-button-icon-color: var(--md-sys-color-on-primary-container);
+  --md-icon-button-selected-container-color: var(--md-sys-color-surface-container);
+  --md-icon-button-selected-icon-color: var(--md-sys-color-on-surface);
 }
 
 /* ---- Docked: full-width bottom bar ---- */
+/*
+ * Gap = 32dp, shrinking toward 4dp when the items (48dp slots) no longer fit:
+ * clamp(4px, (content width − n × 48px) / (n − 1), 32px). n is counted with
+ * :has() up to 10 items (more items → treated as 10, i.e. the tightest gap).
+ */
 .toolbar[data-variant='docked'] {
+  --_item-count: 1;
   width: 100%;
   min-height: 64px;
   flex-direction: row;
   justify-content: center;
-  gap: 8px;
+  column-gap: clamp(
+    4px,
+    (100% - var(--_item-count) * 48px) / max(1, var(--_item-count) - 1),
+    32px
+  );
   padding-inline: 16px;
 }
+.toolbar[data-variant='docked']:has(> :nth-child(2)) { --_item-count: 2; }
+.toolbar[data-variant='docked']:has(> :nth-child(3)) { --_item-count: 3; }
+.toolbar[data-variant='docked']:has(> :nth-child(4)) { --_item-count: 4; }
+.toolbar[data-variant='docked']:has(> :nth-child(5)) { --_item-count: 5; }
+.toolbar[data-variant='docked']:has(> :nth-child(6)) { --_item-count: 6; }
+.toolbar[data-variant='docked']:has(> :nth-child(7)) { --_item-count: 7; }
+.toolbar[data-variant='docked']:has(> :nth-child(8)) { --_item-count: 8; }
+.toolbar[data-variant='docked']:has(> :nth-child(9)) { --_item-count: 9; }
+.toolbar[data-variant='docked']:has(> :nth-child(10)) { --_item-count: 10; }
 
 /* ---- Floating: rounded, elevated pill ---- */
 .toolbar[data-variant='floating'] {
@@ -44,8 +76,10 @@
 
 .toolbar[data-variant='floating'][data-orientation='horizontal'] {
   flex-direction: row;
+  min-height: 64px;
 }
 
 .toolbar[data-variant='floating'][data-orientation='vertical'] {
   flex-direction: column;
+  min-width: 64px;
 }

@@ -1,10 +1,14 @@
 /**
- * MD3 (Expressive) FAB menu. A FAB anchored bottom-trailing that opens a
- * vertical stack of labelled action items above it. Per m3.material.io /
- * Compose FloatingActionButtonMenu: items are fully-rounded pills at medium-
- * button size (56dp), container/on-container of the chosen color set; the FAB
- * morphs into a 56dp close button (primaryContainer → primary). Items stagger
- * in from the FAB. 16dp screen margins are the caller's responsibility.
+ * MD3 (Expressive) FAB menu. A FAB (regular 56 / medium 80 / large 96)
+ * anchored bottom-trailing that opens a vertical stack of labelled action
+ * items above it. Per m3.material.io / Compose FloatingActionButtonMenu:
+ * items are fully-rounded 56dp pills (medium-button specs) with no elevation,
+ * container/on-container of the chosen color set, 4dp apart and 8dp above the
+ * close button, aligned to the trailing edge (logical — mirrored in RTL). The
+ * FAB morphs into a 56dp close button (20dp icon) pinned to the top-trailing
+ * corner of its footprint. Items reveal from the trailing edge (width + fade),
+ * bottom first; closing hides the top first. 16dp screen margins are the
+ * caller's responsibility.
  */
 
 .root {
@@ -14,36 +18,57 @@
   align-items: flex-end;
   width: fit-content;
 
-  /* Color sets map container / on-container roles. */
-  --_container: var(--md-sys-color-primary-container);
-  --_on-container: var(--md-sys-color-on-primary-container);
-  --_fab-open: var(--md-sys-color-primary);
-  --_fab-open-icon: var(--md-sys-color-on-primary);
+  /* Color sets map container / on-container (items, tonal FAB) and base
+     (close button, high-emphasis FAB) roles. */
+  --_container-color: var(--md-sys-color-primary-container);
+  --_content-color: var(--md-sys-color-on-primary-container);
+  --_accent-color: var(--md-sys-color-primary);
+  --_on-accent-color: var(--md-sys-color-on-primary);
+
+  /* Closed FAB (Compose ToggleFloatingActionButtonDefaults). */
+  --_fab-size: 56px;
+  --_fab-container-shape: var(--md-sys-shape-corner-large);
+  --_fab-icon-size: 24px;
+  /* Open close button (FabMenuBaselineTokens.CloseButton*). */
+  --_close-size: 56px;
+  --_close-icon-size: 20px;
 }
 
 .root[data-color='secondary'] {
-  --_container: var(--md-sys-color-secondary-container);
-  --_on-container: var(--md-sys-color-on-secondary-container);
-  --_fab-open: var(--md-sys-color-secondary);
-  --_fab-open-icon: var(--md-sys-color-on-secondary);
+  --_container-color: var(--md-sys-color-secondary-container);
+  --_content-color: var(--md-sys-color-on-secondary-container);
+  --_accent-color: var(--md-sys-color-secondary);
+  --_on-accent-color: var(--md-sys-color-on-secondary);
 }
 
 .root[data-color='tertiary'] {
-  --_container: var(--md-sys-color-tertiary-container);
-  --_on-container: var(--md-sys-color-on-tertiary-container);
-  --_fab-open: var(--md-sys-color-tertiary);
-  --_fab-open-icon: var(--md-sys-color-on-tertiary);
+  --_container-color: var(--md-sys-color-tertiary-container);
+  --_content-color: var(--md-sys-color-on-tertiary-container);
+  --_accent-color: var(--md-sys-color-tertiary);
+  --_on-accent-color: var(--md-sys-color-on-tertiary);
 }
 
-/* ---- Item list (stacks upward, right-aligned) ---- */
+.root[data-size='medium'] {
+  --_fab-size: 80px;
+  --_fab-container-shape: var(--md-sys-shape-corner-large-increased);
+  --_fab-icon-size: 28px;
+}
+
+.root[data-size='large'] {
+  --_fab-size: 96px;
+  --_fab-container-shape: var(--md-sys-shape-corner-extra-large);
+  --_fab-icon-size: 36px;
+}
+
+/* ---- Item list (stacks upward, trailing-aligned) ---- */
 .list {
   position: absolute;
-  bottom: calc(100% + 12px);
-  right: 0;
+  bottom: calc(100% + 8px);
+  inset-inline-end: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 8px;
+  gap: 4px;
   pointer-events: none;
 }
 
@@ -51,18 +76,37 @@
   pointer-events: auto;
 }
 
+/* Item enter / exit (Compose FloatingActionButtonMenuItem): the pill's width
+   grows from the trailing edge on FastSpatial (content stays end-aligned, so
+   it is revealed, not squashed) while it fades in on FastEffects. The clip
+   bleeds --_clip-bleed past the pill so the focus ring is not cut off. */
 .itemSlot {
+  --_clip-bleed: 10px;
+  --_clip-round: calc(28px + var(--_clip-bleed));
   opacity: 0;
-  transform: translateY(12px) scale(0.9);
+  clip-path: inset(
+    calc(-1 * var(--_clip-bleed)) calc(-1 * var(--_clip-bleed)) calc(-1 * var(--_clip-bleed))
+      calc(100% + var(--_clip-bleed)) round var(--_clip-round)
+  );
   transition:
-    opacity var(--md-sys-motion-duration-short2) linear var(--_stagger, 0ms),
-    transform var(--md-sys-motion-duration-medium1)
-      cubic-bezier(0.34, 1.4, 0.5, 1) var(--_stagger, 0ms);
+    opacity var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing) var(--_exit-delay, 0ms),
+    clip-path var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing) var(--_exit-delay, 0ms);
+}
+
+/* RTL: the trailing edge is the left one. */
+.itemSlot:dir(rtl) {
+  clip-path: inset(
+    calc(-1 * var(--_clip-bleed)) calc(100% + var(--_clip-bleed)) calc(-1 * var(--_clip-bleed))
+      calc(-1 * var(--_clip-bleed)) round var(--_clip-round)
+  );
 }
 
 .list[data-open] .itemSlot {
   opacity: 1;
-  transform: translateY(0) scale(1);
+  clip-path: inset(calc(-1 * var(--_clip-bleed)) round var(--_clip-round));
+  transition-delay: var(--_enter-delay, 0ms);
 }
 
 /* ---- Menu item pill ---- */
@@ -81,9 +125,8 @@
   cursor: pointer;
   white-space: nowrap;
   border-radius: var(--md-sys-shape-corner-full);
-  background-color: var(--_container);
-  color: var(--_on-container);
-  box-shadow: var(--md-sys-elevation-shadow-level1);
+  background-color: var(--_container-color);
+  color: var(--_content-color);
 
   font-family: var(--md-sys-typescale-title-medium-font);
   font-size: var(--md-sys-typescale-title-medium-size);
@@ -91,7 +134,7 @@
   font-weight: var(--md-sys-typescale-title-medium-weight);
   letter-spacing: var(--md-sys-typescale-title-medium-tracking);
 
-  --md-ripple-color: var(--_on-container);
+  --md-ripple-color: var(--_content-color);
   --md-focus-ring-color: var(--md-sys-color-secondary);
 }
 
@@ -118,40 +161,65 @@
 }
 
 /* ---- FAB / close button ---- */
-.fab {
+
+/* The closed FAB's footprint — keeps the layout stable while the button
+   shrinks into its top-trailing corner. */
+.fabSlot {
   position: relative;
+  display: block;
+  width: var(--_fab-size);
+  height: var(--_fab-size);
+}
+
+.fab {
+  /* Tonal closed FAB (default): container roles. */
+  --_toggle-container-color: var(--_container-color);
+  --_toggle-icon-color: var(--_content-color);
+  --_toggle-size: var(--_fab-size);
+  --_toggle-shape: var(--_fab-container-shape);
+  --_toggle-icon-size: var(--_fab-icon-size);
+
+  position: absolute;
+  top: 0;
+  inset-inline-end: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  width: 56px;
-  height: 56px;
+  width: var(--_toggle-size);
+  height: var(--_toggle-size);
+  margin: 0;
+  padding: 0;
   appearance: none;
   border: none;
   outline: none;
   cursor: pointer;
-  border-radius: var(--md-sys-shape-corner-large);
-  background-color: var(--_container);
-  color: var(--_on-container);
+  border-radius: var(--_toggle-shape);
+  background-color: var(--_toggle-container-color);
+  color: var(--_toggle-icon-color);
   box-shadow: var(--md-sys-elevation-shadow-level3);
 
-  --md-ripple-color: var(--_on-container);
+  --md-ripple-color: var(--_toggle-icon-color);
   --md-focus-ring-color: var(--md-sys-color-secondary);
 
-  transition:
-    background-color var(--md-sys-motion-duration-medium1)
-      var(--md-sys-motion-easing-standard),
-    color var(--md-sys-motion-duration-medium1)
-      var(--md-sys-motion-easing-standard),
-    border-radius var(--md-sys-motion-duration-medium1)
-      cubic-bezier(0.34, 1.4, 0.5, 1);
+  /* Compose drives size, corner, and colors from one FastSpatial progress. */
+  transition-property: width, height, border-radius, background-color, color;
+  transition-duration: var(--md-sys-motion-spring-fast-spatial-duration);
+  transition-timing-function: var(--md-sys-motion-spring-fast-spatial-easing);
+}
+
+/* High-emphasis closed FAB (`tonal={false}`): base roles. */
+.root:not([data-tonal]) .fab {
+  --_toggle-container-color: var(--_accent-color);
+  --_toggle-icon-color: var(--_on-accent-color);
 }
 
 .root[data-open] .fab {
-  background-color: var(--_fab-open);
-  color: var(--_fab-open-icon);
-  border-radius: var(--md-sys-shape-corner-full);
-  --md-ripple-color: var(--_fab-open-icon);
+  --_toggle-container-color: var(--_accent-color);
+  --_toggle-icon-color: var(--_on-accent-color);
+  --_toggle-size: var(--_close-size);
+  --_toggle-shape: calc(var(--_close-size) / 2);
+  --_toggle-icon-size: var(--_close-icon-size);
 }
 
 .fab:hover {
@@ -164,9 +232,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  font-size: 24px;
+  width: var(--_toggle-icon-size);
+  height: var(--_toggle-icon-size);
+  font-size: var(--_toggle-icon-size);
+  transition-property: width, height, font-size;
+  transition-duration: var(--md-sys-motion-spring-fast-spatial-duration);
+  transition-timing-function: var(--md-sys-motion-spring-fast-spatial-easing);
 }
 
 .fabIcon svg,
@@ -175,9 +246,18 @@
   height: 100%;
 }
 
+/* Reduced motion (B3): state changes are instant; items only fade. */
 @media (prefers-reduced-motion: reduce) {
   .itemSlot,
-  .fab {
+  .itemSlot:dir(rtl),
+  .list[data-open] .itemSlot {
+    clip-path: none;
+    transition: opacity var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing);
+  }
+
+  .fab,
+  .fabIcon {
     transition: none;
   }
 }

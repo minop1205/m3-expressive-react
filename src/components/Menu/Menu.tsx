@@ -19,6 +19,7 @@ import {
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import { resolvePopupSide } from '../../internal/usePopupPosition'
 import { moveMenuFocus } from '../../internal/menuNavigation'
 import styles from './Menu.module.css'
 
@@ -139,7 +140,7 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
 
   // Collision handling (Compose falls back Below → Above): before paint,
   // flip above the trigger when the space below can't fit the menu and the
-  // space above is larger.
+  // space above is larger — the shared flip rule of src/internal/usePopupPosition.
   useLayoutEffect(() => {
     if (!open) {
       setPlacement('below')
@@ -148,11 +149,8 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     const anchor = wrapperRef.current?.getBoundingClientRect()
     const menuHeight = menuRef.current?.offsetHeight ?? 0
     if (!anchor) return
-    const spaceBelow = window.innerHeight - anchor.bottom
-    const spaceAbove = anchor.top
-    setPlacement(
-      spaceBelow < menuHeight + ANCHOR_GAP_PX && spaceAbove > spaceBelow ? 'above' : 'below',
-    )
+    const side = resolvePopupSide(anchor, menuHeight, window.innerHeight, 'bottom', ANCHOR_GAP_PX)
+    setPlacement(side === 'top' ? 'above' : 'below')
   }, [open])
 
   useEffect(() => {
