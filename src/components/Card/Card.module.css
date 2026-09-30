@@ -45,6 +45,12 @@
   border: 1px solid var(--md-sys-color-outline-variant);
 }
 
+/* Link card (`href` → <a>): no link styling of its own. */
+.link {
+  color: var(--_content-color);
+  text-decoration: none;
+}
+
 /* --------------------------------------------------------------------------- */
 /* Interactive (clickable) — hover elevation bump                              */
 /* --------------------------------------------------------------------------- */
@@ -55,22 +61,28 @@
 }
 
 .card[data-interactive]:not([data-dragged])[data-variant='filled']:hover,
-.card[data-interactive]:not([data-dragged])[data-variant='outlined']:hover {
+.card[data-interactive]:not([data-dragged])[data-variant='outlined']:hover,
+.card:not([data-dragged])[data-variant='filled']:has(> .actionArea:not([data-disabled]):hover),
+.card:not([data-dragged])[data-variant='outlined']:has(> .actionArea:not([data-disabled]):hover) {
   --_elevation: var(--md-sys-elevation-shadow-level1);
 }
 
-.card[data-interactive]:not([data-dragged])[data-variant='elevated']:hover {
+.card[data-interactive]:not([data-dragged])[data-variant='elevated']:hover,
+.card:not([data-dragged])[data-variant='elevated']:has(> .actionArea:not([data-disabled]):hover) {
   --_elevation: var(--md-sys-elevation-shadow-level2);
 }
 
 /* Pressed: the latest interaction wins over hover (Compose CardElevation) —
    filled / outlined 0, elevated 1dp. A press on a nested control is that
-   control's, not the card's (#299). */
-.card[data-interactive]:not([data-dragged]):active:not(:has(:is(button, a[href], input, select, textarea, label, [role], [tabindex]):active)) {
+   control's, not the card's (#299). A CardActionArea drives the card's
+   hover / pressed elevation the same way. */
+.card[data-interactive]:not([data-dragged]):active:not(:has(:is(button, a[href], input, select, textarea, label, [role], [tabindex]):active)),
+.card:not([data-dragged])[data-variant]:has(> .actionArea:not([data-disabled]):active) {
   --_elevation: var(--md-sys-elevation-shadow-level0);
 }
 
-.card[data-interactive]:not([data-dragged])[data-variant='elevated']:active:not(:has(:is(button, a[href], input, select, textarea, label, [role], [tabindex]):active)) {
+.card[data-interactive]:not([data-dragged])[data-variant='elevated']:active:not(:has(:is(button, a[href], input, select, textarea, label, [role], [tabindex]):active)),
+.card:not([data-dragged])[data-variant='elevated']:has(> .actionArea:not([data-disabled]):active) {
   --_elevation: var(--md-sys-elevation-shadow-level1);
 }
 
@@ -115,6 +127,41 @@
 
 .card[data-disabled][data-variant='outlined'] {
   border-color: color-mix(in srgb, var(--md-sys-color-outline) 12%, transparent);
+}
+
+/* --------------------------------------------------------------------------- */
+/* CardActionArea / CardActions (B5)                                           */
+/* --------------------------------------------------------------------------- */
+/* The primary action wrapping the card content: button (`div[role=button]`,
+   which — unlike <button> — may hold headings / paragraphs / media) or link.
+   Its ripple and focus ring follow the card's corners. */
+.actionArea {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: inherit;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  --md-ripple-color: var(--md-sys-color-on-surface);
+  --md-focus-ring-color: var(--md-sys-color-secondary);
+}
+
+.actionArea[data-disabled] {
+  cursor: default;
+}
+
+/* Actions beside the action area: end-aligned, 8dp apart, 16dp padding. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 16px 16px;
 }
 
 @media (prefers-reduced-motion: reduce) {

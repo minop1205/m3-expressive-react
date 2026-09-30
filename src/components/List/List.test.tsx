@@ -186,6 +186,98 @@ describe('List / ListItem', () => {
     expect(ref.current).toBeInstanceOf(HTMLLIElement)
   })
 
+  describe('primary action and trailing as siblings (B5, #301)', () => {
+    it('renders the primary action as a <button> beside the trailing slot', () => {
+      render(
+        <List aria-label="Settings">
+          <ListItem
+            headline="Wi-Fi"
+            leading={<svg aria-hidden="true" />}
+            onClick={() => {}}
+            trailing={<Switch aria-label="Wi-Fi toggle" />}
+          />
+        </List>,
+      )
+      const action = screen.getByRole('button', { name: 'Wi-Fi' })
+      const toggle = screen.getByRole('switch', { name: 'Wi-Fi toggle' })
+      expect(action.tagName).toBe('BUTTON')
+      expect(action).toHaveAttribute('type', 'button')
+      expect(action.contains(toggle)).toBe(false)
+      // Same row, same listitem.
+      expect(action.closest('li')).toBe(toggle.closest('li'))
+    })
+
+    it('renders an <a href> primary action for href', async () => {
+      render(
+        <List aria-label="Links">
+          <ListItem headline="Docs" href="/docs" target="_blank" rel="noopener" />
+        </List>,
+      )
+      const link = screen.getByRole('link', { name: 'Docs' })
+      expect(link).toHaveAttribute('href', '/docs')
+      expect(link).toHaveAttribute('target', '_blank')
+      expect(link).toHaveAttribute('rel', 'noopener')
+    })
+
+    it('puts role, tabIndex and aria-* on the primary action, other props on the <li>', () => {
+      render(
+        <ListItem
+          headline="Row"
+          onClick={() => {}}
+          aria-label="Open row"
+          role="menuitem"
+          tabIndex={-1}
+          id="row-1"
+          data-testid="root"
+        />,
+      )
+      const action = screen.getByRole('menuitem', { name: 'Open row' })
+      expect(action).toHaveAttribute('tabindex', '-1')
+      const root = screen.getByTestId('root')
+      expect(root.tagName).toBe('LI')
+      expect(root).toHaveAttribute('id', 'row-1')
+      expect(root).not.toHaveAttribute('aria-label')
+    })
+
+    it('a disabled actionable row renders a disabled button', () => {
+      render(<ListItem headline="Off" onClick={() => {}} disabled />)
+      expect(screen.getByRole('button', { name: 'Off' })).toBeDisabled()
+    })
+
+    it('has no axe violations with trailing controls (no nested-interactive)', async () => {
+      const { container } = render(
+        <List aria-label="Settings">
+          <ListItem
+            headline="Wi-Fi"
+            onClick={() => {}}
+            trailing={<Switch aria-label="Wi-Fi toggle" />}
+          />
+          <ListItem
+            headline="Sync"
+            href="/sync"
+            trailing={<Checkbox aria-label="Sync check" />}
+          />
+        </List>,
+      )
+      expect(await axe(container)).toHaveNoViolations()
+    })
+  })
+
+  describe('leading slot (#227)', () => {
+    it('is not hidden from assistive technology', async () => {
+      const { container } = render(
+        <List aria-label="Pick">
+          <ListItem headline="Ada" leading={<img src="data:," alt="Ada avatar" />} />
+          <ListItem headline="Agree" leading={<Checkbox aria-label="Agree" />} />
+        </List>,
+      )
+      expect(screen.getByRole('img', { name: 'Ada avatar' })).toBeInTheDocument()
+      expect(screen.getByRole('checkbox', { name: 'Agree' })).toBeInTheDocument()
+      expect(container.querySelector('[aria-hidden="true"] input')).toBeNull()
+      expect(await axe(container)).toHaveNoViolations()
+    })
+  })
+
   it('has no axe violations', async () => {
     const { container } = render(
       <List aria-label="Accessible">
