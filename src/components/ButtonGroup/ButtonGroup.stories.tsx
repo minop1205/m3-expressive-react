@@ -51,3 +51,84 @@ export const Mixed: Story = {
     </ButtonGroup>
   ),
 }
+
+const SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const
+
+/** Standard between-space per size (18 / 12 / 8 / 8 / 8dp). */
+export const Sizes: Story = {
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, alignItems: 'flex-start' }}>
+      {SIZES.map((size) => (
+        <ButtonGroup key={size} size={size} aria-label={`Actions ${size}`}>
+          <IconButton
+            variant="tonal"
+            size={size}
+            icon={<span aria-hidden="true">⏮</span>}
+            aria-label="Previous"
+          />
+          <Button variant="filled" size={size}>
+            Play
+          </Button>
+          <IconButton
+            variant="tonal"
+            size={size}
+            icon={<span aria-hidden="true">⏭</span>}
+            aria-label="Next"
+          />
+        </ButtonGroup>
+      ))}
+    </div>
+  ),
+}
+
+/** Connected inner corners per size, the 48dp minimum width at xs / sm, and a
+ * selected (fully round) toggle in the middle. */
+export const ConnectedSizes: Story = {
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, alignItems: 'flex-start' }}>
+      {SIZES.map((size) => (
+        <ButtonGroup key={size} variant="connected" size={size} aria-label={`Alignment ${size}`}>
+          <IconButton
+            variant="tonal"
+            size={size}
+            toggle
+            icon={<span aria-hidden="true">⯇</span>}
+            aria-label="Left"
+          />
+          <IconButton
+            variant="tonal"
+            size={size}
+            toggle
+            defaultSelected
+            icon={<span aria-hidden="true">≡</span>}
+            aria-label="Center"
+          />
+          <IconButton
+            variant="tonal"
+            size={size}
+            toggle
+            icon={<span aria-hidden="true">⯈</span>}
+            aria-label="Right"
+          />
+        </ButtonGroup>
+      ))}
+    </div>
+  ),
+}
+
+/** Connected toggle buttons: selected = fully round; disabled stays in line. */
+export const ConnectedToggle: Story = {
+  render: () => (
+    <ButtonGroup variant="connected" aria-label="Text style">
+      <Button variant="tonal" toggle defaultSelected>
+        Bold
+      </Button>
+      <Button variant="tonal" toggle>
+        Italic
+      </Button>
+      <Button variant="tonal" toggle disabled>
+        Underline
+      </Button>
+    </ButtonGroup>
+  ),
+}
