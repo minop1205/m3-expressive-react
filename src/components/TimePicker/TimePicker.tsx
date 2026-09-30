@@ -10,6 +10,9 @@ import {
 } from 'react'
 import clsx from 'clsx'
 import { KeyboardIcon, ScheduleIcon } from '../../internal/icons'
+import { Ripple } from '../../primitives/Ripple/Ripple'
+import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import { IconButton } from '../IconButton/IconButton'
 import styles from './TimePicker.module.css'
 
 export interface TimeValue {
@@ -197,6 +200,7 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
       const errorId = `${errorIdBase}-${field}-error`
       return (
         <div className={styles.fieldColumn}>
+          <span className={styles.fieldStateLayer} aria-hidden="true" />
           <input
             ref={field === 'minute' ? minuteInputRef : undefined}
             type="text"
@@ -219,7 +223,17 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
             onChange={onFieldChange(field)}
             onKeyDown={onFieldKeyDown(field)}
           />
-          <span id={errorId} className={styles.supportingText} aria-live="polite">
+          {/* Compose SupportingText: the field name below it, swapped for the
+              error message (announced politely) while out of range. */}
+          <span className={styles.supportingText} aria-hidden="true" hidden={invalid}>
+            {field === 'hour' ? 'Hour' : 'Minute'}
+          </span>
+          <span
+            id={errorId}
+            className={styles.supportingText}
+            data-error="true"
+            aria-live="polite"
+          >
             {invalid ? FIELD_ERROR[field] : ''}
           </span>
         </div>
@@ -254,6 +268,8 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
                 onClick={() => setActiveField('hour')}
               >
                 {String(hour12).padStart(2, '0')}
+                <FocusRing />
+                <Ripple />
               </button>
             )}
             <span className={styles.separator}>:</span>
@@ -268,6 +284,8 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
                 onClick={() => setActiveField('minute')}
               >
                 {String(current.minute).padStart(2, '0')}
+                <FocusRing />
+                <Ripple />
               </button>
             )}
           </div>
@@ -279,6 +297,8 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
               onClick={() => setPeriod('AM')}
             >
               AM
+              <FocusRing />
+              <Ripple />
             </button>
             <button
               type="button"
@@ -287,6 +307,8 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
               onClick={() => setPeriod('PM')}
             >
               PM
+              <FocusRing />
+              <Ripple />
             </button>
           </div>
         </div>
@@ -315,6 +337,8 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
                   }
                 >
                   {activeField === 'minute' ? String(n).padStart(2, '0') : n}
+                  <FocusRing />
+                  <Ripple />
                 </button>
               )
             })}
@@ -322,14 +346,12 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
         )}
 
         <div className={styles.actions}>
-          <button
-            type="button"
-            className={styles.modeToggle}
-            aria-label={isInput ? 'Switch to dial' : 'Switch to keyboard input'}
+          <IconButton
+            variant="standard"
+            icon={isInput ? <ScheduleIcon /> : <KeyboardIcon />}
+            aria-label={isInput ? 'Toggle dial picker' : 'Toggle input picker'}
             onClick={() => setViewMode(isInput ? 'dial' : 'input')}
-          >
-            {isInput ? <ScheduleIcon /> : <KeyboardIcon />}
-          </button>
+          />
         </div>
       </div>
     )

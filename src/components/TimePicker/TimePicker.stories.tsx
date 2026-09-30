@@ -24,3 +24,11 @@ export const Default: Story = {
     )
   },
 }
+
+/** Keyboard entry (m3 "time input"): 96×72 fields with Hour / Minute supporting text. */
+export const InputMode: Story = {
+  render: () => {
+    const [time, setTime] = useState<TimeValue>({ hour: 10, minute: 30 })
+    return <TimePicker mode="input" value={time} onChange={setTime} />
+  },
+}
