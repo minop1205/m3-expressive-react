@@ -1,0 +1,144 @@
+---
+title: Tabs
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Tabs, Tab } from 'm3-expressive-react'
+import FlightIcon from '@material-symbols/svg-400/outlined/flight.svg'
+import HotelIcon from '@material-symbols/svg-400/outlined/hotel.svg'
+import ExploreIcon from '@material-symbols/svg-400/outlined/explore.svg'
+
+# Tabs
+
+MD3 tabs: a `role="tablist"` row of `Tab`s with a sliding active indicator,
+in **primary** and **secondary** variants, fixed or scrollable.
+
+## Variants
+
+`primary` tabs sit at the top of a content pane under an app bar and use a
+content-width indicator; `secondary` tabs divide content within a pane and
+use a full-width line.
+
+<Demo>
+  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <Tabs aria-label="Trip (primary)" defaultValue="flights">
+      <Tab value="flights" label="Flights" />
+      <Tab value="hotels" label="Hotels" />
+      <Tab value="explore" label="Explore" />
+    </Tabs>
+    <Tabs aria-label="Trip (secondary)" variant="secondary" defaultValue="flights">
+      <Tab value="flights" label="Flights" />
+      <Tab value="hotels" label="Hotels" />
+      <Tab value="explore" label="Explore" />
+    </Tabs>
+  </div>
+</Demo>
+
+```tsx
+<Tabs variant="secondary" defaultValue="flights" aria-label="Trip">
+  <Tab value="flights" label="Flights" />
+  <Tab value="hotels" label="Hotels" />
+</Tabs>
+```
+
+## Icons
+
+`icon` shows above the label (icon + label tabs are 64dp tall).
+
+<Demo>
+  <div style={{ width: '100%' }}>
+    <Tabs aria-label="Trip with icons" defaultValue="flights">
+      <Tab value="flights" icon={<FlightIcon />} label="Flights" />
+      <Tab value="hotels" icon={<HotelIcon />} label="Hotels" />
+      <Tab value="explore" icon={<ExploreIcon />} label="Explore" />
+      <Tab value="disabled" icon={<ExploreIcon />} label="Disabled" disabled />
+    </Tabs>
+  </div>
+</Demo>
+
+## Scrollable
+
+Fixed tabs (default) split the row into equal widths. `scrollable` tabs size
+to their content and scroll horizontally; the selected tab is scrolled to
+the center whenever the selection changes.
+
+<Demo>
+  <div style={{ width: '100%', maxWidth: 480 }}>
+    <Tabs aria-label="Categories" scrollable defaultValue="c1">
+      {['News', 'Sports', 'Technology', 'Entertainment', 'Science', 'Health', 'Travel', 'Business'].map((l, i) => (
+        <Tab key={l} value={`c${i + 1}`} label={l} />
+      ))}
+    </Tabs>
+  </div>
+</Demo>
+
+```tsx
+<Tabs scrollable value={value} onChange={(event, next) => setValue(next)}>…</Tabs>
+```
+
+## With panels
+
+Tabs are controlled (`value` + `onChange`) or uncontrolled (`defaultValue`).
+There is no panel component — render the panel yourself and link it with
+`id` / `aria-controls` / `aria-labelledby`.
+
+export function PanelDemo() {
+  const [value, setValue] = useState('flights')
+  const tabs = [
+    ['flights', 'Flights', 'Search one-way and round-trip flights.'],
+    ['hotels', 'Hotels', 'Find a place to stay.'],
+    ['explore', 'Explore', 'Discover things to do nearby.'],
+  ]
+  const current = tabs.find(([v]) => v === value)
+  return (
+    <div style={{ width: '100%' }}>
+      <Tabs aria-label="Trip planner" value={value} onChange={(_event, v) => setValue(v)}>
+        {tabs.map(([v, label]) => (
+          <Tab key={v} value={v} label={label} id={`tab-${v}`} aria-controls="trip-panel" />
+        ))}
+      </Tabs>
+      <div role="tabpanel" id="trip-panel" aria-labelledby={`tab-${value}`} tabIndex={0} style={{ padding: 16 }}>
+        {current[2]}
+      </div>
+    </div>
+  )
+}
+
+<Demo>
+  <PanelDemo />
+</Demo>
+
+```tsx
+const [value, setValue] = useState('flights')
+
+<Tabs aria-label="Trip planner" value={value} onChange={(event, next) => setValue(next)}>
+  <Tab value="flights" label="Flights" id="tab-flights" aria-controls="panel" />
+  <Tab value="hotels" label="Hotels" id="tab-hotels" aria-controls="panel" />
+</Tabs>
+<div role="tabpanel" id="panel" aria-labelledby={`tab-${value}`} tabIndex={0}>
+  {panels[value]}
+</div>
+```
+
+## Accessibility
+
+- `role="tablist"` of `role="tab"` buttons with `aria-selected`; label the
+  list with `aria-label` and link panels via `aria-controls`.
+- **Manual activation** (WAI-ARIA APG): <kbd>←</kbd> / <kbd>→</kbd>
+  (mirrored in RTL), <kbd>Home</kbd> and <kbd>End</kbd> move focus only;
+  <kbd>Space</kbd> / <kbd>Enter</kbd> select the focused tab and fire
+  `onChange`. Arrow keys never fire `onChange`.
+- Roving tabindex: <kbd>Tab</kbd> enters the list on the selected tab and
+  leaves it in one step.
+
+## Props
+
+### Tabs
+
+<PropsTable component="Tabs" />
+
+### Tab
+
+<PropsTable component="Tab" />

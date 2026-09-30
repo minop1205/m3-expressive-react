@@ -1,0 +1,117 @@
+---
+title: NavigationBar
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { NavigationBar, NavigationBarItem } from 'm3-expressive-react'
+import HomeIcon from '@material-symbols/svg-400/outlined/home.svg'
+import HomeFillIcon from '@material-symbols/svg-400/outlined/home-fill.svg'
+import SearchIcon from '@material-symbols/svg-400/outlined/search.svg'
+import BellIcon from '@material-symbols/svg-400/outlined/notifications.svg'
+import BellFillIcon from '@material-symbols/svg-400/outlined/notifications-fill.svg'
+import MailIcon from '@material-symbols/svg-400/outlined/mail.svg'
+import MailFillIcon from '@material-symbols/svg-400/outlined/mail-fill.svg'
+import PersonIcon from '@material-symbols/svg-400/outlined/person.svg'
+import PersonFillIcon from '@material-symbols/svg-400/outlined/person-fill.svg'
+
+# NavigationBar
+
+MD3 Expressive flexible navigation bar: a 64dp bottom bar of 3–5
+destinations for compact windows. The active destination shows a pill
+indicator behind its icon.
+
+export function BarDemo({ itemLayout, disabled }) {
+  const [value, setValue] = useState('home')
+  return (
+    <div style={{ width: '100%', maxWidth: itemLayout === 'horizontal' ? 720 : 412, margin: '0 auto' }}>
+      <NavigationBar
+        aria-label="Main"
+        itemLayout={itemLayout}
+        value={value}
+        onChange={(_event, v) => setValue(v)}
+      >
+        <NavigationBarItem value="home" icon={<HomeIcon />} selectedIcon={<HomeFillIcon />} label="Home" />
+        <NavigationBarItem value="mail" icon={<MailIcon />} selectedIcon={<MailFillIcon />} label="Mail" badge="3" />
+        <NavigationBarItem value="alerts" icon={<BellIcon />} selectedIcon={<BellFillIcon />} label="Alerts" badge />
+        <NavigationBarItem
+          value="profile"
+          icon={<PersonIcon />}
+          selectedIcon={<PersonFillIcon />}
+          label="Profile"
+          disabled={disabled}
+        />
+      </NavigationBar>
+    </div>
+  )
+}
+
+## Basic usage
+
+Selection is controlled (`value` + `onChange`) or uncontrolled
+(`defaultValue`). `selectedIcon` shows the filled icon for the active
+destination (m3: filled when selected, outlined otherwise).
+
+<Demo>
+  <BarDemo />
+</Demo>
+
+```tsx
+const [value, setValue] = useState('home')
+
+<NavigationBar aria-label="Main" value={value} onChange={(event, next) => setValue(next)}>
+  <NavigationBarItem value="home" icon={<HomeIcon />} selectedIcon={<HomeFillIcon />} label="Home" />
+  <NavigationBarItem value="mail" icon={<MailIcon />} selectedIcon={<MailFillIcon />} label="Mail" />
+</NavigationBar>
+```
+
+## Horizontal items
+
+`itemLayout="horizontal"` puts the icon beside the label — for medium
+windows. Items are centered with extra space at both ends.
+
+<Demo>
+  <BarDemo itemLayout="horizontal" />
+</Demo>
+
+```tsx
+<NavigationBar itemLayout="horizontal">…</NavigationBar>
+```
+
+## Badges
+
+`badge` takes content (e.g. `"3"`) for a large badge or `true` for a small
+dot. It is announced after the label — by default `"3 new notifications"` /
+`"New notification"`; override the text with `badgeLabel`.
+
+```tsx
+<NavigationBarItem value="mail" icon={<MailIcon />} label="Mail" badge="3" badgeLabel="3 unread" />
+<NavigationBarItem value="alerts" icon={<BellIcon />} label="Alerts" badge />
+```
+
+## Disabled
+
+<Demo>
+  <BarDemo disabled />
+</Demo>
+
+## Accessibility
+
+- Renders a `<nav>` landmark — give it an `aria-label` when the page has
+  more than one navigation region.
+- Items are native `<button>`s in the Tab order; the active one carries
+  `aria-current="page"` (destinations are page navigation, not tabs).
+- An item without a `label` needs an `aria-label` (which also replaces the
+  announced badge text).
+- Icons are decorative (`aria-hidden`).
+
+## Props
+
+### NavigationBar
+
+<PropsTable component="NavigationBar" />
+
+### NavigationBarItem
+
+<PropsTable component="NavigationBarItem" />

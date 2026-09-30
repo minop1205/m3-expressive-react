@@ -1,0 +1,248 @@
+---
+title: AppBar
+---
+
+import { useRef } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { TopAppBar, BottomAppBar, IconButton, Fab } from 'm3-expressive-react'
+import MenuIcon from '@material-symbols/svg-400/outlined/menu.svg'
+import SearchIcon from '@material-symbols/svg-400/outlined/search.svg'
+import MoreVertIcon from '@material-symbols/svg-400/outlined/more_vert.svg'
+import AddIcon from '@material-symbols/svg-400/outlined/add.svg'
+
+# AppBar
+
+MD3 app bars: `TopAppBar` (small, plus the Expressive **medium** and
+**large flexible** bars) with built-in scroll behaviors, and `BottomAppBar`
+for actions at the bottom of the screen.
+
+export const nav = <IconButton variant="standard" icon={<MenuIcon />} aria-label="Menu" />
+export const actions = (
+  <>
+    <IconButton variant="standard" icon={<SearchIcon />} aria-label="Search" />
+    <IconButton variant="standard" icon={<MoreVertIcon />} aria-label="More options" />
+  </>
+)
+export const Frame = ({ children }) => (
+  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 16 }}>{children}</div>
+)
+
+## Sizes
+
+`small` is a single 64dp row. `medium` (112dp) and `large` (120dp) are the
+Expressive flexible bars: a 64dp icon row plus a second row holding a
+HeadlineMedium / DisplaySmall title.
+
+<Demo>
+  <Frame>
+    <TopAppBar variant="small" title="Small" navigationIcon={nav} actions={actions} />
+    <TopAppBar variant="medium" title="Medium flexible" navigationIcon={nav} actions={actions} />
+    <TopAppBar variant="large" title="Large flexible" navigationIcon={nav} actions={actions} />
+  </Frame>
+</Demo>
+
+```tsx
+<TopAppBar
+  variant="medium"
+  title="Inbox"
+  navigationIcon={<IconButton variant="standard" icon={<MenuIcon />} aria-label="Menu" />}
+  actions={<IconButton variant="standard" icon={<SearchIcon />} aria-label="Search" />}
+/>
+```
+
+Use standard `IconButton`s in `navigationIcon` / `actions` — they pick up
+the slot colors and sit in 48dp slots.
+
+## Subtitle
+
+`subtitle` adds supporting text under the title; medium / large grow to
+136 / 152dp.
+
+<Demo>
+  <Frame>
+    <TopAppBar title="Title" subtitle="Subtitle" navigationIcon={nav} actions={actions} />
+    <TopAppBar variant="medium" title="Medium title" subtitle="Subtitle" navigationIcon={nav} actions={actions} />
+    <TopAppBar variant="large" title="Large title" subtitle="Subtitle" navigationIcon={nav} actions={actions} />
+  </Frame>
+</Demo>
+
+```tsx
+<TopAppBar variant="large" title="Large title" subtitle="Subtitle" />
+```
+
+## Title alignment
+
+`titleAlignment="center"` works on every size. A centered title is centered
+across the full bar width, and only pushed inward when it would collide with
+the icons.
+
+<Demo>
+  <Frame>
+    <TopAppBar titleAlignment="center" title="Centered" navigationIcon={nav} actions={actions} />
+    <TopAppBar
+      variant="medium"
+      titleAlignment="center"
+      title="Centered"
+      subtitle="Subtitle"
+      navigationIcon={nav}
+      actions={actions}
+    />
+  </Frame>
+</Demo>
+
+```tsx
+<TopAppBar titleAlignment="center" title="Centered" />
+```
+
+:::caution Deprecated
+
+`variant="center"` still works but is deprecated (removed in v2) — use
+`variant="small" titleAlignment="center"` instead.
+
+:::
+
+## Scroll behavior
+
+`scrollBehavior` observes `scrollTarget` (a ref, an element, or the window —
+default `window`) and makes the bar `position: sticky; top: 0`, so place it at
+the top of the scrolling content. Scroll inside each frame below.
+
+- `pinned` — always visible; switches to the surface-container color once
+  content scrolls under it.
+- `enterAlways` — hides while scrolling forward, reappears on scroll back.
+- `exitUntilCollapsed` — a medium / large bar collapses to its 64dp row and
+  expands again near the top.
+
+export function ScrollDemo(props) {
+  const scrollRef = useRef(null)
+  return (
+    <div
+      ref={scrollRef}
+      tabIndex={0}
+      role="region"
+      aria-label={`${props.scrollBehavior} scroll demo`}
+      style={{
+        flex: '1 1 260px',
+        height: 320,
+        overflowY: 'auto',
+        borderRadius: 8,
+        border: '1px solid var(--md-sys-color-outline-variant)',
+        background: 'var(--md-sys-color-surface)',
+      }}
+    >
+      <TopAppBar
+        {...props}
+        title={props.scrollBehavior}
+        navigationIcon={nav}
+        actions={<IconButton variant="standard" icon={<SearchIcon />} aria-label="Search" />}
+        scrollTarget={scrollRef}
+      />
+      <div style={{ padding: 16 }}>
+        {Array.from({ length: 20 }, (_, i) => (
+          <p key={i} style={{ margin: '0 0 16px' }}>
+            Paragraph {i + 1}. Content scrolls under the app bar.
+          </p>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+<Demo>
+  <ScrollDemo scrollBehavior="pinned" />
+  <ScrollDemo scrollBehavior="enterAlways" />
+  <ScrollDemo variant="large" subtitle="Subtitle" scrollBehavior="exitUntilCollapsed" />
+</Demo>
+
+```tsx
+const scrollRef = useRef<HTMLDivElement>(null)
+
+<div ref={scrollRef} style={{ height: 480, overflowY: 'auto' }}>
+  <TopAppBar
+    variant="large"
+    title="Photos"
+    scrollBehavior="exitUntilCollapsed"
+    scrollTarget={scrollRef}
+  />
+  {content}
+</div>
+```
+
+## Scroll state props
+
+Without a scroll source, the state props render any scroll state directly:
+`scrolled` (surface-container color), `collapsedFraction` (0 = expanded,
+1 = collapsed; medium / large), and `hidden` (slides the bar out and makes it
+`inert`). They override the values derived from `scrollBehavior`.
+
+<Demo>
+  <Frame>
+    <TopAppBar title="scrolled" navigationIcon={nav} actions={actions} scrolled />
+    <TopAppBar
+      variant="medium"
+      title="collapsedFraction={1}"
+      navigationIcon={nav}
+      actions={actions}
+      collapsedFraction={1}
+    />
+  </Frame>
+</Demo>
+
+```tsx
+<TopAppBar title="Title" scrolled={isScrolled} />
+<TopAppBar variant="medium" title="Title" collapsedFraction={0.5} />
+```
+
+## Bottom app bar
+
+An 80dp surface-container bar with actions at the start and an optional FAB
+at the end.
+
+<Demo>
+  <Frame>
+    <BottomAppBar
+      floatingActionButton={<Fab color="secondary" icon={<AddIcon />} aria-label="Add" />}
+    >
+      <IconButton variant="standard" icon={<MenuIcon />} aria-label="Menu" />
+      <IconButton variant="standard" icon={<SearchIcon />} aria-label="Search" />
+      <IconButton variant="standard" icon={<MoreVertIcon />} aria-label="More options" />
+    </BottomAppBar>
+  </Frame>
+</Demo>
+
+```tsx
+<BottomAppBar floatingActionButton={<Fab icon={<AddIcon />} aria-label="Add" />}>
+  <IconButton variant="standard" icon={<SearchIcon />} aria-label="Search" />
+</BottomAppBar>
+```
+
+:::tip
+
+m3.material.io no longer recommends the bottom app bar for new designs —
+prefer a [docked Toolbar](/components/toolbar). `BottomAppBar` is not
+deprecated and stays available.
+
+:::
+
+## Accessibility
+
+- `TopAppBar` renders a `<header>` landmark and its `title` as an `<h1>` —
+  use it once per page, as the page heading.
+- Every icon-only action needs an `aria-label`.
+- `hidden` (and a bar hidden by `enterAlways`) is `inert`, so hidden controls
+  leave the focus order. Leave `scrollBehavior` unset when every control
+  must stay reachable. Motion is instant under
+  `prefers-reduced-motion: reduce`.
+- A scroll container used as `scrollTarget` should be keyboard-scrollable
+  (e.g. `tabIndex={0}` with a `role="region"` and label).
+
+## Props
+
+### TopAppBar
+
+<PropsTable component="TopAppBar" />
+
+### BottomAppBar
+
+<PropsTable component="BottomAppBar" />

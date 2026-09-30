@@ -1,0 +1,227 @@
+---
+title: NavigationRail
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { NavigationRail, NavigationRailItem, IconButton, Fab } from 'm3-expressive-react'
+import MenuIcon from '@material-symbols/svg-400/outlined/menu.svg'
+import MenuOpenIcon from '@material-symbols/svg-400/outlined/menu_open.svg'
+import EditIcon from '@material-symbols/svg-400/outlined/edit.svg'
+import InboxIcon from '@material-symbols/svg-400/outlined/inbox.svg'
+import InboxFillIcon from '@material-symbols/svg-400/outlined/inbox-fill.svg'
+import OutboxIcon from '@material-symbols/svg-400/outlined/outbox.svg'
+import OutboxFillIcon from '@material-symbols/svg-400/outlined/outbox-fill.svg'
+import FavoriteIcon from '@material-symbols/svg-400/outlined/favorite.svg'
+import FavoriteFillIcon from '@material-symbols/svg-400/outlined/favorite-fill.svg'
+import DeleteIcon from '@material-symbols/svg-400/outlined/delete.svg'
+import DeleteFillIcon from '@material-symbols/svg-400/outlined/delete-fill.svg'
+
+# NavigationRail
+
+MD3 Expressive navigation rail for medium and larger windows: a 96dp
+**collapsed** column of destinations that morphs on a spring into an
+**expanded** rail (icon beside label, 220–360dp wide), either in-flow or as
+a **modal** overlay.
+
+export const items = (
+  <>
+    <NavigationRailItem value="inbox" icon={<InboxIcon />} selectedIcon={<InboxFillIcon />} label="Inbox" />
+    <NavigationRailItem value="outbox" icon={<OutboxIcon />} selectedIcon={<OutboxFillIcon />} label="Outbox" badge="3" />
+    <NavigationRailItem value="favorites" icon={<FavoriteIcon />} selectedIcon={<FavoriteFillIcon />} label="Favorites" badge />
+    <NavigationRailItem value="trash" icon={<DeleteIcon />} selectedIcon={<DeleteFillIcon />} label="Trash" />
+  </>
+)
+
+export function Header({ expanded, onMenuClick }) {
+  return (
+    <>
+      <IconButton
+        variant="standard"
+        size="md"
+        icon={expanded ? <MenuOpenIcon /> : <MenuIcon />}
+        aria-label={expanded ? 'Collapse navigation' : 'Expand navigation'}
+        aria-expanded={expanded}
+        onClick={onMenuClick}
+      />
+      <Fab icon={<EditIcon />} label="Compose" followContainer disableElevation />
+    </>
+  )
+}
+
+export function Frame({ children }) {
+  // `transform` makes this box the containing block of the modal rail's
+  // fixed scrim, so the demo overlay stays inside the frame.
+  return (
+    <div
+      style={{
+        position: 'relative',
+        display: 'flex',
+        width: '100%',
+        height: 600,
+        overflow: 'hidden',
+        transform: 'translateZ(0)',
+        borderRadius: 8,
+        border: '1px solid var(--md-sys-color-outline-variant)',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+export function Page({ text }) {
+  return <div style={{ flex: 1, padding: 24, minWidth: 0 }}>{text}</div>
+}
+
+export function RailDemo({ modal, hideOnCollapse, arrangement, initial = 'collapsed' }) {
+  const [value, setValue] = useState('inbox')
+  const [variant, setVariant] = useState(initial)
+  const expanded = variant === 'expanded'
+  const toggle = () => setVariant(expanded ? 'collapsed' : 'expanded')
+  return (
+    <Frame>
+      <NavigationRail
+        aria-label="Mail"
+        value={value}
+        onChange={(_event, v) => {
+          setValue(v)
+          if (modal) setVariant('collapsed')
+        }}
+        variant={variant}
+        arrangement={arrangement}
+        modal={modal}
+        hideOnCollapse={hideOnCollapse}
+        onClose={() => setVariant('collapsed')}
+        header={<Header expanded={expanded} onMenuClick={toggle} />}
+      >
+        {items}
+      </NavigationRail>
+      <Page
+        text={
+          hideOnCollapse ? (
+            <IconButton variant="standard" icon={<MenuIcon />} aria-label="Open navigation" onClick={toggle} />
+          ) : modal ? (
+            'Expanded, the modal rail overlaps this content with a scrim. Press Escape or click the scrim to collapse it.'
+          ) : (
+            'Use the menu button to expand and collapse the rail.'
+          )
+        }
+      />
+    </Frame>
+  )
+}
+
+## Collapsed and expanded
+
+`variant` switches between `collapsed` (icon over label) and `expanded`
+(icon beside label in a pill, as wide as the widest destination). The change
+is a spring morph. The optional `header` is pinned at the top — typically a
+menu button and a FAB; `<Fab followContainer>` morphs in sync with the rail.
+
+<Demo>
+  <RailDemo />
+</Demo>
+
+```tsx
+const [expanded, setExpanded] = useState(false)
+
+<NavigationRail
+  aria-label="Mail"
+  variant={expanded ? 'expanded' : 'collapsed'}
+  value={value}
+  onChange={(event, next) => setValue(next)}
+  header={
+    <>
+      <IconButton
+        variant="standard"
+        icon={expanded ? <MenuOpenIcon /> : <MenuIcon />}
+        aria-label={expanded ? 'Collapse navigation' : 'Expand navigation'}
+        onClick={() => setExpanded(!expanded)}
+      />
+      <Fab icon={<EditIcon />} label="Compose" followContainer />
+    </>
+  }
+>
+  <NavigationRailItem value="inbox" icon={<InboxIcon />} selectedIcon={<InboxFillIcon />} label="Inbox" />
+  <NavigationRailItem value="outbox" icon={<OutboxIcon />} label="Outbox" badge="3" />
+</NavigationRail>
+```
+
+`selectedIcon` shows the filled icon for the active destination. `badge`
+takes content for a large badge or `true` for a dot; `badgeLabel` overrides
+the announced text.
+
+## Arrangement
+
+`arrangement` places the destinations at the `top` (default), `center`, or
+`bottom` below the header.
+
+<Demo>
+  <RailDemo arrangement="center" />
+</Demo>
+
+## Modal
+
+With `modal`, the expanded rail overlaps the page instead of pushing it: a
+scrim, focus trapped inside, the rest of the page inert, and
+<kbd>Escape</kbd> / scrim click call `onClose`. Collapsed, it is a regular
+96dp rail.
+
+<Demo>
+  <RailDemo modal />
+</Demo>
+
+```tsx
+<NavigationRail
+  modal
+  variant={expanded ? 'expanded' : 'collapsed'}
+  onClose={() => setExpanded(false)}
+  …
+/>
+```
+
+## Hide on collapse
+
+`modal` + `hideOnCollapse` hides the rail entirely while collapsed; expanding
+slides it in from the leading edge — open it from a button in the page.
+
+<Demo>
+  <RailDemo modal hideOnCollapse />
+</Demo>
+
+```tsx
+<IconButton icon={<MenuIcon />} aria-label="Open navigation" onClick={() => setExpanded(true)} />
+<NavigationRail
+  modal
+  hideOnCollapse
+  variant={expanded ? 'expanded' : 'collapsed'}
+  onClose={() => setExpanded(false)}
+  …
+/>
+```
+
+## Accessibility
+
+- Renders a `<nav>` landmark — give it an `aria-label`. Items are native
+  `<button>`s; the active one carries `aria-current="page"`.
+- Tab order: header (menu button, FAB) first, then the destinations.
+- Badges are announced after the label (`badgeLabel` to customize). An item
+  without a `label` needs an `aria-label`.
+- The open modal rail is a `dialog` (`aria-modal`) named by `modalLabel`
+  (default "Navigation rail"); focus returns to the opener when it
+  collapses.
+
+## Props
+
+### NavigationRail
+
+<PropsTable component="NavigationRail" />
+
+### NavigationRailItem
+
+`NavigationRailItem` can also be used standalone (outside a rail) with its
+own `selected` / `expanded` props.
+
+<PropsTable component="NavigationRailItem" />
