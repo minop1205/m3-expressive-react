@@ -53,6 +53,57 @@ describe('DatePicker', () => {
     expect(screen.getByRole('button', { name: '10' })).toHaveAttribute('data-selected', 'true')
   })
 
+  it('always lays out six weeks so the height never jumps', () => {
+    // June 2026 needs only five rows; February 2026 (starts Sunday) only four.
+    for (const month of [new Date(2026, 5, 10), new Date(2026, 1, 10)]) {
+      const { container, unmount } = render(<DatePicker value={month} />)
+      const grid = container.querySelector('[aria-label]:not(button)') as HTMLElement
+      expect(grid.children.length).toBe(7 + 6 * 7)
+      unmount()
+    }
+  })
+
+  it('starts the week on the locale first day', () => {
+    const weekdayRow = (locale: string) => {
+      const { container, unmount } = render(
+        <DatePicker value={new Date(2026, 5, 1)} locale={locale} />,
+      )
+      const grid = container.querySelector('[aria-label]:not(button)') as HTMLElement
+      const text = Array.from(grid.children)
+        .slice(0, 7)
+        .map((el) => el.textContent)
+        .join('')
+      unmount()
+      return text
+    }
+    expect(weekdayRow('en-US')).toBe('SMTWTFS')
+    expect(weekdayRow('en-GB')).toBe('MTWTFSS')
+  })
+
+  it('places the first of the month under its weekday for Monday-first locales', () => {
+    // 1 June 2026 is a Monday: first cell in en-GB, second in en-US.
+    const cellIndex = (locale: string) => {
+      const { container, unmount } = render(
+        <DatePicker value={new Date(2026, 5, 10)} locale={locale} />,
+      )
+      const grid = container.querySelector('[aria-label]:not(button)') as HTMLElement
+      const cells = Array.from(grid.children).slice(7)
+      const index = cells.findIndex((el) => el.textContent === '1')
+      unmount()
+      return index
+    }
+    expect(cellIndex('en-GB')).toBe(0)
+    expect(cellIndex('en-US')).toBe(1)
+  })
+
+  it('draws the range band only once both ends are chosen', () => {
+    const { rerender } = render(<DatePicker range value={[new Date(2024, 6, 1), null]} />)
+    expect(screen.getByRole('button', { name: '1' })).not.toHaveAttribute('data-range-start')
+    rerender(<DatePicker range value={[new Date(2024, 6, 1), new Date(2024, 6, 3)]} />)
+    expect(screen.getByRole('button', { name: '1' })).toHaveAttribute('data-range-start', 'true')
+    expect(screen.getByRole('button', { name: '3' })).toHaveAttribute('data-range-end', 'true')
+  })
+
   it('forwards a ref', () => {
     const ref = createRef<HTMLDivElement>()
     render(<DatePicker ref={ref} />)

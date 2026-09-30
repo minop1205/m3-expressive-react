@@ -22,9 +22,17 @@
 .header {
   display: flex;
   flex-direction: column;
-  gap: 36px;
-  padding: 16px 24px 12px;
+  justify-content: space-between;
+  box-sizing: border-box;
+  /* Compose HeaderContainerHeight 120 (range 128): title 16dp from the top,
+     headline 12dp from the divider. */
+  min-height: 120px;
+  padding: 16px 12px 12px 24px;
   border-bottom: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.header[data-range] {
+  min-height: 128px;
 }
 
 .supporting {
@@ -37,7 +45,7 @@
 }
 
 .headline {
-  color: var(--md-sys-color-on-surface);
+  color: var(--md-sys-color-on-surface-variant);
   font-family: var(--md-sys-typescale-headline-large-font);
   font-size: var(--md-sys-typescale-headline-large-size);
   font-weight: var(--md-sys-typescale-headline-large-weight);
@@ -45,11 +53,25 @@
   letter-spacing: var(--md-sys-typescale-headline-large-tracking);
 }
 
+/* Range headline: TitleLarge on a single line (Compose
+   RangeSelectionHeaderHeadlineFont, maxLines = 1). */
+.header[data-range] .headline {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-family: var(--md-sys-typescale-title-large-font);
+  font-size: var(--md-sys-typescale-title-large-size);
+  font-weight: var(--md-sys-typescale-title-large-weight);
+  line-height: var(--md-sys-typescale-title-large-line-height);
+  letter-spacing: var(--md-sys-typescale-title-large-tracking);
+}
+
 .nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 48px;
+  /* Compose MonthYearHeight. */
+  height: 56px;
   padding-inline: 12px 12px;
 }
 
@@ -59,6 +81,8 @@
   font-family: var(--md-sys-typescale-label-large-font);
   font-size: var(--md-sys-typescale-label-large-size);
   font-weight: var(--md-sys-typescale-label-large-weight);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
 }
 
 .navButtons {
@@ -112,6 +136,9 @@
   color: var(--md-sys-color-on-surface);
   font-family: var(--md-sys-typescale-body-large-font);
   font-size: var(--md-sys-typescale-body-large-size);
+  font-weight: var(--md-sys-typescale-body-large-weight);
+  line-height: var(--md-sys-typescale-body-large-line-height);
+  letter-spacing: var(--md-sys-typescale-body-large-tracking);
 }
 
 .empty {
@@ -119,46 +146,73 @@
   height: 48px;
 }
 
+/*
+ * Day cell: a 48dp button (the touch target) holding a 40dp round indicator.
+ * The range band is the button's ::before, painted *inside* the cell under
+ * the indicator (z-index 0 vs 1) — a negative z-index would escape to the
+ * root stacking context and vanish under the picker background (#151).
+ */
 .day {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  margin: 4px;
+  width: 48px;
+  height: 48px;
   padding: 0;
   border: none;
-  border-radius: 50%;
   background: transparent;
   cursor: pointer;
   outline: none;
-  color: var(--md-sys-color-on-surface);
+  -webkit-tap-highlight-color: transparent;
+
+  --_container-color: transparent;
+  --_label-text-color: var(--md-sys-color-on-surface);
+  --_outline-color: transparent;
+
+  color: var(--_label-text-color);
   font-family: var(--md-sys-typescale-body-large-font);
   font-size: var(--md-sys-typescale-body-large-size);
+  font-weight: var(--md-sys-typescale-body-large-weight);
+  line-height: var(--md-sys-typescale-body-large-line-height);
+  letter-spacing: var(--md-sys-typescale-body-large-tracking);
 }
 
-.day:hover:not(:disabled):not([data-selected]) {
+.dayIndicator {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--_container-color);
+  box-shadow: inset 0 0 0 1px var(--_outline-color);
+}
+
+.day:hover:not(:disabled):not([data-selected]) .dayIndicator {
   background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
 }
 
-.day:focus-visible {
+.day:focus-visible .dayIndicator {
   outline: 2px solid var(--md-sys-color-secondary);
 }
 
 .day[data-today]:not([data-selected]) {
-  box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
-  color: var(--md-sys-color-primary);
-}
-
-.day[data-selected] {
-  background-color: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
+  --_outline-color: var(--md-sys-color-primary);
+  --_label-text-color: var(--md-sys-color-primary);
 }
 
 /* Range highlight — a SecondaryContainer band connecting the endpoints. */
 .day[data-in-range] {
-  color: var(--md-sys-color-on-secondary-container);
+  --_label-text-color: var(--md-sys-color-on-secondary-container);
+}
+
+.day[data-selected] {
+  --_container-color: var(--md-sys-color-primary);
+  --_label-text-color: var(--md-sys-color-on-primary);
 }
 
 .day[data-in-range]::before,
@@ -166,11 +220,13 @@
 .day[data-range-end]::before {
   content: '';
   position: absolute;
-  inset: 0 -4px;
-  z-index: -1;
+  z-index: 0;
+  inset: 4px 0;
   background-color: var(--md-sys-color-secondary-container);
 }
 
+/* The band starts / ends at the endpoint's center; the selected circle caps it
+   (Compose drawRect from the cell center). */
 .day[data-range-start]::before {
   inset-inline-start: 50%;
 }
@@ -184,8 +240,10 @@
   display: none;
 }
 
-.day:disabled {
+/* Disabled wins over today's Primary label (the outline stays, as in Compose). */
+.day:disabled,
+.day[data-today]:disabled:not([data-selected]) {
   cursor: default;
   pointer-events: none;
-  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  --_label-text-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
 }
