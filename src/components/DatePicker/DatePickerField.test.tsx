@@ -1,5 +1,5 @@
 import { createRef } from 'react'
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
@@ -204,6 +204,74 @@ describe('DatePickerField', () => {
     await user.clear(input)
     await user.tab()
     expect(onChange).toHaveBeenCalledWith(null)
+  })
+
+  it('uses the docked layout: month and year menus with their own arrows', async () => {
+    const user = userEvent.setup()
+    render(<DatePickerField defaultValue={new Date(2024, 6, 10)} />)
+    await user.click(toggle())
+    const dialog = screen.getByRole('dialog')
+    // No modal headline header.
+    expect(within(dialog).queryByText('Select date')).not.toBeInTheDocument()
+    expect(within(dialog).getByRole('button', { name: 'Jul' })).toHaveAttribute('aria-expanded', 'false')
+    expect(within(dialog).getByRole('button', { name: '2024' })).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: 'Next year' }))
+    expect(within(dialog).getByRole('grid', { name: 'July 2025' })).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: 'Previous month' }))
+    expect(within(dialog).getByRole('grid', { name: 'June 2025' })).toBeInTheDocument()
+  })
+
+  it('shows neighbouring-month days without making them selectable', async () => {
+    const user = userEvent.setup()
+    render(<DatePickerField defaultValue={new Date(2024, 6, 10)} />)
+    await user.click(toggle())
+    // July 2024 starts on a Monday: 30 June fills the first cell.
+    const firstWeek = within(screen.getByRole('grid')).getAllByRole('row')[1]
+    const first = within(firstWeek).getAllByRole('gridcell')[0]
+    expect(first).toHaveTextContent('30')
+    expect(first.tagName).toBe('SPAN')
+    expect(first).not.toHaveAccessibleName()
+  })
+
+  it('picks a month from the month menu', async () => {
+    const user = userEvent.setup()
+    render(<DatePickerField defaultValue={new Date(2024, 6, 10)} />)
+    await user.click(toggle())
+    await user.click(screen.getByRole('button', { name: 'Jul' }))
+    const list = screen.getByRole('listbox', { name: 'Select month' })
+    expect(screen.queryByRole('grid')).not.toBeInTheDocument()
+    expect(within(list).getAllByRole('option')).toHaveLength(12)
+    expect(screen.getByRole('option', { name: 'July' })).toHaveFocus()
+    await user.keyboard('{ArrowDown}{ArrowDown}{Enter}')
+    expect(screen.getByRole('grid', { name: 'September 2024' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Sep' })).toHaveFocus()
+    // Still open; the value is unchanged until a day is picked.
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+  })
+
+  it('picks a year from the year menu', async () => {
+    const user = userEvent.setup()
+    render(
+      <DatePickerField
+        defaultValue={new Date(2024, 6, 10)}
+        min={new Date(2020, 0, 1)}
+        max={new Date(2035, 11, 31)}
+      />,
+    )
+    await user.click(toggle())
+    await user.click(screen.getByRole('button', { name: '2024' }))
+    expect(screen.getByRole('listbox', { name: 'Select year' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: '2024' })).toHaveFocus()
+    await user.click(screen.getByRole('option', { name: '2031' }))
+    expect(screen.getByRole('grid', { name: 'July 2031' })).toBeInTheDocument()
+  })
+
+  it('has no axe violations with the month menu open', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<DatePickerField defaultValue={new Date(2024, 6, 10)} />)
+    await user.click(toggle())
+    await user.click(screen.getByRole('button', { name: 'Jul' }))
+    expect(await axe(container)).toHaveNoViolations()
   })
 
   it('forwards a ref', () => {

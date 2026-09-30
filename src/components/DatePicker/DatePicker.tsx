@@ -30,6 +30,8 @@ export interface DatePickerProps
   previousMonthLabel?: string
   /** Accessible label of the next-month button. @default 'Next month' */
   nextMonthLabel?: string
+  /** Accessible name of the year picker list. @default 'Select year' */
+  selectYearLabel?: string
   /** Prefix announced on today's cell. @default 'Today' */
   todayLabel?: string
   /** Range start: announced on the start cell and the headline placeholder. @default 'Start date' */
@@ -51,7 +53,8 @@ function asRange(v: Date | DateRange | null | undefined): DateRange {
  * are 40dp round; selected fills Primary / OnPrimary, today shows a 1dp Primary
  * outline. In `range` mode two dates are picked and the span is highlighted with
  * SecondaryContainer — per Compose DatePickerModalTokens. The day grid is an
- * APG grid (single Tab stop, arrow / Page / Home / End keys). Wrap in a
+ * APG grid (single Tab stop, arrow / Page / Home / End keys); the month label
+ * is a menu button that swaps the grid for a year picker. Wrap in a
  * `Dialog` for a full modal experience, or use `DatePickerField` for the
  * docked variant.
  *
@@ -72,6 +75,7 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
       noSelectionLabel = 'Selected date',
       previousMonthLabel = 'Previous month',
       nextMonthLabel = 'Next month',
+      selectYearLabel = 'Select year',
       todayLabel = 'Today',
       startDateLabel = 'Start date',
       endDateLabel = 'End date',
@@ -162,6 +166,10 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
           labels={{
             previousMonth: previousMonthLabel,
             nextMonth: nextMonthLabel,
+            previousYear: '',
+            nextYear: '',
+            selectYear: selectYearLabel,
+            selectMonth: '',
             today: todayLabel,
             startDate: startDateLabel,
             endDate: endDateLabel,

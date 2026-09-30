@@ -64,6 +64,14 @@ export interface DatePickerFieldProps
   previousMonthLabel?: string
   /** Accessible label of the next-month button. @default 'Next month' */
   nextMonthLabel?: string
+  /** Accessible label of the previous-year button. @default 'Previous year' */
+  previousYearLabel?: string
+  /** Accessible label of the next-year button. @default 'Next year' */
+  nextYearLabel?: string
+  /** Accessible name of the month menu list. @default 'Select month' */
+  selectMonthLabel?: string
+  /** Accessible name of the year menu list. @default 'Select year' */
+  selectYearLabel?: string
   /** Prefix announced on today's cell. @default 'Today' */
   todayLabel?: string
 }
@@ -79,7 +87,8 @@ export function defaultErrorLabel(error: DateInputError, pattern: string) {
  *
  * An outlined text field (type a date directly) with a trailing calendar
  * button that opens the calendar in a dropdown — the docked variant per
- * m3.material.io. Typed text is parsed on Enter or blur in the locale's field
+ * m3.material.io (16dp corners, a 64dp header with month and year menu
+ * buttons and arrows, neighbouring-month days at 38%). Typed text is parsed on Enter or blur in the locale's field
  * order (no input mask; `-`, `/`, `.` and spaces all work) and rejected text
  * shows an error; the helper text states the format.
  *
@@ -105,6 +114,10 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
       getErrorLabel = defaultErrorLabel,
       previousMonthLabel = 'Previous month',
       nextMonthLabel = 'Next month',
+      previousYearLabel = 'Previous year',
+      nextYearLabel = 'Next year',
+      selectMonthLabel = 'Select month',
+      selectYearLabel = 'Select year',
       todayLabel = 'Today',
       onKeyDown,
       onBlur,
@@ -256,6 +269,7 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
             className={clsx(pickerStyles.picker, pickerStyles.docked, styles.popup)}
           >
             <Calendar
+              layout="docked"
               range={false}
               selected={current}
               rangeStart={null}
@@ -273,6 +287,10 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
               labels={{
                 previousMonth: previousMonthLabel,
                 nextMonth: nextMonthLabel,
+                previousYear: previousYearLabel,
+                nextYear: nextYearLabel,
+                selectMonth: selectMonthLabel,
+                selectYear: selectYearLabel,
                 today: todayLabel,
                 startDate: 'Start date',
                 endDate: 'End date',

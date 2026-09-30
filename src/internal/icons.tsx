@@ -61,6 +61,18 @@ export const ScheduleIcon = (props: IconProps) => (
   </Icon>
 )
 
+export const ArrowDropDownIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="m7 10 5 5 5-5z" />
+  </Icon>
+)
+
+export const EditIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z" />
+  </Icon>
+)
+
 export const CheckIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
