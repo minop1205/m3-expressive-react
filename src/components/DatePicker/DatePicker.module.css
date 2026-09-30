@@ -90,44 +90,20 @@
   gap: 4px;
 }
 
-.navButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  cursor: pointer;
-  color: var(--md-sys-color-on-surface-variant);
-  outline: none;
-}
-
-.navButton:hover {
-  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
-}
-
-.navButton:focus-visible {
-  outline: 2px solid var(--md-sys-color-secondary);
-}
-
-.navButton svg {
-  width: 24px;
-  height: 24px;
-  fill: currentColor;
-}
-
 .grid {
+  display: flex;
+  flex-direction: column;
+  padding-inline: 12px;
+}
+
+.row {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 0;
-  padding-inline: 12px;
   justify-items: center;
 }
 
 .weekday {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -169,6 +145,11 @@
   --_container-color: transparent;
   --_label-text-color: var(--md-sys-color-on-surface);
   --_outline-color: transparent;
+  /* State layer follows the cell state (m3 Date * state layer color): the
+     site's on-surface-variant for unselected days (audit conflict ruling). */
+  --_state-layer-color: var(--md-sys-color-on-surface-variant);
+  --md-ripple-color: var(--_state-layer-color);
+  --md-focus-ring-color: var(--md-sys-color-secondary);
 
   color: var(--_label-text-color);
   font-family: var(--md-sys-typescale-body-large-font);
@@ -192,27 +173,34 @@
   box-shadow: inset 0 0 0 1px var(--_outline-color);
 }
 
-.day:hover:not(:disabled):not([data-selected]) .dayIndicator {
-  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+/* Ripple + FocusRing hug the 40dp indicator, not the 48dp touch target.
+   Parent-qualified so they win over the primitives' own `inset: 0`. */
+.day > .dayRipple,
+.day > .dayFocusRing {
+  inset: 4px;
+  border-radius: 50%;
 }
 
-.day:focus-visible .dayIndicator {
-  outline: 2px solid var(--md-sys-color-secondary);
+.day > .dayRipple {
+  z-index: 2;
 }
 
 .day[data-today]:not([data-selected]) {
   --_outline-color: var(--md-sys-color-primary);
   --_label-text-color: var(--md-sys-color-primary);
+  --_state-layer-color: var(--md-sys-color-primary);
 }
 
 /* Range highlight — a SecondaryContainer band connecting the endpoints. */
 .day[data-in-range] {
   --_label-text-color: var(--md-sys-color-on-secondary-container);
+  --_state-layer-color: var(--md-sys-color-on-primary-container);
 }
 
 .day[data-selected] {
   --_container-color: var(--md-sys-color-primary);
   --_label-text-color: var(--md-sys-color-on-primary);
+  --_state-layer-color: var(--md-sys-color-on-primary);
 }
 
 .day[data-in-range]::before,
@@ -240,10 +228,20 @@
   display: none;
 }
 
-/* Disabled wins over today's Primary label (the outline stays, as in Compose). */
-.day:disabled,
-.day[data-today]:disabled:not([data-selected]) {
+/* Out of min/max: still focusable (aria-disabled) so the grid can be
+   traversed, but not selectable. Wins over today's Primary label (the outline
+   stays, as in Compose). */
+.day[data-disabled],
+.day[data-today][data-disabled]:not([data-selected]) {
   cursor: default;
-  pointer-events: none;
   --_label-text-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
