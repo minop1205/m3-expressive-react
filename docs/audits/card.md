@@ -106,7 +106,7 @@ Issue: CD1 → #216、CD2 → #217、CD3 → #218、CD4 → #219、CD5/CD6 → #
 
 | 項目 | m3.material.io | Compose | 裁定 |
 |---|---|---|---|
-| filled の disabled container | **on-surface** @0.38(warning なし、`info` で参照先を確認) | トークン `DisabledContainerColor` = **SurfaceVariant** @0.38 を ContainerColor(s-c-highest)に合成(≒ 不透明で通常時とほぼ同色) | site が上位で行は非推奨表示なし → **on-surface @0.38**(CD3)。見た目の変化が大きい値なので、修正 PR で site の値を再確認すること |
+| filled の disabled container | **on-surface** @0.38(warning なし、`info` で参照先を確認) | トークン `DisabledContainerColor` = **SurfaceVariant** @0.38 を ContainerColor(s-c-highest)に合成(≒ 不透明で通常時とほぼ同色) | site が上位で行は非推奨表示なし → **on-surface @0.38**(CD3)。見た目の変化が大きい値なので、修正 PR で site の値を再確認すること → **2026-09-30 再確認済み**(Card - Filled セット: disabled container color #1D1B20 = on-surface、opacity 0.38、warning なし)。#218 で実装 |
 | elevated の disabled container | surface @0.38 | トークン Surface @0.38 を **Surface に合成**(= 不透明の surface) | 色は一致。不透明度は Button B4 と同じく **トークン値をそのまま半透明で適用**(CD3) |
 | outlined の hover elevation | **1dp** | トークン Level1、Defaults `outlinedCardElevation` は hover / focus / pressed = default(Level0) | site + トークン → **1dp**(CD5)。現実装のコメント「Compose」は Defaults 由来 |
 | outlined の focus 枠線色 | **on-surface** | トークン `FocusOutlineColor` = OnSurface、Defaults の `outlinedCardBorder(enabled)` は状態別の色を持たない | site + トークン → **on-surface**(CD6) |

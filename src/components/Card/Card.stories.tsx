@@ -57,9 +57,27 @@ export const Clickable: Story = {
 export const Disabled: Story = {
   args: { onClick: fn(), disabled: true },
   render: (args) => (
-    <Card {...args} variant="elevated" style={{ width: 300, padding: 16 }}>
-      <strong>Disabled card</strong>
-      <p style={{ margin: '8px 0 0' }}>Dimmed to 38% and non-interactive.</p>
-    </Card>
+    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+      {(['filled', 'elevated', 'outlined'] as const).map((variant) => (
+        <Card key={variant} {...args} variant={variant} style={{ width: 200, padding: 16 }}>
+          <strong style={{ textTransform: 'capitalize' }}>{variant}</strong>
+          <p style={{ margin: '8px 0 0' }}>Disabled: container and content at 38%.</p>
+        </Card>
+      ))}
+    </div>
+  ),
+}
+
+/** `dragged`: raised elevation (6dp / 8dp) and the 0.16 on-surface state layer. */
+export const Dragged: Story = {
+  render: () => (
+    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+      {(['filled', 'elevated', 'outlined'] as const).map((variant) => (
+        <Card key={variant} variant={variant} dragged style={{ width: 200, padding: 16 }}>
+          <strong style={{ textTransform: 'capitalize' }}>{variant}</strong>
+          <p style={{ margin: '8px 0 0' }}>Being dragged.</p>
+        </Card>
+      ))}
+    </div>
   ),
 }
