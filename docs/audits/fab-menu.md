@@ -63,6 +63,12 @@ Phase B。Expressive の FAB menu(`FabMenu` + `FabMenuItem`、color primary / se
 Issue: FM1 → #201、FM2/FM3 → #202(同じキー / フォーカス処理を書き換えるため同梱)、FM4 → #203、FM5 → #204、
 FM6 → #205、FM7 → #206、FM8 → #207、FM9 → #208、focus state layer → #200(fab.md FB4)
 
+**対応(2026-09-30)**: FM4〜FM9 を修正(FM1〜FM3 は #304 で対応済み)。FM4 / FM9 は Phase B **B24** のとおり —
+`closeAriaLabel` は deprecated(無視 + 1回だけ dev 警告)、`size`(`regular` / `medium` / `large`)と `tonal` を追加。
+FM8 の stagger は Compose の SlowEffects(臨界減衰)の項目数ばねを逆算した遅延で近似し(開: 下から、閉: 上から)、
+各項目は trailing 端からの `clip-path` の幅リビール(FastSpatial)+ 透明度(FastEffects)。reduced motion は
+透明度のフェードのみ(B3)。
+
 **軽微(判断・記録のみ)**:
 
 - **web 向けの別レイアウト**: site specs「On web, the FAB menu opens from the FAB, and inherits its states and specs from
