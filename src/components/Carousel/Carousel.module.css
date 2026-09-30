@@ -1,9 +1,21 @@
 /**
- * MD3 (Expressive) Carousel. A horizontal scroll-snap row of 28dp-rounded items
- * with 16dp side / 8dp block padding and 8dp between items (m3.material.io
- * carousel specs). Items shrink via a scroll-driven transform mask (`--_mask-*`,
- * set in JS) as they leave the focus zone — layout stays stable because the
- * mask uses transform/opacity only.
+ * MD3 (Expressive) Carousel. A horizontal scroller of 28dp-rounded items with
+ * 16dp start / end and 8dp block padding and 8dp between items
+ * (m3.material.io carousel specs).
+ *
+ * Keyline layout (data-mode="keylines", multi-browse / hero): each item owns a
+ * fixed layout slot at the large size (`--_large-size`, computed in JS), so the
+ * native scroll range and the snap points (`scroll-margin-inline-start` per
+ * slot) never move. The visible item inside the slot is positioned and sized
+ * from the scroll offset (`--_item-start` / `--_item-size`, Compose
+ * `Modifier.carouselItem`): a mask, not a scale — the content keeps the large
+ * size (`--_content-start` counter-offsets it), the item keeps its full height
+ * and 28dp corners. The keylines span the content box inside the 16dp
+ * start / end padding and items are clipped to it (JS), like a Compose
+ * carousel inset by that padding.
+ *
+ * data-mode="uniform" (reduced motion) and "flow" (uncontained): plain
+ * same-size items with 16dp inline padding.
  */
 
 .scroller {
@@ -19,49 +31,133 @@
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
   background-color: var(--md-sys-color-surface);
+  outline: none;
 }
 
 .scroller::-webkit-scrollbar {
   display: none;
 }
 
-.item {
+/* Keyboard focus on the container itself (only when no item is focusable). */
+.scroller:focus-visible {
+  outline: 3px solid var(--md-sys-color-secondary);
+  outline-offset: -3px;
+}
+
+/* Uncontained: m3 "Default: Standard scrolling. Recommended for uncontained
+   layouts" (Compose noSnapFlingBehavior). */
+.scroller[data-mode='flow'] {
+  scroll-snap-type: none;
+}
+
+/* Fixed layout slot — the snap target. Never transformed or resized by the
+   scroll, so snapping and the scroll range stay stable. */
+.slot {
   position: relative;
   flex: 0 0 auto;
   box-sizing: border-box;
-  width: var(--_item-w, 260px);
+  width: var(--_large-size, var(--_item-w, 320px));
   height: var(--_item-h, 200px);
-  overflow: hidden;
-  border-radius: var(--md-sys-shape-corner-extra-large);
-  background-color: var(--md-sys-color-surface-container-high);
-  color: var(--md-sys-color-on-surface);
   scroll-snap-align: start;
-
-  transform: scale(var(--_mask-scale, 1));
-  opacity: var(--_mask-opacity, 1);
-  transition:
-    transform var(--md-sys-motion-duration-short2) linear,
-    opacity var(--md-sys-motion-duration-short2) linear;
 }
 
-.item > img {
+.item {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  inset-inline-start: var(--_item-start, 0px);
+  width: var(--_item-size, 100%);
+  box-sizing: border-box;
+  display: block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--_container-shape);
+  background-color: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface);
+  font: inherit;
+  text-align: inherit;
+  text-decoration: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+
+  --_container-shape: var(--md-sys-shape-corner-extra-large);
+  --md-ripple-color: var(--md-sys-color-on-surface);
+  --md-focus-ring-color: var(--md-sys-color-secondary);
+}
+
+/* Clip layer: the visible (masked) item box with the 28dp corners. Kept apart
+   from .item so the focus ring (outside the item) is not clipped. */
+.clip {
+  position: absolute;
+  inset: 0;
+  display: block;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+/* The unmasked content: always the large size, counter-offset by the mask. */
+.content {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  inset-inline-start: var(--_content-start, 0px);
+  width: var(--_large-size, var(--_item-w, 320px));
+  display: block;
+}
+
+.content > img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-/* Hero centres the large item and previews the next. */
-.scroller[data-variant='hero'] {
-  scroll-snap-type: x mandatory;
-  scroll-padding-inline: var(--_padding, 16px);
+/* --------------------------------------------------------------------------- */
+/* Interactive items (onClick → button, href → a): m3 "Carousel item" tokens — */
+/* hover 0.08 + 1dp elevation, focus 0.10 + focus ring, pressed 0.10 + ripple  */
+/* and a slight shape change.                                                  */
+/* --------------------------------------------------------------------------- */
+
+.item[data-interactive] {
+  cursor: pointer;
+  transition:
+    border-radius var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+    box-shadow var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
 }
 
-.scroller[data-variant='hero'] .item {
-  scroll-snap-align: center;
+.item[data-interactive]:hover:not([data-disabled]) {
+  box-shadow: var(--md-sys-elevation-shadow-level1);
+}
+
+/* Pressed: "Tapping on a carousel item changes the shape slightly". */
+.item[data-interactive]:active:not([data-disabled]) {
+  --_container-shape: var(--md-sys-shape-corner-large-increased);
+}
+
+/* Keyboard-focus state layer (0.10). TODO(#194): drop once the shared Ripple
+   paints the focus layer itself (PR #302) — otherwise the two would stack. */
+.item[data-interactive]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--md-sys-color-on-surface);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.item[data-interactive]:focus-visible:not([data-disabled])::after {
+  opacity: var(--md-sys-state-focus-state-layer-opacity);
+}
+
+.item[data-disabled] {
+  cursor: default;
+  opacity: 0.38;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .item {
+  .item[data-interactive] {
     transition: none;
   }
 }
