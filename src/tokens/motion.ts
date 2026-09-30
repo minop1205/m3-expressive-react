@@ -1,9 +1,12 @@
 /**
  * MD3 Expressive motion-physics (spring) tokens.
  *
- * Springs are defined by damping ratio + stiffness and cannot be expressed as
- * CSS easing, so they live here for JS-driven animation (e.g. Web Animations,
- * Framer Motion). Sourced from androidx Compose Standard/Expressive motion tokens.
+ * Springs are defined by damping ratio + stiffness. These raw values serve
+ * JS-driven animation (e.g. Web Animations, Framer Motion); CSS consumers use
+ * the baked `--md-sys-motion-spring-*-duration` / `-easing` tokens in
+ * tokens.css, generated from these tables (scripts/generate-motion-tokens.ts)
+ * and switched per subtree by `ThemeProvider motionScheme`. Sourced from
+ * androidx Compose `StandardMotionTokens` / `ExpressiveMotionTokens`.
  * See docs/md3-token-reference.md §5.
  */
 
@@ -14,6 +17,10 @@ export interface SpringToken {
   readonly stiffness: number
 }
 
+/**
+ * Compose `MotionScheme.standard()` / `.expressive()`. The library default is
+ * `'expressive'` (see `ThemeProvider`'s `motionScheme` prop).
+ */
 export type MotionScheme = 'standard' | 'expressive'
 
 /** Spatial springs animate position/size and may overshoot. */
