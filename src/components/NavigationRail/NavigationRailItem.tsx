@@ -9,6 +9,8 @@ import {
 } from 'react'
 import clsx from 'clsx'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import { Ripple } from '../../primitives/Ripple/Ripple'
+import { defaultNavBadgeLabel, hasNavBadge } from '../../internal/navBadge'
 import { RailContext } from './NavigationRailContext'
 import { useRailMorph } from './useRailMorph'
 import styles from './NavigationRailItem.module.css'
@@ -17,10 +19,27 @@ export interface NavigationRailItemProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'value'> {
   /** Destination value; selected state is derived from the parent rail. */
   value: string
+  /** The item icon (outlined, per m3.material.io, when `selectedIcon` is given). */
   icon: ReactNode
+  /**
+   * Icon shown while this destination is selected — typically the filled
+   * version of `icon` (m3: filled for the selected destination, outlined for
+   * the rest). Falls back to `icon`.
+   */
+  selectedIcon?: ReactNode
+  /**
+   * The item label. Without a label, give the item an `aria-label` (which then
+   * also replaces the announced badge text).
+   */
   label?: ReactNode
   /** Badge on the icon: content (e.g. `"3"`) for a large badge, `true` for a small dot. */
   badge?: ReactNode
+  /**
+   * Accessible text for the badge, announced after the label. Defaults to
+   * `"{badge} new notifications"` for a counting badge and `"New notification"`
+   * for a dot.
+   */
+  badgeLabel?: string
   /** Selected state when used standalone (outside a `NavigationRail`). */
   selected?: boolean
   /**
@@ -45,11 +64,26 @@ export interface NavigationRailItemProps
  */
 export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailItemProps>(
   function NavigationRailItem(
-    { value, icon, label, badge, selected: selectedProp, expanded, disabled = false, className, onClick, ...rest },
+    {
+      value,
+      icon,
+      selectedIcon,
+      label,
+      badge,
+      badgeLabel,
+      selected: selectedProp,
+      expanded,
+      disabled = false,
+      className,
+      onClick,
+      ...rest
+    },
     ref,
   ) {
     const ctx = useContext(RailContext)
     const selected = ctx ? ctx.value === value : !!selectedProp
+    const showBadge = hasNavBadge(badge)
+    const badgeText = showBadge ? (badgeLabel ?? defaultNavBadgeLabel(badge)) : undefined
 
     const buttonRef = useRef<HTMLButtonElement | null>(null)
     const labelExpRef = useRef<HTMLSpanElement>(null)
@@ -100,11 +134,14 @@ export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailIt
           ctx?.onChange(event, value)
         }}
       >
-        <span className={styles.shape} aria-hidden="true" />
+        <span className={styles.shape} aria-hidden="true">
+          {/* State layer + press ripple clipped to the pill, driven by the
+              whole (full-width) item. */}
+          <Ripple control={buttonRef} disabled={disabled} className={styles.ripple} />
+        </span>
         <span className={styles.icon} aria-hidden="true">
-          {icon}
-          {badge != null &&
-            badge !== false &&
+          {selected && selectedIcon != null ? selectedIcon : icon}
+          {showBadge &&
             (badge === true ? (
               <span className={styles.badgeDot} />
             ) : (
@@ -123,6 +160,9 @@ export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailIt
             </span>
           </>
         )}
+        {/* Read after the destination label (m3 badges/accessibility); the
+            visible badge above is decorative. */}
+        {badgeText && <span className={styles.visuallyHidden}>{` ${badgeText}`}</span>}
         {!disabled && <FocusRing className={styles.focus} />}
       </button>
     )
