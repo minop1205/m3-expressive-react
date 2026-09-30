@@ -7,6 +7,7 @@ import {
   useLayoutEffect,
   useRef,
   type ButtonHTMLAttributes,
+  type FocusEvent,
   type HTMLAttributes,
   type KeyboardEvent,
   type MouseEvent,
@@ -24,7 +25,14 @@ interface TabsContextValue {
   value: string
   onChange: (event: MouseEvent<HTMLButtonElement>, value: string) => void
   variant: TabsVariant
+  /** Value of the tab that currently takes `tabIndex=0`. */
+  tabStop: string
+  onTabFocus: (value: string) => void
 }
+
+const isRtl = (el: Element) =>
+  getComputedStyle(el).direction === 'rtl' ||
+  el.closest('[dir]')?.getAttribute('dir')?.toLowerCase() === 'rtl'
 
 const TabsContext = createContext<TabsContextValue | null>(null)
 
@@ -71,25 +79,49 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
     className,
     children,
     onKeyDown,
+    onBlur,
     ...rest
   },
   ref,
 ) {
+  // Roving tabindex: the focused tab is the tab stop while focus is inside the
+  // list; when focus leaves, the stop returns to the selected tab (APG: Tab
+  // into the list lands on the active tab).
+  const [focusedValue, setFocusedValue] = useState<string | null>(null)
+
+  const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
+    onBlur?.(event)
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+      setFocusedValue(null)
+    }
+  }
+
+  // Manual activation (m3 a11y key table, WAI-ARIA APG Tabs): Left/Right
+  // (swapped in RTL) and Home/End only move focus between enabled tabs;
+  // Space/Enter select through the native button click, firing onChange.
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     onKeyDown?.(event)
-    if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
+    if (event.defaultPrevented) return
+    const { key } = event
+    if (key !== 'ArrowRight' && key !== 'ArrowLeft' && key !== 'Home' && key !== 'End') {
+      return
+    }
+    const list = event.currentTarget
     const tabs = Array.from(
-      event.currentTarget.querySelectorAll<HTMLButtonElement>(
-        '[role="tab"]:not(:disabled)',
-      ),
-    )
+      list.querySelectorAll<HTMLButtonElement>('[role="tab"]:not(:disabled)'),
+    ).filter((t) => t.closest('[role="tablist"]') === list)
     const currentIndex = tabs.findIndex((t) => t === document.activeElement)
     if (currentIndex === -1) return
     event.preventDefault()
-    const delta = event.key === 'ArrowRight' ? 1 : -1
-    const next = tabs[(currentIndex + delta + tabs.length) % tabs.length]
-    next.focus()
-    next.click()
+    let nextIndex: number
+    if (key === 'Home') nextIndex = 0
+    else if (key === 'End') nextIndex = tabs.length - 1
+    else {
+      // Arrows follow the visual order, so they swap in right-to-left layouts.
+      const forward = (key === 'ArrowRight') !== isRtl(list)
+      nextIndex = (currentIndex + (forward ? 1 : -1) + tabs.length) % tabs.length
+    }
+    tabs[nextIndex].focus()
   }
   const isControlled = value !== undefined
   const [uncontrolled, setUncontrolled] = useState(defaultValue ?? '')
@@ -207,7 +239,15 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
   }, [scrollable, current])
 
   return (
-    <TabsContext.Provider value={{ value: current, onChange: handleChange, variant }}>
+    <TabsContext.Provider
+      value={{
+        value: current,
+        onChange: handleChange,
+        variant,
+        tabStop: focusedValue ?? current,
+        onTabFocus: setFocusedValue,
+      }}
+    >
       <div
         ref={setListRef}
         {...rest}
@@ -215,6 +255,7 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
         data-variant={variant}
         data-scrollable={scrollable || undefined}
         onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
         className={clsx(styles.tabs, className)}
       >
         {children}
@@ -236,7 +277,7 @@ export interface TabProps
 
 /** A single tab; must be rendered inside `Tabs`. */
 export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
-  { value, label, icon, disabled = false, className, onClick, ...rest },
+  { value, label, icon, disabled = false, className, onClick, onFocus, ...rest },
   ref,
 ) {
   const ctx = useContext(TabsContext)
@@ -250,11 +291,15 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
       type="button"
       role="tab"
       aria-selected={selected}
-      tabIndex={selected ? 0 : -1}
+      tabIndex={ctx.tabStop === value ? 0 : -1}
       disabled={disabled}
       data-selected={selected || undefined}
       data-with-icon={icon != null || undefined}
       className={clsx(styles.tab, className)}
+      onFocus={(event) => {
+        onFocus?.(event)
+        ctx.onTabFocus(value)
+      }}
       onClick={(event) => {
         onClick?.(event)
         ctx.onChange(event, value)
