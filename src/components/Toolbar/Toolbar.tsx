@@ -1,5 +1,6 @@
 import { forwardRef, type HTMLAttributes, type ReactNode } from 'react'
 import clsx from 'clsx'
+import { handleToolbarKeyDown } from '../../internal/toolbarNavigation'
 import styles from './Toolbar.module.css'
 
 export type ToolbarVariant = 'docked' | 'floating'
@@ -28,17 +29,36 @@ export interface ToolbarProps extends HTMLAttributes<HTMLDivElement> {
  * 48dp slot; standard `IconButton`s pick up the scheme's content colors
  * (standard: OnSurfaceVariant, selected SecondaryContainer / OnSecondaryContainer;
  * vibrant: OnPrimaryContainer, selected SurfaceContainer / OnSurface).
+ *
+ * Keyboard: every item stays in the Tab order, and the arrow keys also move
+ * between items — Left / Right (mirrored in RTL) for a horizontal toolbar,
+ * Up / Down for a vertical one, Home / End to the ends; disabled items are
+ * skipped and text fields keep their own arrow keys. Give the toolbar an
+ * `aria-label` (recommended when a page has several toolbars).
  */
 export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar(
-  { variant = 'docked', color = 'standard', orientation = 'horizontal', className, children, ...rest },
+  {
+    variant = 'docked',
+    color = 'standard',
+    orientation = 'horizontal',
+    className,
+    children,
+    onKeyDown,
+    ...rest
+  },
   ref,
 ) {
+  const ariaOrientation = variant === 'floating' ? orientation : 'horizontal'
   return (
     <div
       ref={ref}
       {...rest}
       role="toolbar"
-      aria-orientation={variant === 'floating' ? orientation : 'horizontal'}
+      aria-orientation={ariaOrientation}
+      onKeyDown={(event) => {
+        onKeyDown?.(event)
+        handleToolbarKeyDown(event, ariaOrientation)
+      }}
       data-variant={variant}
       data-color={color}
       data-orientation={orientation}
