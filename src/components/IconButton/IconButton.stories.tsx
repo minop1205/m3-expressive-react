@@ -108,3 +108,102 @@ export const Disabled: Story = {
   ),
   args: { disabled: true },
 }
+
+const VARIANTS = ['standard', 'filled', 'tonal', 'outlined'] as const
+const SIZES = ['xs', 'sm', 'md', 'lg', 'xl'] as const
+
+/** Every variant as a toggle: unselected (top row) and selected (bottom row). */
+export const ToggleVariants: Story = {
+  render: (args) => (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(4, auto)',
+        gap: 12,
+        justifyItems: 'center',
+      }}
+    >
+      {([false, true] as const).map((selected) =>
+        VARIANTS.map((variant) => (
+          <IconButton
+            {...args}
+            key={`${variant}-${selected}`}
+            variant={variant}
+            toggle
+            selected={selected}
+            icon={<Favorite />}
+            selectedIcon={<FavoriteFill />}
+            aria-label={`${variant} ${selected ? 'selected' : 'unselected'}`}
+          />
+        )),
+      )}
+    </div>
+  ),
+}
+
+/** Disabled toggles: the disabled colors win over the selection colors. */
+export const DisabledToggles: Story = {
+  ...ToggleVariants,
+  args: { disabled: true },
+}
+
+/** Resting shapes (rows 1–2) and their selected swap round ⇄ square (rows 3–4). */
+export const Shapes: Story = {
+  render: (args) => (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(5, auto)',
+        gap: 12,
+        alignItems: 'center',
+        justifyItems: 'center',
+      }}
+    >
+      {([false, true] as const).map((selected) =>
+        (['round', 'square'] as const).map((shape) =>
+          SIZES.map((size) => (
+            <IconButton
+              {...args}
+              key={`${shape}-${size}-${selected}`}
+              shape={shape}
+              size={size}
+              toggle={selected}
+              selected={selected || undefined}
+              aria-label={`${shape} ${size}${selected ? ' selected' : ''}`}
+            />
+          )),
+        ),
+      )}
+    </div>
+  ),
+}
+
+/** Outlined next to filled across the size × width scale — identical containers. */
+export const OutlinedSizes: Story = {
+  render: (args) => (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(6, auto)',
+        gap: 12,
+        alignItems: 'center',
+        justifyItems: 'center',
+      }}
+    >
+      {SIZES.map((size) =>
+        (['narrow', 'default', 'wide'] as const).flatMap((width) =>
+          (['outlined', 'filled'] as const).map((variant) => (
+            <IconButton
+              {...args}
+              key={`${size}-${width}-${variant}`}
+              size={size}
+              width={width}
+              variant={variant}
+              aria-label={`${variant} ${size} ${width}`}
+            />
+          )),
+        ),
+      )}
+    </div>
+  ),
+}

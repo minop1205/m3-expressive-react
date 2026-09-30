@@ -209,6 +209,59 @@ describe('TextField', () => {
     expect(document.getElementById(describedBy!)).toHaveTextContent('Help')
   })
 
+  it('describes the input with its prefix and suffix, then the supporting text', () => {
+    render(
+      <TextField
+        label="Price"
+        prefixText="$"
+        suffixText="USD"
+        supportingText="Per item"
+        value="5"
+        onChange={() => {}}
+      />,
+    )
+    expect(screen.getByRole('textbox')).toHaveAccessibleDescription('$ USD Per item')
+  })
+
+  it('reads the counter as a character count, not the visible "n / max"', () => {
+    render(<TextField label="Bio" maxLength={100} value="abc" onChange={() => {}} />)
+    expect(screen.getByRole('textbox')).toHaveAccessibleDescription(
+      'Character count: 3 of 100',
+    )
+    expect(screen.getByText('3 / 100')).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('accepts a custom counter label', () => {
+    render(
+      <TextField
+        label="Bio"
+        maxLength={10}
+        value="ab"
+        onChange={() => {}}
+        getCounterLabel={(n, max) => `${n}/${max} 文字`}
+      />,
+    )
+    expect(screen.getByRole('textbox')).toHaveAccessibleDescription('2/10 文字')
+  })
+
+  it('keeps the counter out of the error alert', () => {
+    render(
+      <TextField
+        label="Bio"
+        error
+        errorText="Too long"
+        maxLength={5}
+        value="abcdef"
+        onChange={() => {}}
+      />,
+    )
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent(/^Too long$/)
+    expect(screen.getByRole('textbox')).toHaveAccessibleDescription(
+      'Too long Character count: 6 of 5',
+    )
+  })
+
   it('clicking the container focuses the input', async () => {
     const user = userEvent.setup()
     const { container } = render(<TextField label="Name" />)

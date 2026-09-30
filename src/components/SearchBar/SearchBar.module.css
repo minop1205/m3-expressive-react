@@ -1,78 +1,129 @@
 /**
- * MD3 Search bar. Values from androidx.compose.material3 SearchBarTokens:
- * 56dp SurfaceContainerHigh stadium (28dp radius), 360–720dp width; OnSurface
- * BodyLarge input, OnSurfaceVariant placeholder, OnSurface leading icon,
- * OnSurfaceVariant trailing icon, 24dp icons, 16dp icon insets, elevation 0.
+ * MD3 Search bar. Values from androidx.compose.material3 SearchBarTokens +
+ * m3.material.io Search specs (docs/audits/searchbar.md):
+ * 56dp SurfaceContainerHigh stadium, 360–720dp width; OnSurface BodyLarge
+ * input with a Primary caret, OnSurfaceVariant placeholder, OnSurface leading
+ * icon, OnSurfaceVariant trailing icon, 24dp icons in 48dp slots, elevation 0.
+ * State layer on-surface (hover 0.08 / pressed 0.10 via Ripple) and a
+ * keyboard-only focus ring (secondary 3dp, offset 2dp).
+ *
+ * Docked search view = the Expressive "contained" style (Compose
+ * ExpandedDockedSearchBarWithGap): a separate 12dp results container 2dp
+ * below the bar, no divider, min 240dp / max 2/3 of the viewport height,
+ * over a 32% scrim. The view's position and width (the bar's) are written
+ * inline by the shared popup helper (src/internal/usePopupPosition); it is a
+ * `popover="manual"` element drawn in the top layer.
  */
 
 .wrapper {
   position: relative;
   width: 100%;
+  min-width: 360px;
   max-width: 720px;
+
+  --_container-color: var(--md-sys-color-surface-container-high);
+  --_container-shape: var(--md-sys-shape-corner-full);
+  --_input-text-color: var(--md-sys-color-on-surface);
+  --_caret-color: var(--md-sys-color-primary);
+  --_supporting-text-color: var(--md-sys-color-on-surface-variant);
+  --_leading-icon-color: var(--md-sys-color-on-surface);
+  --_trailing-icon-color: var(--md-sys-color-on-surface-variant);
+  --_state-layer-color: var(--md-sys-color-on-surface);
+  --_view-container-color: var(--md-sys-color-surface-container-high);
+  --_view-container-shape: var(--md-sys-shape-corner-medium);
+  --_view-min-height: 240px;
+  --_scrim-color: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
+
+  /*
+   * Motion (Compose ExpandedDockedSearchBarWithGap): the container expands on
+   * DefaultSpatial and collapses on FastSpatial; the content fades in over
+   * 100ms after a 50ms delay and out over 100ms (Compose tweens — kept on
+   * the duration / easing tokens). Spatial: motion-scheme spring tokens.
+   */
+  --_expand-duration: var(--md-sys-motion-spring-default-spatial-duration);
+  --_expand-easing: var(--md-sys-motion-spring-default-spatial-easing);
+  --_collapse-duration: var(--md-sys-motion-spring-fast-spatial-duration);
+  --_collapse-easing: var(--md-sys-motion-spring-fast-spatial-easing);
+
+  /* While open (and through the collapse) the whole component — scrim,
+     view, bar — stacks above the page. */
+  z-index: 0;
+  transition: z-index 0s linear var(--_collapse-duration);
+}
+
+.wrapper[data-open] {
+  z-index: 20;
+  transition-delay: 0s;
 }
 
 .bar {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 4px;
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
   height: 56px;
-  padding-inline: 16px;
-  border-radius: var(--md-sys-shape-corner-full);
-  background-color: var(--md-sys-color-surface-container-high);
-  color: var(--md-sys-color-on-surface);
+  /* 4dp + 48dp icon slot + 4dp: the icon sits 16dp in, the text starts at 56dp. */
+  padding-inline: 4px 16px;
+  border-radius: var(--_container-shape);
+  background-color: var(--_container-color);
+  color: var(--_input-text-color);
+  cursor: text;
+
+  --md-ripple-color: var(--_state-layer-color);
 }
 
-/* Expanded search view (docked results dropdown). */
-.view {
-  position: absolute;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  z-index: 20;
-  display: none;
-  border-radius: 12px;
-  background-color: var(--md-sys-color-surface-container-high);
-  box-shadow: var(--md-sys-elevation-shadow-level3);
-  overflow: hidden;
+.bar[data-has-end] {
+  padding-inline-end: 4px;
 }
 
-.view[data-open] {
-  display: block;
+/* Hovering / pressing an interactive slot child (e.g. a navigation
+   IconButton) shows only that child's own state layer, not the bar's. */
+.bar:has(.slot :is(button, a[href], [role='button']):hover) > .stateLayer {
+  visibility: hidden;
 }
 
-.divider {
-  height: 1px;
-  background-color: var(--md-sys-color-outline);
+/* Keyboard-only focus indicator around the whole bar (secondary, 3dp,
+   offset 2dp — the FocusRing contract). Shown by JS (`data-focus-visible`)
+   because text inputs match :focus-visible on pointer focus too. */
+.focusRing {
+  composes: ring fill from '../../primitives/FocusRing/FocusRing.module.css';
 }
 
-.results {
-  max-height: 320px;
-  overflow-y: auto;
+.bar[data-focus-visible] > .focusRing {
+  display: flex;
+}
+
+/* 48dp leading / trailing slots (Compose: minimumInteractiveComponentSize
+   boxes). They host a decorative icon or an interactive IconButton. */
+.slot {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
 }
 
 .leading {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  color: var(--md-sys-color-on-surface);
+  color: var(--_leading-icon-color);
 }
 
 .trailing {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--_trailing-icon-color);
 }
 
-.leading svg,
-.trailing svg {
+.glyph {
+  display: inline-flex;
+}
+
+.slot > svg,
+.glyph > svg {
   width: 24px;
   height: 24px;
   fill: currentColor;
@@ -82,10 +133,12 @@
   flex: 1 1 auto;
   min-width: 0;
   height: 100%;
+  padding: 0;
   border: none;
   background: transparent;
   outline: none;
-  color: var(--md-sys-color-on-surface);
+  color: var(--_input-text-color);
+  caret-color: var(--_caret-color);
   font-family: var(--md-sys-typescale-body-large-font);
   font-size: var(--md-sys-typescale-body-large-size);
   font-weight: var(--md-sys-typescale-body-large-weight);
@@ -94,7 +147,7 @@
 }
 
 .input::placeholder {
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--_supporting-text-color);
   opacity: 1;
 }
 
@@ -103,6 +156,149 @@
 .input::-webkit-search-cancel-button {
   -webkit-appearance: none;
   appearance: none;
+}
+
+/* Scrim over the main content while the docked view is open (click closes).
+   It stays in the page (not the top layer, unlike the view) so the in-flow
+   bar keeps stacking above it. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-color: var(--_scrim-color);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--_collapse-duration) linear,
+    visibility 0s linear var(--_collapse-duration);
+}
+
+.wrapper[data-open] .scrim {
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity var(--_expand-duration) linear,
+    visibility 0s;
+}
+
+/* Docked search view (contained style). Reset the UA [popover] box
+   (inset: 0; margin: auto; border; padding; overflow: auto…); the z-index
+   only matters without Popover API support. */
+.view {
+  position: fixed;
+  inset: auto;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  box-sizing: border-box;
+  height: auto;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  border-radius: var(--_view-container-shape);
+  background-color: var(--_view-container-color);
+  color: inherit;
+  overflow: hidden;
+  visibility: hidden;
+  clip-path: inset(0 0 100% 0 round var(--_view-container-shape));
+  transition:
+    clip-path var(--_collapse-duration) var(--_collapse-easing),
+    visibility 0s linear var(--_collapse-duration);
+  /* Keep the top-layer popover rendered through the collapse. Browsers that
+     don't know `allow-discrete` drop this declaration and keep the one above. */
+  transition:
+    clip-path var(--_collapse-duration) var(--_collapse-easing),
+    visibility 0s linear var(--_collapse-duration),
+    display var(--_collapse-duration) allow-discrete,
+    overlay var(--_collapse-duration) allow-discrete;
+}
+
+.view[data-open] {
+  visibility: visible;
+  clip-path: inset(0 0 0 0 round var(--_view-container-shape));
+  transition:
+    clip-path var(--_expand-duration) var(--_expand-easing),
+    visibility 0s;
+}
+
+/* Entering the top layer starts from `display: none` — give the expand
+   motion its starting point. */
+@starting-style {
+  .view[data-open] {
+    clip-path: inset(0 0 100% 0 round var(--_view-container-shape));
+  }
+
+  .view[data-open] .results {
+    opacity: 0;
+  }
+}
+
+.results {
+  box-sizing: border-box;
+  min-height: var(--_view-min-height);
+  max-height: calc(100vh * 2 / 3);
+  max-height: calc(100dvh * 2 / 3);
+  /* …and no taller than the room below the bar (written by the popup helper),
+     so the results scroll inside the view instead of running off-screen —
+     but never below the 240dp minimum. */
+  max-height: max(
+    var(--_view-min-height),
+    min(calc(100dvh * 2 / 3), var(--_popup-available-height, 100dvh))
+  );
+  overflow-y: auto;
+  opacity: 0;
+  transition: opacity var(--md-sys-motion-duration-short2)
+    var(--md-sys-motion-easing-standard-decelerate);
+}
+
+.view[data-open] .results {
+  opacity: 1;
+  transition: opacity var(--md-sys-motion-duration-short2)
+    var(--md-sys-motion-easing-standard-accelerate)
+    var(--md-sys-motion-duration-short1);
+}
+
+/* Reduced motion (B3): no spatial reveal — the view only fades (the scrim
+   already only fades). */
+@media (prefers-reduced-motion: reduce) {
+  .view {
+    clip-path: none;
+    opacity: 0;
+    transition:
+      opacity var(--md-sys-motion-duration-short2) linear,
+      visibility 0s linear var(--md-sys-motion-duration-short2),
+      display var(--md-sys-motion-duration-short2) allow-discrete,
+      overlay var(--md-sys-motion-duration-short2) allow-discrete;
+  }
+
+  .view[data-open] {
+    clip-path: none;
+    opacity: 1;
+    transition:
+      opacity var(--md-sys-motion-duration-short2) linear,
+      visibility 0s;
+  }
+
+  .results,
+  .view[data-open] .results {
+    opacity: 1;
+    transition: none;
+  }
+
+  @starting-style {
+    .view[data-open] {
+      clip-path: none;
+      opacity: 0;
+    }
+
+    .view[data-open] .results {
+      opacity: 1;
+    }
+  }
+
+  .wrapper {
+    transition-delay: var(--md-sys-motion-duration-short2);
+  }
 }
 
 /*
@@ -126,4 +322,17 @@
 
 .wrapper[data-disabled] .input::placeholder {
   color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+/* Live region announcing the open view (`suggestionsLabel`). */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }

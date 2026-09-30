@@ -1,31 +1,32 @@
 /**
- * MD3 Tabs. Values from androidx.compose.material3 Primary/SecondaryNavigationTab
- * tokens: Surface row, TitleSmall labels, 24dp icons, 48dp (label) / 72dp
- * (icon+label) height, 16dp horizontal padding, 3dp indicator. Primary =
- * Primary active + content-width rounded pill; secondary = OnSurface active +
- * full-width square line. Bottom divider OutlineVariant 1dp.
+ * MD3 Tabs. Values from m3.material.io Tabs specs + androidx.compose.material3
+ * Primary/SecondaryNavigationTab tokens (see docs/audits/tabs.md): Surface
+ * row, TitleSmall labels, 24dp icons, 48dp (label) / 64dp (icon+label)
+ * height, 16dp horizontal padding. Fixed tabs are equal width; scrollable tabs
+ * size to content (90dp min) with 52dp edge padding. One sliding indicator:
+ * primary = content-width (min 24dp) 3dp bar, top corners 3dp; secondary =
+ * full-tab-width 2dp line. Bottom divider OutlineVariant 1dp.
  */
 
 .tabs {
   position: relative;
   display: flex;
+  box-sizing: border-box;
   align-items: stretch;
   background-color: var(--md-sys-color-surface);
   box-shadow: inset 0 -1px 0 0 var(--md-sys-color-outline-variant);
 }
 
-/* Scrollable tabs: content-width tabs that scroll horizontally. */
+/* Scrollable tabs: content-width tabs that scroll horizontally, with
+   Compose `ScrollableTabRowEdgeStartPadding` (52dp) at both ends. */
 .tabs[data-scrollable] {
   overflow-x: auto;
+  padding-inline: 52px;
   scrollbar-width: none;
 }
 
 .tabs[data-scrollable]::-webkit-scrollbar {
   display: none;
-}
-
-.tabs[data-scrollable] .tab {
-  flex: 0 0 auto;
 }
 
 /* --------------------------------------------------------------------------- */
@@ -34,14 +35,15 @@
 .tab {
   position: relative;
   display: inline-flex;
-  flex: 1 1 auto;
+  /* Fixed tabs: "divided into equal sections" (Compose rowWidth / tabCount). */
+  flex: 1 1 0;
+  min-width: 0;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
   box-sizing: border-box;
   min-height: 48px;
-  min-width: 90px;
   margin: 0;
   padding: 0 16px;
   border: none;
@@ -50,43 +52,69 @@
   outline: none;
   -webkit-tap-highlight-color: transparent;
 
-  color: var(--_content-color);
+  color: var(--_label-text-color);
   font-family: var(--md-sys-typescale-title-small-font);
   font-size: var(--md-sys-typescale-title-small-size);
   font-weight: var(--md-sys-typescale-title-small-weight);
   line-height: var(--md-sys-typescale-title-small-line-height);
   letter-spacing: var(--md-sys-typescale-title-small-tracking);
+  /* Compose `TabTransition`: FastEffects towards unselected, DefaultEffects
+     towards selected (rule below). */
+  transition: color var(--md-sys-motion-spring-fast-effects-duration)
+    var(--md-sys-motion-spring-fast-effects-easing);
 
-  --_content-color: var(--md-sys-color-on-surface-variant);
+  --_label-text-color: var(--md-sys-color-on-surface-variant);
+  --md-ripple-color: var(--_state-layer-color);
   --md-focus-ring-color: var(--md-sys-color-secondary);
+  /* Spec focus indicator offset -3dp: the ring stays inside the tab (no
+     overlap with neighbours, no clipping by the scrollable container). */
+  --md-focus-ring-offset: -3px;
+}
+
+/* Scrollable tabs: content width, 90dp minimum (ScrollableTabRowMinTabWidth). */
+.tabs[data-scrollable] .tab {
+  flex: 0 0 auto;
+  min-width: 90px;
 }
 
 .tab[data-with-icon] {
-  min-height: 72px;
-  padding-block: 8px;
+  min-height: 64px;
 }
 
-/* Inactive → active content colors per variant. */
-.tabs[data-variant='primary'] .tab[data-selected] {
-  --_content-color: var(--md-sys-color-primary);
-}
-
-.tabs[data-variant='secondary'] .tab[data-selected] {
-  --_content-color: var(--md-sys-color-on-surface);
-}
-
+/* State layer: primary tabs tint with Primary, except inactive hover/focus
+   which use OnSurface (inactive pressed stays Primary); secondary = OnSurface. */
 .tabs[data-variant='primary'] .tab {
-  --md-ripple-color: var(--md-sys-color-primary);
+  --_state-layer-color: var(--md-sys-color-primary);
+}
+
+.tabs[data-variant='primary'] .tab:not([data-selected]):not(:active) {
+  --_state-layer-color: var(--md-sys-color-on-surface);
 }
 
 .tabs[data-variant='secondary'] .tab {
-  --md-ripple-color: var(--md-sys-color-on-surface);
+  --_state-layer-color: var(--md-sys-color-on-surface);
+}
+
+/* Inactive hover / focus / pressed content: OnSurface (both variants). */
+.tab:not([data-selected]):hover,
+.tab:not([data-selected]):focus-visible,
+.tab:not([data-selected]):active {
+  --_label-text-color: var(--md-sys-color-on-surface);
+}
+
+/* Active content colors per variant. */
+.tabs[data-variant='primary'] .tab[data-selected] {
+  --_label-text-color: var(--md-sys-color-primary);
+}
+
+.tabs[data-variant='secondary'] .tab[data-selected] {
+  --_label-text-color: var(--md-sys-color-on-surface);
 }
 
 .tab:disabled {
   cursor: default;
   pointer-events: none;
-  --_content-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  --_label-text-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
 }
 
 .icon,
@@ -101,7 +129,6 @@
   justify-content: center;
   width: 24px;
   height: 24px;
-  color: var(--_content-color);
 }
 
 .icon svg {
@@ -111,33 +138,58 @@
 }
 
 .label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.tab[data-selected] {
+  transition: color var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
+}
+
 /* --------------------------------------------------------------------------- */
-/* Active indicator                                                            */
+/* Active indicator — one element for the row, positioned from JS under the    */
+/* selected tab, sliding between tabs (Compose TabIndicatorOffsetNode:        */
+/* DefaultSpatial, motion-scheme spring tokens).                               */
 /* --------------------------------------------------------------------------- */
 .indicator {
   position: absolute;
   bottom: 0;
+  left: 0;
+  width: 0;
   height: 3px;
   background-color: var(--md-sys-color-primary);
-  opacity: 0;
+  pointer-events: none;
   z-index: 1;
+  transition:
+    transform var(--md-sys-motion-spring-default-spatial-duration)
+      var(--md-sys-motion-spring-default-spatial-easing),
+    width var(--md-sys-motion-spring-default-spatial-duration)
+      var(--md-sys-motion-spring-default-spatial-easing);
 }
 
-.tab[data-selected] .indicator {
-  opacity: 1;
+.indicator[hidden] {
+  display: none;
 }
 
-/* Primary — content-width rounded pill (inset by the horizontal padding). */
-.tabs[data-variant='primary'] .indicator {
-  inset-inline: 16px;
+/* Primary: top corners 3dp (m3 table 3,3,0,0). */
+.tabs[data-variant='primary'] > .indicator {
   border-start-start-radius: 3px;
   border-start-end-radius: 3px;
 }
 
-/* Secondary — full-width square line. */
-.tabs[data-variant='secondary'] .indicator {
-  inset-inline: 0;
+/* Secondary: 2dp full-width square line. */
+.tabs[data-variant='secondary'] > .indicator {
+  height: 2px;
+}
+
+/* Reduced motion (B3): state changes are instant. */
+@media (prefers-reduced-motion: reduce) {
+  .tab,
+  .tab[data-selected],
+  .indicator {
+    transition: none;
+  }
 }

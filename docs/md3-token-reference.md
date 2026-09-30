@@ -124,6 +124,125 @@ Expressive scheme (lower-damped spatial → overshoot/bounce):
 | Effects Default | 1.0     | 1600      |
 | Effects Slow    | 1.0     | 800       |
 
+Source: Compose `MotionScheme.kt`, `tokens/StandardMotionTokens.kt`,
+`tokens/ExpressiveMotionTokens.kt` (androidx-main, token version v0_14_0). JS
+access: `spatialSprings` / `effectsSprings` in `src/tokens/motion.ts`.
+
+### Motion-scheme spring tokens (CSS)
+
+Every spring is also exposed as CSS custom properties, so component CSS never
+hardcodes a spring approximation:
+
+```
+--md-sys-motion-spring-{fast|default|slow}-{spatial|effects}-duration   /* e.g. 360ms */
+--md-sys-motion-spring-{fast|default|slow}-{spatial|effects}-easing     /* linear(…) */
+--md-sys-motion-spring-{fast|default|slow}-{spatial|effects}-damping    /* raw, unitless */
+--md-sys-motion-spring-{fast|default|slow}-{spatial|effects}-stiffness  /* raw, unitless */
+```
+
+**Scheme switch.** `:root` carries the **expressive** values (library default,
+ruling B2). `<ThemeProvider motionScheme="standard">` renders
+`data-md-motion-scheme="standard"` on its root element, and tokens.css
+redeclares the spring tokens for `[data-md-motion-scheme='standard']` (and
+`'expressive'`, so providers nest). Effects springs are identical in both schemes.
+
+| Spring          | Expressive (ζ / k → duration) | Standard (ζ / k → duration) |
+| --------------- | ----------------------------- | --------------------------- |
+| Fast spatial    | 0.6 / 800 → 360ms, peak 1.094 | 0.9 / 1400 → 230ms, ≈ 1.000 |
+| Default spatial | 0.8 / 380 → 440ms, peak 1.015 | 0.9 / 700 → 320ms, ≈ 1.000  |
+| Slow spatial    | 0.8 / 200 → 600ms, peak 1.015 | 0.9 / 300 → 490ms, ≈ 1.000  |
+| Fast effects    | 1.0 / 3800 → 150ms            | same                        |
+| Default effects | 1.0 / 1600 → 240ms            | same                        |
+| Slow effects    | 1.0 / 800 → 330ms             | same                        |
+
+**Derivation** (`src/theme/motionScheme.ts`; regenerate with
+`node scripts/generate-motion-tokens.ts`, a unit test fails on drift):
+
+1. Analytic step response of the damped spring (unit mass, ω₀ = √k, start 0 →
+   target 1, zero initial velocity): for ζ < 1,
+   `d(t) = e^(−ζω₀t)·(cos ω_d t + ζω₀/ω_d · sin ω_d t)`, ω_d = ω₀√(1−ζ²);
+   for ζ = 1, `d(t) = (1 + ω₀t)·e^(−ω₀t)`. Progress = 1 − d(t).
+2. Duration = last time |d(t)| ≥ 0.001 (0.1 % of the travel), rounded up to
+   10ms — the CSS counterpart of Compose stopping at the visibility threshold.
+3. Progress is sampled every 1ms over the duration and simplified
+   (Ramer–Douglas–Peucker, 0.002 tolerance) into `linear()` stops. `linear()`
+   accepts values > 1, so overshoot is encoded exactly (max error < 0.005).
+   Browser support: Chrome 113, Firefox 112, Safari 17.2.
+
+**Usage** — always pair duration and easing of the same spring; pick spatial
+for size / position / shape, effects for color / opacity:
+
+```css
+.thing {
+  transition:
+    border-radius var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    opacity var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing);
+}
+```
+
+A CSS transition interrupted mid-flight restarts from the current value with
+zero velocity (a true spring keeps its momentum) — acceptable for press and
+toggle morphs; JS-driven animations that need velocity continuity should read
+the raw damping / stiffness instead (`readSpring` / `stepSpring` in
+`src/internal/spring.ts`).
+
+**Reduced motion (ruling B3).** Under `prefers-reduced-motion: reduce`,
+tokens.css redeclares the three **spatial** durations as `0ms` (for `:root`
+and every `[data-md-motion-scheme]`, after the scheme rules), so spatial
+motion driven by the tokens is instant while effects springs keep their
+color / opacity fade — "instant or fade-only" with no per-component rule.
+A component rule is still needed for keyframe animations, for spatial
+properties animated on an effects token (e.g. the bounce-free press morph),
+and JS motion must check `prefersReducedMotion()`. Only indeterminate
+progress keeps a minimal motion (ProgressIndicator / LoadingIndicator).
+VRT captures with reduced motion and animations disabled, so baselines are
+unaffected.
+
+**Component mapping** (Compose `MotionSchemeKeyTokens` per animation; #314):
+
+| Component | Spatial | Effects |
+| --- | --- | --- |
+| Button / IconButton / SplitButton press morph | — (DefaultEffects: "prevent any bounce", B5) | DefaultEffects (shape), FastEffects (IconButton colors) |
+| Button toggle (selected) morph, ButtonGroup press width | FastSpatial | — |
+| SplitButton chevron rotate / offset | FastSpatial | — |
+| SegmentedButton check scale-in, label shift | FastSpatial | DefaultEffects (check fade, icon crossfade) |
+| Chip filter check slot | FastSpatial (expand) | DefaultEffects (shrink), SlowEffects / FastEffects (fade in / out) |
+| Fab extended morph, FabMenu | FastSpatial | FastEffects |
+| Tooltip / Menu open-close; Menu item + group shape morph | FastSpatial (scale, shape) | FastEffects (fade, item color) |
+| Snackbar enter / exit | FastSpatial (scale) | FastEffects (fade; exit length = 150ms) |
+| NavigationBar / NavigationRail item indicator | DefaultSpatial | DefaultEffects |
+| NavigationRail expand / modal slide (JS) | DefaultSpatial | DefaultEffects (scrim, shadow) |
+| NavigationDrawer (modal) | DefaultSpatial (open) | FastEffects (close), DefaultEffects (scrim in) |
+| Tabs indicator; tab label color | DefaultSpatial | DefaultEffects (to selected) / FastEffects |
+| SearchBar docked view | DefaultSpatial (expand) / FastSpatial (collapse) | content fades stay Compose tweens |
+| AppBar / Toolbar | FastSpatial (slots, padding) | DefaultEffects (color, snap / hide) |
+| DatePicker | FastSpatial (menu arrow) | DefaultEffects (year reveal, mode switch) |
+| TimePicker | DefaultSpatial (hand) | DefaultEffects (dial crossfade) |
+| Checkbox | DefaultSpatial (draw, check↔dash, fill scale) | DefaultEffects in / FastEffects out |
+| RadioButton | FastSpatial (dot grow) | DefaultEffects (ring color, dot shrink†) |
+| Switch | FastSpatial (thumb offset + size, icon) | — (colors: material-web 67ms) |
+| TextField | FastSpatial (label, indicator / outline width, notch) | FastEffects (colors), SlowEffects / FastEffects (content show / hide) |
+| Badge | FastSpatial (scale-in) | DefaultEffects (scale-out†) |
+| Carousel item press shape | — (DefaultEffects, as B5) | — |
+| BottomSheet / SideSheet scrim | — | DefaultEffects |
+
+† Shrinking to `scale(0)` uses the critically damped DefaultEffects: an
+expressive overshoot past 0 would render a mirrored dot / badge.
+
+**Not scheme keys — stay on `--md-sys-motion-duration-*` / `-easing-*`:**
+elevation (`box-shadow`; Compose `ElevationDefaults` tweens), state layers /
+Ripple / FocusRing, Dialog and the DatePicker / TimePicker modal enter
+(platform dialog), BottomSheet / SideSheet slide (`BottomSheetAnimationSpec`
+tween 300ms FastOutSlowIn), SwipeToDismiss settle (`AnchoredDraggableDefaults`
+tween), determinate progress (`ProgressAnimationSpec`, a fixed non-bouncy
+spring), Slider (no Compose motion), Switch colors, Checkbox mark
+visibility gating and the any→unchecked `snap(delayMillis = 100)` hold.
+`src/theme/motionUsage.test.ts` rejects `cubic-bezier(` in component code,
+leftover `TODO(#314)`, unpaired spring easing / duration, and JS motion
+without a reduced-motion check.
+
 ## 6. Color System / Dynamic Color
 
 System color roles (from `_md-sys-color.scss`):

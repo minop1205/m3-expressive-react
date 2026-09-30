@@ -51,24 +51,26 @@
   --md-ripple-color: var(--_state-layer-color);
   --md-focus-ring-color: var(--md-sys-color-secondary);
 
-  /* Press morph ≈ spec spring (damping 0.9 / stiffness 1400 → ~150ms with no
-     visible bounce; Compose regular buttons use the equally bounce-free
-     DefaultEffects). Toggle buttons override these vars below with the
-     springy FastSpatial-like curve. */
-  --_shape-morph-duration: var(--md-sys-motion-duration-short3);
-  --_shape-morph-easing: var(--md-sys-motion-easing-standard);
+  /* Press morph: Compose Button animates the pressed shape with
+     MotionSchemeKeyTokens.DefaultEffects ("intentional here to prevent any
+     bounce") — critically damped, identical in both motion schemes (B5, B2).
+     Toggle buttons override these vars below with FastSpatial (ToggleButton). */
+  --_shape-morph-duration: var(--md-sys-motion-spring-default-effects-duration);
+  --_shape-morph-easing: var(--md-sys-motion-spring-default-effects-easing);
   transition:
     box-shadow var(--md-sys-motion-duration-short3)
       var(--md-sys-motion-easing-standard),
     border-radius var(--_shape-morph-duration) var(--_shape-morph-easing);
 }
 
-/* Toggle buttons morph with a springy overshoot for both press and
-   selected-shape changes (Compose FastSpatial, Expressive scheme:
-   damping 0.6 / stiffness 800). data-selected exists only in toggle mode. */
+/* Toggle buttons morph on the FastSpatial spring for both press and
+   selected-shape changes (Compose MotionSchemeKeyTokens.FastSpatial). The
+   motion-scheme tokens make the bounce follow ThemeProvider motionScheme:
+   expressive 0.6 / 800 (visible overshoot), standard 0.9 / 1400.
+   data-selected exists only in toggle mode. */
 .button[data-selected] {
-  --_shape-morph-duration: var(--md-sys-motion-duration-medium3);
-  --_shape-morph-easing: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --_shape-morph-duration: var(--md-sys-motion-spring-fast-spatial-duration);
+  --_shape-morph-easing: var(--md-sys-motion-spring-fast-spatial-easing);
 }
 
 /* Expanded 48dp touch target without changing visual height. */

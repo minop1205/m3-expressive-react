@@ -1,6 +1,7 @@
 import { createRef } from 'react'
-import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { Carousel, CarouselItem } from './Carousel'
 
@@ -10,6 +11,18 @@ function Example() {
       <CarouselItem>One</CarouselItem>
       <CarouselItem>Two</CarouselItem>
       <CarouselItem>Three</CarouselItem>
+    </Carousel>
+  )
+}
+
+function Interactive({ onClick = () => {} }: { onClick?: (i: number) => void }) {
+  return (
+    <Carousel aria-label="Albums">
+      {['One', 'Two', 'Three', 'Four'].map((t, i) => (
+        <CarouselItem key={t} onClick={() => onClick(i)} disabled={i === 2}>
+          {t}
+        </CarouselItem>
+      ))}
     </Carousel>
   )
 }
@@ -65,5 +78,238 @@ describe('Carousel', () => {
   it('has no axe violations', async () => {
     const { container } = render(<Example />)
     expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('has no axe violations with interactive items', async () => {
+    const { container } = render(<Interactive />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('Carousel layout modes', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('uses the keyline layout for multi-browse / hero and free flow for uncontained', () => {
+    const { rerender } = render(<Example />)
+    expect(screen.getByRole('group', { name: 'Photos' })).toHaveAttribute('data-mode', 'keylines')
+    rerender(
+      <Carousel aria-label="Photos" variant="uncontained">
+        <CarouselItem>One</CarouselItem>
+      </Carousel>,
+    )
+    expect(screen.getByRole('group', { name: 'Photos' })).toHaveAttribute('data-mode', 'flow')
+  })
+
+  it('keeps every item the same size under prefers-reduced-motion (#246)', () => {
+    vi.stubGlobal(
+      'matchMedia',
+      (query: string) =>
+        ({
+          matches: query.includes('reduce'),
+          media: query,
+          addEventListener: () => {},
+          removeEventListener: () => {},
+        }) as unknown as MediaQueryList,
+    )
+    render(<Example />)
+    expect(screen.getByRole('group', { name: 'Photos' })).toHaveAttribute('data-mode', 'uniform')
+  })
+})
+
+describe('CarouselItem slide semantics (#249)', () => {
+  it('labels non-interactive items as slides with their position', () => {
+    render(<Example />)
+    const slides = screen.getAllByRole('group', { name: /of 3$/ })
+    expect(slides).toHaveLength(3)
+    expect(slides[1]).toHaveAttribute('aria-roledescription', 'slide')
+    expect(slides[1]).toHaveAccessibleName('2 of 3')
+  })
+
+  it('accepts a localized position label', () => {
+    render(
+      <Carousel aria-label="写真" getItemLabel={(p, c) => `${c} 枚中 ${p} 枚目`}>
+        <CarouselItem>One</CarouselItem>
+        <CarouselItem>Two</CarouselItem>
+      </Carousel>,
+    )
+    expect(screen.getByRole('group', { name: '2 枚中 2 枚目' })).toHaveTextContent('Two')
+  })
+
+  it('accepts localized role descriptions for the carousel and its slides', () => {
+    render(
+      <Carousel
+        aria-label="写真"
+        roleDescriptionLabel="カルーセル"
+        itemRoleDescriptionLabel="スライド"
+      >
+        <CarouselItem>One</CarouselItem>
+      </Carousel>,
+    )
+    expect(screen.getByRole('group', { name: '写真' })).toHaveAttribute(
+      'aria-roledescription',
+      'カルーセル',
+    )
+    expect(screen.getByRole('group', { name: '1 of 1' })).toHaveAttribute(
+      'aria-roledescription',
+      'スライド',
+    )
+  })
+
+  it('lets an explicit aria-label name the slide', () => {
+    render(
+      <Carousel aria-label="Photos">
+        <CarouselItem aria-label="Sunset">One</CarouselItem>
+      </Carousel>,
+    )
+    expect(screen.getByRole('group', { name: 'Sunset' })).toHaveAttribute(
+      'aria-roledescription',
+      'slide',
+    )
+  })
+
+  it('recomputes positions when items change', () => {
+    const { rerender } = render(
+      <Carousel aria-label="P">
+        <CarouselItem>A</CarouselItem>
+        <CarouselItem>B</CarouselItem>
+      </Carousel>,
+    )
+    rerender(
+      <Carousel aria-label="P">
+        <CarouselItem key="c">C</CarouselItem>
+        <CarouselItem key="b">B</CarouselItem>
+        <CarouselItem key="a">A</CarouselItem>
+      </Carousel>,
+    )
+    expect(screen.getByText('A').closest('[aria-roledescription="slide"]')).toHaveAccessibleName(
+      '3 of 3',
+    )
+  })
+
+  it('describes interactive items by position without a wrapping group', () => {
+    render(<Interactive />)
+    const two = screen.getByRole('button', { name: 'Two' })
+    expect(two).toHaveAccessibleDescription('2 of 4')
+    // Only the carousel itself is a group — no slide group around the button.
+    expect(screen.getAllByRole('group')).toHaveLength(1)
+  })
+})
+
+describe('CarouselItem interaction (#247)', () => {
+  it('renders onClick items as buttons activated by click, Enter and Space', async () => {
+    const onClick = vi.fn()
+    const user = userEvent.setup()
+    render(<Interactive onClick={onClick} />)
+    const one = screen.getByRole('button', { name: 'One' })
+    expect(one.tagName).toBe('BUTTON')
+    await user.click(one)
+    one.focus()
+    await user.keyboard('{Enter}')
+    await user.keyboard(' ')
+    expect(onClick.mock.calls.map((c) => c[0])).toEqual([0, 0, 0])
+  })
+
+  it('renders href items as links', () => {
+    render(
+      <Carousel aria-label="P">
+        <CarouselItem href="/album/1">Album</CarouselItem>
+      </Carousel>,
+    )
+    const link = screen.getByRole('link', { name: 'Album' })
+    expect(link).toHaveAttribute('href', '/album/1')
+    expect(link).toHaveAccessibleDescription('1 of 1')
+  })
+
+  it('disables an interactive item', async () => {
+    const onClick = vi.fn()
+    const user = userEvent.setup({ pointerEventsCheck: 0 })
+    render(<Interactive onClick={onClick} />)
+    const three = screen.getByRole('button', { name: 'Three' })
+    expect(three).toBeDisabled()
+    await user.click(three)
+    expect(onClick).not.toHaveBeenCalled()
+  })
+
+  it('forwards the ref to the item element', () => {
+    const ref = createRef<HTMLElement>()
+    render(
+      <Carousel aria-label="P">
+        <CarouselItem ref={ref} onClick={() => {}}>
+          One
+        </CarouselItem>
+      </Carousel>,
+    )
+    expect(ref.current).toBeInstanceOf(HTMLButtonElement)
+  })
+
+  it('keeps the container focusable only when no item is (scrollable-region-focusable)', () => {
+    const { unmount } = render(<Example />)
+    expect(screen.getByRole('group', { name: 'Photos' })).toHaveAttribute('tabindex', '0')
+    unmount()
+    render(<Interactive />)
+    expect(screen.getByRole('group', { name: 'Albums' })).not.toHaveAttribute('tabindex')
+  })
+
+  it('places initial Tab focus on the first item', async () => {
+    const user = userEvent.setup()
+    render(<Interactive />)
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'One' })).toHaveFocus()
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Two' })).toHaveFocus()
+  })
+})
+
+describe('Carousel keyboard navigation (#248)', () => {
+  it('moves between items with Left / Right, skipping disabled items', async () => {
+    const user = userEvent.setup()
+    render(<Interactive />)
+    screen.getByRole('button', { name: 'One' }).focus()
+    await user.keyboard('{ArrowRight}')
+    expect(screen.getByRole('button', { name: 'Two' })).toHaveFocus()
+    await user.keyboard('{ArrowRight}')
+    expect(screen.getByRole('button', { name: 'Four' })).toHaveFocus()
+    await user.keyboard('{ArrowRight}')
+    expect(screen.getByRole('button', { name: 'Four' })).toHaveFocus()
+    await user.keyboard('{ArrowLeft}')
+    expect(screen.getByRole('button', { name: 'Two' })).toHaveFocus()
+  })
+
+  it('does not intercept Up / Down', () => {
+    render(<Interactive />)
+    const one = screen.getByRole('button', { name: 'One' })
+    one.focus()
+    expect(fireEvent.keyDown(one, { key: 'ArrowDown' })).toBe(true)
+    expect(one).toHaveFocus()
+  })
+
+  it('never intercepts keys from content nested inside an item', () => {
+    render(
+      <Carousel aria-label="P">
+        <CarouselItem>
+          <input aria-label="Caption" />
+        </CarouselItem>
+        <CarouselItem onClick={() => {}}>Two</CarouselItem>
+      </Carousel>,
+    )
+    const input = screen.getByRole('textbox', { name: 'Caption' })
+    input.focus()
+    expect(fireEvent.keyDown(input, { key: 'ArrowRight' })).toBe(true)
+    expect(input).toHaveFocus()
+  })
+
+  it('leaves the event to a consumer that handled it', () => {
+    render(
+      <Carousel aria-label="P" onKeyDown={(e) => e.preventDefault()}>
+        <CarouselItem onClick={() => {}}>One</CarouselItem>
+        <CarouselItem onClick={() => {}}>Two</CarouselItem>
+      </Carousel>,
+    )
+    const one = screen.getByRole('button', { name: 'One' })
+    one.focus()
+    fireEvent.keyDown(one, { key: 'ArrowRight' })
+    expect(one).toHaveFocus()
   })
 })

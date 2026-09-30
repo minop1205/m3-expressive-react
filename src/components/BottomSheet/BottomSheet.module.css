@@ -26,8 +26,9 @@
   inset: 0;
   background-color: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
   opacity: 0;
-  transition: opacity var(--md-sys-motion-duration-medium2)
-    var(--md-sys-motion-easing-standard);
+  /* Scrim fade: Compose ModalBottomSheet DefaultEffects. */
+  transition: opacity var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
 }
 
 .root[data-open] .scrim {

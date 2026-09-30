@@ -1,9 +1,19 @@
 /**
  * MD3 (Expressive) Split button. A leading action button joined to a trailing
- * menu button with a 2dp gap. Outer corners are round (CornerFull); inner
- * corners are small and morph to round on the trailing button when the menu is
- * open. Colors mirror the standard Button variants. Per m3.material.io
- * split-button specs (sizes XS–XL).
+ * menu button with a 2dp gap. Per m3.material.io split-button specs (sizes
+ * XS–XL) + Compose SplitButtonDefaults / SplitButton*Tokens.
+ *
+ * Both halves carry Button's own `.button` class plus `data-variant` /
+ * `data-size` (SplitButton.tsx), so everything the spec says is "the same as
+ * buttons" — container / label / state-layer colors, disabled opacities,
+ * outline color and width, typography, icon size, the 48dp touch target
+ * (`::before`) and the press-morph timing (B5) — comes from Button.module.css
+ * and follows every Button fix automatically. This module only adds what is
+ * split-specific: paddings, widths, the joined corners and the chevron.
+ *
+ * Specificity: rules here that must beat Button's `.button:active:not(:disabled)`
+ * (0,3,0) border-radius use at least 0,4,0; plain overrides of `.button`
+ * (0,1,0) properties use 0,2,0.
  */
 
 .split {
@@ -11,9 +21,6 @@
   align-items: stretch;
   gap: 2px;
   vertical-align: middle;
-
-  --_inner: var(--md-sys-shape-corner-small);
-  --_outer: calc(var(--_height) / 2);
 }
 
 /* Menu wraps the trailing button in an inline-flex span. */
@@ -21,245 +28,163 @@
   display: inline-flex;
 }
 
-/* ---- Shared button base ---- */
-.leading,
-.trailing {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  height: var(--_height);
-  appearance: none;
-  margin: 0;
-  border: var(--_outline-width, 0) solid var(--_outline-color, transparent);
-  outline: none;
-  cursor: pointer;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  color: var(--_label-text-color);
-  background-color: var(--_container-color);
-  box-shadow: var(--_shadow, none);
+/* --------------------------------------------------------------------------- */
+/* Geometry                                                                    */
+/* --------------------------------------------------------------------------- */
 
-  font-family: var(--md-sys-typescale-label-large-font);
-  font-size: var(--_font-size);
-  line-height: var(--_line-height);
-  font-weight: var(--_font-weight);
-  letter-spacing: var(--_tracking);
-
-  --md-ripple-color: var(--_state-layer-color);
-  --md-focus-ring-color: var(--md-sys-color-secondary);
-
-  transition:
-    box-shadow var(--md-sys-motion-duration-short3)
-      var(--md-sys-motion-easing-standard),
-    border-radius var(--md-sys-motion-duration-medium1)
-      cubic-bezier(0.34, 1.4, 0.5, 1);
+/* Leading: Compose LeadingButtonMinWidth 48dp (Button's own is 64). The
+   outline width is taken out of the padding so an outlined half keeps the
+   spec width (Compose draws the border inside the shape — IB4). */
+.split .leading {
+  min-width: 48px;
+  padding-inline: calc(var(--_leading-padding-start) - var(--_outline-width, 0px))
+    calc(var(--_leading-padding-end) - var(--_outline-width, 0px));
 }
 
-.leading:hover:not(:disabled),
-.trailing:hover:not(:disabled) {
-  box-shadow: var(--_shadow-hover, var(--_shadow, none));
+/* Trailing: fixed spec width (border-box, so the outline is absorbed too).
+   The chevron is centred; the closed-state optical offset is a translate on
+   the chevron itself (Compose horizontalCenterOptically). */
+.split .trailing {
+  width: var(--_trailing-width);
+  min-width: 0;
+  padding-inline: 0;
 }
 
-/* Leading: label (+ optional icon), outer-left corners round, inner-right small. */
-.leading {
-  gap: var(--_icon-label-gap);
-  min-width: 64px;
-  padding-inline: var(--_padding-leading) var(--_padding-trailing);
-  border-start-start-radius: var(--_outer);
-  border-end-start-radius: var(--_outer);
-  border-start-end-radius: var(--_inner);
-  border-end-end-radius: var(--_inner);
+/* Corners. Outer = round (half the height, so the radius interpolates within
+   the visible range); inner = size token, larger while hovered / focused /
+   pressed (m3.material.io — Compose only changes it on press). */
+.split .leading {
+  border-start-start-radius: calc(var(--_height) / 2);
+  border-end-start-radius: calc(var(--_height) / 2);
+  border-start-end-radius: var(--_inner-corner-size);
+  border-end-end-radius: var(--_inner-corner-size);
 }
 
-/* Trailing: icon-only, inner-left small, outer-right corners round. */
-.trailing {
-  padding-inline: var(--_trailing-pad);
-  border-start-start-radius: var(--_inner);
-  border-end-start-radius: var(--_inner);
-  border-start-end-radius: var(--_outer);
-  border-end-end-radius: var(--_outer);
+.split .trailing {
+  border-start-start-radius: var(--_inner-corner-size);
+  border-end-start-radius: var(--_inner-corner-size);
+  border-start-end-radius: calc(var(--_height) / 2);
+  border-end-end-radius: calc(var(--_height) / 2);
 }
 
-/* Signature morph: trailing inner corner rounds while the menu is open. */
-.split[data-open] .trailing {
-  border-start-start-radius: var(--_outer);
-  border-end-start-radius: var(--_outer);
+.split .leading:is(:hover, :focus-visible, :active):not(:disabled) {
+  border-start-start-radius: calc(var(--_height) / 2);
+  border-end-start-radius: calc(var(--_height) / 2);
+  border-start-end-radius: var(--_hovered-inner-corner-size);
+  border-end-end-radius: var(--_hovered-inner-corner-size);
 }
 
-.chevron {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--_trailing-icon);
-  height: var(--_trailing-icon);
-  transition: transform var(--md-sys-motion-duration-medium1)
-    var(--md-sys-motion-easing-standard);
+.split .trailing:is(:hover, :focus-visible, :active):not(:disabled) {
+  border-start-start-radius: var(--_hovered-inner-corner-size);
+  border-end-start-radius: var(--_hovered-inner-corner-size);
+  border-start-end-radius: calc(var(--_height) / 2);
+  border-end-end-radius: calc(var(--_height) / 2);
 }
 
-.split[data-open] .chevron {
-  transform: rotate(180deg);
+/* Signature morph: the open trailing button is fully round in every state
+   (site "selected inner corner 50%", Compose TrailingCheckedShape = Circle). */
+.split[data-open] .trailing,
+.split[data-open] .trailing:is(:hover, :focus-visible, :active):not(:disabled) {
+  border-radius: calc(var(--_height) / 2);
 }
 
-.icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--_icon-size);
-  height: var(--_icon-size);
-  font-size: var(--_icon-size);
+/* Open = selected: color unchanged, only a state layer (site "unlike toggle
+   buttons … only a state layer is applied"; Compose TrailingButtonStateLayerAlpha
+   = pressed state-layer opacity 0.10). */
+.split[data-open] .trailing::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-color: var(--_state-layer-color);
+  opacity: var(--md-sys-state-pressed-state-layer-opacity);
+  pointer-events: none;
 }
 
-.icon svg,
-.icon img {
-  width: 100%;
-  height: 100%;
-}
-
-.label,
-.icon,
 .chevron {
   position: relative;
   z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--_trailing-icon-size);
+  height: var(--_trailing-icon-size);
+  /* Closed: nudged towards the start edge (optical centre). */
+  translate: var(--_chevron-offset) 0;
+  /* Rotation / offset are small spatial moves → FastSpatial (the trailing
+     button's own shape morph stays bounce-free: Button, DefaultEffects). */
+  transition:
+    transform var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    translate var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing);
+}
+
+.split:dir(rtl) .chevron {
+  translate: calc(-1 * var(--_chevron-offset)) 0;
+}
+
+.split[data-open] .chevron {
+  translate: 0 0;
+  transform: rotate(180deg);
 }
 
 /* --------------------------------------------------------------------------- */
-/* Sizes (Expressive scale)                                                    */
+/* Sizes (split-specific metrics only; height, typography, leading icon size  */
+/* and icon–label gap come from Button's matching data-size block)             */
 /* --------------------------------------------------------------------------- */
 .split[data-size='xs'] {
-  --_height: 32px;
-  --_padding-leading: 12px;
-  --_padding-trailing: 10px;
-  --_trailing-pad: 13px;
-  --_trailing-icon: 22px;
-  --_icon-label-gap: 8px;
-  --_icon-size: 20px;
-  --_font-size: var(--md-sys-typescale-label-large-size);
-  --_line-height: var(--md-sys-typescale-label-large-line-height);
-  --_font-weight: var(--md-sys-typescale-label-large-weight);
-  --_tracking: var(--md-sys-typescale-label-large-tracking);
+  --_leading-padding-start: 12px;
+  --_leading-padding-end: 10px;
+  --_trailing-width: 48px;
+  --_trailing-icon-size: 22px;
+  --_chevron-offset: -1px;
+  --_inner-corner-size: 4px;
+  --_hovered-inner-corner-size: 8px;
 }
 
 .split[data-size='sm'] {
-  --_height: 40px;
-  --_padding-leading: 16px;
-  --_padding-trailing: 12px;
-  --_trailing-pad: 14px;
-  --_trailing-icon: 22px;
-  --_icon-label-gap: 8px;
-  --_icon-size: 20px;
-  --_font-size: var(--md-sys-typescale-label-large-size);
-  --_line-height: var(--md-sys-typescale-label-large-line-height);
-  --_font-weight: var(--md-sys-typescale-label-large-weight);
-  --_tracking: var(--md-sys-typescale-label-large-tracking);
+  --_leading-padding-start: 16px;
+  --_leading-padding-end: 12px;
+  --_trailing-width: 48px;
+  --_trailing-icon-size: 22px;
+  --_chevron-offset: -1px;
+  --_inner-corner-size: 4px;
+  --_hovered-inner-corner-size: 12px;
 }
 
 .split[data-size='md'] {
-  --_height: 56px;
-  --_padding-leading: 24px;
-  --_padding-trailing: 16px;
-  --_trailing-pad: 20px;
-  --_trailing-icon: 24px;
-  --_icon-label-gap: 8px;
-  --_icon-size: 24px;
-  --_font-size: var(--md-sys-typescale-title-medium-size);
-  --_line-height: var(--md-sys-typescale-title-medium-line-height);
-  --_font-weight: var(--md-sys-typescale-title-medium-weight);
-  --_tracking: var(--md-sys-typescale-title-medium-tracking);
+  --_leading-padding-start: 24px;
+  --_leading-padding-end: 24px;
+  --_trailing-width: 56px;
+  --_trailing-icon-size: 26px;
+  --_chevron-offset: -2px;
+  --_inner-corner-size: 4px;
+  --_hovered-inner-corner-size: 12px;
 }
 
 .split[data-size='lg'] {
-  --_height: 96px;
-  --_padding-leading: 48px;
-  --_padding-trailing: 32px;
-  --_trailing-pad: 36px;
-  --_trailing-icon: 32px;
-  --_icon-label-gap: 12px;
-  --_icon-size: 32px;
-  --_font-size: var(--md-sys-typescale-headline-small-size);
-  --_line-height: var(--md-sys-typescale-headline-small-line-height);
-  --_font-weight: var(--md-sys-typescale-headline-small-weight);
-  --_tracking: var(--md-sys-typescale-headline-small-tracking);
+  --_leading-padding-start: 48px;
+  --_leading-padding-end: 48px;
+  --_trailing-width: 96px;
+  --_trailing-icon-size: 38px;
+  --_chevron-offset: -3px;
+  --_inner-corner-size: 8px;
+  --_hovered-inner-corner-size: 20px;
 }
 
 .split[data-size='xl'] {
-  --_height: 136px;
-  --_padding-leading: 64px;
-  --_padding-trailing: 48px;
-  --_trailing-pad: 52px;
-  --_trailing-icon: 40px;
-  --_icon-label-gap: 16px;
-  --_icon-size: 40px;
-  --_font-size: var(--md-sys-typescale-headline-large-size);
-  --_line-height: var(--md-sys-typescale-headline-large-line-height);
-  --_font-weight: var(--md-sys-typescale-headline-large-weight);
-  --_tracking: var(--md-sys-typescale-headline-large-tracking);
-}
-
-/* --------------------------------------------------------------------------- */
-/* Variants (mirror Button)                                                    */
-/* --------------------------------------------------------------------------- */
-.split[data-variant='filled'] {
-  --_container-color: var(--md-sys-color-primary);
-  --_label-text-color: var(--md-sys-color-on-primary);
-  --_state-layer-color: var(--md-sys-color-on-primary);
-  --_shadow: var(--md-sys-elevation-shadow-level0);
-  --_shadow-hover: var(--md-sys-elevation-shadow-level1);
-}
-
-.split[data-variant='tonal'] {
-  --_container-color: var(--md-sys-color-secondary-container);
-  --_label-text-color: var(--md-sys-color-on-secondary-container);
-  --_state-layer-color: var(--md-sys-color-on-secondary-container);
-  --_shadow: var(--md-sys-elevation-shadow-level0);
-  --_shadow-hover: var(--md-sys-elevation-shadow-level1);
-}
-
-.split[data-variant='elevated'] {
-  --_container-color: var(--md-sys-color-surface-container-low);
-  --_label-text-color: var(--md-sys-color-primary);
-  --_state-layer-color: var(--md-sys-color-primary);
-  --_shadow: var(--md-sys-elevation-shadow-level1);
-  --_shadow-hover: var(--md-sys-elevation-shadow-level2);
-}
-
-.split[data-variant='outlined'] {
-  --_container-color: transparent;
-  --_label-text-color: var(--md-sys-color-primary);
-  --_state-layer-color: var(--md-sys-color-primary);
-  --_outline-color: var(--md-sys-color-outline-variant);
-  --_outline-width: 1px;
-}
-
-/* --------------------------------------------------------------------------- */
-/* Disabled                                                                    */
-/* --------------------------------------------------------------------------- */
-.leading:disabled,
-.trailing:disabled {
-  cursor: default;
-  pointer-events: none;
-  box-shadow: none;
-  --_label-text-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
-}
-
-.split[data-variant='filled'] .leading:disabled,
-.split[data-variant='filled'] .trailing:disabled,
-.split[data-variant='tonal'] .leading:disabled,
-.split[data-variant='tonal'] .trailing:disabled,
-.split[data-variant='elevated'] .leading:disabled,
-.split[data-variant='elevated'] .trailing:disabled {
-  --_container-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
-}
-
-.split[data-variant='outlined'] .leading:disabled,
-.split[data-variant='outlined'] .trailing:disabled {
-  --_outline-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  --_leading-padding-start: 64px;
+  --_leading-padding-end: 64px;
+  --_trailing-width: 136px;
+  --_trailing-icon-size: 50px;
+  --_chevron-offset: -6px;
+  --_inner-corner-size: 12px;
+  --_hovered-inner-corner-size: 20px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .leading,
-  .trailing,
   .chevron {
     transition: none;
   }

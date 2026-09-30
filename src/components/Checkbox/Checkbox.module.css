@@ -3,8 +3,10 @@
  * State layer 40dp, touch target 48dp.
  * Token values from m3.material.io/components/checkbox/specs.
  * Motion follows Compose (docs/specs/checkbox.md Motion): the mark draws in
- * ≈250ms from unchecked, morphs (not crossfades) between check and dash, and
- * any -> unchecked snaps after a 100ms hold — never a reverse draw.
+ * on DefaultSpatial from unchecked, morphs (not crossfades) between check and
+ * dash on DefaultSpatial, and any -> unchecked snaps after a 100ms hold
+ * (Compose snap(delayMillis = 100)) — never a reverse draw. Container color:
+ * DefaultEffects in, FastEffects out (motion-scheme spring tokens).
  */
 
 /* =========================================================================== */
@@ -65,7 +67,21 @@
   border-radius: inherit;
   border: 2px solid var(--md-sys-color-on-surface-variant);
   box-sizing: border-box;
-  transition: opacity 50ms linear, border-color 50ms linear;
+  /* Container color (Compose colorAnimationSpecForState): to On / Ind on
+     DefaultEffects, to Off on FastEffects (.unchecked rule below). */
+  transition:
+    opacity var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing),
+    border-color var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing);
+}
+
+.unchecked .outline {
+  transition:
+    opacity var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing),
+    border-color var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing);
 }
 
 .checked .outline,
@@ -73,16 +89,18 @@
   opacity: 0;
 }
 
-/* Background — visible when checked/indeterminate. The fill grows in step
-   with the ~250ms mark draw. */
+/* Background — visible when checked/indeterminate. The fill fades in on
+   DefaultEffects and grows in step with the mark draw (DefaultSpatial). */
 .background {
   position: absolute;
   inset: 0;
   border-radius: inherit;
   background-color: var(--md-sys-color-primary);
   transition:
-    opacity 50ms linear,
-    transform 250ms var(--md-sys-motion-easing-standard);
+    opacity var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing),
+    transform var(--md-sys-motion-spring-default-spatial-duration)
+      var(--md-sys-motion-spring-default-spatial-easing);
 }
 
 .unchecked .background {
@@ -114,6 +132,7 @@
 .mark {
   stroke: var(--md-sys-color-on-primary);
   fill: none;
+  /* Only gates visibility — the path draw (below) is the reveal. */
   transition: opacity 50ms linear;
 }
 
@@ -129,19 +148,21 @@
   opacity: 1;
 }
 
-/* Draw-in from unchecked — the mark draws itself along its path, ~250ms
-   standard easing (Compose DefaultSpatial spring(0.9, 700) settles ≈ 250ms).
+/* Draw-in from unchecked — the mark draws itself along its path on the
+   DefaultSpatial spring (Compose checkDrawFraction).
    Gated on data-prev-state so check <-> dash changes morph instead of
    redrawing, and initial mounts don't animate. Dasharray = path length
    (check ≈ 16.3, dash = 10). */
 .checked[data-prev-state='unchecked'] .mark {
   stroke-dasharray: 16.3;
-  animation: check-draw 250ms var(--md-sys-motion-easing-standard);
+  animation: check-draw var(--md-sys-motion-spring-default-spatial-duration)
+    var(--md-sys-motion-spring-default-spatial-easing);
 }
 
 .indeterminate[data-prev-state='unchecked'] .mark {
   stroke-dasharray: 10;
-  animation: dash-draw 250ms var(--md-sys-motion-easing-standard);
+  animation: dash-draw var(--md-sys-motion-spring-default-spatial-duration)
+    var(--md-sys-motion-spring-default-spatial-easing);
 }
 
 @keyframes check-draw {
@@ -179,7 +200,8 @@
   .indeterminate[data-prev-state='checked'] .mark {
     transition:
       opacity 50ms linear,
-      d 250ms var(--md-sys-motion-easing-standard);
+      d var(--md-sys-motion-spring-default-spatial-duration)
+        var(--md-sys-motion-spring-default-spatial-easing);
   }
 }
 
@@ -378,6 +400,7 @@
 /* =========================================================================== */
 @media (prefers-reduced-motion: reduce) {
   .outline,
+  .unchecked .outline,
   .background,
   .unchecked .background,
   .mark,

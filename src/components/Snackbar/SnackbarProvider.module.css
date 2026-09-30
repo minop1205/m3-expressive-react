@@ -1,0 +1,87 @@
+/**
+ * MD3 Snackbar host (Compose SnackbarHost + FadeInFadeOutWithScale).
+ *
+ * Placement: bottom-center, in front of content (and FABs), with a 12dp outer
+ * margin (Compose data-overload padding); the snackbar fills the width up to
+ * 600dp (ContainerMaxWidth).
+ *
+ * Motion: enter / exit fade on FastEffects + scale 0.8↔1 on FastSpatial
+ * (Compose FadeInFadeOutWithScale; bouncy in the Expressive scheme). As in
+ * Compose the item is removed when the fade finishes, so the exit scale is
+ * cut at the FastEffects duration. Reduced motion: fade only (B3).
+ */
+
+.host {
+  --_host-margin: 12px;
+  --_effects-duration: var(--md-sys-motion-spring-fast-effects-duration);
+  --_effects-easing: var(--md-sys-motion-spring-fast-effects-easing);
+  --_spatial-duration: var(--md-sys-motion-spring-fast-spatial-duration);
+  --_spatial-easing: var(--md-sys-motion-spring-fast-spatial-easing);
+
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: var(--_host-margin);
+  padding-block-end: calc(var(--_host-margin) + env(safe-area-inset-bottom, 0px));
+  /* Clicks pass through the empty host area. */
+  pointer-events: none;
+}
+
+.region {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 600px;
+}
+
+.item {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  pointer-events: auto;
+  transform-origin: center;
+  animation:
+    md-snackbar-fade-in var(--_effects-duration) var(--_effects-easing) both,
+    md-snackbar-scale-in var(--_spatial-duration) var(--_spatial-easing) both;
+}
+
+.item[data-state='exiting'] {
+  pointer-events: none;
+  animation:
+    md-snackbar-fade-out var(--_effects-duration) var(--_effects-easing) both,
+    md-snackbar-scale-out var(--_spatial-duration) var(--_spatial-easing) both;
+}
+
+@keyframes md-snackbar-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes md-snackbar-scale-in {
+  from {
+    transform: scale(0.8);
+  }
+}
+@keyframes md-snackbar-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes md-snackbar-scale-out {
+  to {
+    transform: scale(0.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item {
+    animation: md-snackbar-fade-in var(--_effects-duration) var(--_effects-easing) both;
+  }
+  .item[data-state='exiting'] {
+    animation: md-snackbar-fade-out var(--_effects-duration) var(--_effects-easing) both;
+  }
+}

@@ -1,37 +1,69 @@
 /**
- * MD3 (Expressive) Toolbar. Docked = full-width 64dp bar; floating = rounded
- * pill with 8dp padding and 4dp gaps (Compose FloatingToolbarTokens: CornerFull,
- * ContainerLeadingSpace/TrailingSpace 8dp, ContainerBetweenSpace 4dp). Standard
- * color = SurfaceContainer / OnSurface, vibrant = PrimaryContainer /
- * OnPrimaryContainer.
+ * MD3 (Expressive) Toolbar. Docked = full-width 64dp bar, 16dp outside padding,
+ * items centered 32dp apart (m3 Docked `max space between actions` 32dp, min 4dp);
+ * floating = rounded 64dp pill with 8dp padding and 4dp gaps (Compose
+ * FloatingToolbarTokens: CornerFull, ContainerSize 64, Leading/TrailingSpace 8dp,
+ * ContainerBetweenSpace 4dp → item pitch 52).
+ *
+ * Items use IconButton's host-slot contract (see IconButton.module.css): each
+ * IconButton takes a 48dp layout box (Compose minimumInteractiveComponentSize),
+ * and the color scheme supplies the standard IconButton's icon / state-layer /
+ * selected colors — the CSS analogue of Compose's LocalContentColor, per the
+ * m3.material.io Toolbar - Color - Standard / Vibrant token sets.
  */
 
 .toolbar {
   display: flex;
   box-sizing: border-box;
   align-items: center;
+  --md-icon-button-layout-min-size: 48px;
 }
 
 /* ---- Color schemes ---- */
 .toolbar[data-color='standard'] {
   background-color: var(--md-sys-color-surface-container);
-  color: var(--md-sys-color-on-surface);
+  color: var(--md-sys-color-on-surface-variant);
+  --md-icon-button-icon-color: var(--md-sys-color-on-surface-variant);
+  --md-icon-button-selected-container-color: var(--md-sys-color-secondary-container);
+  --md-icon-button-selected-icon-color: var(--md-sys-color-on-secondary-container);
 }
 
 .toolbar[data-color='vibrant'] {
   background-color: var(--md-sys-color-primary-container);
   color: var(--md-sys-color-on-primary-container);
+  --md-icon-button-icon-color: var(--md-sys-color-on-primary-container);
+  --md-icon-button-selected-container-color: var(--md-sys-color-surface-container);
+  --md-icon-button-selected-icon-color: var(--md-sys-color-on-surface);
 }
 
 /* ---- Docked: full-width bottom bar ---- */
+/*
+ * Gap = 32dp, shrinking toward 4dp when the items (48dp slots) no longer fit:
+ * clamp(4px, (content width − n × 48px) / (n − 1), 32px). n is counted with
+ * :has() up to 10 items (more items → treated as 10, i.e. the tightest gap).
+ */
 .toolbar[data-variant='docked'] {
+  --_item-count: 1;
   width: 100%;
   min-height: 64px;
   flex-direction: row;
   justify-content: center;
-  gap: 8px;
+  column-gap: clamp(
+    4px,
+    (100% - var(--_item-count) * 48px) / max(1, var(--_item-count) - 1),
+    32px
+  );
   padding-inline: 16px;
 }
+.toolbar[data-variant='docked']:has(> :nth-child(2)) { --_item-count: 2; }
+.toolbar[data-variant='docked']:has(> :nth-child(3)) { --_item-count: 3; }
+.toolbar[data-variant='docked']:has(> :nth-child(4)) { --_item-count: 4; }
+.toolbar[data-variant='docked']:has(> :nth-child(5)) { --_item-count: 5; }
+.toolbar[data-variant='docked']:has(> :nth-child(6)) { --_item-count: 6; }
+.toolbar[data-variant='docked']:has(> :nth-child(7)) { --_item-count: 7; }
+.toolbar[data-variant='docked']:has(> :nth-child(8)) { --_item-count: 8; }
+.toolbar[data-variant='docked']:has(> :nth-child(9)) { --_item-count: 9; }
+.toolbar[data-variant='docked']:has(> :nth-child(10)) { --_item-count: 10; }
 
 /* ---- Floating: rounded, elevated pill ---- */
 .toolbar[data-variant='floating'] {
@@ -44,8 +76,141 @@
 
 .toolbar[data-variant='floating'][data-orientation='horizontal'] {
   flex-direction: row;
+  min-height: 64px;
 }
 
 .toolbar[data-variant='floating'][data-orientation='vertical'] {
   flex-direction: column;
+  min-width: 64px;
+}
+
+/* ---- Floating expand / collapse (startContent / endContent) ---- */
+/*
+ * Compose HorizontalFloatingToolbar(expanded, leadingContent,
+ * trailingContent): the side content expands / shrinks horizontally
+ * (vertically for a vertical toolbar) with the FastSpatial spring. A 1fr ↔ 0fr
+ * grid track animates the slot between its content size and 0; the slot's
+ * negative margin cancels the toolbar gap once it is empty.
+ */
+.slot {
+  display: grid;
+  transition:
+    grid-template-columns var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    grid-template-rows var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    margin var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing);
+}
+
+.slotInner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 0;
+  /* Clip while (and once) collapsed; leave room for focus rings otherwise. */
+  overflow: clip;
+  overflow-clip-margin: 8px;
+}
+
+.slot[data-collapsed] .slotInner {
+  overflow-clip-margin: 0px;
+}
+
+.toolbar[data-orientation='horizontal'] .slot {
+  grid-template-columns: 1fr;
+}
+
+.toolbar[data-orientation='horizontal'] .slot[data-collapsed] {
+  grid-template-columns: 0fr;
+}
+
+.toolbar[data-orientation='horizontal'] .slot[data-slot='start'][data-collapsed] {
+  margin-inline-end: -4px;
+}
+
+.toolbar[data-orientation='horizontal'] .slot[data-slot='end'][data-collapsed] {
+  margin-inline-start: -4px;
+}
+
+.toolbar[data-orientation='vertical'] .slot {
+  grid-template-rows: 1fr;
+}
+
+.toolbar[data-orientation='vertical'] .slot[data-collapsed] {
+  grid-template-rows: 0fr;
+}
+
+.toolbar[data-orientation='vertical'] .slotInner {
+  flex-direction: column;
+}
+
+.toolbar[data-orientation='vertical'] .slot[data-slot='start'][data-collapsed] {
+  margin-block-end: -4px;
+}
+
+.toolbar[data-orientation='vertical'] .slot[data-slot='end'][data-collapsed] {
+  margin-block-start: -4px;
+}
+
+/*
+ * A floating toolbar without `children` collapses away entirely (the "with
+ * FAB" pattern: Compose shrinks the toolbar to 0 while the FAB grows).
+ */
+.toolbar[data-variant='floating'] {
+  transition:
+    padding var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    box-shadow var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing);
+}
+
+.toolbar[data-variant='floating'][data-empty][data-expanded='false'] {
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+/* ---- Scroll: exitAlways / hidden ---- */
+/* A docked toolbar with a scrollBehavior stays at the bottom of its scroller. */
+.toolbar[data-variant='docked'][data-scroll-behavior] {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+}
+
+/*
+ * Slides off the screen edge by --_hide-offset (px, signed for RTL): follows
+ * the scroll delta, and animates (DefaultEffects spring, like Compose's snap)
+ * only when settling or when driven by the `hidden` state prop.
+ */
+.toolbar[data-exit-direction='bottom'] {
+  transform: translateY(var(--_hide-offset));
+}
+
+.toolbar[data-exit-direction='end'] {
+  transform: translateX(var(--_hide-offset));
+}
+
+.toolbar[data-settling],
+.toolbar[data-hidden] {
+  transition:
+    transform var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing),
+    padding var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    box-shadow var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing);
+}
+
+/* B3: state changes are instant under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .slot,
+  .toolbar[data-variant='floating'],
+  .toolbar[data-settling],
+  .toolbar[data-hidden] {
+    transition: none;
+  }
 }

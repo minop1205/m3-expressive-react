@@ -82,8 +82,8 @@ import { SegmentedButton, type SegmentedButtonProps } from 'md3-react'
 ```
 
 The old names still work in this release as **deprecated aliases** (your
-editor will show strikethrough + a hint) and will be removed in the next
-release. This is the only rename that keeps an alias.
+editor will show strikethrough + a hint) and will be removed in v2
+(the removal originally planned for 1.1.0 was postponed to keep 1.x compatible). This is the only rename that keeps an alias.
 
 ## 5. SearchBar: `expanded` → `open` / `defaultOpen` / `onOpenChange`
 

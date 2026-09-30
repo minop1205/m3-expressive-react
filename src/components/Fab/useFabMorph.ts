@@ -1,48 +1,21 @@
 import { useLayoutEffect, useRef, type RefObject } from 'react'
+import {
+  prefersReducedMotion,
+  readSpring,
+  stepSpring as step,
+  type SpringState,
+} from '../../internal/spring'
 
 /**
  * Extended FAB collapse↔expand morph, per Compose
- * `ExtendedFloatingActionButton(expanded=)` with the MD3 Expressive motion
- * scheme (`MotionScheme.expressive()` / `ExpressiveMotionTokens`):
+ * `Small / Medium / LargeExtendedFloatingActionButton(expanded=)`: in both
+ * directions the width progress runs on the `FastSpatial` spring and the label
+ * alpha on `FastEffects`. The springs are read from the motion-scheme tokens
+ * (`--md-sys-motion-spring-fast-{spatial,effects}-{damping,stiffness}`) on the
+ * element, so `ThemeProvider motionScheme` switches them (expressive 0.6 / 800
+ * with ~9% overshoot, standard 0.9 / 1400); the expressive values are the
+ * fallback when the tokens are not loaded (src/internal/spring.ts).
  *
- *   expand:   width `FastSpatial` (damping 0.6, stiffness 800, ~9% overshoot)
- *             + label fade-in `DefaultEffects` (damping 1.0, stiffness 1600)
- *   collapse: width `DefaultSpatial` (damping 0.8, stiffness 380)
- *             + label fade-out `FastEffects` (damping 1.0, stiffness 3800)
- */
-const WIDTH_EXPAND = { stiffness: 800, dampingRatio: 0.6 }
-const WIDTH_COLLAPSE = { stiffness: 380, dampingRatio: 0.8 }
-const FADE_IN = { stiffness: 1600, dampingRatio: 1 }
-const FADE_OUT = { stiffness: 3800, dampingRatio: 1 }
-
-interface SpringState {
-  value: number
-  vel: number
-}
-
-/* Semi-implicit Euler needs damping·dt < 2 to stay stable; the stiffest spring
-   here (3800 → damping ≈ 123) already diverges at a 60fps frame (16.7ms), so
-   integrate in sub-steps of at most 4ms (stable up to stiffness ~62000). */
-const MAX_SUBSTEP = 0.004
-
-function step(s: SpringState, target: number, spec: { stiffness: number; dampingRatio: number }, dt: number) {
-  const damping = 2 * spec.dampingRatio * Math.sqrt(spec.stiffness)
-  const n = Math.max(1, Math.ceil(dt / MAX_SUBSTEP))
-  const h = dt / n
-  for (let i = 0; i < n; i++) {
-    const a = -spec.stiffness * (s.value - target) - damping * s.vel
-    s.vel += a * h
-    s.value += s.vel * h
-  }
-  if (Math.abs(s.value - target) < 0.001 && Math.abs(s.vel) < 0.001) {
-    s.value = target
-    s.vel = 0
-    return true
-  }
-  return false
-}
-
-/**
  * Drives the morph as two custom properties on the FAB element: `--_ext`
  * (label-row width progress, 0 = collapsed, 1 = expanded, may overshoot) and
  * `--_label-o` (label opacity, clamped to [0, 1]). Physical springs, so a
@@ -64,8 +37,8 @@ export function useFabMorph(expanded: boolean, ref: RefObject<HTMLElement | null
   useLayoutEffect(() => {
     if (!enabled) return
     const target = expanded ? 1 : 0
-    const widthSpec = expanded ? WIDTH_EXPAND : WIDTH_COLLAPSE
-    const fadeSpec = expanded ? FADE_IN : FADE_OUT
+    const widthSpec = readSpring(ref.current, 'fast-spatial')
+    const fadeSpec = readSpring(ref.current, 'fast-effects')
 
     const write = () => {
       const el = ref.current
@@ -73,10 +46,7 @@ export function useFabMorph(expanded: boolean, ref: RefObject<HTMLElement | null
       el?.style.setProperty('--_label-o', String(Math.min(1, Math.max(0, opacity.current.value))))
     }
 
-    const reduce =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    if (reduce) {
+    if (prefersReducedMotion()) {
       ext.current = { value: target, vel: 0 }
       opacity.current = { value: target, vel: 0 }
       write()
