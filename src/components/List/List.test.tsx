@@ -3,6 +3,8 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
+import { Checkbox } from '../Checkbox'
+import { Switch } from '../Switch'
 import { List, ListItem } from './List'
 
 describe('List / ListItem', () => {
@@ -48,7 +50,94 @@ describe('List / ListItem', () => {
     await user.click(item)
     item.focus()
     await user.keyboard('{Enter}')
-    expect(onClick).toHaveBeenCalledTimes(2)
+    await user.keyboard(' ')
+    expect(onClick).toHaveBeenCalledTimes(3)
+  })
+
+  describe('nested controls in a clickable row (LS5)', () => {
+    it('Enter / Space on a trailing button fire only the button', async () => {
+      const user = userEvent.setup()
+      const onRow = vi.fn()
+      const onButton = vi.fn()
+      render(
+        <ListItem
+          headline="Row"
+          onClick={onRow}
+          trailing={
+            <button type="button" onClick={onButton}>
+              More
+            </button>
+          }
+        />,
+      )
+      screen.getByRole('button', { name: 'More' }).focus()
+      await user.keyboard('{Enter}')
+      await user.keyboard(' ')
+      expect(onButton).toHaveBeenCalledTimes(2)
+      expect(onRow).not.toHaveBeenCalled()
+    })
+
+    it('Space on a trailing Switch toggles it without activating the row', async () => {
+      const user = userEvent.setup()
+      const onRow = vi.fn()
+      render(
+        <ListItem
+          headline="Wi-Fi"
+          onClick={onRow}
+          trailing={<Switch aria-label="Wi-Fi toggle" />}
+        />,
+      )
+      const toggle = screen.getByRole('switch', { name: 'Wi-Fi toggle' })
+      toggle.focus()
+      await user.keyboard(' ')
+      expect(toggle).toBeChecked()
+      expect(onRow).not.toHaveBeenCalled()
+    })
+
+    it('clicking a trailing Switch / Checkbox toggles it without activating the row', async () => {
+      const user = userEvent.setup()
+      const onRow = vi.fn()
+      render(
+        <List aria-label="Settings">
+          <ListItem
+            headline="Wi-Fi"
+            onClick={onRow}
+            trailing={<Switch aria-label="Wi-Fi toggle" />}
+          />
+          <ListItem
+            headline="Sync"
+            onClick={onRow}
+            trailing={<Checkbox aria-label="Sync check" />}
+          />
+        </List>,
+      )
+      const toggle = screen.getByRole('switch', { name: 'Wi-Fi toggle' })
+      const check = screen.getByRole('checkbox', { name: 'Sync check' })
+      await user.click(toggle)
+      await user.click(check)
+      expect(toggle).toBeChecked()
+      expect(check).toBeChecked()
+      expect(onRow).not.toHaveBeenCalled()
+      // The row itself still activates.
+      await user.click(screen.getByText('Wi-Fi'))
+      expect(onRow).toHaveBeenCalledTimes(1)
+    })
+
+    it('typing into a nested input keeps spaces and does not fire the row', async () => {
+      const user = userEvent.setup()
+      const onRow = vi.fn()
+      render(
+        <ListItem
+          headline="Name"
+          onClick={onRow}
+          trailing={<input aria-label="Name input" />}
+        />,
+      )
+      const input = screen.getByRole('textbox', { name: 'Name input' })
+      await user.type(input, 'a b{Enter}')
+      expect(input).toHaveValue('a b')
+      expect(onRow).not.toHaveBeenCalled()
+    })
   })
 
   it('does not fire when disabled', async () => {
