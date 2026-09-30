@@ -1,6 +1,7 @@
 import { forwardRef, useState, type HTMLAttributes } from 'react'
 import clsx from 'clsx'
 import { ChevronLeftIcon, ChevronRightIcon } from '../../internal/icons'
+import { getFirstDayOfWeek, getMonthGrid, sameDay, startOfDay } from './calendar'
 import styles from './DatePicker.module.css'
 
 /** `[start, end]` — either may be null while selecting. */
@@ -24,18 +25,6 @@ export interface DatePickerProps
   locale?: string
 }
 
-
-function startOfDay(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
-}
-function sameDay(a: Date | null | undefined, b: Date) {
-  return (
-    a != null &&
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  )
-}
 function asRange(v: Date | DateRange | null | undefined): DateRange {
   return Array.isArray(v) ? v : [null, null]
 }
@@ -88,8 +77,10 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
       year: 'numeric',
     }).format(new Date(view.year, view.month, 1))
 
+    // Weeks start on the locale's first day (Compose `firstDayOfWeek`).
+    const firstDayOfWeek = getFirstDayOfWeek(locale)
     const weekdays = Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(2023, 0, 1 + i) // 2023-01-01 is a Sunday
+      const d = new Date(2023, 0, 1 + ((firstDayOfWeek + i) % 7)) // 2023-01-01 is a Sunday
       return new Intl.DateTimeFormat(locale, { weekday: 'narrow' }).format(d)
     })
 
@@ -107,13 +98,11 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
         ? fmt(single)
         : 'Select date'
 
-    const firstWeekday = new Date(view.year, view.month, 1).getDay()
-    const daysInMonth = new Date(view.year, view.month + 1, 0).getDate()
-    const cells: (number | null)[] = [
-      ...Array.from({ length: firstWeekday }, () => null),
-      ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-    ]
-    while (cells.length % 7 !== 0) cells.push(null)
+    // Always 6 weeks so the container height never jumps while paging
+    // (Compose lays out MaxCalendarRows = 6).
+    const cells = getMonthGrid(view.year, view.month, firstDayOfWeek)
+      .flat()
+      .map((cell) => (cell.outside ? null : cell.date.getDate()))
 
     const changeMonth = (delta: number) => {
       setView(({ year, month }) => {
@@ -150,9 +139,15 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
       }
       const isStart = sameDay(rStart, date)
       const isEnd = sameDay(rEnd, date)
-      const inRange =
-        rStart != null && rEnd != null && date > rStart && date < rEnd
-      return { selected: isStart || isEnd, inRange, rangeStart: isStart, rangeEnd: isEnd }
+      // The band only exists once both ends are chosen.
+      const complete = rStart != null && rEnd != null
+      const inRange = complete && date > rStart && date < rEnd
+      return {
+        selected: isStart || isEnd,
+        inRange,
+        rangeStart: complete && isStart,
+        rangeEnd: complete && isEnd,
+      }
     }
 
     const isDisabled = (day: number) => {
@@ -164,7 +159,7 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
 
     return (
       <div ref={ref} {...rest} className={clsx(styles.picker, className)}>
-        <div className={styles.header}>
+        <div className={styles.header} data-range={range || undefined}>
           <span className={styles.supporting}>{range ? 'Select range' : 'Select date'}</span>
           <span className={styles.headline}>{headline}</span>
         </div>
@@ -216,7 +211,7 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
                 className={styles.day}
                 onClick={() => selectDay(day)}
               >
-                {day}
+                <span className={styles.dayIndicator}>{day}</span>
               </button>
             )
           })}
