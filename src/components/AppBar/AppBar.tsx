@@ -1,6 +1,19 @@
-import { forwardRef, type HTMLAttributes, type ReactNode } from 'react'
+import {
+  forwardRef,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type HTMLAttributes,
+  type ReactNode,
+} from 'react'
 import clsx from 'clsx'
+import { cubicBezier } from '../../internal/cubicBezier'
+import { useScrollObserver, type ScrollTarget } from '../../internal/useScrollObserver'
 import styles from './AppBar.module.css'
+
+export type { ScrollTarget }
 
 /**
  * Top app bar size.
@@ -19,7 +32,19 @@ export type TopAppBarVariant = 'small' | 'medium' | 'large' | 'center'
 /** Horizontal alignment of the title (and subtitle). */
 export type TopAppBarTitleAlignment = 'start' | 'center'
 
-export interface TopAppBarProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
+/**
+ * Built-in scroll behaviors (Compose `TopAppBarDefaults.*ScrollBehavior`):
+ * - `pinned` — always visible; a small bar switches to the scrolled container
+ *   color once content scrolls under it.
+ * - `enterAlways` — hides as the content scrolls forward and reappears as soon
+ *   as it scrolls back; a half-hidden bar settles when scrolling stops.
+ * - `exitUntilCollapsed` — a medium / large bar collapses to its 64dp row as
+ *   the content scrolls and expands again near the top (the container color
+ *   follows the collapse). On a small bar it behaves like `pinned`.
+ */
+export type TopAppBarScrollBehavior = 'pinned' | 'enterAlways' | 'exitUntilCollapsed'
+
+export interface TopAppBarProps extends Omit<HTMLAttributes<HTMLElement>, 'title' | 'hidden'> {
   /** The bar title (rendered as the page heading). */
   title?: ReactNode
   /**
@@ -44,7 +69,47 @@ export interface TopAppBarProps extends Omit<HTMLAttributes<HTMLElement>, 'title
    * @default 'start' ('center' for the deprecated `variant="center"`)
    */
   titleAlignment?: TopAppBarTitleAlignment
+  /**
+   * State: content is scrolled under the bar → the container turns
+   * surface-container (color only, no shadow). Overrides the value derived
+   * from `scrollBehavior`.
+   */
+  scrolled?: boolean
+  /**
+   * State (medium / large): how far the bar is collapsed toward its 64dp row,
+   * from 0 (expanded) to 1 (collapsed); the container color follows it.
+   * Overrides the value derived from `scrollBehavior`.
+   */
+  collapsedFraction?: number
+  /**
+   * State: slides the whole bar out of view (upward) and takes it out of the
+   * focus order / accessibility tree (`inert`). Unlike the native `hidden`
+   * attribute the bar keeps its layout box. Overrides `scrollBehavior`.
+   */
+  hidden?: boolean
+  /**
+   * Observe `scrollTarget` and drive the state above automatically. The bar
+   * then becomes `position: sticky; top: 0` (override with `style` /
+   * `className`) and is meant to sit at the top of the scrolling content.
+   * Leave it unset (and use the state props, or nothing) to keep the bar
+   * fully expanded and reachable — e.g. for assistive-technology users.
+   * Motion is instant under `prefers-reduced-motion: reduce`.
+   */
+  scrollBehavior?: TopAppBarScrollBehavior
+  /**
+   * The scroll container observed by `scrollBehavior` (a ref, an element or
+   * the window). @default window
+   */
+  scrollTarget?: ScrollTarget
 }
+
+// Compose AppBar.kt: the two-row container color follows collapsedFraction
+// through FastOutLinearInEasing; the top-row (collapsed) title fades in with
+// TopTitleAlphaEasing while the second-row title fades out linearly.
+const fastOutLinearIn = cubicBezier(0.4, 0, 1, 1)
+const topTitleAlpha = cubicBezier(0.8, 0, 0.8, 0.15)
+
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
 
 /**
  * Material Design 3 (Expressive) Top app bar.
@@ -59,6 +124,12 @@ export interface TopAppBarProps extends Omit<HTMLAttributes<HTMLElement>, 'title
  * m3.material.io / Compose `AppBar.kt` (`TopAppBar`, `MediumFlexibleTopAppBar`,
  * `LargeFlexibleTopAppBar`). Standard `IconButton`s in the slots pick up the
  * slot color.
+ *
+ * Scrolling (docs/decisions/phase-b-api.md B25): the state props (`scrolled`,
+ * `collapsedFraction`, `hidden`) render any state; `scrollBehavior` +
+ * `scrollTarget` derive them from a scroll container like Compose's pinned /
+ * enterAlways / exitUntilCollapsed behaviors. On scroll the container turns
+ * surface-container — a color change only, no shadow.
  */
 export const TopAppBar = forwardRef<HTMLElement, TopAppBarProps>(
   function TopAppBar(
@@ -69,7 +140,13 @@ export const TopAppBar = forwardRef<HTMLElement, TopAppBarProps>(
       actions,
       variant: variantProp = 'small',
       titleAlignment: titleAlignmentProp,
+      scrolled: scrolledProp,
+      collapsedFraction: collapsedFractionProp,
+      hidden: hiddenProp,
+      scrollBehavior,
+      scrollTarget,
       className,
+      style,
       ...rest
     },
     ref,
@@ -81,6 +158,93 @@ export const TopAppBar = forwardRef<HTMLElement, TopAppBarProps>(
     const twoRow = variant === 'medium' || variant === 'large'
     const hasSubtitle = subtitle != null
 
+    const barRef = useRef<HTMLElement | null>(null)
+    const expandedRowRef = useRef<HTMLDivElement | null>(null)
+    const setRefs = useCallback(
+      (node: HTMLElement | null) => {
+        barRef.current = node
+        if (typeof ref === 'function') ref(node)
+        else if (ref) ref.current = node
+      },
+      [ref],
+    )
+
+    // ---- State derived from scrollBehavior ----
+    const [scrolledState, setScrolledState] = useState(false)
+    const [fractionState, setFractionState] = useState(0)
+    const [offsetState, setOffsetState] = useState(0)
+    const [scrollHidden, setScrollHidden] = useState(false)
+    const [settling, setSettling] = useState(false)
+    const offsetRef = useRef(0)
+    // Natural height of the second row (the collapse range).
+    const [expandedRowHeight, setExpandedRowHeight] = useState(0)
+
+    const collapsible = twoRow && scrollBehavior === 'exitUntilCollapsed'
+    const enterAlways = scrollBehavior === 'enterAlways'
+
+    const applyOffset = (next: number, limit: number, settle: boolean) => {
+      offsetRef.current = next
+      setSettling(settle)
+      setOffsetState(next)
+      setScrollHidden(limit > 0 && next >= limit)
+    }
+
+    useScrollObserver(
+      scrollTarget,
+      scrollBehavior != null,
+      ({ top, delta }) => {
+        // Compose: a single-row bar changes color once content overlaps it; a
+        // two-row bar follows collapsedFraction instead.
+        if (!twoRow) setScrolledState(top > 0)
+        if (enterAlways) {
+          const limit = barRef.current?.offsetHeight ?? 0
+          const next = top <= 0 ? 0 : Math.min(limit, Math.max(0, offsetRef.current + delta))
+          if (next !== offsetRef.current) applyOffset(next, limit, false)
+        }
+        if (collapsible) {
+          const range = expandedRowRef.current?.offsetHeight ?? 0
+          if (range > 0) setExpandedRowHeight(range)
+          setFractionState(range > 0 ? clamp01(top / range) : 0)
+        }
+      },
+      () => {
+        // Settle a half-hidden bar when scrolling stops (Compose settleAppBar:
+        // less than half hidden → shown, otherwise hidden).
+        if (!enterAlways) return
+        const limit = barRef.current?.offsetHeight ?? 0
+        const offset = offsetRef.current
+        if (offset <= 0 || offset >= limit) return
+        applyOffset(offset < limit / 2 ? 0 : limit, limit, true)
+      },
+    )
+
+    const scrolled = scrolledProp ?? (scrollBehavior != null && scrolledState)
+    const collapsedFraction = twoRow
+      ? clamp01(collapsedFractionProp ?? (collapsible ? fractionState : 0))
+      : 0
+    const hideOffset = hiddenProp == null && enterAlways ? offsetState : 0
+    const fullyHidden = hiddenProp ?? (enterAlways && scrollHidden)
+
+    // A collapse requested through the state prop needs the row's natural
+    // height too (scroll-driven collapses measure in the scroll handler).
+    useLayoutEffect(() => {
+      if (!twoRow || collapsedFraction <= 0) return
+      const h = expandedRowRef.current?.offsetHeight ?? 0
+      if (h > 0 && h !== expandedRowHeight) setExpandedRowHeight(h)
+    }, [twoRow, collapsedFraction, expandedRowHeight])
+
+    // Offscreen → out of the focus order and the accessibility tree (B25).
+    // Set through the DOM: React 18 has no boolean `inert` prop.
+    useLayoutEffect(() => {
+      barRef.current?.toggleAttribute('inert', fullyHidden)
+    }, [fullyHidden])
+
+    const colorFraction = twoRow
+      ? Math.max(scrolled ? 1 : 0, fastOutLinearIn(collapsedFraction))
+      : scrolled
+        ? 1
+        : 0
+
     const titleBox =
       title != null || hasSubtitle ? (
         <div className={styles.titleBox}>
@@ -89,23 +253,54 @@ export const TopAppBar = forwardRef<HTMLElement, TopAppBarProps>(
         </div>
       ) : null
 
+    // A collapsing two-row bar shows the title in its top row (small
+    // typography), fading in while the second row folds away. It duplicates
+    // the heading visually, so it is hidden from assistive technology.
+    const collapsedTitle =
+      twoRow && collapsedFraction > 0 && (title != null || hasSubtitle) ? (
+        <div className={clsx(styles.titleBox, styles.collapsedTitle)} aria-hidden="true">
+          {title != null && <div className={styles.title}>{title}</div>}
+          {hasSubtitle && <div className={styles.subtitle}>{subtitle}</div>}
+        </div>
+      ) : null
+
+    const vars = {
+      '--_scrolled-fraction': colorFraction,
+      '--_collapsed-fraction': collapsedFraction,
+      '--_collapsed-title-opacity': topTitleAlpha(collapsedFraction),
+      '--_expanded-row-full-height': `${expandedRowHeight}px`,
+      '--_hide-offset': `${hideOffset}px`,
+    } as CSSProperties
+
     return (
       <header
-        ref={ref}
+        ref={setRefs}
         {...rest}
+        style={{ ...vars, ...style }}
         data-variant={variant}
         data-title-alignment={titleAlignment}
         data-subtitle={hasSubtitle || undefined}
+        data-scroll-behavior={scrollBehavior}
+        data-scrolled={scrolled || undefined}
+        data-collapsing={(twoRow && collapsedFraction > 0) || undefined}
+        data-hidden={hiddenProp == null ? undefined : String(hiddenProp)}
+        data-settling={settling || undefined}
         className={clsx(styles.topBar, className)}
       >
         <div className={styles.row}>
           {navigationIcon != null && (
             <div className={styles.nav}>{navigationIcon}</div>
           )}
-          {twoRow ? <div className={styles.spacer} /> : titleBox}
+          {twoRow ? (collapsedTitle ?? <div className={styles.spacer} />) : titleBox}
           {actions != null && <div className={styles.actions}>{actions}</div>}
         </div>
-        {twoRow && <div className={styles.expandedRow}>{titleBox}</div>}
+        {twoRow && (
+          <div className={styles.expandedClip}>
+            <div ref={expandedRowRef} className={styles.expandedRow}>
+              {titleBox}
+            </div>
+          </div>
+        )}
       </header>
     )
   },

@@ -267,6 +267,125 @@
   --_expanded-row-height: 88px;
 }
 
+/* ---- Scrolling (scrolled / collapsedFraction / hidden, scrollBehavior) ---- */
+/*
+ * Compose AppBar.kt: container → scrolledContainerColor (SurfaceContainer)
+ * when content scrolls under the bar — color only, the 3dp on-scroll
+ * elevation token is unused (audit AB1 ruling). A single-row bar animates the
+ * switch with the DefaultEffects spring; a two-row bar follows its collapse
+ * continuously (FastOutLinearIn applied in JS → --_scrolled-fraction).
+ */
+.topBar {
+  transition: background-color var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
+}
+
+.topBar[data-scrolled] {
+  background-color: var(--md-sys-color-surface-container);
+}
+
+.topBar[data-collapsing] {
+  background-color: color-mix(
+    in srgb,
+    var(--md-sys-color-surface-container) calc(var(--_scrolled-fraction) * 100%),
+    var(--md-sys-color-surface)
+  );
+  transition: none;
+}
+
+/* scrollBehavior: the bar stays at the top of the scrolling content. */
+.topBar[data-scroll-behavior] {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/*
+ * Collapse (medium / large): the second row shrinks from its natural height
+ * to 0 with the title kept bottom-aligned and clipped at the top, fading out,
+ * while the top row's copy of the title fades in (Compose TwoRowsTopAppBar).
+ */
+.expandedClip {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.expandedRow {
+  flex: none;
+}
+
+.topBar[data-collapsing] .expandedClip {
+  height: calc(var(--_expanded-row-full-height) * (1 - var(--_collapsed-fraction)));
+  overflow: hidden;
+}
+
+.topBar[data-collapsing] .expandedRow {
+  opacity: calc(1 - var(--_collapsed-fraction));
+}
+
+.collapsedTitle {
+  opacity: var(--_collapsed-title-opacity);
+}
+
+/* The collapsed top row uses the small bar's typography. */
+.collapsedTitle .title {
+  font-family: var(--md-sys-typescale-title-large-font);
+  font-size: var(--md-sys-typescale-title-large-size);
+  font-weight: var(--md-sys-typescale-title-large-weight);
+  line-height: var(--md-sys-typescale-title-large-line-height);
+  letter-spacing: var(--md-sys-typescale-title-large-tracking);
+}
+
+.collapsedTitle .subtitle {
+  font-family: var(--md-sys-typescale-label-medium-font);
+  font-size: var(--md-sys-typescale-label-medium-size);
+  font-weight: var(--md-sys-typescale-label-medium-weight);
+  line-height: var(--md-sys-typescale-label-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-label-medium-tracking);
+}
+
+/*
+ * Scroll-driven collapse: the bar shrinks as the content scrolls by the same
+ * distance. A matching bottom margin keeps the bar's layout footprint
+ * constant, so the content's top edge stays glued to the bar's bottom edge
+ * instead of moving twice as fast (Compose consumes that scroll instead).
+ */
+.topBar[data-scroll-behavior='exitUntilCollapsed'][data-collapsing] {
+  margin-block-end: calc(var(--_expanded-row-full-height) * var(--_collapsed-fraction));
+}
+
+/*
+ * Hiding: enterAlways follows the scroll delta (--_hide-offset, px) and only
+ * animates when settling a half-hidden bar; the `hidden` state prop slides the
+ * whole bar up with the DefaultEffects spring.
+ */
+.topBar[data-scroll-behavior='enterAlways'] {
+  transform: translateY(calc(-1 * var(--_hide-offset)));
+}
+
+.topBar[data-hidden='true'] {
+  transform: translateY(-100%);
+}
+
+.topBar[data-settling],
+.topBar[data-hidden] {
+  transition:
+    background-color var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing),
+    transform var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing);
+}
+
+/* B3: state changes are instant under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .topBar,
+  .topBar[data-settling],
+  .topBar[data-hidden] {
+    transition: none;
+  }
+}
+
 /* --------------------------------------------------------------------------- */
 /* Bottom app bar                                                              */
 /* --------------------------------------------------------------------------- */
