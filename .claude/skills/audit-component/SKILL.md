@@ -35,6 +35,8 @@ every token set (use `page.evaluate` clicks ONLY — `page.locator().click()` ha
 
 1. `document.querySelectorAll('button.active-token-set-button')[0].click()` → wait 600ms
 2. Pick the set from `[role="menuitem"]` by text → wait 1000ms
+   (if a previous call left the menu open, step 1 CLOSES it — check for existing
+   `[role="menuitem"]` first, and verify the switch via the button's `innerText`)
 3. Click the `expand_all` control inside the first `token-viewer` (find by
    `textContent.trim() === 'expand_all'`, click its closest button) → wait 800ms
 4. Extract `token-viewer` `innerText`; strip the header chrome
@@ -44,6 +46,9 @@ Values render as resolved baseline-light hexes — map them back to color roles
 #E8DEF8=secondary-container, #F7F2FA=surface-container-low, #F3EDF7=surface-container…).
 Ignore the bottom "Baseline tokens" viewer if its sets are labeled `[Deprecated]`.
 Dump raw extracts to the scratchpad immediately — context is precious.
+Also read `/components/<component>/accessibility` — it carries requirements that no
+token table has (e.g. text field prefix/suffix ids, the "character count" label).
+`page.evaluate` output must be returned (no `require`/`fs` in `browser_run_code_unsafe`).
 
 ## Step 3 — Compose (delegate to a background subagent)
 
@@ -82,6 +87,6 @@ Spawn an agent to fetch raw `.kt` from
 
 - One GitHub issue per CONFIRMED finding group (English, labels: `phase-b` + `tokens`/
   `a11y`/`vrt` as relevant), each citing `docs/audits/<component>.md <ID>` and expected
-  Chromatic impact
+  VRT impact
 - PR the report to `develop` from branch `docs/<component>-audit`; fixes come later as
   separate 1-issue PRs (bundle only findings that rewrite the same code region)
