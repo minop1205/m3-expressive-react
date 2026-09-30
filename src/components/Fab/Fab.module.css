@@ -2,8 +2,12 @@
  * MD3 FAB. 4 sizes (small / regular / medium / large), 3 color sets
  * (primary / secondary / tertiary) x tonal (container roles, default) or
  * high-emphasis (base roles, `data-tonal` absent), optional label for
- * Extended FAB. Elevation level 3 at rest, level 4 on hover.
- * Values: m3.material.io/components/floating-action-button/specs
+ * Extended FAB. Elevation level 3 at rest, level 4 on hover. The container
+ * shape is static — neither m3.material.io nor Compose has a pressed FAB
+ * shape (docs/audits/fab.md FB3).
+ * Values: m3.material.io/components/floating-action-button/specs and
+ * /components/extended-fab/specs (= Compose FloatingActionButtonDefaults and
+ * Small / Medium / LargeExtendedFloatingActionButton).
  */
 
 .fab {
@@ -20,10 +24,10 @@
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   outline: none;
-  gap: 12px;
 
   height: var(--_height);
-  min-width: var(--_min-width);
+  /* Never narrower than tall (Compose `minWidth` = container height). */
+  min-width: var(--_height);
   padding-inline: var(--_pad-inline);
 
   /* Default color set = primary, tonal (primary-container roles) */
@@ -34,7 +38,7 @@
   --_elevation: var(--md-fab-container-elevation, var(--md-sys-elevation-shadow-level3));
   --_elevation-hover: var(--md-fab-hover-container-elevation, var(--md-sys-elevation-shadow-level4));
 
-  border-radius: var(--_shape);
+  border-radius: var(--_container-shape);
   background-color: var(--_container-color);
   color: var(--_content-color);
   box-shadow: var(--_elevation);
@@ -42,17 +46,30 @@
   --md-ripple-color: var(--_state-layer-color);
   --md-focus-ring-color: var(--md-sys-color-secondary);
 
-  font-family: var(--md-sys-typescale-label-large-font);
-  font-size: var(--md-sys-typescale-label-large-size);
-  font-weight: var(--md-sys-typescale-label-large-weight);
-  line-height: var(--md-sys-typescale-label-large-line-height);
-  letter-spacing: var(--md-sys-typescale-label-large-tracking);
+  /* Icon-only FABs have no label; these defaults only keep text-glyph icons
+     rendering in a stable font. Extended sizes override them below. */
+  --_label-text-font: var(--md-sys-typescale-label-large-font);
+  --_label-text-size: var(--md-sys-typescale-label-large-size);
+  --_label-text-weight: var(--md-sys-typescale-label-large-weight);
+  --_label-text-line-height: var(--md-sys-typescale-label-large-line-height);
+  --_label-text-tracking: var(--md-sys-typescale-label-large-tracking);
+  font-family: var(--_label-text-font);
+  font-size: var(--_label-text-size);
+  font-weight: var(--_label-text-weight);
+  line-height: var(--_label-text-line-height);
+  letter-spacing: var(--_label-text-tracking);
 
-  transition:
-    box-shadow var(--md-sys-motion-duration-short3)
-      var(--md-sys-motion-easing-standard),
-    border-radius var(--md-sys-motion-duration-medium1)
-      cubic-bezier(0.34, 1.4, 0.5, 1);
+  transition: box-shadow var(--md-sys-motion-duration-short3)
+    var(--md-sys-motion-easing-standard);
+}
+
+/* 48dp minimum touch target (Compose applies `minimumInteractiveComponentSize()`
+   to every FAB's clickable Surface). Only the 40dp small FAB actually grows;
+   every other size is already >= 48 and gets a zero inset. */
+.fab::before {
+  content: '';
+  position: absolute;
+  inset: min(0px, calc((var(--_height) - 48px) / 2));
 }
 
 /* --------------------------------------------------------------------------- */
@@ -73,61 +90,100 @@
 }
 
 /* --------------------------------------------------------------------------- */
-/* Sizes                                                                       */
+/* Sizes — icon-only FAB (padding = (height - icon) / 2)                       */
 /* --------------------------------------------------------------------------- */
 .fab[data-size='small'] {
   --_height: 40px;
-  --_min-width: 40px;
   --_icon-size: 24px;
   --_pad-inline: 8px;
-  --_shape: var(--md-sys-shape-corner-medium);
-  --_shape-pressed: var(--md-sys-shape-corner-small);
+  --_container-shape: var(--md-sys-shape-corner-medium);
 }
 .fab[data-size='regular'] {
   --_height: 56px;
-  --_min-width: 56px;
   --_icon-size: 24px;
   --_pad-inline: 16px;
-  --_shape: var(--md-sys-shape-corner-large);
-  --_shape-pressed: var(--md-sys-shape-corner-medium);
+  --_container-shape: var(--md-sys-shape-corner-large);
 }
 .fab[data-size='medium'] {
   --_height: 80px;
-  --_min-width: 80px;
   --_icon-size: 28px;
   --_pad-inline: 26px;
-  --_shape: var(--md-sys-shape-corner-large-increased);
-  --_shape-pressed: var(--md-sys-shape-corner-large);
+  --_container-shape: var(--md-sys-shape-corner-large-increased);
 }
 .fab[data-size='large'] {
   --_height: 96px;
-  --_min-width: 96px;
   --_icon-size: 36px;
   --_pad-inline: 30px;
-  --_shape: var(--md-sys-shape-corner-extra-large);
-  --_shape-pressed: var(--md-sys-shape-corner-large);
+  --_container-shape: var(--md-sys-shape-corner-extra-large);
 }
 
-/* Extended FAB: horizontal padding widens, min-width removes square constraint */
+/* --------------------------------------------------------------------------- */
+/* Extended FAB sizes (static `data-extended` and morphing `data-morph`) —     */
+/* the Expressive small / medium / large extended FAB (site token sets =      */
+/* Compose Defaults; medium / large icon-label spaces 12 / 16 follow the       */
+/* Defaults, not the stale token files). There is no 40dp extended FAB:       */
+/* `size="small"` + `label` renders the 56dp small extended FAB.               */
+/* --------------------------------------------------------------------------- */
+.fab:is([data-extended], [data-morph]):is([data-size='small'], [data-size='regular']) {
+  --_height: 56px;
+  --_icon-size: 24px;
+  --_container-shape: var(--md-sys-shape-corner-large);
+  --_leading-space: 16px;
+  --_icon-label-space: 8px;
+  --_trailing-space: 16px;
+  --_label-text-font: var(--md-sys-typescale-title-medium-font);
+  --_label-text-size: var(--md-sys-typescale-title-medium-size);
+  --_label-text-weight: var(--md-sys-typescale-title-medium-weight);
+  --_label-text-line-height: var(--md-sys-typescale-title-medium-line-height);
+  --_label-text-tracking: var(--md-sys-typescale-title-medium-tracking);
+}
+.fab:is([data-extended], [data-morph])[data-size='medium'] {
+  --_leading-space: 26px;
+  --_icon-label-space: 12px;
+  --_trailing-space: 26px;
+  --_label-text-font: var(--md-sys-typescale-title-large-font);
+  --_label-text-size: var(--md-sys-typescale-title-large-size);
+  --_label-text-weight: var(--md-sys-typescale-title-large-weight);
+  --_label-text-line-height: var(--md-sys-typescale-title-large-line-height);
+  --_label-text-tracking: var(--md-sys-typescale-title-large-tracking);
+}
+.fab:is([data-extended], [data-morph])[data-size='large'] {
+  --_leading-space: 28px;
+  --_icon-label-space: 16px;
+  --_trailing-space: 28px;
+  --_label-text-font: var(--md-sys-typescale-headline-small-font);
+  --_label-text-size: var(--md-sys-typescale-headline-small-size);
+  --_label-text-weight: var(--md-sys-typescale-headline-small-weight);
+  --_label-text-line-height: var(--md-sys-typescale-headline-small-line-height);
+  --_label-text-tracking: var(--md-sys-typescale-headline-small-tracking);
+}
+
+/* Static Extended FAB: leading space / icon / icon-label space / label /
+   trailing space. */
 .fab[data-extended] {
-  --_pad-inline: 16px;
-  --_min-width: auto;
-  padding-inline-start: 16px;
-  padding-inline-end: 20px;
+  gap: var(--_icon-label-space);
+  padding-inline: var(--_leading-space) var(--_trailing-space);
 }
 
-/* Extended with no icon — equal padding */
-.fab[data-extended]:not(:has(.icon svg, .icon img)) {
-  padding-inline-start: 24px;
-  padding-inline-end: 24px;
+/* Extended with no icon — the label is centered between the leading space. */
+.fab[data-extended][data-no-icon] {
+  padding-inline: var(--_leading-space);
 }
 
-/* Morphing Extended FAB (`expanded` prop): keeps the per-size square padding,
-   so at --_ext: 0 it is exactly the icon-only FAB; the label row (gap + label
-   + trailing padding) carries the rest of the extended width and scales with
-   the spring-driven --_ext (may overshoot slightly past 1). */
+/* Morphing Extended FAB (`expanded` / `followContainer`). Compose lerps the
+   container width between the collapsed width (= height) and the expanded
+   width while the content stays laid out from the start edge — the icon never
+   leaves the leading space and the label row is clipped. Here the progress
+   --_p (spring-driven --_ext, or a container's inherited --_t; may overshoot)
+   scales the label row, and the trailing padding lerps from the collapsed
+   remainder (height - leading - icon) to the trailing space, so the width is
+   exactly lerp(height, expanded width, p). */
 .fab[data-morph] {
-  gap: 0;
+  --_p: var(--_ext, var(--_t, 1));
+  --_collapsed-trailing: calc(var(--_height) - var(--_leading-space) - var(--_icon-size));
+  justify-content: flex-start;
+  padding-inline: var(--_leading-space)
+    calc(var(--_collapsed-trailing) + (var(--_trailing-space) - var(--_collapsed-trailing)) * var(--_p));
 }
 
 .labelWrap {
@@ -137,27 +193,21 @@
   justify-content: flex-start;
   overflow: hidden;
   /* Spring-driven morphs (`expanded` boolean) write --_ext/--_label-o inline;
-     container-driven morphs (`expanded="container"`) fall back to the
-     inherited --_t, so the label row tracks the container's spring exactly.
-     The fallback opacity fades in over the first ~30% of the morph (per the
+     container-driven morphs (`followContainer`) fall back to the inherited
+     --_t, so the label row tracks the container's spring exactly. The
+     fallback opacity fades in over the first ~30% of the morph (per the
      m3.material.io rail demo; the clip does the rest of the reveal). */
-  width: calc(var(--_ext, var(--_t, 1)) * var(--_label-total, 0px));
+  width: calc(var(--_p) * var(--_label-total, 0px));
   opacity: var(--_label-o, calc(var(--_t, 1) * 3.4));
 }
 
-/* Regular size: 16 (pad) + 24 (icon) + 12 (gap) + label + 4 + 16 (pad) —
-   the extended 16/20 paddings and 12dp icon–label gap from the spec. */
+/* The label row = icon-label space + label; its natural width is measured
+   into --_label-total. */
 .labelInner {
   flex-shrink: 0;
   box-sizing: border-box;
   width: max-content;
-  padding-inline-start: 12px;
-  padding-inline-end: 4px;
-}
-
-/* Shape morph on press */
-.fab:active:not(:disabled) {
-  border-radius: var(--_shape-pressed);
+  padding-inline-start: var(--_icon-label-space);
 }
 
 /* --------------------------------------------------------------------------- */
