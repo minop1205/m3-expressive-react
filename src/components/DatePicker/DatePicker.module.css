@@ -42,6 +42,20 @@
   min-height: 128px;
 }
 
+/* Headline + the calendar / text-input toggle (Compose DateEntryContainer:
+   SpaceBetween row, toggle padded 12dp from the end). */
+.headlineRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.headlineRow > .headline {
+  flex: 1;
+  min-width: 0;
+}
+
 .supporting {
   color: var(--md-sys-color-on-surface-variant);
   font-family: var(--md-sys-typescale-label-large-font);
@@ -464,10 +478,87 @@
   white-space: nowrap;
 }
 
+/* Calendar / input switch: a short fade (Compose slides + fades). */
+.content[data-animate] {
+  animation: md-date-content-enter var(--md-sys-motion-duration-short4)
+    var(--md-sys-motion-easing-standard);
+}
+
+@keyframes md-date-content-enter {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Input mode — Compose DateInput: outlined field(s) 24dp from the sides,
+   10dp below the divider, 16dp above the actions; range fields split the
+   row with 8dp between them. */
+.inputs {
+  display: flex;
+  gap: 8px;
+  padding: 10px 24px 16px;
+}
+
+.inputs > .inputField {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Cancel / OK — Compose DatePickerDialog: end-aligned, 8dp apart, 6dp from
+   the end (the container adds the 8dp bottom). */
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-inline-end: 6px;
+}
+
+/* Modal (open prop): fixed overlay + Scrim 32%, like Dialog. */
+.modalRoot {
+  position: fixed;
+  inset: 0;
+  z-index: 24;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.scrim {
+  position: absolute;
+  inset: 0;
+  background-color: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
+  animation: md-date-content-enter var(--md-sys-motion-duration-medium2)
+    var(--md-sys-motion-easing-standard);
+}
+
+.modalSurface {
+  position: relative;
+  max-height: 100%;
+  overflow-y: auto;
+  outline: none;
+  animation: md-date-modal-enter var(--md-sys-motion-duration-medium2)
+    var(--md-sys-motion-easing-emphasized-decelerate);
+}
+
+@keyframes md-date-modal-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .yearGrid,
-  .menuList {
+  .menuList,
+  .content[data-animate],
+  .scrim {
     animation: none;
+  }
+
+  /* B3: the modal's scale-in becomes a plain fade. */
+  .modalSurface {
+    animation-name: md-date-content-enter;
   }
 
   .menuButtonIcon {

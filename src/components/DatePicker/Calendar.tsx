@@ -580,6 +580,8 @@ export function Calendar({
                     type="button"
                     role="gridcell"
                     tabIndex={sameDay(tabbable, date) ? 0 : -1}
+                    // Initial focus target for a modal picker (useModal).
+                    data-autofocus={sameDay(tabbable, date) || undefined}
                     aria-label={describe(date)}
                     aria-selected={isSelected}
                     aria-current={isToday ? 'date' : undefined}
