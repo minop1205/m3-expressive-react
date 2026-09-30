@@ -83,3 +83,134 @@
   flex-direction: column;
   min-width: 64px;
 }
+
+/* ---- Floating expand / collapse (startContent / endContent) ---- */
+/*
+ * Compose HorizontalFloatingToolbar(expanded, leadingContent,
+ * trailingContent): the side content expands / shrinks horizontally
+ * (vertically for a vertical toolbar) with the FastSpatial spring. A 1fr ↔ 0fr
+ * grid track animates the slot between its content size and 0; the slot's
+ * negative margin cancels the toolbar gap once it is empty.
+ */
+.slot {
+  display: grid;
+  transition:
+    grid-template-columns var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    grid-template-rows var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    margin var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing);
+}
+
+.slotInner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 0;
+  /* Clip while (and once) collapsed; leave room for focus rings otherwise. */
+  overflow: clip;
+  overflow-clip-margin: 8px;
+}
+
+.slot[data-collapsed] .slotInner {
+  overflow-clip-margin: 0px;
+}
+
+.toolbar[data-orientation='horizontal'] .slot {
+  grid-template-columns: 1fr;
+}
+
+.toolbar[data-orientation='horizontal'] .slot[data-collapsed] {
+  grid-template-columns: 0fr;
+}
+
+.toolbar[data-orientation='horizontal'] .slot[data-slot='start'][data-collapsed] {
+  margin-inline-end: -4px;
+}
+
+.toolbar[data-orientation='horizontal'] .slot[data-slot='end'][data-collapsed] {
+  margin-inline-start: -4px;
+}
+
+.toolbar[data-orientation='vertical'] .slot {
+  grid-template-rows: 1fr;
+}
+
+.toolbar[data-orientation='vertical'] .slot[data-collapsed] {
+  grid-template-rows: 0fr;
+}
+
+.toolbar[data-orientation='vertical'] .slotInner {
+  flex-direction: column;
+}
+
+.toolbar[data-orientation='vertical'] .slot[data-slot='start'][data-collapsed] {
+  margin-block-end: -4px;
+}
+
+.toolbar[data-orientation='vertical'] .slot[data-slot='end'][data-collapsed] {
+  margin-block-start: -4px;
+}
+
+/*
+ * A floating toolbar without `children` collapses away entirely (the "with
+ * FAB" pattern: Compose shrinks the toolbar to 0 while the FAB grows).
+ */
+.toolbar[data-variant='floating'] {
+  transition:
+    padding var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    box-shadow var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing);
+}
+
+.toolbar[data-variant='floating'][data-empty][data-expanded='false'] {
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+/* ---- Scroll: exitAlways / hidden ---- */
+/* A docked toolbar with a scrollBehavior stays at the bottom of its scroller. */
+.toolbar[data-variant='docked'][data-scroll-behavior] {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+}
+
+/*
+ * Slides off the screen edge by --_hide-offset (px, signed for RTL): follows
+ * the scroll delta, and animates (DefaultEffects spring, like Compose's snap)
+ * only when settling or when driven by the `hidden` state prop.
+ */
+.toolbar[data-exit-direction='bottom'] {
+  transform: translateY(var(--_hide-offset));
+}
+
+.toolbar[data-exit-direction='end'] {
+  transform: translateX(var(--_hide-offset));
+}
+
+.toolbar[data-settling],
+.toolbar[data-hidden] {
+  transition:
+    transform var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing),
+    padding var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    box-shadow var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing);
+}
+
+/* B3: state changes are instant under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .slot,
+  .toolbar[data-variant='floating'],
+  .toolbar[data-settling],
+  .toolbar[data-hidden] {
+    transition: none;
+  }
+}

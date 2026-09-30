@@ -24,6 +24,15 @@
   --_supporting-text-color: var(--md-sys-color-inverse-on-surface);
   --_action-label-text-color: var(--md-sys-color-inverse-primary);
   --_dismiss-icon-color: var(--md-sys-color-inverse-on-surface);
+  /* Focus indicator on the inverse container. Neither m3 SnackbarTokens nor
+     Compose / material-web define one, and the standard ring (secondary) is
+     only ~2.0:1 (light) / ~1.3:1 (dark) against inverse-surface. The
+     inverse-primary accent the action already uses clears WCAG 1.4.11's 3:1
+     (baseline #6750A4: 7.8:1 light, 5.0:1 dark; ≥ 4.9:1 across all scheme
+     variants). Inherited by custom action nodes; re-applied below on the
+     built-in buttons, which set their own ring color. */
+  --_focus-indicator-color: var(--md-sys-color-inverse-primary);
+  --md-focus-ring-color: var(--_focus-indicator-color);
 
   display: flex;
   align-items: center;
@@ -100,11 +109,18 @@
   min-width: 58px;
 }
 
+/* The action (built-in or a custom node built from library components such
+   as Button / IconButton) sets its own ring color; keep the inverse one. */
+.snackbar .actionSlot [data-variant] {
+  --md-focus-ring-color: var(--_focus-indicator-color);
+}
+
 /* ---- Dismiss: IconButton variant="standard" size="sm" -------------------- */
 /* 40dp container + 24dp icon, centered in a 48dp area (12 | 24 | 12) that
    touches the trailing edge. */
 .snackbar .dismiss[data-variant] {
   --_icon-color: var(--_dismiss-icon-color);
   --_state-layer-color: var(--_dismiss-icon-color);
+  --md-focus-ring-color: var(--_focus-indicator-color);
   margin-inline: 4px;
 }

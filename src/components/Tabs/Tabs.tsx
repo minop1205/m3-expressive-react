@@ -28,6 +28,8 @@ interface TabsContextValue {
   /** Value of the tab that currently takes `tabIndex=0`. */
   tabStop: string
   onTabFocus: (value: string) => void
+  /** Records each tab element's value so the list can resolve a fallback stop. */
+  registerTab: (el: HTMLButtonElement | null, value: string) => void
 }
 
 const isRtl = (el: Element) =>
@@ -126,6 +128,20 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
   const isControlled = value !== undefined
   const [uncontrolled, setUncontrolled] = useState(defaultValue ?? '')
   const current = isControlled ? value : uncontrolled
+  const preferredStop = focusedValue ?? current
+
+  // Fallback tab stop: when the preferred stop matches no enabled tab (no
+  // selection, a stale value, or a disabled selected tab), the first enabled
+  // tab takes tabIndex=0 so the list stays reachable (WAI-ARIA APG Tabs).
+  const tabValues = useRef(new Map<HTMLButtonElement, string>())
+  const registerTab = useCallback((el: HTMLButtonElement | null, v: string) => {
+    // Called with the element on mount and null on unmount; prune detached ones.
+    if (el) tabValues.current.set(el, v)
+    tabValues.current.forEach((_, node) => {
+      if (!node.isConnected && node !== el) tabValues.current.delete(node)
+    })
+  }, [])
+  const [fallbackStop, setFallbackStop] = useState<string | null>(null)
   const handleChange = (event: MouseEvent<HTMLButtonElement>, v: string) => {
     if (!isControlled) setUncontrolled(v)
     onChange?.(event, v)
@@ -207,6 +223,17 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
     layoutIndicator('auto')
   })
 
+  useLayoutEffect(() => {
+    const list = listRef.current
+    if (!list) return
+    const enabled = Array.from(
+      list.querySelectorAll<HTMLButtonElement>('[role="tab"]:not(:disabled)'),
+    ).filter((t) => t.closest('[role="tablist"]') === list)
+    const values = enabled.map((t) => tabValues.current.get(t))
+    const next = values.includes(preferredStop) ? null : (values[0] ?? null)
+    if (next !== fallbackStop) setFallbackStop(next)
+  })
+
   // Re-measure on size changes (container resize, font load, label edits).
   useEffect(() => {
     const list = listRef.current
@@ -244,8 +271,9 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
         value: current,
         onChange: handleChange,
         variant,
-        tabStop: focusedValue ?? current,
+        tabStop: fallbackStop ?? preferredStop,
         onTabFocus: setFocusedValue,
+        registerTab,
       }}
     >
       <div
@@ -281,12 +309,21 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
   ref,
 ) {
   const ctx = useContext(TabsContext)
+  const registerTab = ctx?.registerTab
+  const setRef = useCallback(
+    (node: HTMLButtonElement | null) => {
+      registerTab?.(node, value)
+      if (typeof ref === 'function') ref(node)
+      else if (ref) ref.current = node
+    },
+    [registerTab, value, ref],
+  )
   if (!ctx) throw new Error('Tab must be used within <Tabs>')
   const selected = ctx.value === value
 
   return (
     <button
-      ref={ref}
+      ref={setRef}
       {...rest}
       type="button"
       role="tab"
