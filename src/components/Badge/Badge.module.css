@@ -8,7 +8,8 @@
   --_container-color: var(--md-sys-color-error);
   --_label-text-color: var(--md-sys-color-on-error);
   --_small-size: 6px;
-  --_large-height: 16px;
+  /* Compose Badge: defaultMinSize(16dp) — a minimum, text in sp grows it */
+  --_large-min-size: 16px;
   --_large-shape: 8px;
   --_large-padding: 4px;
   --_large-offset-bottom: 14px;
@@ -32,13 +33,35 @@
   pointer-events: none;
   z-index: 1;
 
-  /* Hidden by default; .visible triggers scale-in */
+  /* Hidden by default; .visible triggers scale-in. Once scaled out the badge
+     also becomes visibility: hidden so assistive technology stops reading it
+     (the visibility switch is delayed until the scale-out has finished). */
   transform: scale(0);
-  transition: transform 150ms var(--_easing);
+  visibility: hidden;
+  transition:
+    transform 150ms var(--_easing),
+    visibility 0s linear 150ms;
 }
 
 .visible {
   transform: scale(1);
+  visibility: visible;
+  transition:
+    transform 150ms var(--_easing),
+    visibility 0s linear 0s;
+}
+
+/* Accessible label — announced, never painted, no layout impact */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* --- Small (dot) --------------------------------------------------------- */
@@ -52,11 +75,21 @@
 }
 
 /* --- Large (label) ------------------------------------------------------- */
-/* Badge bottom = icon top + 14dp, badge leading edge = icon trailing edge − 12dp */
+/* Badge bottom = icon top + 14dp, badge leading edge = icon trailing edge − 12dp.
+   Anchored by its bottom edge (Compose BadgedBox: badgeY = -height + 14dp) so
+   a badge that grows with text scaling extends upward, not over the icon. */
 .large {
-  height: var(--_large-height);
-  min-width: var(--_large-height);
-  border-radius: var(--_large-shape);
+  min-height: var(--_large-min-size);
+  /* never narrower than tall, so a single digit stays a circle when scaled */
+  min-width: max(
+    var(--_large-min-size),
+    var(--md-sys-typescale-label-small-line-height)
+  );
+  /* 8dp at the default size; stays a pill when the label line grows */
+  border-radius: max(
+    var(--_large-shape),
+    calc(var(--md-sys-typescale-label-small-line-height) / 2)
+  );
   padding-inline: var(--_large-padding);
 
   /* Label Small typescale */
@@ -73,9 +106,20 @@
   text-align: center;
   white-space: nowrap;
 
-  /* top = bottom offset − height */
-  top: calc(var(--_large-offset-bottom) - var(--_large-height));
+  bottom: calc(100% - var(--_large-offset-bottom));
   /* Leading edge offset from trailing edge of icon */
   inset-inline-start: calc(100% - var(--_large-offset-start));
+  /* Scale from the leading edge */
   transform-origin: left center;
+}
+
+.large:dir(rtl) {
+  transform-origin: right center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .badge,
+  .visible {
+    transition: none;
+  }
 }

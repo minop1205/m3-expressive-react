@@ -14,7 +14,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Hover / pressed flat state layer. */
+/* Hover / keyboard-focus flat state layer (the press is the ripple below). */
 .stateLayer {
   position: absolute;
   inset: 0;
@@ -27,6 +27,17 @@
 
 .hovered {
   opacity: var(--md-sys-state-hover-state-layer-opacity);
+}
+
+/* Keyboard focus (the host's :focus-visible, tracked in JS) — 0.10, shown
+   alongside the FocusRing. Hover + focus together shows ONE layer at the
+   larger opacity (focus 0.10), never a sum: Compose's StateLayer draws a
+   single interaction (the most recent of hover / focus / drag), so the only
+   divergence is focus-then-hover (Compose 0.08, here 0.10) — imperceptible,
+   and it keeps the layer from dimming while the focus ring is still shown.
+   Declared after .hovered so it wins at equal specificity. */
+.focused {
+  opacity: var(--md-sys-state-focus-state-layer-opacity);
 }
 
 /* Each press emits an expanding circle that fades on release. */
