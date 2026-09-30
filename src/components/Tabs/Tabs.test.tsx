@@ -45,13 +45,97 @@ describe('Tabs', () => {
     expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'c')
   })
 
-  it('moves with arrow keys', async () => {
+  it('arrow keys move focus without selecting (manual activation)', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
     render(<Example value="a" onChange={onChange} />)
     screen.getByRole('tab', { name: 'Alpha' }).focus()
     await user.keyboard('{ArrowRight}')
-    expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'b')
+    expect(screen.getByRole('tab', { name: 'Beta' })).toHaveFocus()
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveAttribute('aria-selected', 'true')
+    await user.keyboard('{ArrowLeft}{ArrowLeft}')
+    expect(screen.getByRole('tab', { name: 'Gamma' })).toHaveFocus() // wraps
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('selects the focused tab with Enter and Space', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<Example value="a" onChange={onChange} />)
+    screen.getByRole('tab', { name: 'Alpha' }).focus()
+    await user.keyboard('{ArrowRight}{Enter}')
+    expect(onChange).toHaveBeenLastCalledWith(expect.any(Object), 'b')
+    await user.keyboard('{ArrowRight} ')
+    expect(onChange).toHaveBeenLastCalledWith(expect.any(Object), 'c')
+    expect(onChange).toHaveBeenCalledTimes(2)
+  })
+
+  it('Home and End move focus to the first and last tab', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<Example value="b" onChange={onChange} />)
+    screen.getByRole('tab', { name: 'Beta' }).focus()
+    await user.keyboard('{End}')
+    expect(screen.getByRole('tab', { name: 'Gamma' })).toHaveFocus()
+    await user.keyboard('{Home}')
+    expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveFocus()
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('skips disabled tabs', async () => {
+    const user = userEvent.setup()
+    render(
+      <Tabs value="a" onChange={() => {}} aria-label="S">
+        <Tab value="a" label="Alpha" />
+        <Tab value="b" label="Beta" disabled />
+        <Tab value="c" label="Gamma" />
+        <Tab value="d" label="Delta" disabled />
+      </Tabs>,
+    )
+    screen.getByRole('tab', { name: 'Alpha' }).focus()
+    await user.keyboard('{ArrowRight}')
+    expect(screen.getByRole('tab', { name: 'Gamma' })).toHaveFocus()
+    await user.keyboard('{End}')
+    expect(screen.getByRole('tab', { name: 'Gamma' })).toHaveFocus()
+    await user.keyboard('{ArrowRight}')
+    expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveFocus()
+  })
+
+  it('reverses the arrow keys in RTL', async () => {
+    const user = userEvent.setup()
+    render(
+      <div dir="rtl">
+        <Example value="a" />
+      </div>,
+    )
+    screen.getByRole('tab', { name: 'Alpha' }).focus()
+    await user.keyboard('{ArrowLeft}')
+    expect(screen.getByRole('tab', { name: 'Beta' })).toHaveFocus()
+    await user.keyboard('{ArrowRight}')
+    expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveFocus()
+  })
+
+  it('moves the tab stop with focus and restores it to the selected tab on leave', async () => {
+    const user = userEvent.setup()
+    render(
+      <>
+        <Example value="a" />
+        <button type="button">After</button>
+      </>,
+    )
+    await user.tab()
+    expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveFocus()
+    await user.keyboard('{ArrowRight}')
+    expect(screen.getByRole('tab', { name: 'Beta' })).toHaveAttribute('tabindex', '0')
+    expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveAttribute('tabindex', '-1')
+    // Tab leaves the tablist (one tab stop), then the stop returns to the selection.
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'After' })).toHaveFocus()
+    expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveAttribute('tabindex', '0')
+    expect(screen.getByRole('tab', { name: 'Beta' })).toHaveAttribute('tabindex', '-1')
+    await user.tab({ shift: true })
+    expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveFocus()
   })
 
   it('supports the secondary variant', () => {

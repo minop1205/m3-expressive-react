@@ -5,37 +5,54 @@ import { axe } from 'vitest-axe'
 import { Divider } from './Divider'
 
 describe('Divider', () => {
-  it('renders a horizontal separator by default', () => {
-    render(<Divider />)
-    const el = screen.getByRole('separator')
-    expect(el).toHaveAttribute('aria-orientation', 'horizontal')
+  it('is decorative by default (hidden from assistive technology)', () => {
+    render(<Divider data-testid="d" />)
+    const el = screen.getByTestId('d')
+    expect(el.tagName).toBe('HR')
+    expect(el).toHaveAttribute('aria-hidden', 'true')
+    expect(el).not.toHaveAttribute('role')
+    expect(el).not.toHaveAttribute('aria-orientation')
+    expect(screen.queryByRole('separator')).not.toBeInTheDocument()
   })
 
-  it('renders a vertical separator', () => {
-    render(<Divider orientation="vertical" />)
+  it('is decorative by default when vertical', () => {
+    render(<Divider data-testid="d" orientation="vertical" />)
+    const el = screen.getByTestId('d')
+    expect(el).toHaveAttribute('aria-hidden', 'true')
+    expect(el).not.toHaveAttribute('aria-orientation')
+    expect(screen.queryByRole('separator')).not.toBeInTheDocument()
+  })
+
+  it('exposes a horizontal separator when decorative={false}', () => {
+    render(<Divider decorative={false} />)
     const el = screen.getByRole('separator')
-    expect(el).toHaveAttribute('aria-orientation', 'vertical')
+    expect(el).not.toHaveAttribute('aria-hidden')
+    // horizontal is the implicit default — no redundant attribute
+    expect(el).not.toHaveAttribute('aria-orientation')
+    expect(el).not.toHaveAttribute('role')
+  })
+
+  it('exposes a vertical separator when decorative={false}', () => {
+    render(<Divider decorative={false} orientation="vertical" />)
+    expect(screen.getByRole('separator')).toHaveAttribute(
+      'aria-orientation',
+      'vertical',
+    )
   })
 
   it('applies full-width variant by default', () => {
-    render(<Divider />)
-    expect(screen.getByRole('separator')).toHaveAttribute(
-      'data-variant',
-      'full-width',
-    )
+    render(<Divider data-testid="d" />)
+    expect(screen.getByTestId('d')).toHaveAttribute('data-variant', 'full-width')
   })
 
   it('applies inset variant', () => {
-    render(<Divider variant="inset" />)
-    expect(screen.getByRole('separator')).toHaveAttribute(
-      'data-variant',
-      'inset',
-    )
+    render(<Divider data-testid="d" variant="inset" />)
+    expect(screen.getByTestId('d')).toHaveAttribute('data-variant', 'inset')
   })
 
   it('applies middle-inset variant', () => {
-    render(<Divider variant="middle-inset" />)
-    expect(screen.getByRole('separator')).toHaveAttribute(
+    render(<Divider data-testid="d" variant="middle-inset" />)
+    expect(screen.getByTestId('d')).toHaveAttribute(
       'data-variant',
       'middle-inset',
     )
@@ -57,8 +74,10 @@ describe('Divider', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 
-  it('has no axe violations (vertical)', async () => {
-    const { container } = render(<Divider orientation="vertical" />)
+  it('has no axe violations (semantic, vertical)', async () => {
+    const { container } = render(
+      <Divider decorative={false} orientation="vertical" />,
+    )
     expect(await axe(container)).toHaveNoViolations()
   })
 })

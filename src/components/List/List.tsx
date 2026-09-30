@@ -3,12 +3,17 @@ import {
   type HTMLAttributes,
   type KeyboardEvent,
   type LiHTMLAttributes,
+  type MouseEvent,
   type MouseEventHandler,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import {
+  isContainerKeyActivation,
+  isFromNestedInteractive,
+} from '../../internal/isFromNestedInteractive'
 import styles from './List.module.css'
 
 export interface ListProps extends HTMLAttributes<HTMLUListElement> {
@@ -83,14 +88,19 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
     const lineCount = Math.min(lines, 3)
 
     const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-      if (
-        !disabled &&
-        !event.defaultPrevented &&
-        (event.key === 'Enter' || event.key === ' ')
-      ) {
+      // Only when the row itself is focused — keys from controls in the
+      // leading/trailing slots belong to them (docs/audits/list.md LS5).
+      if (!disabled && isContainerKeyActivation(event)) {
         event.preventDefault()
         event.currentTarget.click()
       }
+    }
+
+    // Clicks on nested controls (trailing Switch, icon button…) activate only
+    // that control, not the row as well.
+    const handleClick = (event: MouseEvent<HTMLDivElement>) => {
+      if (isFromNestedInteractive(event)) return
+      onClick?.(event)
     }
 
     const content = (
@@ -129,7 +139,7 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
             role={role ?? 'button'}
             tabIndex={disabled ? undefined : tabIndex ?? 0}
             aria-disabled={disabled || undefined}
-            onClick={disabled ? undefined : onClick}
+            onClick={disabled ? undefined : handleClick}
             onKeyDown={handleKeyDown}
             className={styles.item}
           >
