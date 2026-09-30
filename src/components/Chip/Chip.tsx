@@ -300,7 +300,7 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
             </span>
           )}
           <span className={styles.label}>{label}</span>
-          {!disabled && <Ripple />}
+          {(!disabled || dragged) && <Ripple disabled={disabled} dragged={dragged} />}
           {!disabled && <FocusRing />}
         </button>
         {hasTrailingAction && (
