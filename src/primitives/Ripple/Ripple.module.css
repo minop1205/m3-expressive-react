@@ -40,6 +40,12 @@
   opacity: var(--md-sys-state-focus-state-layer-opacity);
 }
 
+/* Dragged (a surface being dragged) — 0.16, replaces hover / focus while set.
+   Declared after .focused so it wins at equal specificity. */
+.dragged {
+  opacity: var(--md-sys-state-dragged-state-layer-opacity);
+}
+
 /* Each press emits an expanding circle that fades on release. */
 .ripple {
   position: absolute;

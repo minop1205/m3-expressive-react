@@ -19,9 +19,16 @@ export type CardVariant = 'filled' | 'elevated' | 'outlined'
 export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   /** Container style. @default 'filled' */
   variant?: CardVariant
-  /** Disable interaction and dim the card (only meaningful when `onClick` is set). */
+  /**
+   * Show the disabled appearance (container and content at 38%). A clickable
+   * card also stops responding (`aria-disabled`, removed from the Tab order).
+   */
   disabled?: boolean
-  /** Apply the MD3 dragged appearance (raised elevation) — for drag-and-drop. */
+  /**
+   * Apply the MD3 dragged appearance — raised elevation (filled / outlined
+   * 6dp, elevated 8dp) and the 0.16 on-surface state layer — for
+   * drag-and-drop. Works on static and clickable cards.
+   */
   dragged?: boolean
   children?: ReactNode
 }
@@ -83,7 +90,9 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
       className={clsx(styles.card, className)}
     >
       {children}
-      {interactive && !disabled && <Ripple />}
+      {((interactive && !disabled) || dragged) && (
+        <Ripple disabled={!interactive || disabled} dragged={dragged} ignoreNestedPress />
+      )}
       {interactive && !disabled && <FocusRing />}
     </div>
   )

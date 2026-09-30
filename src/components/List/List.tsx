@@ -130,7 +130,7 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
           <span className={styles.trailingText}>{trailingSupportingText}</span>
         )}
         {trailing != null && <span className={styles.trailing}>{trailing}</span>}
-        {interactive && !disabled && <Ripple />}
+        {interactive && !disabled && <Ripple ignoreNestedPress />}
         {interactive && !disabled && <FocusRing />}
       </>
     )

@@ -1,11 +1,12 @@
 import { createRef } from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { Checkbox } from '../Checkbox'
 import { Switch } from '../Switch'
 import { List, ListItem } from './List'
+import rippleStyles from '../../primitives/Ripple/Ripple.module.css'
 
 describe('List / ListItem', () => {
   it('renders a list with items', () => {
@@ -121,6 +122,21 @@ describe('List / ListItem', () => {
       // The row itself still activates.
       await user.click(screen.getByText('Wi-Fi'))
       expect(onRow).toHaveBeenCalledTimes(1)
+    })
+
+    it('a press on a trailing control does not ripple the row (#299)', () => {
+      const { container } = render(
+        <ListItem
+          headline="Row"
+          onClick={() => {}}
+          trailing={<button type="button">More</button>}
+        />,
+      )
+      const ripples = () => container.querySelectorAll(`.${rippleStyles.ripple}`).length
+      fireEvent.pointerDown(screen.getByRole('button', { name: 'More' }), { button: 0 })
+      expect(ripples()).toBe(0)
+      fireEvent.pointerDown(screen.getByText('Row'), { button: 0 })
+      expect(ripples()).toBe(1)
     })
 
     it('typing into a nested input keeps spaces and does not fire the row', async () => {

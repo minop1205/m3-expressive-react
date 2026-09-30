@@ -1,9 +1,10 @@
 import { createRef } from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { Card } from './Card'
+import rippleStyles from '../../primitives/Ripple/Ripple.module.css'
 
 describe('Card', () => {
   it('renders its children', () => {
@@ -106,9 +107,34 @@ describe('Card', () => {
     })
   })
 
-  it('applies the dragged state', () => {
-    const { container } = render(<Card dragged>x</Card>)
+  it('applies the dragged state with the 0.16 state layer (static and clickable)', () => {
+    const { container, rerender } = render(<Card dragged>x</Card>)
     expect(container.firstChild).toHaveAttribute('data-dragged', 'true')
+    const layer = () => container.querySelector(`.${rippleStyles.stateLayer}`)
+    expect(layer()).toHaveClass(rippleStyles.dragged)
+    rerender(
+      <Card dragged onClick={() => {}}>
+        x
+      </Card>,
+    )
+    expect(layer()).toHaveClass(rippleStyles.dragged)
+    // Not dragged: a static card has no state layer at all.
+    rerender(<Card>x</Card>)
+    expect(layer()).toBeNull()
+  })
+
+  it('a press on a nested control does not ripple the card (#299)', () => {
+    const { container } = render(
+      <Card onClick={() => {}} aria-label="Card">
+        <button type="button">Action</button>
+        <span>Body</span>
+      </Card>,
+    )
+    const ripples = () => container.querySelectorAll(`.${rippleStyles.ripple}`).length
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Action' }), { button: 0 })
+    expect(ripples()).toBe(0)
+    fireEvent.pointerDown(screen.getByText('Body'), { button: 0 })
+    expect(ripples()).toBe(1)
   })
 
   it('forwards a ref', () => {
