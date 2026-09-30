@@ -5,7 +5,8 @@ import { Snackbar } from './Snackbar'
 const meta = {
   title: 'Components/Snackbar',
   component: Snackbar,
-  parameters: { layout: 'centered' },
+  // The snackbar fills the available width (up to 600dp).
+  parameters: { layout: 'padded' },
   args: { message: 'Single-line snackbar' },
 } satisfies Meta<typeof Snackbar>
 
@@ -34,6 +35,16 @@ export const TwoLine: Story = {
     message:
       'A longer snackbar message that wraps onto a second line to demonstrate the two-line layout.',
     action: { label: 'Action', onClick: fn() },
+    onDismiss: fn(),
+  },
+}
+
+/** A long action on its own line, end-aligned below the message. */
+export const ActionOnNewLine: Story = {
+  args: {
+    message: 'Your photos were moved to the shared album.',
+    action: { label: 'Open shared album', onClick: fn() },
+    actionOnNewLine: true,
     onDismiss: fn(),
   },
 }
