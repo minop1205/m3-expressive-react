@@ -98,6 +98,10 @@
 .item:hover:not(:disabled) .shape::after {
   opacity: var(--md-sys-state-hover-state-layer-opacity);
 }
+/* Keyboard focus 0.10 (after hover: hover + focus = one 0.10 layer, #194). */
+.item:focus-visible:not(:disabled) .shape::after {
+  opacity: var(--md-sys-state-focus-state-layer-opacity);
+}
 .item:active:not(:disabled) .shape::after {
   opacity: var(--md-sys-state-pressed-state-layer-opacity);
 }
