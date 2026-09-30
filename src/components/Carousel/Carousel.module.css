@@ -115,8 +115,8 @@
 
 /* --------------------------------------------------------------------------- */
 /* Interactive items (onClick → button, href → a): m3 "Carousel item" tokens — */
-/* hover 0.08 + 1dp elevation, focus 0.10 + focus ring, pressed 0.10 + ripple  */
-/* and a slight shape change.                                                  */
+/* hover 0.08 + 1dp elevation, focus 0.10 (shared Ripple, #194) + focus ring,   */
+/* pressed 0.10 + ripple, and a slight shape change.                          */
 /* --------------------------------------------------------------------------- */
 
 .item[data-interactive] {
@@ -133,22 +133,6 @@
 /* Pressed: "Tapping on a carousel item changes the shape slightly". */
 .item[data-interactive]:active:not([data-disabled]) {
   --_container-shape: var(--md-sys-shape-corner-large-increased);
-}
-
-/* Keyboard-focus state layer (0.10). TODO(#194): drop once the shared Ripple
-   paints the focus layer itself (PR #302) — otherwise the two would stack. */
-.item[data-interactive]::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background-color: var(--md-sys-color-on-surface);
-  opacity: 0;
-  pointer-events: none;
-}
-
-.item[data-interactive]:focus-visible:not([data-disabled])::after {
-  opacity: var(--md-sys-state-focus-state-layer-opacity);
 }
 
 .item[data-disabled] {
