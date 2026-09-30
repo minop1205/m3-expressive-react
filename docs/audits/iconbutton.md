@@ -70,6 +70,12 @@ IconButton は `--md-ripple-color: var(--_state-layer-color)` を正しく設定
 Issue: IB1 → #191、IB2/IB3 → #192(同じ `.iconButton:disabled` まわりの Disabled 節を書き換えるため同梱)、
 IB4 → #193、IB5 → #194、IB6 → #195
 
+**対応状況**: IB5 は PR #302(Ripple の focus 0.10)で解消。IB1・IB2・IB3・IB4・IB6 は `fix/iconbutton-audit` で解消 —
+disabled のルールを 0,3,0 以上にしてトグル状態のルールより後に置き(`IconButton.css.test.ts` がカスケードを検査)、
+outlined の枠線は `::after`(`inset: 0`・`border-radius: inherit`)で container の内側に描く(幅は filled と同一、
+Ripple / FocusRing は外形基準)、モーフは押下・選択とも `short3` + standard easing。ストーリー `ToggleVariants` /
+`DisabledToggles` / `Shapes` / `OutlinedSizes` を追加(軽微欄のカバレッジ不足を解消)
+
 **軽微(判断・記録のみ)**:
 
 - **`selectedAriaLabel` と `aria-pressed` の併用**: 実装は選択時にラベルを差し替え**つつ** `aria-pressed="true"` も

@@ -176,6 +176,21 @@ Issue: TP1 → #163、TP2/TP3 → #164(入力/表示部の寸法とタイポの 
 | `prefers-reduced-motion` | — | ✓(ハンドルの transition を無効化) |
 | axe(dial / input 両モード) | — | 違反 0 ✓ |
 
+## 修正時の決定(#164〜#169、2026-09-30)
+
+裁定表で「修正時に決める」とした点と、修正中に選んだ点:
+
+| 項目 | 決定 | 理由 |
+|---|---|---|
+| dial ラベルの読み上げ(上表「dial ラベルの読み上げ」) | role は native `<button>`、名前は Compose の単位付き文言(「3 o'clock」/「15 minutes」/ 24h「15 hours」、`getHourLabel` / `getMinuteLabel` で差し替え可)。選択中の値は **`aria-current="time"`**。site の「of 12」の位置情報は付けない | site の role(button)に従い、選択状態は「時刻の集合の中の現在値」を表す ARIA の語で出す(`aria-pressed` はトグルの意味になるため不採用)。位置は矢印キーの循環で自明 |
+| 端数の分(例 7 分)のとき | ハンドルは 42° に描き、Tab の入口は最寄りの 5 分(「05」)、`aria-current` はどのラベルにも付けない | Compose `isTheSelectedValue`(入口)と、読み上げが実値と食い違わないこと |
+| dial の Tab 順 | 選択中の数字 1 つが Tab ストップ(矢印で移動した数字に roving)。Shift+Tab は選択中の hour/minute セレクタへ戻す | Compose `ClockText` |
+| ポインタ押下時のフォーカス | dial 上の押下では数字にフォーカスを残さない | Compose `clearFocus()` |
+| 24h 外リング先頭の表記 | 「00」(名前は「0 hours」) | Compose は「0」だが、時刻セレクタの「00」表示と揃える見た目の軽微差 |
+| `mode` の互換(B6 付随) | `mode` は `onModeChange` と併用したときだけ controlled。単独指定は v1.0 どおり初期値(`@deprecated`、`defaultMode` へ移行、v2 で常に controlled) | Phase B 裁定の追加条件(v1.1.0 で互換を壊さない) |
+| 見出しの表示条件 | `onAccept` / `onCancel` / `open` のいずれかがあるときだけ(アクション行と同じ) | B6(opt-in、既存ストーリー不変) |
+| Enter の確定 | 入力モードの minute フィールドで有効値のとき `onAccept`(hour は minute へ進む)。dial の Enter は選択のみ | m3 キー表 + Compose `ClockText`(Enter は選択) |
+
 ## 手順メモ(今回わかったこと)
 
 - time-pickers の token viewer は、セットを切り替えても `visibility` ビューが維持されることがある(ボタンが `view_list` 表示になる)。
