@@ -269,6 +269,7 @@
 /* Hover */
 .outlined:not(.disabled):not(.focused):not(.error):hover {
   --_outline-color: var(--md-sys-color-on-surface);
+  --_label-text-color: var(--md-sys-color-on-surface);
 }
 
 /* Focus: primary color via variable, border-width set directly for transition */
@@ -581,11 +582,19 @@ textarea.input {
   --_trailing-icon-color: var(--md-sys-color-on-error-container);
 }
 
-/* Error + focus: override hover back to error color */
-.error.focused,
+/* Error + focus: the error outline beats `.outlined.focused`'s primary */
 .outlined.error.focused {
-  --_label-text-color: var(--md-sys-color-error);
   --_outline-color: var(--md-sys-color-error);
+}
+
+/* Error + focus: focus wins over hover — the error focus tokens are the base
+   error colors, so restore every part the hover rule changed. Chained
+   :not(.disabled) keeps this selector's specificity above the hover rule. */
+.error.focused:not(.disabled):hover {
+  --_active-indicator-color: var(--md-sys-color-error);
+  --_outline-color: var(--md-sys-color-error);
+  --_label-text-color: var(--md-sys-color-error);
+  --_trailing-icon-color: var(--md-sys-color-error);
 }
 
 /* =========================================================================== */
