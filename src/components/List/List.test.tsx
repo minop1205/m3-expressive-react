@@ -156,6 +156,22 @@ describe('List / ListItem', () => {
     })
   })
 
+  it("calls the caller's onKeyDown and lets it suppress activation (#300)", async () => {
+    const user = userEvent.setup()
+    const onClick = vi.fn()
+    const onKeyDown = vi.fn((event: { key: string; preventDefault: () => void }) => {
+      if (event.key === 'Enter') event.preventDefault()
+    })
+    render(<ListItem headline="Go" onClick={onClick} onKeyDown={onKeyDown} />)
+    screen.getByRole('button', { name: /Go/ }).focus()
+    await user.keyboard('{Delete}')
+    await user.keyboard('{Enter}')
+    expect(onKeyDown).toHaveBeenCalledTimes(2)
+    expect(onClick).not.toHaveBeenCalled()
+    await user.keyboard(' ')
+    expect(onClick).toHaveBeenCalledTimes(1)
+  })
+
   it('does not fire when disabled', async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 })
     const onClick = vi.fn()
