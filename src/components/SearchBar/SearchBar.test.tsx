@@ -33,6 +33,26 @@ describe('SearchBar', () => {
     expect(onSearch).toHaveBeenCalledWith('cats')
   })
 
+  it('pins the open view 2dp under the bar at its width', async () => {
+    const user = userEvent.setup()
+    render(
+      <SearchBar aria-label="Search">
+        <button>Result</button>
+      </SearchBar>,
+    )
+    const bar = screen.getByRole('combobox').parentElement as HTMLElement
+    vi.spyOn(bar, 'getBoundingClientRect').mockReturnValue({
+      top: 20, bottom: 76, left: 16, right: 496, width: 480, height: 56,
+    } as DOMRect)
+    await user.click(screen.getByRole('combobox'))
+    const view = document.getElementById(
+      screen.getByRole('combobox').getAttribute('aria-controls')!,
+    )!
+    expect(view.style.top).toBe('78px')
+    expect(view.style.left).toBe('16px')
+    expect(view.style.width).toBe('480px')
+  })
+
   it('opens the search view on focus and closes on Escape', async () => {
     const user = userEvent.setup()
     render(

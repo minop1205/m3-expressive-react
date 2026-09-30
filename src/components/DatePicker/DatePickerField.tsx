@@ -14,6 +14,7 @@ import { IconButton } from '../IconButton'
 import { Calendar, type CalendarView } from './Calendar'
 import { CalendarIcon } from '../../internal/icons'
 import { assignRefs } from '../../internal/useModal'
+import { usePopupPosition } from '../../internal/usePopupPosition'
 import {
   defaultErrorLabel,
   formatDateInput,
@@ -27,6 +28,12 @@ import pickerStyles from './DatePicker.module.css'
 import styles from './DatePickerField.module.css'
 
 export type { DateInputError } from './dateUtils'
+
+/** Gap between the field and the calendar popup. */
+const ANCHOR_GAP_PX = 4
+
+/** Minimum distance the popup keeps from the viewport edges when clamped. */
+const VIEWPORT_MARGIN_PX = 8
 
 export interface DatePickerFieldProps
   extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange' | 'defaultValue'> {
@@ -89,7 +96,9 @@ export interface DatePickerFieldProps
  *
  * The popup is a non-modal `role="dialog"`: opening moves focus to the
  * selected day (else today), Escape or a pick closes it and returns focus to
- * the toggle, and it closes when focus or a click leaves the field.
+ * the toggle, and it closes when focus or a click leaves the field. It is
+ * drawn in the top layer (Popover API) below the field — above it when it
+ * doesn't fit below — and kept inside the viewport.
  */
 export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
   function DatePickerField(
@@ -128,6 +137,7 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
     const [error, setError] = useState<DateInputError | null>(null)
     const wrapRef = useRef<HTMLDivElement | null>(null)
     const toggleRef = useRef<HTMLButtonElement>(null)
+    const popupRef = useRef<HTMLDivElement>(null)
     const pattern = getDatePattern(locale)
 
     const [text, setText] = useState(current ? formatDateInput(current, locale) : '')
@@ -212,6 +222,18 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
       })
     }
 
+    // Below the field (start-aligned), flipped above / clamped into the
+    // viewport, in the top layer — the shared popup helper (B4).
+    usePopupPosition({
+      open,
+      anchorRef: wrapRef,
+      popupRef,
+      side: 'bottom',
+      align: 'start',
+      gap: ANCHOR_GAP_PX,
+      margin: VIEWPORT_MARGIN_PX,
+    })
+
     const showError = error !== null && !disabled
 
     return (
@@ -257,6 +279,7 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
         />
         {open && (
           <div
+            ref={popupRef}
             id={popupId}
             role="dialog"
             aria-label={dialogLabel}

@@ -16,6 +16,7 @@ import {
 import clsx from 'clsx'
 import { SearchIcon } from '../../internal/icons'
 import { Ripple } from '../../primitives/Ripple/Ripple'
+import { usePopupPosition } from '../../internal/usePopupPosition'
 import styles from './SearchBar.module.css'
 
 export interface SearchBarProps
@@ -81,6 +82,8 @@ export interface SearchBarProps
   onKeyDown?: KeyboardEventHandler<HTMLInputElement>
 }
 
+/** Gap between the bar and the docked search view (Compose DockedSearchBarGap). */
+const VIEW_GAP_PX = 2
 
 /**
  * Material Design 3 Search bar (docked field + search view).
@@ -92,7 +95,9 @@ export interface SearchBarProps
  * Providing `children` (results) turns it into a docked search view in the
  * Expressive "contained" style: a 12dp results container 2dp under the bar
  * over a scrim, opening on focus and closing on Escape / outside click /
- * scrim click.
+ * scrim click. The view is drawn in the top layer (Popover API), pinned under
+ * the bar at the bar's width, so ancestors' `overflow` / `z-index` can't clip
+ * it; like Compose's docked view it never flips above the bar.
  *
  * With a view, the input is an APG-style `role="combobox"` (`aria-expanded`,
  * `aria-controls`, `aria-autocomplete="list"`) and the view's opening is
@@ -154,6 +159,7 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
     const wrapperRef = useRef<HTMLDivElement>(null)
     const inputElRef = useRef<HTMLInputElement | null>(null)
     const viewRef = useRef<HTMLDivElement>(null)
+    const barRef = useRef<HTMLDivElement>(null)
     // Focus modality: the bar's focus ring is keyboard-only, but text inputs
     // match :focus-visible on pointer focus too — so track pointer presses.
     const pointerDownRef = useRef(false)
@@ -200,6 +206,23 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
       return () => document.removeEventListener('mousedown', onDown)
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open])
+
+    // Docked view placement via the shared popup helper (B4): top layer, pinned
+    // 2dp under the bar at its width, following scroll / resize / layout
+    // shifts. No flip or clamp — Compose's ExpandedDockedSearchBar popup is
+    // anchored to the bar with clipping disabled, and its height is already
+    // capped (2/3 of the viewport) in CSS. The scrim stays in the page, under
+    // the in-flow bar: in the top layer it would cover the bar itself.
+    usePopupPosition({
+      open,
+      anchorRef: barRef,
+      popupRef: viewRef,
+      side: 'bottom',
+      align: 'start',
+      gap: VIEW_GAP_PX,
+      avoidCollisions: false,
+      matchAnchorWidth: true,
+    })
 
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
       if (!isControlled) setInternal(event.target.value)
@@ -311,6 +334,7 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
           />
         )}
         <div
+          ref={barRef}
           className={styles.bar}
           data-has-end={endIcon != null || undefined}
           data-focus-visible={focusVisible || undefined}
@@ -371,8 +395,6 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
           <span aria-hidden="true" className={styles.focusRing} />
         </div>
         {hasView && (
-          // TODO(#317): move onto the shared popup positioning helper
-          // (src/internal/usePopupPosition, B4) once it lands.
           <div
             ref={viewRef}
             id={viewId}

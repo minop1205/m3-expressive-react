@@ -42,6 +42,13 @@ export interface PopupPositionOptions {
   margin?: number
   /** Right-to-left layout (only affects `start` / `end` alignment). @default false */
   rtl?: boolean
+  /**
+   * Flip + clamp into the viewport. `false` pins the popup to the anchor on
+   * `side` (no flip, no clamp) — like a Compose popup with clipping disabled,
+   * e.g. the docked search view that always grows down from its bar.
+   * @default true
+   */
+  avoidCollisions?: boolean
 }
 
 export interface PopupPosition {
@@ -83,9 +90,18 @@ export function computePopupPosition(
   anchor: PopupAnchorRect,
   popup: PopupSize,
   viewport: PopupSize,
-  { side, align = 'center', gap = 4, margin = 0, rtl = false }: PopupPositionOptions,
+  {
+    side,
+    align = 'center',
+    gap = 4,
+    margin = 0,
+    rtl = false,
+    avoidCollisions = true,
+  }: PopupPositionOptions,
 ): PopupPosition {
-  const resolved = resolvePopupSide(anchor, popup.height, viewport.height, side, gap, margin)
+  const resolved = avoidCollisions
+    ? resolvePopupSide(anchor, popup.height, viewport.height, side, gap, margin)
+    : side
   const top = resolved === 'top' ? anchor.top - gap - popup.height : anchor.bottom + gap
 
   let left: number
@@ -94,6 +110,7 @@ export function computePopupPosition(
   else if (alignStart) left = anchor.left
   else left = anchor.right - popup.width
 
+  if (!avoidCollisions) return { side: resolved, top, left }
   return {
     side: resolved,
     top: clamp(top, margin, viewport.height - popup.height - margin),
@@ -142,13 +159,75 @@ export interface UsePopupPositionOptions extends PopupPositionOptions {
   anchorRef: RefObject<HTMLElement | null>
   /** The popup (`position: fixed`; made a `popover="manual"` element for the top layer). */
   popupRef: RefObject<HTMLElement | null>
+  /** Also size the popup to the anchor's width (inline `width`). @default false */
+  matchAnchorWidth?: boolean
+}
+
+/**
+ * Calls `onMove` when `element` moves in the viewport without being resized
+ * or scrolled (a layout shift, e.g. content inserted above it) — which
+ * neither ResizeObserver nor scroll / resize events report. An
+ * IntersectionObserver whose root margin shrinks the viewport to exactly the
+ * element's rect fires as soon as the element leaves that rect; it is then
+ * re-armed at the new position (the technique of Floating UI's `autoUpdate`).
+ */
+function observeMove(element: Element, onMove: () => void): () => void {
+  if (typeof IntersectionObserver !== 'function') return () => {}
+  let observer: IntersectionObserver | null = null
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  const root = document.documentElement
+
+  const arm = (threshold = 1) => {
+    observer?.disconnect()
+    clearTimeout(timeout)
+    const { left, top, width, height } = element.getBoundingClientRect()
+    if (!width || !height) return
+    const insetTop = Math.floor(top)
+    const insetRight = Math.floor(root.clientWidth - (left + width))
+    const insetBottom = Math.floor(root.clientHeight - (top + height))
+    const insetLeft = Math.floor(left)
+    const rootMargin = `${-insetTop}px ${-insetRight}px ${-insetBottom}px ${-insetLeft}px`
+    let first = true
+    const onChange = ([entry]: IntersectionObserverEntry[]) => {
+      const ratio = entry.intersectionRatio
+      if (ratio !== threshold) {
+        // The first callback reports the initial state: re-arm at the actual
+        // visible ratio when the element is partly outside the viewport.
+        if (!first) onMove()
+        if (!ratio) {
+          // Fully outside its own rect: poll once more after the move settles.
+          timeout = setTimeout(() => arm(1e-7), 1000)
+        } else {
+          arm(ratio)
+        }
+      }
+      first = false
+    }
+    const options = { rootMargin: rootMargin, threshold: Math.max(0, Math.min(1, threshold)) || 1 }
+    try {
+      // `root: document` keeps the viewport of this (possibly framed) document.
+      observer = new IntersectionObserver(onChange, { ...options, root: root.ownerDocument })
+    } catch {
+      observer = new IntersectionObserver(onChange, options)
+    }
+    observer.observe(element)
+  }
+
+  arm()
+  return () => {
+    clearTimeout(timeout)
+    observer?.disconnect()
+  }
 }
 
 /**
  * Positions `popupRef` next to `anchorRef` while `open`: shows it in the top
  * layer (Popover API), measures before paint, writes `top` / `left` inline
- * (`position: fixed` coordinates), and follows scroll / resize. Returns the
- * side actually used, for `data-*` styling hooks.
+ * (`position: fixed` coordinates) plus `--_popup-available-height` (the room
+ * on the side used), and follows scroll / resize, size changes
+ * of the anchor or the popup (ResizeObserver) and layout shifts that move the
+ * anchor (IntersectionObserver). Returns the side actually used, for `data-*`
+ * styling hooks.
  */
 export function usePopupPosition({
   open,
@@ -159,6 +238,8 @@ export function usePopupPosition({
   gap = 4,
   margin = 0,
   rtl,
+  avoidCollisions = true,
+  matchAnchorWidth = false,
 }: UsePopupPositionOptions): PopupSide {
   const [resolvedSide, setResolvedSide] = useState<PopupSide>(side)
 
@@ -174,18 +255,27 @@ export function usePopupPosition({
       const anchorEl = anchorRef.current
       if (!anchorEl) return
       const anchor = anchorEl.getBoundingClientRect()
+      if (matchAnchorWidth) popup.style.width = `${anchor.width}px`
       const isRtl = rtl ?? getComputedStyle(anchorEl).direction === 'rtl'
+      const viewport = {
+        width: document.documentElement.clientWidth || window.innerWidth,
+        height: document.documentElement.clientHeight || window.innerHeight,
+      }
       const position = computePopupPosition(
         anchor,
         { width: popup.offsetWidth, height: popup.offsetHeight },
-        {
-          width: document.documentElement.clientWidth || window.innerWidth,
-          height: document.documentElement.clientHeight || window.innerHeight,
-        },
-        { side, align, gap, margin, rtl: isRtl },
+        viewport,
+        { side, align, gap, margin, rtl: isRtl, avoidCollisions },
       )
       popup.style.top = `${position.top}px`
       popup.style.left = `${position.left}px`
+      // Room between the anchor and the viewport edge on the side used, for
+      // popups that cap their height to it (CSS `var(--_popup-available-height)`).
+      const available =
+        position.side === 'bottom'
+          ? viewport.height - anchor.bottom - gap - margin
+          : anchor.top - gap - margin
+      popup.style.setProperty('--_popup-available-height', `${Math.max(0, Math.floor(available))}px`)
       setResolvedSide(position.side)
     }
 
@@ -195,13 +285,16 @@ export function usePopupPosition({
     const observer =
       typeof ResizeObserver === 'function' ? new ResizeObserver(() => update()) : null
     observer?.observe(popup)
-    if (anchorRef.current) observer?.observe(anchorRef.current)
+    const anchorEl = anchorRef.current
+    if (anchorEl) observer?.observe(anchorEl)
+    const stopMoveObserver = anchorEl ? observeMove(anchorEl, update) : () => {}
     return () => {
       window.removeEventListener('resize', update)
       window.removeEventListener('scroll', update, true)
       observer?.disconnect()
+      stopMoveObserver()
     }
-  }, [open, anchorRef, popupRef, side, align, gap, margin, rtl])
+  }, [open, anchorRef, popupRef, side, align, gap, margin, rtl, avoidCollisions, matchAnchorWidth])
 
   // Leave the top layer on unmount (a still-open popover would linger there
   // only until removal, but hiding keeps the Popover API state consistent).
