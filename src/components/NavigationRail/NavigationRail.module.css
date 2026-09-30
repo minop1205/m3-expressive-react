@@ -133,7 +133,10 @@
    hidden once the slide-out has finished. */
 .rail[data-hide-on-collapse] {
   --_t: 1;
-  transform: translateX(calc(min(0%, (var(--_reveal, 0) - 1) * 100%) * var(--_dir)));
+  /* min() lives in its own property: postcss-calc (cssnano) can't parse a
+     min() nested in calc(), and warns / skips the whole declaration. */
+  --_reveal-offset: min(0%, calc((var(--_reveal, 0) - 1) * 100%));
+  transform: translateX(calc(var(--_reveal-offset) * var(--_dir)));
   visibility: hidden;
   /* Hidden once the DefaultSpatial slide-out (useRailMorph) has settled. */
   transition:
