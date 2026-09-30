@@ -22,6 +22,12 @@ describe('LoadingIndicator', () => {
     expect(bar).not.toHaveAttribute('data-indeterminate')
   })
 
+  it('rotates the determinate form counter-clockwise by value × 180°', () => {
+    const { container } = render(<LoadingIndicator aria-label="Loading" value={0.6} />)
+    const g = container.querySelector('g[transform]')
+    expect(g?.getAttribute('transform')).toContain('rotate(-108)')
+  })
+
   it('clamps the determinate value', () => {
     render(<LoadingIndicator aria-label="Loading" value={2} />)
     expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1')
