@@ -1,19 +1,39 @@
 import { useLayoutEffect, useRef, type RefObject } from 'react'
+import { effectsSprings, spatialSprings } from '../../tokens/motion'
 
 /**
  * Extended FAB collapse↔expand morph, per Compose
- * `ExtendedFloatingActionButton(expanded=)` with the MD3 Expressive motion
- * scheme (`MotionScheme.expressive()` / `ExpressiveMotionTokens`):
- *
- *   expand:   width `FastSpatial` (damping 0.6, stiffness 800, ~9% overshoot)
- *             + label fade-in `DefaultEffects` (damping 1.0, stiffness 1600)
- *   collapse: width `DefaultSpatial` (damping 0.8, stiffness 380)
- *             + label fade-out `FastEffects` (damping 1.0, stiffness 3800)
+ * `Small / Medium / LargeExtendedFloatingActionButton(expanded=)`: in both
+ * directions the width progress runs on the `FastSpatial` spring and the label
+ * alpha on `FastEffects`. The springs are read from the motion-scheme tokens
+ * (`--md-sys-motion-spring-fast-{spatial,effects}-{damping,stiffness}`) on the
+ * element, so `ThemeProvider motionScheme` switches them (expressive 0.6 / 800
+ * with ~9% overshoot, standard 0.9 / 1400); the expressive values are the
+ * fallback when the tokens are not loaded.
  */
-const WIDTH_EXPAND = { stiffness: 800, dampingRatio: 0.6 }
-const WIDTH_COLLAPSE = { stiffness: 380, dampingRatio: 0.8 }
-const FADE_IN = { stiffness: 1600, dampingRatio: 1 }
-const FADE_OUT = { stiffness: 3800, dampingRatio: 1 }
+interface SpringSpec {
+  stiffness: number
+  dampingRatio: number
+}
+
+function readSpring(el: HTMLElement | null, key: string, fallback: SpringSpec): SpringSpec {
+  if (!el || typeof getComputedStyle === 'undefined') return fallback
+  const style = getComputedStyle(el)
+  const damping = parseFloat(style.getPropertyValue(`--md-sys-motion-spring-${key}-damping`))
+  const stiffness = parseFloat(style.getPropertyValue(`--md-sys-motion-spring-${key}-stiffness`))
+  return Number.isFinite(damping) && Number.isFinite(stiffness) && stiffness > 0
+    ? { stiffness, dampingRatio: damping }
+    : fallback
+}
+
+const FAST_SPATIAL: SpringSpec = {
+  stiffness: spatialSprings.expressive.fast.stiffness,
+  dampingRatio: spatialSprings.expressive.fast.damping,
+}
+const FAST_EFFECTS: SpringSpec = {
+  stiffness: effectsSprings.fast.stiffness,
+  dampingRatio: effectsSprings.fast.damping,
+}
 
 interface SpringState {
   value: number
@@ -21,11 +41,11 @@ interface SpringState {
 }
 
 /* Semi-implicit Euler needs damping·dt < 2 to stay stable; the stiffest spring
-   here (3800 → damping ≈ 123) already diverges at a 60fps frame (16.7ms), so
+   here (FastEffects 3800 → damping ≈ 123) already diverges at a 60fps frame (16.7ms), so
    integrate in sub-steps of at most 4ms (stable up to stiffness ~62000). */
 const MAX_SUBSTEP = 0.004
 
-function step(s: SpringState, target: number, spec: { stiffness: number; dampingRatio: number }, dt: number) {
+function step(s: SpringState, target: number, spec: SpringSpec, dt: number) {
   const damping = 2 * spec.dampingRatio * Math.sqrt(spec.stiffness)
   const n = Math.max(1, Math.ceil(dt / MAX_SUBSTEP))
   const h = dt / n
@@ -64,8 +84,8 @@ export function useFabMorph(expanded: boolean, ref: RefObject<HTMLElement | null
   useLayoutEffect(() => {
     if (!enabled) return
     const target = expanded ? 1 : 0
-    const widthSpec = expanded ? WIDTH_EXPAND : WIDTH_COLLAPSE
-    const fadeSpec = expanded ? FADE_IN : FADE_OUT
+    const widthSpec = readSpring(ref.current, 'fast-spatial', FAST_SPATIAL)
+    const fadeSpec = readSpring(ref.current, 'fast-effects', FAST_EFFECTS)
 
     const write = () => {
       const el = ref.current

@@ -20,9 +20,18 @@ export type FabSize = 'small' | 'regular' | 'medium' | 'large'
 
 export interface FabProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'color' | 'children'> {
-  /** The icon displayed in the FAB. */
+  /**
+   * The icon displayed in the FAB. An Extended FAB (with `label`) may pass
+   * `null` for a label-only FAB.
+   */
   icon: ReactNode
-  /** Optional label — turns the FAB into an Extended FAB. */
+  /**
+   * Optional label — turns the FAB into an Extended FAB, sized per the MD3
+   * Expressive extended FAB: `regular` → small extended (56dp, title-medium),
+   * `medium` → medium extended (80dp, title-large), `large` → large extended
+   * (96dp, headline-small). There is no 40dp extended FAB — `size="small"`
+   * with a label renders the 56dp small extended FAB.
+   */
   label?: string
   /**
    * For an Extended FAB (with `label`): `true` shows the label, `false`
@@ -48,7 +57,11 @@ export interface FabProps
    * `on-primary` content). @default true
    */
   tonal?: boolean
-  /** Container size. @default 'regular' (56dp) */
+  /**
+   * Container size: small 40dp (no longer recommended by MD3 — prefer a larger
+   * size; it keeps a 48dp touch target), regular 56dp, medium 80dp (the size
+   * MD3 recommends most), large 96dp. @default 'regular'
+   */
   size?: FabSize
   /**
    * Removes the container shadow. Per the MD3 spec a FAB inside a Navigation
@@ -69,7 +82,11 @@ export interface FabProps
  * (`--_label-total`) scales with the spring-driven `--_ext` while the label
  * cross-fades via `--_label-o` — or, with `followContainer`, both follow a
  * morphing container's inherited `--_t` instead. Elevation lifts on hover
- * (level 3 → 4) and the corner morphs while pressed (CSS `:active`).
+ * (level 3 → 4); the container shape is static (MD3 / Compose define no
+ * pressed FAB shape).
+ *
+ * MD3 advises against disabling a FAB — hide it when its action is
+ * unavailable. The native `disabled` attribute is still honored.
  */
 export const Fab = forwardRef<HTMLButtonElement, FabProps>(function Fab(
   {
@@ -89,6 +106,7 @@ export const Fab = forwardRef<HTMLButtonElement, FabProps>(function Fab(
   ref,
 ) {
   const isExtended = label != null
+  const hasIcon = icon != null && icon !== false
   const morph = isExtended && (followContainer || expanded !== undefined)
 
   const buttonRef = useRef<HTMLButtonElement | null>(null)
@@ -135,11 +153,14 @@ export const Fab = forwardRef<HTMLButtonElement, FabProps>(function Fab(
       data-disable-elevation={disableElevation || undefined}
       data-extended={(isExtended && !morph) || undefined}
       data-morph={morph || undefined}
+      data-no-icon={(isExtended && !hasIcon) || undefined}
       className={clsx(styles.fab, className)}
     >
-      <span className={styles.icon} aria-hidden="true">
-        {icon}
-      </span>
+      {(hasIcon || !isExtended) && (
+        <span className={styles.icon} aria-hidden="true">
+          {icon}
+        </span>
+      )}
       {isExtended &&
         (morph ? (
           <span className={styles.labelWrap}>
