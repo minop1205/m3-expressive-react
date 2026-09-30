@@ -1,52 +1,272 @@
 import { createRef } from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { TimePicker } from './TimePicker'
 
+function firePointer(el: Element, type: string, props: Record<string, unknown>) {
+  const event = new Event(type, { bubbles: true, cancelable: true })
+  Object.assign(event, { pointerId: 1, pointerType: 'mouse', button: 0, ...props })
+  fireEvent(el, event)
+}
+
+/** The dial group, laid out as a 256×256 box at the origin. */
+function getDial(name: 'Hour' | 'Minute' = 'Hour') {
+  const dial = screen.getByRole('group', { name })
+  dial.getBoundingClientRect = () =>
+    ({ left: 0, top: 0, right: 256, bottom: 256, width: 256, height: 256, x: 0, y: 0 }) as DOMRect
+  return dial
+}
+
+/** A point on the dial at `deg` (clockwise from 12 o'clock) and `r` from the center. */
+const at = (deg: number, r = 101) => ({
+  clientX: 128 + r * Math.sin((deg * Math.PI) / 180),
+  clientY: 128 - r * Math.cos((deg * Math.PI) / 180),
+})
+
 describe('TimePicker', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('shows the current time in 12-hour form', () => {
     render(<TimePicker value={{ hour: 13, minute: 5 }} />)
-    expect(screen.getByRole('button', { name: 'Hour' })).toHaveTextContent('01')
-    expect(screen.getByRole('button', { name: 'Minute' })).toHaveTextContent('05')
-    expect(screen.getByRole('button', { name: 'PM' })).toHaveAttribute('data-selected', 'true')
+    expect(screen.getByRole('radio', { name: 'Select hour' })).toHaveTextContent('01')
+    expect(screen.getByRole('radio', { name: 'Select minutes' })).toHaveTextContent('05')
+    expect(screen.getByRole('radio', { name: 'PM' })).toBeChecked()
   })
 
-  it('sets the hour from the dial', async () => {
-    const user = userEvent.setup()
-    const onChange = vi.fn()
-    render(<TimePicker value={{ hour: 10, minute: 0 }} onChange={onChange} />)
-    await user.click(screen.getByRole('button', { name: '3' }))
-    expect(onChange).toHaveBeenCalledWith({ hour: 3, minute: 0 })
+  describe('radio semantics', () => {
+    it('exposes the hour / minute selectors as a radio group with their values', async () => {
+      const user = userEvent.setup()
+      render(<TimePicker value={{ hour: 10, minute: 30 }} />)
+      const hour = screen.getByRole('radio', { name: 'Select hour' })
+      const minute = screen.getByRole('radio', { name: 'Select minutes' })
+      expect(hour.closest('[role=radiogroup]')).toBe(minute.closest('[role=radiogroup]'))
+      expect(hour).toBeChecked()
+      expect(minute).not.toBeChecked()
+      expect(hour).toHaveAccessibleDescription("10 o'clock")
+      expect(minute).toHaveAccessibleDescription('30 minutes')
+      // One Tab stop; arrow keys move and select.
+      expect(hour).toHaveAttribute('tabindex', '0')
+      expect(minute).toHaveAttribute('tabindex', '-1')
+      hour.focus()
+      await user.keyboard('{ArrowRight}')
+      expect(minute).toHaveFocus()
+      expect(minute).toBeChecked()
+      expect(screen.getByRole('group', { name: 'Minute' })).toBeInTheDocument()
+      await user.keyboard('{ArrowRight}')
+      expect(hour).toHaveFocus()
+      expect(hour).toBeChecked()
+    })
+
+    it('exposes AM / PM as a radio group with arrow keys', async () => {
+      const user = userEvent.setup()
+      const onChange = vi.fn()
+      render(<TimePicker defaultValue={{ hour: 10, minute: 0 }} onChange={onChange} />)
+      const group = screen.getByRole('radiogroup', { name: 'AM or PM' })
+      const am = screen.getByRole('radio', { name: 'AM' })
+      const pm = screen.getByRole('radio', { name: 'PM' })
+      expect(group).toContainElement(am)
+      expect(am).toBeChecked()
+      expect(am).toHaveAttribute('tabindex', '0')
+      expect(pm).toHaveAttribute('tabindex', '-1')
+      am.focus()
+      await user.keyboard('{ArrowDown}')
+      expect(pm).toHaveFocus()
+      expect(pm).toBeChecked()
+      expect(onChange).toHaveBeenLastCalledWith({ hour: 22, minute: 0 })
+      await user.keyboard('{ArrowUp}')
+      expect(am).toBeChecked()
+      expect(onChange).toHaveBeenLastCalledWith({ hour: 10, minute: 0 })
+    })
+
+    it('toggles AM/PM on click', async () => {
+      const user = userEvent.setup()
+      const onChange = vi.fn()
+      render(<TimePicker value={{ hour: 10, minute: 0 }} onChange={onChange} />)
+      await user.click(screen.getByRole('radio', { name: 'PM' }))
+      expect(onChange).toHaveBeenCalledWith({ hour: 22, minute: 0 })
+    })
   })
 
-  it('switches to minutes and sets one', async () => {
-    const user = userEvent.setup()
-    const onChange = vi.fn()
-    render(<TimePicker value={{ hour: 10, minute: 0 }} onChange={onChange} />)
-    await user.click(screen.getByRole('button', { name: 'Minute' }))
-    await user.click(screen.getByRole('button', { name: '15' }))
-    expect(onChange).toHaveBeenCalledWith({ hour: 10, minute: 15 })
-  })
+  describe('dial', () => {
+    it('names the numbers with units and marks the current one', async () => {
+      const user = userEvent.setup()
+      render(<TimePicker defaultValue={{ hour: 15, minute: 45 }} />)
+      const three = screen.getByRole('button', { name: "3 o'clock" })
+      expect(three).toHaveAttribute('aria-current', 'time')
+      expect(screen.getByRole('button', { name: "4 o'clock" })).not.toHaveAttribute('aria-current')
+      expect(screen.getAllByRole('button', { name: /o'clock$/ })).toHaveLength(12)
+      await user.click(screen.getByRole('radio', { name: 'Select minutes' }))
+      expect(screen.getByRole('button', { name: '45 minutes' })).toHaveAttribute('aria-current', 'time')
+      expect(screen.getByRole('button', { name: '0 minutes' })).toBeInTheDocument()
+    })
 
-  it('toggles AM/PM', async () => {
-    const user = userEvent.setup()
-    const onChange = vi.fn()
-    render(<TimePicker value={{ hour: 10, minute: 0 }} onChange={onChange} />)
-    await user.click(screen.getByRole('button', { name: 'PM' }))
-    expect(onChange).toHaveBeenCalledWith({ hour: 22, minute: 0 })
+    it('accepts custom hour / minute labels', () => {
+      render(
+        <TimePicker
+          defaultValue={{ hour: 3, minute: 0 }}
+          getHourLabel={(h) => `${h}時`}
+          getMinuteLabel={(m) => `${m}分`}
+        />,
+      )
+      expect(screen.getByRole('button', { name: '3時' })).toBeInTheDocument()
+      expect(screen.getByRole('radio', { name: 'Select minutes' })).toHaveAccessibleDescription('0分')
+    })
+
+    it('is a single Tab stop on the selected value, with arrow keys looping the ring', async () => {
+      const user = userEvent.setup()
+      render(<TimePicker defaultValue={{ hour: 11, minute: 0 }} />)
+      const stops = screen
+        .getAllByRole('button', { name: /o'clock$/ })
+        .filter((b) => b.tabIndex === 0)
+      expect(stops.map((b) => b.getAttribute('aria-label'))).toEqual(["11 o'clock"])
+      // Tab order: hour selector → AM/PM → dial → mode toggle.
+      await user.tab()
+      expect(screen.getByRole('radio', { name: 'Select hour' })).toHaveFocus()
+      await user.tab()
+      expect(screen.getByRole('radio', { name: 'AM' })).toHaveFocus()
+      await user.tab()
+      expect(screen.getByRole('button', { name: "11 o'clock" })).toHaveFocus()
+      await user.keyboard('{ArrowRight}')
+      expect(screen.getByRole('button', { name: "12 o'clock" })).toHaveFocus()
+      await user.keyboard('{ArrowDown}')
+      expect(screen.getByRole('button', { name: "1 o'clock" })).toHaveFocus()
+      await user.keyboard('{ArrowLeft}{ArrowLeft}{ArrowUp}')
+      expect(screen.getByRole('button', { name: "10 o'clock" })).toHaveFocus()
+      await user.tab()
+      expect(screen.getByRole('button', { name: 'Toggle input picker' })).toHaveFocus()
+    })
+
+    it('Shift+Tab from the dial returns to the active selector', async () => {
+      const user = userEvent.setup()
+      render(<TimePicker defaultValue={{ hour: 11, minute: 0 }} />)
+      screen.getByRole('button', { name: "11 o'clock" }).focus()
+      await user.keyboard('{Shift>}{Tab}{/Shift}')
+      expect(screen.getByRole('radio', { name: 'Select hour' })).toHaveFocus()
+    })
+
+    it('Enter / Space select without switching to minutes', async () => {
+      const user = userEvent.setup()
+      const onChange = vi.fn()
+      render(<TimePicker defaultValue={{ hour: 10, minute: 0 }} onChange={onChange} />)
+      screen.getByRole('button', { name: "10 o'clock" }).focus()
+      await user.keyboard('{ArrowRight}{Enter}')
+      expect(onChange).toHaveBeenLastCalledWith({ hour: 11, minute: 0 })
+      await user.keyboard('{ArrowRight} ')
+      expect(onChange).toHaveBeenLastCalledWith({ hour: 0, minute: 0 })
+      expect(screen.getByRole('button', { name: "12 o'clock" })).toHaveFocus()
+      expect(screen.getByRole('radio', { name: 'Select hour' })).toBeChecked()
+    })
+
+    it('an in-between minute keeps its angle; the entry is the nearest 5-minute mark', async () => {
+      const user = userEvent.setup()
+      const { container } = render(<TimePicker defaultValue={{ hour: 10, minute: 7 }} />)
+      await user.click(screen.getByRole('radio', { name: 'Select minutes' }))
+      const arm = container.querySelector('[class*=arm]') as HTMLElement
+      expect(parseFloat(arm.style.transform.slice(7)) % 360).toBe(42)
+      expect(screen.getByRole('button', { name: '5 minutes' })).toHaveAttribute('tabindex', '0')
+      // 7 is not one of the dial numbers, so none is announced as current.
+      expect(
+        screen.getAllByRole('button', { name: /minutes$/ }).filter((b) => b.hasAttribute('aria-current')),
+      ).toHaveLength(0)
+    })
+
+    it('rotates the hand the short way round (11 → 1 turns +60°)', () => {
+      vi.useFakeTimers()
+      const { container, rerender } = render(<TimePicker value={{ hour: 11, minute: 0 }} />)
+      const arm = container.querySelector('[class*=arm]') as HTMLElement
+      expect(arm.style.transform).toBe('rotate(330deg)')
+      rerender(<TimePicker value={{ hour: 1, minute: 0 }} />)
+      expect(arm.style.transform).toBe('rotate(390deg)')
+    })
+
+    it('a pointer tap on an hour selects it and switches to minutes after 100ms', () => {
+      vi.useFakeTimers()
+      const onChange = vi.fn()
+      render(<TimePicker defaultValue={{ hour: 10, minute: 0 }} onChange={onChange} />)
+      const dial = getDial('Hour')
+      firePointer(dial, 'pointerdown', at(90))
+      firePointer(dial, 'pointerup', at(90))
+      expect(onChange).toHaveBeenLastCalledWith({ hour: 3, minute: 0 })
+      expect(screen.getByRole('group', { name: 'Hour' })).toBeInTheDocument()
+      act(() => {
+        vi.advanceTimersByTime(100)
+      })
+      expect(screen.getByRole('group', { name: 'Minute' })).toBeInTheDocument()
+      expect(screen.getByRole('radio', { name: 'Select minutes' })).toBeChecked()
+    })
+
+    it('a pointer tap on minutes snaps to the 5-minute marks', () => {
+      const onChange = vi.fn()
+      render(<TimePicker defaultValue={{ hour: 10, minute: 0 }} onChange={onChange} />)
+      fireEvent.click(screen.getByRole('radio', { name: 'Select minutes' }))
+      const dial = getDial('Minute')
+      firePointer(dial, 'pointerdown', at(100))
+      firePointer(dial, 'pointerup', at(100))
+      // 100° ≈ 16.7 min → the 15 mark.
+      expect(onChange).toHaveBeenLastCalledWith({ hour: 10, minute: 15 })
+    })
+
+    it('dragging the track selects with 1-minute resolution', () => {
+      const onChange = vi.fn()
+      const { container } = render(
+        <TimePicker defaultValue={{ hour: 10, minute: 0 }} onChange={onChange} />,
+      )
+      fireEvent.click(screen.getByRole('radio', { name: 'Select minutes' }))
+      const dial = getDial('Minute')
+      firePointer(dial, 'pointerdown', at(0, 60))
+      firePointer(dial, 'pointermove', at(20, 60))
+      firePointer(dial, 'pointermove', at(43, 60))
+      expect(onChange).toHaveBeenLastCalledWith({ hour: 10, minute: 7 })
+      // The hand follows the pointer while dragging…
+      const arm = container.querySelector('[class*=arm]') as HTMLElement
+      expect(parseFloat(arm.style.transform.slice(7)) % 360).toBe(43)
+      firePointer(dial, 'pointerup', at(43, 60))
+      // …and settles on the selected minute.
+      expect(parseFloat(arm.style.transform.slice(7)) % 360).toBe(42)
+    })
+
+    it('ending an hour drag switches to minutes', () => {
+      const onChange = vi.fn()
+      render(<TimePicker defaultValue={{ hour: 10, minute: 0 }} onChange={onChange} />)
+      const dial = getDial('Hour')
+      firePointer(dial, 'pointerdown', at(90))
+      firePointer(dial, 'pointermove', at(120))
+      firePointer(dial, 'pointermove', at(150))
+      expect(onChange).toHaveBeenLastCalledWith({ hour: 5, minute: 0 })
+      firePointer(dial, 'pointerup', at(150))
+      expect(screen.getByRole('group', { name: 'Minute' })).toBeInTheDocument()
+    })
+
+    it('keeps the PM period when selecting an hour', () => {
+      const onChange = vi.fn()
+      render(<TimePicker value={{ hour: 22, minute: 0 }} onChange={onChange} />)
+      const dial = getDial('Hour')
+      firePointer(dial, 'pointerdown', at(0))
+      firePointer(dial, 'pointerup', at(0))
+      expect(onChange).toHaveBeenLastCalledWith({ hour: 12, minute: 0 })
+    })
+
+    it('has no axe violations on the minute dial', async () => {
+      const { container } = render(<TimePicker value={{ hour: 10, minute: 30 }} />)
+      fireEvent.click(screen.getByRole('radio', { name: 'Select minutes' }))
+      expect(await axe(container)).toHaveNoViolations()
+    })
   })
 
   it('toggles between dial and input mode', async () => {
     const user = userEvent.setup()
     render(<TimePicker value={{ hour: 10, minute: 0 }} />)
-    // Dial mode: hour is a button.
-    expect(screen.getByRole('button', { name: 'Hour' })).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Switch to keyboard input' }))
-    // Input mode: hour is a textbox, dial numbers gone.
+    expect(screen.getByRole('radio', { name: 'Select hour' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Toggle input picker' }))
+    // Input mode: hour is a textbox, the dial is gone.
     expect(screen.getByRole('textbox', { name: 'Hour' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: '3' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Hour' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Toggle dial picker' }))
+    expect(screen.getByRole('group', { name: 'Hour' })).toBeInTheDocument()
   })
 
   it('edits the time via input fields', () => {

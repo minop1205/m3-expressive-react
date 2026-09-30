@@ -116,4 +116,47 @@ describe('Fab', () => {
     expect(btn).toHaveAttribute('data-extended', 'true')
     expect(btn.style.getPropertyValue('--_ext')).toBe('')
   })
+  it('renders a label-only Extended FAB without an icon slot', () => {
+    render(<Fab icon={null} label="Create" />)
+    const btn = screen.getByRole('button', { name: 'Create' })
+    expect(btn).toHaveAttribute('data-extended', 'true')
+    expect(btn).toHaveAttribute('data-no-icon', 'true')
+    expect(btn.firstElementChild).toHaveTextContent('Create')
+  })
+
+  it('keeps the size attribute on an Extended FAB (small falls back in CSS)', () => {
+    render(<Fab icon={Icon} label="Create" size="small" />)
+    const btn = screen.getByRole('button', { name: 'Create' })
+    expect(btn).toHaveAttribute('data-size', 'small')
+    expect(btn).not.toHaveAttribute('data-no-icon')
+  })
+
+  it('activates with Enter and Space', async () => {
+    const user = userEvent.setup()
+    const onClick = vi.fn()
+    render(<Fab icon={Icon} aria-label="Add" onClick={onClick} />)
+    screen.getByRole('button').focus()
+    await user.keyboard('{Enter}')
+    await user.keyboard(' ')
+    expect(onClick).toHaveBeenCalledTimes(2)
+  })
+
+  it('jumps straight to the target under prefers-reduced-motion', () => {
+    const original = window.matchMedia
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes('reduce'),
+      media: query,
+      addEventListener() {},
+      removeEventListener() {},
+    })) as unknown as typeof window.matchMedia
+    try {
+      const { rerender } = render(<Fab icon={Icon} label="Create" expanded={false} />)
+      rerender(<Fab icon={Icon} label="Create" expanded />)
+      const btn = screen.getByRole('button', { name: 'Create' })
+      expect(btn.style.getPropertyValue('--_ext')).toBe('1')
+      expect(btn.style.getPropertyValue('--_label-o')).toBe('1')
+    } finally {
+      window.matchMedia = original
+    }
+  })
 })
