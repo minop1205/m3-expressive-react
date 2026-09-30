@@ -1,0 +1,92 @@
+---
+title: LoadingIndicator
+---
+
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { LoadingIndicator } from 'm3-expressive-react'
+
+# LoadingIndicator
+
+MD3 Expressive loading indicator: a 48dp indicator whose active shape morphs
+through the seven Material shapes while spinning. Use it for short,
+indeterminate waits; use a [progress indicator](/components/progressindicator)
+for longer processes.
+
+## Variants
+
+`uncontained` (default) draws the shape alone; `contained` puts it on a
+`primary-container` circle so it stands out over other content.
+
+<Demo>
+  <LoadingIndicator aria-label="Loading" />
+  <LoadingIndicator variant="contained" aria-label="Loading" />
+</Demo>
+
+```tsx
+<LoadingIndicator aria-label="Loading" />
+<LoadingIndicator variant="contained" aria-label="Loading" />
+```
+
+## Determinate
+
+Pass `value` (0 to 1) to tie the shape to a gesture amount such as a
+pull-to-refresh drag — it morphs from a circle to the soft-burst shape as
+the value grows. Don't turn a loading indicator into a progress indicator
+for real task progress.
+
+<Demo>
+  <LoadingIndicator value={0} aria-label="Refreshing, 0%" />
+  <LoadingIndicator value={0.4} aria-label="Refreshing, 40%" />
+  <LoadingIndicator value={0.8} aria-label="Refreshing, 80%" />
+  <LoadingIndicator value={1} aria-label="Refreshing, 100%" />
+</Demo>
+
+```tsx
+<LoadingIndicator value={pullProgress} variant="contained" aria-label="Refresh" />
+```
+
+## Sizes & colors
+
+`size` sets the rendered diameter in px (default `48`). `color` and
+`containerColor` override the active shape and container fills.
+
+<Demo>
+  <LoadingIndicator size={36} aria-label="Loading" />
+  <LoadingIndicator size={96} aria-label="Loading" />
+  <LoadingIndicator
+    variant="contained"
+    color="var(--md-sys-color-on-tertiary-container)"
+    containerColor="var(--md-sys-color-tertiary-container)"
+    aria-label="Loading"
+  />
+</Demo>
+
+```tsx
+<LoadingIndicator
+  variant="contained"
+  size={96}
+  color="var(--md-sys-color-on-tertiary-container)"
+  containerColor="var(--md-sys-color-tertiary-container)"
+  aria-label="Loading"
+/>
+```
+
+## Reduced motion
+
+Under `prefers-reduced-motion: reduce` the shape morph stops; the indicator
+keeps only a slow constant rotation so it still reads as busy.
+
+## Accessibility
+
+- Renders `role="progressbar"`. With a `value` it exposes
+  `aria-valuemin={0}`, `aria-valuemax={1}` and `aria-valuenow`; the
+  indeterminate form omits the value attributes.
+- Give it an accessible name that describes what is loading
+  (`aria-label` / `aria-labelledby`) — it is not enforced.
+- Put `aria-busy="true"` on the region that is loading, not on the
+  indicator.
+
+## Props
+
+<PropsTable component="LoadingIndicator" />
