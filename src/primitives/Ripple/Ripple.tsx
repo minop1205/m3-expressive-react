@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import clsx from 'clsx'
 import styles from './Ripple.module.css'
 
@@ -6,6 +6,15 @@ export interface RippleProps {
   /** Disable hover/press feedback (e.g. when the control is disabled). */
   disabled?: boolean
   className?: string
+  /**
+   * The element whose pointer events drive the ripple. Defaults to the
+   * Ripple's parent. Set it when the ripple is clipped to a smaller shape
+   * inside a larger click target (e.g. a navigation item's active indicator):
+   * hover is then picked up over the whole target, and a press outside the
+   * shape still starts its ripple at the pointer and sweeps through the shape
+   * (Compose offsets the press position into the indicator the same way).
+   */
+  control?: RefObject<HTMLElement | null>
 }
 
 interface RippleInstance {
@@ -25,7 +34,7 @@ interface RippleInstance {
  * `FocusRing`, so both appear together on keyboard focus only. Purely
  * decorative (aria-hidden, pointer-events: none).
  */
-export function Ripple({ disabled = false, className }: RippleProps) {
+export function Ripple({ disabled = false, className, control }: RippleProps) {
   const hostRef = useRef<HTMLSpanElement>(null)
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
@@ -34,7 +43,7 @@ export function Ripple({ disabled = false, className }: RippleProps) {
 
   useEffect(() => {
     const host = hostRef.current
-    const surface = host?.parentElement
+    const surface = control?.current ?? host?.parentElement
     if (!surface || disabled) return
 
     const handleEnter = () => setHovered(true)
@@ -51,7 +60,8 @@ export function Ripple({ disabled = false, className }: RippleProps) {
 
     const handleDown = (event: PointerEvent) => {
       if (event.pointerType === 'mouse' && event.button !== 0) return
-      const rect = surface.getBoundingClientRect()
+      // Relative to the painted host (== the parent unless `control` is set).
+      const rect = (host ?? surface).getBoundingClientRect()
       const x = event.clientX - rect.left
       const y = event.clientY - rect.top
       // Radius reaches the farthest corner so the ripple always fills the bounds.

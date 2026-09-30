@@ -105,3 +105,48 @@ export const CircularSmall: CircularStory = {
   args: { value: 0.45, size: 24 },
   render: (args) => <CircularProgressIndicator {...args} aria-label="Loading" />,
 }
+
+/** Default sizes: flat 40 / 44 and wavy 48 / 52 for a 4dp / 8dp thickness. */
+export const CircularConfigurations: CircularStory = {
+  render: () => (
+    <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+      <CircularProgressIndicator value={0.7} aria-label="Flat 4dp" />
+      <CircularProgressIndicator value={0.7} thickness={8} aria-label="Flat 8dp" />
+      <CircularProgressIndicator value={0.7} shape="wavy" aria-label="Wavy 4dp" />
+      <CircularProgressIndicator
+        value={0.7}
+        shape="wavy"
+        thickness={8}
+        aria-label="Wavy 8dp"
+      />
+    </div>
+  ),
+}
+
+/** Very low progress still shows a dot, with the track gap shrinking to fit. */
+export const LinearLowValue: LinearStory = {
+  render: () => (
+    <div style={{ width: 360, display: 'grid', gap: 24 }}>
+      <LinearProgressIndicator value={0.005} aria-label="Flat, 0.5%" />
+      <LinearProgressIndicator value={0.015} aria-label="Flat, 1.5%" />
+      <LinearProgressIndicator value={0.005} shape="wavy" aria-label="Wavy, 0.5%" />
+      <CircularProgressIndicator value={0.01} aria-label="Circular, 1%" />
+    </div>
+  ),
+}
+
+/** Linear indicators mirror in right-to-left layouts (flat and wavy). */
+export const LinearRtl: LinearStory = {
+  render: () => (
+    <div dir="rtl" style={{ width: 360, display: 'grid', gap: 24 }}>
+      <LinearProgressIndicator value={0.3} aria-label="Flat determinate" />
+      <LinearProgressIndicator aria-label="Flat indeterminate" />
+      <LinearProgressIndicator
+        value={0.3}
+        shape="wavy"
+        aria-label="Wavy determinate"
+      />
+      <LinearProgressIndicator shape="wavy" aria-label="Wavy indeterminate" />
+    </div>
+  ),
+}

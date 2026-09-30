@@ -1,7 +1,8 @@
 /**
  * MD3 (Expressive) Navigation rail container. Width, inline padding and item
  * spacing interpolate from the spring `--_t` (0 = collapsed 96dp, 1 = expanded
- * 220dp); the per-item morph lives in NavigationRailItem.module.css. Header
+ * `--_expanded-w`, 220–360dp fitting the widest item — measured in JS); the
+ * per-item morph lives in NavigationRailItem.module.css. Header
  * (menu button / FAB) is pinned at the top. Surface container, 44dp top space.
  */
 
@@ -10,9 +11,9 @@
   flex-direction: column;
   box-sizing: border-box;
   height: 100%;
-  /* 96dp (collapsed) → 220dp (expanded). No inline padding: items span the full
-     width and position their pill/icon at fixed x (see NavigationRailItem). */
-  width: calc(96px + 124px * var(--_t, 0));
+  /* 96dp (collapsed) → 220–360dp (expanded). No inline padding: items span the
+     full width and position their pill/icon at fixed x (see NavigationRailItem). */
+  width: calc(96px + (var(--_expanded-w, 220px) - 96px) * var(--_t, 0));
   padding-block: 44px 8px;
   background-color: var(--md-sys-color-surface);
 }
@@ -47,4 +48,108 @@
 .rail[data-arrangement='bottom'] .items {
   flex: 1;
   justify-content: flex-end;
+}
+
+/* --------------------------------------------------------------------------- */
+/* Modal expanded rail (site "Expanded layout: Modal"; Compose                 */
+/* ModalWideNavigationRail): surface-container, 16dp (CornerLarge) trailing    */
+/* corners, level-2 shadow (site 3dp — Compose defines ModalContainerElevation */
+/* Level2 but does not apply it; the site wins since the surface overlaps      */
+/* content), Scrim @ 0.32.                                                     */
+/* --------------------------------------------------------------------------- */
+.modalRoot {
+  position: relative;
+  z-index: 24; /* match the other modal overlays */
+  flex-shrink: 0;
+  align-self: stretch;
+  /* Keeps the collapsed rail's place in the page; the rail overlaps beyond. */
+  width: 96px;
+  min-height: 100%;
+}
+
+.modalRoot[data-hide-on-collapse] {
+  width: 0;
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  background-color: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard),
+    visibility 0s linear var(--md-sys-motion-duration-medium2);
+}
+
+.modalRoot[data-open] .scrim {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--md-sys-motion-duration-medium2)
+    var(--md-sys-motion-easing-standard);
+}
+
+.modalSurface {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  outline: none;
+  /* Only the rail itself is a hit target (a hidden rail — visibility: hidden —
+     is not), so the slid-out hide-on-collapse rail never blocks the page. */
+  pointer-events: none;
+}
+
+.modalSurface > .rail {
+  pointer-events: auto;
+}
+
+.rail[data-modal] {
+  --_dir: 1;
+  /* Surface (collapsed, in-flow) → SurfaceContainer (expanded, modal), with
+     the corners rounding in, both following the morph. */
+  background-color: color-mix(
+    in srgb,
+    var(--md-sys-color-surface-container) calc(var(--_t, 0) * 100%),
+    var(--md-sys-color-surface)
+  );
+  border-start-end-radius: calc(var(--md-sys-shape-corner-large) * var(--_t, 0));
+  border-end-end-radius: calc(var(--md-sys-shape-corner-large) * var(--_t, 0));
+  transition: box-shadow var(--md-sys-motion-duration-medium2)
+    var(--md-sys-motion-easing-standard);
+}
+
+.rail[data-modal]:dir(rtl) {
+  --_dir: -1;
+}
+
+.rail[data-modal][data-open] {
+  box-shadow: var(--md-sys-elevation-shadow-level2);
+}
+
+/* Hide on collapse: the rail keeps its expanded layout and slides in from the
+   leading edge on the spring (`--_reveal` 0 → 1, overshoot clamped). It is
+   hidden once the slide-out has finished. */
+.rail[data-hide-on-collapse] {
+  --_t: 1;
+  transform: translateX(calc(min(0%, (var(--_reveal, 0) - 1) * 100%) * var(--_dir)));
+  visibility: hidden;
+  transition:
+    box-shadow var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard),
+    visibility 0s linear var(--md-sys-motion-duration-medium4);
+}
+
+.rail[data-hide-on-collapse][data-open] {
+  visibility: visible;
+  transition: box-shadow var(--md-sys-motion-duration-medium2)
+    var(--md-sys-motion-easing-standard);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrim,
+  .modalRoot[data-open] .scrim,
+  .rail[data-modal],
+  .rail[data-hide-on-collapse],
+  .rail[data-hide-on-collapse][data-open] {
+    transition: none;
+  }
 }

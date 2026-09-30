@@ -166,3 +166,41 @@ SB4a–e → #146(キー/フォーカスハンドラを書き直すため同梱)
   挙動記述(「docked は scrim を伴う」など)がトークン表にない要件を持つ
 - `type="search"` の Escape はブラウザが値を消す。Escape を扱う入力系コンポーネントは実ブラウザで確認すること
   (jsdom では再現しない)
+
+## 修正時の判断(2026-09-30、#143 #144 #147 #148 #149)
+
+- **slot(SB1)**: leading / trailing とも 48dp の slot(Compose の `minimumInteractiveComponentSize` ボックス)。バーの
+  左パディングを 4 + slot 48 + gap 4 にしたので、既定グリフの位置(x = 16)と入力の開始(56)は従来と同じ。trailing も
+  同じ構成(`endIcon` がないときだけ右パディング 16)で、素のアイコンの位置は変わらず、IconButton を入れても中心が端から 28。
+  `aria-hidden` は既定の検索グリフだけに付ける。利用側が渡した装飾アイコンは自分で `aria-hidden` を付ける(JSDoc に記載)
+- **state layer(SB2a)**: バーに Ripple(`--md-ripple-color` = on-surface)。slot 内の操作要素(IconButton)に hover
+  している間はバーの state layer を隠し、ボタン自身の state layer だけを見せる(二重表示の回避)
+- **フォーカスインジケーター(SB2b)**: FocusRing の `ring` を `composes` してバー全体に表示。テキスト入力はポインターで
+  フォーカスしても `:focus-visible` に一致するため、ポインター押下を追跡して**キーボード(と programmatic)フォーカス時だけ**
+  表示する(Compose もキーボード操作時のみ)
+- **docked view の影(軽微欄)**: scrim で背景と分離するので `shadow-level3` を削除(Compose の with-gap と同じく影なし)
+- **モーション(SB5e)**: Compose の spring を CSS で近似 — 展開はコンテナを上端から `clip-path` で開く(medium4・
+  emphasized-decelerate ≈ DefaultSpatial)、収納は short4・emphasized-accelerate(≈ FastSpatial)、中身は 100ms フェード
+  (展開時 50ms 遅延)。spring トークン(#319)が入ったら差し替える(TODO #314)。reduced motion(B3)では空間的な開閉を
+  やめ、view は opacity のフェードのみ
+- **位置決め**: 当面は従来どおりバー直下の `position: absolute`(+ `position: fixed` の scrim)。共通ヘルパー
+  `usePopupPosition`(B4)への移行は #317
+
+## 修正時の判断(2026-09-30、#145 #146)
+
+- **ロール(SB3a)**: view(`children`)があるときだけ input を `role="combobox"`(`aria-expanded` / `aria-controls` =
+  view の id / `aria-autocomplete="list"`)にする。view がない SearchBar は従来どおり `searchbox`。`children` は任意の
+  コンテンツ(List + ListItem など)なので、listbox / option を強制する `aria-activedescendant` 方式ではなく、**実フォーカスを
+  結果の項目に移す**方式(Compose の DirectionDown と同じ)を採用。`aria-haspopup` は付けない(implicit のまま)
+- **告知(SB3b)**: 視覚的に隠した `role="status"` に、view が開いたときだけ `suggestionsLabel`(既定
+  「Suggestions below」= Compose の stateDescription)を入れる。文言は B1 に従い prop で差し替える
+- **キー操作(SB4a/b)**: input で ArrowDown → view が閉じていれば開く、開いていれば最初の項目へ。項目間は
+  ArrowUp / ArrowDown / Home / End(無効な項目はスキップ、端で止まる)、先頭で ArrowUp → input。view 内の Escape → 閉じて
+  input へフォーカスを戻す(戻したフォーカスで再び開かない)。利用側の `onKeyDown` が `preventDefault()` したキーは
+  組み込み処理をしない
+- **フォーカスアウト(SB4c)**: ルートの `focusout` で `relatedTarget` がルート外なら閉じる。ルート内のポインター押下
+  (結果の非フォーカス領域・scrim)とウィンドウ切り替え(`document.hasFocus()` が false)は除外
+- **Escape とクリア(SB4d)**: view が開いているときの Escape は閉じるだけ(`preventDefault` でネイティブのクリアを
+  止め、`stopPropagation` で外側の dialog も閉じない)。閉じているとき(または view がないとき)はブラウザの
+  `type="search"` のネイティブ動作に任せる(Chromium / Safari はクエリを消す)= APG「popup が出ていないときに限り任意でクリア」
+- **IME(SB4e)**: `nativeEvent.isComposing` または `keyCode === 229` の Enter では `onSearch` を呼ばない

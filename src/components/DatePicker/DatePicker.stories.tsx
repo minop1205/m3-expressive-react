@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { DatePicker, type DateRange } from './DatePicker'
 import { DatePickerField } from './DatePickerField'
@@ -45,5 +45,110 @@ export const Docked: StoryObj<typeof DatePickerField> = {
   render: () => {
     const [date, setDate] = useState<Date | null>(null)
     return <DatePickerField value={date} onChange={setDate} label="Event date" />
+  },
+}
+
+/** Clicks the element matching `selector` inside `ref` once on mount — opens a
+ * menu / popup so the open state is captured (VRT has no interaction step). */
+function useOpenOnMount(selector: string) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    ref.current?.querySelector<HTMLElement>(selector)?.click()
+  }, [selector])
+  return ref
+}
+
+export const YearSelection: Story = {
+  render: () => {
+    const ref = useOpenOnMount('[aria-expanded]')
+    const [date, setDate] = useState<Date | null>(new Date(2026, 5, 10))
+    return (
+      <div ref={ref}>
+        <DatePicker value={date} onChange={(d) => setDate(d as Date)} />
+      </div>
+    )
+  },
+}
+
+export const DockedOpen: StoryObj<typeof DatePickerField> = {
+  render: () => {
+    const ref = useOpenOnMount('[aria-haspopup="dialog"]')
+    const [date, setDate] = useState<Date | null>(new Date(2026, 5, 10))
+    return (
+      <div ref={ref} style={{ minHeight: 520 }}>
+        <DatePickerField value={date} onChange={setDate} label="Event date" />
+      </div>
+    )
+  },
+}
+
+export const DockedYearMenu: StoryObj<typeof DatePickerField> = {
+  render: () => {
+    const ref = useRef<HTMLDivElement>(null)
+    useEffect(() => {
+      ref.current?.querySelector<HTMLElement>('[aria-haspopup="dialog"]')?.click()
+      // The popup renders on the next commit.
+      const id = setTimeout(() => {
+        const menus = ref.current?.querySelectorAll<HTMLElement>('[role="dialog"] [aria-expanded]')
+        menus?.[menus.length - 1]?.click()
+      })
+      return () => clearTimeout(id)
+    }, [])
+    const [date, setDate] = useState<Date | null>(new Date(2026, 5, 10))
+    return (
+      <div ref={ref} style={{ minHeight: 520 }}>
+        <DatePickerField value={date} onChange={setDate} label="Event date" />
+      </div>
+    )
+  },
+}
+
+export const InputMode: Story = {
+  render: () => {
+    const [date, setDate] = useState<Date | null>(new Date(2026, 5, 10))
+    return <DatePicker defaultMode="input" value={date} onChange={(d) => setDate(d as Date)} />
+  },
+}
+
+/** Draft / commit: picks update the draft, OK commits, Cancel reverts. */
+export const WithActions: Story = {
+  render: () => {
+    const [draft, setDraft] = useState<Date | null>(new Date(2026, 5, 10))
+    const [saved, setSaved] = useState<Date | null>(draft)
+    return (
+      <div>
+        <DatePicker
+          value={draft}
+          onChange={(d) => setDraft(d as Date)}
+          onAccept={(d) => setSaved(d as Date)}
+          onCancel={() => {}}
+        />
+        <p>Saved: {saved ? saved.toDateString() : '—'}</p>
+      </div>
+    )
+  },
+}
+
+/** `open` shows the picker as a modal dialog (Compose DatePickerDialog). */
+export const ModalDialog: Story = {
+  render: () => {
+    const [open, setOpen] = useState(true)
+    const [draft, setDraft] = useState<Date | null>(new Date(2026, 5, 10))
+    const [saved, setSaved] = useState<Date | null>(draft)
+    return (
+      <div>
+        <button type="button" onClick={() => setOpen(true)}>
+          Pick a date
+        </button>
+        <p>Saved: {saved ? saved.toDateString() : '—'}</p>
+        <DatePicker
+          open={open}
+          onClose={() => setOpen(false)}
+          value={draft}
+          onChange={(d) => setDraft(d as Date)}
+          onAccept={(d) => setSaved(d as Date)}
+        />
+      </div>
+    )
   },
 }
