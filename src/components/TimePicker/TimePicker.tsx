@@ -1,9 +1,12 @@
 import {
   forwardRef,
+  useId,
+  useRef,
   useState,
   type ChangeEvent,
   type CSSProperties,
   type HTMLAttributes,
+  type KeyboardEvent,
 } from 'react'
 import clsx from 'clsx'
 import { KeyboardIcon, ScheduleIcon } from '../../internal/icons'
@@ -42,6 +45,34 @@ function pointFor(index: number, count: number): CSSProperties {
   }
 }
 
+type Field = 'hour' | 'minute'
+
+/**
+ * Status of a time-input field's text:
+ * - `valid` — a committable value (`value` is set);
+ * - `pending` — an incomplete entry (empty, or a lone leading `0` in the hour
+ *   field): no error, nothing committed;
+ * - `invalid` — out of range (e.g. hour `13` / `00`, minute `75`): error state,
+ *   nothing committed.
+ */
+type FieldStatus =
+  | { status: 'valid'; value: number }
+  | { status: 'pending' }
+  | { status: 'invalid' }
+
+function parseField(field: Field, text: string): FieldStatus {
+  if (text === '' || (field === 'hour' && text === '0')) return { status: 'pending' }
+  const n = Number(text)
+  const [min, max] = field === 'hour' ? [1, 12] : [0, 59]
+  return n >= min && n <= max ? { status: 'valid', value: n } : { status: 'invalid' }
+}
+
+const FIELD_ERROR: Record<Field, string> = {
+  hour: 'Hour must be 1–12',
+  minute: 'Minute must be 0–59',
+}
+
+const pad2 = (n: number) => String(n).padStart(2, '0')
 
 /**
  * Material Design 3 Time picker (dial + input).
@@ -50,6 +81,11 @@ function pointFor(index: number, count: number): CSSProperties {
  * when active), an AM/PM toggle (TertiaryContainer selected), and either a 256dp
  * SurfaceContainerHighest clock dial with a Primary selector, or editable input
  * fields — toggled with the keyboard/clock button, per Compose TimePickerTokens.
+ *
+ * Input mode validates like Compose `TimeInput`: 2 digits max, out-of-range
+ * text (hour outside 1–12, minute outside 0–59) shows an error and is not
+ * committed, and an empty / invalid field reverts to the current value on
+ * blur. `onChange` only ever receives valid values.
  */
 export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
   function TimePicker(
@@ -82,15 +118,112 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
       commit({ ...current, hour: (current.hour + 12) % 24 })
     }
 
-    const onHourInput = (event: ChangeEvent<HTMLInputElement>) => {
-      const n = Number(event.target.value)
-      if (Number.isNaN(n)) return
-      setHour12(Math.min(12, Math.max(1, n)))
+    // ---- Input mode (Compose `TimeInputTransformation`) -------------------
+    // Each field keeps a text draft while focused. Rules:
+    // - digits only, at most 2; a digit typed into a full field (collapsed
+    //   caret) replaces the whole field with that digit instead of appending;
+    // - only in-range text commits (`onChange`); out-of-range text stays
+    //   visible with an error state and is never clamped; an empty field is
+    //   allowed while editing;
+    // - on blur the draft is dropped, so an empty / invalid field reverts to
+    //   the last committed value;
+    // - the hour auto-advances to the minute field once it is a valid 2-digit
+    //   hour, or a typed 2–9 (can't start a valid 2-digit 12h hour); Enter
+    //   on a valid hour also advances.
+    const [drafts, setDrafts] = useState<Record<Field, string | null>>({
+      hour: null,
+      minute: null,
+    })
+    const minuteInputRef = useRef<HTMLInputElement>(null)
+    const errorIdBase = useId()
+
+    const fieldText: Record<Field, string> = {
+      hour: drafts.hour ?? pad2(hour12),
+      minute: drafts.minute ?? pad2(current.minute),
     }
-    const onMinuteInput = (event: ChangeEvent<HTMLInputElement>) => {
-      const n = Number(event.target.value)
-      if (Number.isNaN(n)) return
-      setMinute(Math.min(59, Math.max(0, n)))
+
+    const applyText = (field: Field, text: string, typed: boolean) => {
+      setDrafts((d) => ({ ...d, [field]: text }))
+      const parsed = parseField(field, text)
+      if (parsed.status !== 'valid') return
+      if (field === 'hour') {
+        if (parsed.value !== hour12) setHour12(parsed.value)
+        if (text.length === 2 || (typed && parsed.value >= 2 && parsed.value <= 9)) {
+          minuteInputRef.current?.focus()
+        }
+      } else if (parsed.value !== current.minute) {
+        setMinute(parsed.value)
+      }
+    }
+
+    const onFieldChange = (field: Field) => (event: ChangeEvent<HTMLInputElement>) => {
+      const prev = fieldText[field]
+      let text = event.target.value
+      if (!/^\d*$/.test(text)) return
+      // Deletions never auto-advance (Compose `hasInsertedText`).
+      const inputType = (event.nativeEvent as InputEvent).inputType
+      const typed = inputType ? inputType.startsWith('insert') : text.length >= prev.length
+      if (text.length > 2) {
+        // A single digit inserted into a full field replaces it (Compose).
+        if (text.length !== prev.length + 1 || prev.length !== 2) return
+        const caret = event.target.selectionStart ?? text.length
+        text = text.charAt(Math.max(0, caret - 1))
+      }
+      applyText(field, text, typed)
+    }
+
+    const onFieldKeyDown = (field: Field) => (event: KeyboardEvent<HTMLInputElement>) => {
+      const input = event.currentTarget
+      if (
+        /^\d$/.test(event.key) &&
+        input.value.length >= 2 &&
+        input.selectionStart === input.selectionEnd
+      ) {
+        // `maxLength` would block the keystroke — replace instead.
+        event.preventDefault()
+        applyText(field, event.key, true)
+      } else if (
+        event.key === 'Enter' &&
+        field === 'hour' &&
+        parseField('hour', input.value).status === 'valid'
+      ) {
+        event.preventDefault()
+        minuteInputRef.current?.focus()
+      }
+    }
+
+    const renderFieldInput = (field: Field) => {
+      const invalid = parseField(field, fieldText[field]).status === 'invalid'
+      const errorId = `${errorIdBase}-${field}-error`
+      return (
+        <div className={styles.fieldColumn}>
+          <input
+            ref={field === 'minute' ? minuteInputRef : undefined}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={2}
+            autoComplete="off"
+            className={styles.fieldInput}
+            aria-label={field === 'hour' ? 'Hour' : 'Minute'}
+            aria-invalid={invalid || undefined}
+            aria-describedby={invalid ? errorId : undefined}
+            data-error={invalid || undefined}
+            value={fieldText[field]}
+            onFocus={(event) => {
+              setActiveField(field)
+              setDrafts((d) => ({ ...d, [field]: fieldText[field] }))
+              event.currentTarget.select()
+            }}
+            onBlur={() => setDrafts((d) => ({ ...d, [field]: null }))}
+            onChange={onFieldChange(field)}
+            onKeyDown={onFieldKeyDown(field)}
+          />
+          <span id={errorId} className={styles.supportingText} aria-live="polite">
+            {invalid ? FIELD_ERROR[field] : ''}
+          </span>
+        </div>
+      )
     }
 
     const hours = Array.from({ length: 12 }, (_, i) => (i === 0 ? 12 : i))
@@ -111,15 +244,7 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
         <div className={styles.fields}>
           <div className={styles.timeFields}>
             {isInput ? (
-              <input
-                type="text"
-                inputMode="numeric"
-                className={styles.fieldInput}
-                aria-label="Hour"
-                value={String(hour12).padStart(2, '0')}
-                onFocus={() => setActiveField('hour')}
-                onChange={onHourInput}
-              />
+              renderFieldInput('hour')
             ) : (
               <button
                 type="button"
@@ -133,15 +258,7 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
             )}
             <span className={styles.separator}>:</span>
             {isInput ? (
-              <input
-                type="text"
-                inputMode="numeric"
-                className={styles.fieldInput}
-                aria-label="Minute"
-                value={String(current.minute).padStart(2, '0')}
-                onFocus={() => setActiveField('minute')}
-                onChange={onMinuteInput}
-              />
+              renderFieldInput('minute')
             ) : (
               <button
                 type="button"
