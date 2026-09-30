@@ -40,6 +40,8 @@ export const Sizes: Story = {
       <SplitButton {...args} size="xs" />
       <SplitButton {...args} size="sm" />
       <SplitButton {...args} size="md" />
+      <SplitButton {...args} size="lg" />
+      <SplitButton {...args} size="xl" />
     </div>
   ),
 }
@@ -50,6 +52,14 @@ export const WithIcon: Story = {
 
 export const Disabled: Story = {
   args: { disabled: true },
+  render: (args) => (
+    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+      <SplitButton {...args} variant="elevated" />
+      <SplitButton {...args} variant="filled" />
+      <SplitButton {...args} variant="tonal" />
+      <SplitButton {...args} variant="outlined" />
+    </div>
+  ),
 }
 
 /** Dropdown open so the menu half is covered by VRT (`open` is controlled-only). */
