@@ -64,3 +64,73 @@ export function getMonthGrid(year: number, month: number, firstDayOfWeek: number
   }
   return rows
 }
+
+/** Why a typed date was rejected. */
+export type DateInputError = 'invalid' | 'outOfRange' | 'invalidRange'
+
+type DatePart = 'year' | 'month' | 'day'
+
+const numericOptions: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+}
+
+const sampleDate = () => new Date(2000, 10, 22)
+
+/** Field order of the locale's numeric date (e.g. month/day/year for en-US). */
+function getPartOrder(locale: string): DatePart[] {
+  return new Intl.DateTimeFormat(locale, numericOptions)
+    .formatToParts(sampleDate())
+    .map((p) => p.type)
+    .filter((t): t is DatePart => t === 'year' || t === 'month' || t === 'day')
+}
+
+/** Numeric date text in the locale's order, e.g. `07/04/2024` (en-US). */
+export function formatDateInput(date: Date, locale: string): string {
+  return new Intl.DateTimeFormat(locale, numericOptions).format(date)
+}
+
+/**
+ * The locale's input pattern for helper text / placeholders, e.g.
+ * `MM/DD/YYYY` (en-US), `DD/MM/YYYY` (en-GB), `DD.MM.YYYY` (de).
+ */
+export function getDatePattern(locale: string): string {
+  const letters: Record<string, string> = { year: 'YYYY', month: 'MM', day: 'DD' }
+  return new Intl.DateTimeFormat(locale, numericOptions)
+    .formatToParts(sampleDate())
+    .map((p) => letters[p.type] ?? (p.type === 'literal' ? p.value : ''))
+    .join('')
+    .trim()
+}
+
+/**
+ * Parses typed date text in the locale's field order (m3 accessibility: no
+ * input mask; dashes, spaces, slashes and dots are all accepted as
+ * separators, leading zeros are optional). A leading 4-digit group is read as
+ * ISO year-month-day in any locale. Returns `null` when the text is not a
+ * real calendar date with a 4-digit year.
+ */
+export function parseDateInput(text: string, locale: string): Date | null {
+  const trimmed = text.trim()
+  // Digits and separators only (a trailing dot covers e.g. ko "2024. 7. 4.").
+  if (!/^\d+([\s./-]+\d+){2}[\s./-]*$/.test(trimmed)) return null
+  const groups = trimmed.match(/\d+/g) ?? []
+  const order: DatePart[] =
+    groups[0]?.length === 4 ? ['year', 'month', 'day'] : getPartOrder(locale)
+  const parts: Record<DatePart, string> = { year: '', month: '', day: '' }
+  order.forEach((part, i) => {
+    parts[part] = groups[i] ?? ''
+  })
+  if (parts.year.length !== 4 || parts.month.length > 2 || parts.day.length > 2) return null
+  const year = Number(parts.year)
+  const month = Number(parts.month) - 1
+  const day = Number(parts.day)
+  if (month < 0 || month > 11 || day < 1 || day > daysInMonth(year, month)) return null
+  return new Date(year, month, day)
+}
+
+/** Whether `date` lies within the optional inclusive `[min, max]` bounds. */
+export function isWithin(date: Date, min: Date | null | undefined, max: Date | null | undefined) {
+  return (!min || date >= startOfDay(min)) && (!max || date <= startOfDay(max))
+}
