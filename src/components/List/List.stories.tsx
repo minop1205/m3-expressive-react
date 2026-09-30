@@ -1,7 +1,12 @@
+import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { fn } from 'storybook/test'
 import Star from '@material-symbols/svg-400/outlined/star.svg?react'
 import ChevronRight from '@material-symbols/svg-400/outlined/chevron_right.svg?react'
+import RadioChecked from '@material-symbols/svg-400/outlined/radio_button_checked.svg?react'
+import RadioUnchecked from '@material-symbols/svg-400/outlined/radio_button_unchecked.svg?react'
+import CheckBox from '@material-symbols/svg-400/outlined/check_box.svg?react'
+import CheckBoxBlank from '@material-symbols/svg-400/outlined/check_box_outline_blank.svg?react'
 import Wifi from '@material-symbols/svg-400/outlined/wifi.svg?react'
 import Bluetooth from '@material-symbols/svg-400/outlined/bluetooth.svg?react'
 import MoreVert from '@material-symbols/svg-400/outlined/more_vert.svg?react'
@@ -128,4 +133,70 @@ export const MultiAction: Story = {
       />
     </List>
   ),
+}
+
+/**
+ * `selectionMode="single"`: a `listbox` of `option`s with `aria-selected`. One Tab
+ * stop (the selected option); arrow keys move, Enter / Space select. A leading
+ * indicator keeps the selection from relying on color alone.
+ */
+export const SingleSelect: Story = {
+  render: function Render() {
+    const [value, setValue] = useState<string | null>('work')
+    const items = [
+      ['personal', 'Personal', 'alex@example.com'],
+      ['work', 'Work', 'alex@company.com'],
+      ['school', 'School', 'alex@university.edu'],
+    ]
+    return (
+      <List
+        selectionMode="single"
+        value={value}
+        onChange={(_, next) => setValue(next)}
+        aria-label="Account (choose one)"
+        style={{ width: 360 }}
+      >
+        {items.map(([v, headline, supporting]) => (
+          <ListItem
+            key={v}
+            value={v}
+            leading={value === v ? <RadioChecked aria-hidden /> : <RadioUnchecked aria-hidden />}
+            headline={headline}
+            supportingText={supporting}
+          />
+        ))}
+      </List>
+    )
+  },
+}
+
+/** `selectionMode="multiple"`: `aria-multiselectable` listbox; Enter / Space toggle. */
+export const MultiSelect: Story = {
+  render: function Render() {
+    const [value, setValue] = useState<string[]>(['wifi'])
+    const items = [
+      ['wifi', 'Wi-Fi'],
+      ['bluetooth', 'Bluetooth'],
+      ['nfc', 'NFC'],
+    ]
+    return (
+      <List
+        selectionMode="multiple"
+        value={value}
+        onChange={(_, next) => setValue(next)}
+        aria-label="Connections to share (choose any)"
+        style={{ width: 360 }}
+      >
+        {items.map(([v, headline]) => (
+          <ListItem
+            key={v}
+            value={v}
+            leading={value.includes(v) ? <CheckBox aria-hidden /> : <CheckBoxBlank aria-hidden />}
+            headline={headline}
+          />
+        ))}
+        <ListItem value="uwb" headline="Ultra-wideband" supportingText="Unavailable" disabled />
+      </List>
+    )
+  },
 }

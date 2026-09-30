@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { Checkbox } from '../Checkbox'
 import { Switch } from '../Switch'
+import { SwipeToDismiss } from '../SwipeToDismiss'
 import { List, ListItem } from './List'
 import rippleStyles from '../../primitives/Ripple/Ripple.module.css'
 
@@ -275,6 +276,170 @@ describe('List / ListItem', () => {
       expect(screen.getByRole('checkbox', { name: 'Agree' })).toBeInTheDocument()
       expect(container.querySelector('[aria-hidden="true"] input')).toBeNull()
       expect(await axe(container)).toHaveNoViolations()
+    })
+  })
+
+  describe('selection lists (B17, #225)', () => {
+    it('single: listbox / option / aria-selected, click and keys select', async () => {
+      const user = userEvent.setup()
+      const onChange = vi.fn()
+      render(
+        <List selectionMode="single" defaultValue="b" onChange={onChange} aria-label="Account">
+          <ListItem value="a" headline="Personal" />
+          <ListItem value="b" headline="Work" />
+          <ListItem value="c" headline="Other" disabled />
+        </List>,
+      )
+      const listbox = screen.getByRole('listbox', { name: 'Account' })
+      expect(listbox).not.toHaveAttribute('aria-multiselectable')
+      const [a, b, c] = screen.getAllByRole('option')
+      expect(a).toHaveAttribute('aria-selected', 'false')
+      expect(b).toHaveAttribute('aria-selected', 'true')
+      expect(c).toHaveAttribute('aria-disabled', 'true')
+      // The selected option is the Tab stop.
+      expect(b).toHaveAttribute('tabindex', '0')
+      expect(a).toHaveAttribute('tabindex', '-1')
+      expect(c).not.toHaveAttribute('tabindex')
+
+      await user.click(a)
+      expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 'a')
+      expect(a).toHaveAttribute('aria-selected', 'true')
+      expect(b).toHaveAttribute('aria-selected', 'false')
+      // Re-activating the selected option keeps it (radio-like).
+      await user.click(a)
+      expect(onChange).toHaveBeenCalledTimes(1)
+
+      b.focus()
+      await user.keyboard(' ')
+      expect(b).toHaveAttribute('aria-selected', 'true')
+      a.focus()
+      await user.keyboard('{Enter}')
+      expect(a).toHaveAttribute('aria-selected', 'true')
+      fireEvent.click(c)
+      expect(c).toHaveAttribute('aria-selected', 'false')
+    })
+
+    it('multiple: aria-multiselectable, toggles values', async () => {
+      const user = userEvent.setup()
+      const onChange = vi.fn()
+      render(
+        <List selectionMode="multiple" value={['a']} onChange={onChange} aria-label="Tags">
+          <ListItem value="a" headline="Alpha" />
+          <ListItem value="b" headline="Beta" />
+        </List>,
+      )
+      expect(screen.getByRole('listbox')).toHaveAttribute('aria-multiselectable', 'true')
+      const [a, b] = screen.getAllByRole('option')
+      await user.click(b)
+      expect(onChange).toHaveBeenLastCalledWith(expect.anything(), ['a', 'b'])
+      await user.click(a)
+      expect(onChange).toHaveBeenLastCalledWith(expect.anything(), [])
+      // Controlled: unchanged until the parent updates value.
+      expect(a).toHaveAttribute('aria-selected', 'true')
+    })
+
+    it('puts aria-* and role on the option itself (no aria-allowed-attr)', async () => {
+      const { container } = render(
+        <List selectionMode="single" aria-label="Pick">
+          <ListItem value="a" headline="A" aria-describedby="hint" />
+          <ListItem value="b" headline="B" />
+        </List>,
+      )
+      expect(screen.getAllByRole('option')[0]).toHaveAttribute('aria-describedby', 'hint')
+      expect(await axe(container)).toHaveNoViolations()
+    })
+
+    it('keeps listbox structure inside SwipeToDismiss (li role=none)', async () => {
+      const { container } = render(
+        <List selectionMode="single" aria-label="Mail">
+          <SwipeToDismiss>
+            <ListItem value="a" headline="A" />
+          </SwipeToDismiss>
+          <ListItem value="b" headline="B" />
+        </List>,
+      )
+      const li = container.querySelector('ul > li')!
+      expect(li).toHaveAttribute('role', 'none')
+      expect(screen.getAllByRole('option')).toHaveLength(2)
+      expect(await axe(container)).toHaveNoViolations()
+    })
+  })
+
+  describe('arrow-key navigation (#229)', () => {
+    it('one Tab stop; arrows move and wrap; Home / End', async () => {
+      const user = userEvent.setup()
+      render(
+        <>
+          <List aria-label="Actions">
+            <ListItem headline="One" onClick={() => {}} />
+            <ListItem headline="Two" onClick={() => {}} disabled />
+            <ListItem headline="Three" href="#three" />
+            <ListItem headline="Four" onClick={() => {}} />
+          </List>
+          <button type="button">After</button>
+        </>,
+      )
+      const one = screen.getByRole('button', { name: 'One' })
+      const three = screen.getByRole('link', { name: 'Three' })
+      const four = screen.getByRole('button', { name: 'Four' })
+      await user.tab()
+      expect(one).toHaveFocus()
+      await user.tab()
+      expect(screen.getByRole('button', { name: 'After' })).toHaveFocus()
+      await user.tab({ shift: true })
+      expect(one).toHaveFocus()
+
+      await user.keyboard('{ArrowDown}')
+      expect(three).toHaveFocus() // skips the disabled row
+      await user.keyboard('{ArrowRight}')
+      expect(four).toHaveFocus()
+      await user.keyboard('{ArrowDown}')
+      expect(one).toHaveFocus() // wraps
+      await user.keyboard('{ArrowUp}')
+      expect(four).toHaveFocus()
+      await user.keyboard('{ArrowLeft}')
+      expect(three).toHaveFocus()
+      await user.keyboard('{Home}')
+      expect(one).toHaveFocus()
+      await user.keyboard('{End}')
+      expect(four).toHaveFocus()
+      // Tab returns to the last focused row.
+      await user.tab()
+      await user.tab({ shift: true })
+      expect(four).toHaveFocus()
+    })
+
+    it('includes trailing controls, but leaves text inputs their arrows', async () => {
+      const user = userEvent.setup()
+      render(
+        <List aria-label="Settings">
+          <ListItem headline="Wi-Fi" onClick={() => {}} trailing={<Switch aria-label="Wi-Fi on" />} />
+          <ListItem headline="Name" onClick={() => {}} trailing={<input aria-label="Name input" />} />
+        </List>,
+      )
+      screen.getByRole('button', { name: 'Wi-Fi' }).focus()
+      await user.keyboard('{ArrowDown}')
+      expect(screen.getByRole('switch', { name: 'Wi-Fi on' })).toHaveFocus()
+      await user.keyboard('{ArrowDown}')
+      expect(screen.getByRole('button', { name: 'Name' })).toHaveFocus()
+      await user.keyboard('{ArrowDown}')
+      const input = screen.getByRole('textbox', { name: 'Name input' })
+      expect(input).toHaveFocus()
+      await user.keyboard('{ArrowDown}')
+      expect(input).toHaveFocus()
+    })
+
+    it("respects a caller's preventDefault", async () => {
+      const user = userEvent.setup()
+      render(
+        <List aria-label="L" onKeyDown={(e) => e.preventDefault()}>
+          <ListItem headline="A" onClick={() => {}} />
+          <ListItem headline="B" onClick={() => {}} />
+        </List>,
+      )
+      screen.getByRole('button', { name: 'A' }).focus()
+      await user.keyboard('{ArrowDown}')
+      expect(screen.getByRole('button', { name: 'A' })).toHaveFocus()
     })
   })
 
