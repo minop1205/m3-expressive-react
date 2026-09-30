@@ -6,7 +6,6 @@ import {
   useContext,
   useEffect,
   useId,
-  useLayoutEffect,
   useRef,
   useState,
   type ButtonHTMLAttributes,
@@ -19,7 +18,7 @@ import {
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
-import { resolvePopupSide } from '../../internal/usePopupPosition'
+import { usePopupPosition } from '../../internal/usePopupPosition'
 import { moveMenuFocus } from '../../internal/menuNavigation'
 import styles from './Menu.module.css'
 
@@ -64,8 +63,11 @@ export interface MenuProps extends Omit<HTMLAttributes<HTMLDivElement>, 'childre
 /** How long a pause resets the typeahead buffer (APG-typical). */
 const TYPEAHEAD_RESET_MS = 500
 
-/** Gap between the trigger and the menu (kept in sync with the CSS). */
+/** Gap between the trigger and the menu. */
 const ANCHOR_GAP_PX = 4
+
+/** Minimum distance the menu keeps from the viewport edges when clamped. */
+const VIEWPORT_MARGIN_PX = 8
 
 /**
  * Material Design 3 Menu (dropdown).
@@ -73,6 +75,9 @@ const ANCHOR_GAP_PX = 4
  * Anchors a `role="menu"` popup to a trigger. SurfaceContainer container, 4dp
  * corners, elevation 2, 112–280dp wide, 8dp vertical padding — per Compose
  * MenuTokens. Closes on outside click, Escape, Tab-out, or item selection.
+ * The menu is drawn in the top layer (Popover API) below the trigger — above
+ * it when it doesn't fit below — and kept inside the viewport, so ancestors'
+ * `overflow` / `z-index` can't clip it; it follows scrolling and layout shifts.
  *
  * `variant="vertical"` renders the MD3 Expressive vertical menu (Compose
  * `DropdownMenuPopup`/`DropdownMenuGroup`): a transparent popup that stacks
@@ -109,7 +114,6 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   const open = isControlled ? controlledOpen : uncontrolled
   const wrapperRef = useRef<HTMLSpanElement>(null)
   const menuRef = useRef<HTMLDivElement | null>(null)
-  const [placement, setPlacement] = useState<'below' | 'above'>('below')
   // Where to move focus once the menu opens ('last' for ArrowUp on the trigger).
   const pendingFocus = useRef<'first' | 'last'>('first')
   const typeahead = useRef({ buffer: '', at: 0 })
@@ -138,20 +142,19 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
       ) ?? [],
     )
 
-  // Collision handling (Compose falls back Below → Above): before paint,
-  // flip above the trigger when the space below can't fit the menu and the
-  // space above is larger — the shared flip rule of src/internal/usePopupPosition.
-  useLayoutEffect(() => {
-    if (!open) {
-      setPlacement('below')
-      return
-    }
-    const anchor = wrapperRef.current?.getBoundingClientRect()
-    const menuHeight = menuRef.current?.offsetHeight ?? 0
-    if (!anchor) return
-    const side = resolvePopupSide(anchor, menuHeight, window.innerHeight, 'bottom', ANCHOR_GAP_PX)
-    setPlacement(side === 'top' ? 'above' : 'below')
-  }, [open])
+  // Positioning (Compose DropdownMenuPositionProvider): below the trigger,
+  // flipped above when it doesn't fit there and the space above is larger,
+  // clamped inside the viewport; top layer via the shared popup helper (B4).
+  const side = usePopupPosition({
+    open,
+    anchorRef: wrapperRef,
+    popupRef: menuRef,
+    side: 'bottom',
+    align,
+    gap: ANCHOR_GAP_PX,
+    margin: VIEWPORT_MARGIN_PX,
+  })
+  const placement = side === 'top' ? 'above' : 'below'
 
   useEffect(() => {
     if (!open) return

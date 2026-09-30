@@ -183,8 +183,10 @@ SB4a–e → #146(キー/フォーカスハンドラを書き直すため同梱)
   emphasized-decelerate ≈ DefaultSpatial)、収納は short4・emphasized-accelerate(≈ FastSpatial)、中身は 100ms フェード
   (展開時 50ms 遅延)。spring トークン(#319)が入ったら差し替える(TODO #314)。reduced motion(B3)では空間的な開閉を
   やめ、view は opacity のフェードのみ
-- **位置決め**: 当面は従来どおりバー直下の `position: absolute`(+ `position: fixed` の scrim)。共通ヘルパー
-  `usePopupPosition`(B4)への移行は #317
+- **位置決め**: ~~当面は従来どおりバー直下の `position: absolute`(+ `position: fixed` の scrim)。共通ヘルパー
+  `usePopupPosition`(B4)への移行は #317~~ → #317 で移行済み: view は top layer でバー直下に固定(flip / clamp なし、
+  幅はバーに一致、高さはバー下の余白を上限)、scrim はページ内に残す。判断理由は
+  [phase-b-api.md B4 の実装メモ](../decisions/phase-b-api.md#b4-ポップアップ位置決めの共通化)
 
 ## 修正時の判断(2026-09-30、#145 #146)
 

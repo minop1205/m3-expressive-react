@@ -11,6 +11,11 @@
  * containers (SurfaceContainerLow, elevation Level2, SegmentedGap 2dp) with
  * 44dp items, 20dp icons, 16dp leading/trailing space, positional corner
  * shapes, and a TertiaryContainer selected state with a springy shape morph.
+ *
+ * Position (`top` / `left`, flip + clamp) is written inline by the shared
+ * popup helper (src/internal/usePopupPosition); the menu is a
+ * `popover="manual"` element drawn in the top layer. Width is the content's
+ * own (`max-content`, 112–280dp) — never the trigger's.
  */
 
 .wrapper {
@@ -33,15 +38,24 @@
   --_item-icon-color: var(--md-sys-color-on-surface-variant);
   --_state-layer-color: var(--md-sys-color-on-surface);
 
-  position: absolute;
-  top: calc(100% + 4px);
+  /* Reset the UA [popover] box (inset: 0; margin: auto; border; padding;
+     overflow: auto…). The z-index only matters without Popover API support. */
+  position: fixed;
+  inset: auto;
+  top: 0;
+  left: 0;
   z-index: 22;
   display: none;
   flex-direction: column;
   box-sizing: border-box;
+  width: max-content;
+  height: auto;
   min-width: 112px;
-  max-width: 280px;
-  padding-block: 8px;
+  max-width: min(280px, 100vw - 16px);
+  margin: 0;
+  border: 0;
+  padding: 8px 0;
+  overflow: visible;
   border-radius: var(--_container-shape);
   background-color: var(--_container-color);
   color: var(--md-sys-color-on-surface);
@@ -65,6 +79,12 @@
         var(--md-sys-motion-spring-fast-spatial-duration),
         var(--md-sys-motion-spring-fast-effects-duration)
       )
+      allow-discrete,
+    overlay
+      max(
+        var(--md-sys-motion-spring-fast-spatial-duration),
+        var(--md-sys-motion-spring-fast-effects-duration)
+      )
       allow-discrete;
 }
 
@@ -82,20 +102,14 @@
 }
 
 .menu[data-align='start'] {
-  inset-inline-start: 0;
   transform-origin: top left;
 }
 
 .menu[data-align='end'] {
-  inset-inline-end: 0;
   transform-origin: top right;
 }
 
 /* Flipped above the trigger when the viewport can't fit the menu below. */
-.menu[data-placement='above'] {
-  top: auto;
-  bottom: calc(100% + 4px);
-}
 
 .menu[data-align='start'][data-placement='above'] {
   transform-origin: bottom left;
@@ -103,6 +117,15 @@
 
 .menu[data-align='end'][data-placement='above'] {
   transform-origin: bottom right;
+}
+
+/* A baseline menu taller than the viewport scrolls inside it (Compose
+   DropdownMenu: vertically scrollable, constrained to the window). The
+   vertical variant keeps `overflow: visible` so its groups' shadows aren't
+   clipped. */
+.menu:not([data-variant='vertical']) {
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
 }
 
 /* ------------------------------------------------------------------ */

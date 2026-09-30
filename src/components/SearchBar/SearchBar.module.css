@@ -10,7 +10,9 @@
  * Docked search view = the Expressive "contained" style (Compose
  * ExpandedDockedSearchBarWithGap): a separate 12dp results container 2dp
  * below the bar, no divider, min 240dp / max 2/3 of the viewport height,
- * over a 32% scrim.
+ * over a 32% scrim. The view's position and width (the bar's) are written
+ * inline by the shared popup helper (src/internal/usePopupPosition); it is a
+ * `popover="manual"` element drawn in the top layer.
  */
 
 .wrapper {
@@ -29,7 +31,6 @@
   --_state-layer-color: var(--md-sys-color-on-surface);
   --_view-container-color: var(--md-sys-color-surface-container-high);
   --_view-container-shape: var(--md-sys-shape-corner-medium);
-  --_view-gap: 2px;
   --_view-min-height: 240px;
   --_scrim-color: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
 
@@ -158,8 +159,8 @@
 }
 
 /* Scrim over the main content while the docked view is open (click closes).
-   TODO(#317): render the view + scrim in the top layer via the shared popup
-   positioning helper so ancestor clipping / stacking contexts can't trap it. */
+   It stays in the page (not the top layer, unlike the view) so the in-flow
+   bar keeps stacking above it. */
 .scrim {
   position: fixed;
   inset: 0;
@@ -180,21 +181,36 @@
     visibility 0s;
 }
 
-/* Docked search view (contained style). */
+/* Docked search view (contained style). Reset the UA [popover] box
+   (inset: 0; margin: auto; border; padding; overflow: auto…); the z-index
+   only matters without Popover API support. */
 .view {
-  position: absolute;
-  top: calc(100% + var(--_view-gap));
+  position: fixed;
+  inset: auto;
+  top: 0;
   left: 0;
-  right: 0;
   z-index: 1;
+  box-sizing: border-box;
+  height: auto;
+  margin: 0;
+  border: 0;
+  padding: 0;
   border-radius: var(--_view-container-shape);
   background-color: var(--_view-container-color);
+  color: inherit;
   overflow: hidden;
   visibility: hidden;
   clip-path: inset(0 0 100% 0 round var(--_view-container-shape));
   transition:
     clip-path var(--_collapse-duration) var(--_collapse-easing),
     visibility 0s linear var(--_collapse-duration);
+  /* Keep the top-layer popover rendered through the collapse. Browsers that
+     don't know `allow-discrete` drop this declaration and keep the one above. */
+  transition:
+    clip-path var(--_collapse-duration) var(--_collapse-easing),
+    visibility 0s linear var(--_collapse-duration),
+    display var(--_collapse-duration) allow-discrete,
+    overlay var(--_collapse-duration) allow-discrete;
 }
 
 .view[data-open] {
@@ -205,11 +221,30 @@
     visibility 0s;
 }
 
+/* Entering the top layer starts from `display: none` — give the expand
+   motion its starting point. */
+@starting-style {
+  .view[data-open] {
+    clip-path: inset(0 0 100% 0 round var(--_view-container-shape));
+  }
+
+  .view[data-open] .results {
+    opacity: 0;
+  }
+}
+
 .results {
   box-sizing: border-box;
   min-height: var(--_view-min-height);
   max-height: calc(100vh * 2 / 3);
   max-height: calc(100dvh * 2 / 3);
+  /* …and no taller than the room below the bar (written by the popup helper),
+     so the results scroll inside the view instead of running off-screen —
+     but never below the 240dp minimum. */
+  max-height: max(
+    var(--_view-min-height),
+    min(calc(100dvh * 2 / 3), var(--_popup-available-height, 100dvh))
+  );
   overflow-y: auto;
   opacity: 0;
   transition: opacity var(--md-sys-motion-duration-short2)
@@ -231,7 +266,9 @@
     opacity: 0;
     transition:
       opacity var(--md-sys-motion-duration-short2) linear,
-      visibility 0s linear var(--md-sys-motion-duration-short2);
+      visibility 0s linear var(--md-sys-motion-duration-short2),
+      display var(--md-sys-motion-duration-short2) allow-discrete,
+      overlay var(--md-sys-motion-duration-short2) allow-discrete;
   }
 
   .view[data-open] {
@@ -246,6 +283,17 @@
   .view[data-open] .results {
     opacity: 1;
     transition: none;
+  }
+
+  @starting-style {
+    .view[data-open] {
+      clip-path: none;
+      opacity: 0;
+    }
+
+    .view[data-open] .results {
+      opacity: 1;
+    }
   }
 
   .wrapper {

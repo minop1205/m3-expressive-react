@@ -137,6 +137,26 @@ describe('CarouselItem slide semantics (#249)', () => {
     expect(screen.getByRole('group', { name: '2 枚中 2 枚目' })).toHaveTextContent('Two')
   })
 
+  it('accepts localized role descriptions for the carousel and its slides', () => {
+    render(
+      <Carousel
+        aria-label="写真"
+        roleDescriptionLabel="カルーセル"
+        itemRoleDescriptionLabel="スライド"
+      >
+        <CarouselItem>One</CarouselItem>
+      </Carousel>,
+    )
+    expect(screen.getByRole('group', { name: '写真' })).toHaveAttribute(
+      'aria-roledescription',
+      'カルーセル',
+    )
+    expect(screen.getByRole('group', { name: '1 of 1' })).toHaveAttribute(
+      'aria-roledescription',
+      'スライド',
+    )
+  })
+
   it('lets an explicit aria-label name the slide', () => {
     render(
       <Carousel aria-label="Photos">

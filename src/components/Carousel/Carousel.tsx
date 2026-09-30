@@ -66,6 +66,16 @@ export interface CarouselProps extends HTMLAttributes<HTMLDivElement> {
    */
   getItemLabel?: (position: number, count: number) => string
   /**
+   * Role description announced for the carousel container
+   * (`aria-roledescription`). @default 'carousel'
+   */
+  roleDescriptionLabel?: string
+  /**
+   * Role description announced for each non-interactive item
+   * (`aria-roledescription`). @default 'slide'
+   */
+  itemRoleDescriptionLabel?: string
+  /**
    * Accessible name of the carousel. Required in practice — the container is a
    * `group` announced as "carousel".
    */
@@ -85,6 +95,7 @@ interface CarouselContextValue {
   index: number
   count: number
   getItemLabel: (position: number, count: number) => string
+  itemRoleDescriptionLabel: string
 }
 
 const ItemContext = createContext<CarouselContextValue | null>(null)
@@ -144,6 +155,8 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
     itemHeight = 200,
     spacing = 8,
     getItemLabel = defaultGetItemLabel,
+    roleDescriptionLabel = 'carousel',
+    itemRoleDescriptionLabel = 'slide',
     className,
     children,
     style,
@@ -328,7 +341,7 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
   const count = childCount
   const content = Children.map(children, (child) => {
     if (!isValidElement(child)) return child
-    const value = { index: index++, count, getItemLabel }
+    const value = { index: index++, count, getItemLabel, itemRoleDescriptionLabel }
     return <ItemContext.Provider value={value}>{child}</ItemContext.Provider>
   })
 
@@ -340,7 +353,7 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
       }}
       {...rest}
       role="group"
-      aria-roledescription="carousel"
+      aria-roledescription={roleDescriptionLabel}
       data-carousel=""
       data-variant={variant}
       data-mode={mode}
@@ -472,7 +485,7 @@ export const CarouselItem = forwardRef<HTMLElement, CarouselItemProps>(function 
         ref={ref as Ref<HTMLDivElement>}
         {...shared}
         role={role ?? 'group'}
-        aria-roledescription="slide"
+        aria-roledescription={ctx?.itemRoleDescriptionLabel ?? 'slide'}
         aria-label={ariaLabel ?? positionLabel}
         aria-describedby={ariaDescribedBy}
       >

@@ -71,7 +71,7 @@ shadow / コンテナ縦 padding 8dp / 幅 112〜280dp / item 高さ 48dp / item
 | disabled | on-surface 0.38 | on-surface 0.38 | 38% color-mix(アイコン含む) | ✓ |
 | state layer | hover .08 / focus .1 / pressed .1 | ripple 同値 | hover のみ | **✗ M4** |
 | モーション | — | scale .8→1 FastSpatial + alpha FastEffects, transform-origin=交差点 | なし | **✗ M6** |
-| 配置 | — | 下→上→中央 fallback、縦マージン48dp | 下固定 | **✗ M7** |
+| 配置 | — | 下→上→中央 fallback、縦マージン48dp | 下固定 | **✗ M7**(→ #317 で flip + clamp 8dp + top layer。[B4 実装メモ](../decisions/phase-b-api.md#b4-ポップアップ位置決めの共通化)) |
 
 ## スキルへのフィードバック
 

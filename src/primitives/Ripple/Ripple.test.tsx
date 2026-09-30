@@ -61,3 +61,32 @@ describe('Ripple focus state layer (#194)', () => {
     expect(stateLayer(container)).toBeNull()
   })
 })
+
+describe('Ripple dragged / nested presses', () => {
+  it('paints the dragged layer, even when disabled, without hover', () => {
+    const { container } = render(
+      <div style={{ position: 'relative' }}>
+        <Ripple disabled dragged />
+      </div>,
+    )
+    const layer = stateLayer(container)
+    expect(layer).toHaveClass(styles.dragged)
+    fireEvent.pointerEnter(container.firstChild as HTMLElement)
+    expect(layer).not.toHaveClass(styles.hovered)
+  })
+
+  it('ignoreNestedPress skips presses that start on a nested control', () => {
+    const { container } = render(
+      <div role="group" style={{ position: 'relative' }}>
+        <button type="button">Nested</button>
+        <span>Text</span>
+        <Ripple ignoreNestedPress />
+      </div>,
+    )
+    const count = () => container.querySelectorAll(`.${styles.ripple}`).length
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Nested' }), { button: 0 })
+    expect(count()).toBe(0)
+    fireEvent.pointerDown(screen.getByText('Text'), { button: 0 })
+    expect(count()).toBe(1)
+  })
+})

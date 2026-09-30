@@ -14,21 +14,29 @@
   flex-shrink: 0;
 }
 
-/*
- * TODO(B4, docs/decisions/phase-b-api.md): move to the shared popup
- * positioning helper (flip + clamp, top layer) once it lands in src/internal.
- * Until then the dropdown opens below the field, start-aligned.
- */
+/* Calendar dropdown. Position (`top` / `left`, flip + clamp) is written
+   inline by the shared popup helper (src/internal/usePopupPosition); the
+   popup is a `popover="manual"` element drawn in the top layer. Reset the UA
+   [popover] box (inset: 0; margin: auto; border; padding; overflow: auto…);
+   the z-index only matters without Popover API support. */
 .popup {
-  position: absolute;
-  top: calc(100% + 4px);
-  inset-inline-start: 0;
+  position: fixed;
+  inset: auto;
+  top: 0;
+  left: 0;
   z-index: 22;
+  height: auto;
+  margin: 0;
+  border: 0;
+  padding-block-start: 0;
+  padding-inline: 0;
+  overflow: visible;
   outline: none;
 }
 
-/* The picker's own `max-width: 100%` would resolve against the (narrower)
-   field; the dropdown keeps its 360dp width. */
+/* The picker keeps its 360dp width, narrowed only to fit the viewport minus
+   the 8dp edge margins (its own `max-width: 100%` would now resolve against
+   the viewport). */
 .field > .popup {
-  max-width: none;
+  max-width: calc(100vw - 16px);
 }
