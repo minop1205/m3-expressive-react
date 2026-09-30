@@ -69,6 +69,43 @@ describe('Tabs', () => {
     expect(screen.getByRole('tablist')).toHaveAttribute('data-scrollable', 'true')
   })
 
+  it('renders a single decorative indicator for the row', () => {
+    const { container, rerender } = render(<Example value="b" />)
+    const indicators = container.querySelectorAll('[role="tablist"] > [aria-hidden="true"]')
+    expect(indicators).toHaveLength(1)
+    expect(indicators[0]).not.toHaveAttribute('hidden')
+    // No tab matches the value → nothing to point at.
+    rerender(<Example value="zzz" />)
+    expect(indicators[0]).toHaveAttribute('hidden')
+  })
+
+  it('scrolls the selected scrollable tab into the center on selection change', () => {
+    const scrollBy = vi.fn()
+    const original = Element.prototype.scrollBy
+    Element.prototype.scrollBy = scrollBy
+    try {
+      const { rerender } = render(
+        <Tabs value="a" onChange={() => {}} scrollable aria-label="S">
+          <Tab value="a" label="Alpha" />
+          <Tab value="b" label="Beta" />
+        </Tabs>,
+      )
+      // First layout snaps instantly.
+      expect(scrollBy).toHaveBeenCalledTimes(1)
+      expect(scrollBy).toHaveBeenLastCalledWith(expect.objectContaining({ behavior: 'instant' }))
+      rerender(
+        <Tabs value="b" onChange={() => {}} scrollable aria-label="S">
+          <Tab value="a" label="Alpha" />
+          <Tab value="b" label="Beta" />
+        </Tabs>,
+      )
+      expect(scrollBy).toHaveBeenCalledTimes(2)
+      expect(scrollBy).toHaveBeenLastCalledWith(expect.objectContaining({ behavior: 'smooth' }))
+    } finally {
+      Element.prototype.scrollBy = original
+    }
+  })
+
   it('forwards a ref', () => {
     const ref = createRef<HTMLDivElement>()
     render(
