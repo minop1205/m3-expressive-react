@@ -1,8 +1,14 @@
-# Phase B — 公開 API 判断の提案(2026-09-30・**全項目 未決**)
+# Phase B — 公開 API 判断(2026-09-30・**全項目 決定**)
 
 コンポーネント別 spec 監査(`docs/audits/*.md` — 多くは PR #162〜#296 で追加中)で `api-design` ラベルが付いた
 Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」として持ち越された論点をまとめた**提案書**。本書の「推奨」は起案者の案であり、
-**すべての項目がユーザー判断待ち**。裁定後に各項目を「決定」に書き換え、`phase-a-api.md` と同じ決定記録として扱う。
+本書は当初「提案書」として起案され、全項目がユーザー判断待ちだった(推奨は起案者の案)。下記の裁定により全項目が決定した。
+
+> **裁定(2026-09-30)**: ユーザーが **全 29 項目を推奨どおり承認**した。本書は `phase-a-api.md` と同じ決定記録として扱う。
+> 追加条件: **v1.1.0(マイナー)で出すため、互換性を壊さない**。破壊的変更を含む項目(B5 の ListItem DOM、B6 の TimePicker
+> `mode`、B26 の `medium` / `large` / `variant="center"`)は、旧 API を **非推奨の別名として残して互換を保つ**形で実装し、
+> 削除は v2 で行う。DOM の変化(B5・B21)は公開 API ではないが、CHANGELOG に明記する。
+> 実装順は下記「依存関係」に従う。v1.1.0 は監査で出た全 Issue の修正が揃ってからリリースする。
 
 前提(Phase A で決定済み — 本書の推奨はこれと矛盾しないように組んである):
 
@@ -19,35 +25,35 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 
 | ID | Issue | 論点 | 推奨 | 破壊的変更 | 状態 |
 |---|---|---|---|---|---|
-| B1 | 横断(#265 #251 #161 ほか) | 組み込み文言の i18n | **prop ごとのラベル(`*Label` / `get*Label`)を正とし、`LocaleProvider` は後から既定値供給として追加** | なし | 未決(ユーザー判断待ち) |
-| B2 | 横断(button B5・nav 監査) | 既定の motion scheme | **expressive を既定、`ThemeProvider motionScheme="standard"` で切替** | 挙動のみ(bounce 量) | 未決(ユーザー判断待ち) |
-| B3 | 横断(PI5・CR4 ほか) | reduced motion の方針 | **状態遷移は即時/フェードのみ、不定進捗だけ最小の動きで継続** | 挙動のみ | 未決(ユーザー判断待ち) |
-| B4 | 横断(#259 #54) | ポップアップ位置決めの共通化 | **内製の `src/internal` ヘルパー(flip + clamp)+ Popover API の top layer** | なし(内部) | 未決(ユーザー判断待ち) |
-| B5 | #217 #301 #247 | 操作可能な面(リンク化・入れ子の操作要素・Carousel 項目) | **`href` → `<a>` / `onClick` → ボタン。入れ子は ListItem = 内部で主アクションと `trailing` を兄弟に、Card = `CardActionArea` / `CardActions` を追加** | ListItem の DOM のみ | 未決(ユーザー判断待ち) |
-| B6 | #161 #168 | ピッカーの OK / Cancel と dialog 構成 | **組み込みアクション行 + `onAccept`(下書き/確定モデル)+ `open` 指定でモーダル表示** | TimePicker `mode` のみ(下記) | 未決(ユーザー判断待ち) |
-| B7 | 横断 | ピッカー確定と Snackbar host の共通パターン | **仕組みは共通化しない。語彙(`reason`)と内部プリミティブだけ共有** | なし | 未決(ユーザー判断待ち) |
-| B8 | #169 | TimePicker 24 時間制 | **`ampm?: boolean`(MUI X)、既定は `locale`(既定 `'en-US'`)から導出** | なし | 未決(ユーザー判断待ち) |
-| B9 | #251 | Snackbar host(キュー・自動消去) | **`SnackbarProvider` + `useSnackbar().show()`(Promise を返す)、`Snackbar` は見た目部品のまま** | なし | 未決(ユーザー判断待ち) |
-| B10 | #253 | 長い action を別行に | **`actionOnNewLine?: boolean`(自動判定なし)** | なし | 未決(ユーザー判断待ち) |
-| B11 | #257 #261 | rich tooltip の操作性と persistent | **action 付き rich は非モーダル `role="dialog"`、`persistent?: boolean` を追加** | a11y ロールのみ | 未決(ユーザー判断待ち) |
-| B12 | #259 | rich tooltip の既定配置 | **rich は `bottom` 既定(plain は `top` のまま)** | 既定値変更(VRT) | 未決(ユーザー判断待ち) |
-| B13 | #281 | ButtonGroup の選択モデル | **`selectionMode` + `value` / `defaultValue` / `onChange(event, value)` + `selectionRequired`** | なし | 未決(ユーザー判断待ち) |
-| B14 | 横断(SG 軽微欄) | SegmentedButton の存廃 | **維持 + JSDoc / Storybook で ButtonGroup を案内(`@deprecated` は付けない)** | なし | 未決(ユーザー判断待ち) |
-| B15 | #213 | アイコンのみセグメント | **option に `ariaLabel`、アイコンは選択時も残す(check + icon)** | なし(見た目は新ストーリーのみ) | 未決(ユーザー判断待ち) |
-| B16 | #184 #185 #189 | input chip の選択・avatar・ChipSet | **filter と同じ選択 API / `avatar` prop / `ChipSet` 新設** | なし | 未決(ユーザー判断待ち) |
-| B17 | #225 | List の選択を支援技術へ | **`List selectionMode` + `value` → `listbox` / `option` + `aria-selected`** | なし(追加) | 未決(ユーザー判断待ち) |
-| B18 | #224 | Expressive リストの形・segmented・既定の見た目 | **Expressive の形を既定、`variant="standard" \| "segmented"`** | 見た目(VRT) | 未決(ユーザー判断待ち) |
-| B19 | #293 | SwipeToDismiss のライフサイクル | **`onDismiss` は退場後、`dismissed` の controlled / uncontrolled で reset / プログラム dismiss** | タイミングのみ | 未決(ユーザー判断待ち) |
-| B20 | #294 | 方向別の背景 | **`startToEndBackground` / `endToStartBackground` + `data-*` / 進捗 CSS 変数** | なし | 未決(ユーザー判断待ち) |
-| B21 | #295 | List 内での list 構造 | **context で自動: List 内の SwipeToDismiss が `<li>`、中の ListItem は `<div>`** | DOM のみ | 未決(ユーザー判断待ち) |
-| B22 | #174 | ナビ項目の `selectedIcon` | **`selectedIcon?: ReactNode`(Switch / IconButton と同名)** | なし | 未決(ユーザー判断待ち) |
-| B23 | #180 | モーダル NavigationRail | **`modal` + `hideOnCollapse` + `onClose`(useModal ベース)** | なし | 未決(ユーザー判断待ち) |
-| B24 | #203 #208 | FabMenu の名前固定とサイズ | **`closeAriaLabel` を deprecated(無視)/ `size` + `tonal` を追加** | 実質なし(prop は残す) | 未決(ユーザー判断待ち) |
-| B25 | #233 #243 | AppBar / Toolbar のスクロール連動 | **状態 prop(`scrolled` 等)+ 便利 prop `scrollBehavior` / `scrollTarget` の二層** | なし | 未決(ユーザー判断待ち) |
-| B26 | #238 | AppBar の flexible・subtitle・配置 | **`medium` / `large` を flexible に置換、`subtitle`、`titleAlignment`、`variant="center"` は deprecated エイリアス** | あり(見た目・型) | 未決(ユーザー判断待ち) |
-| B27 | 横断(AB / TL 軽微欄) | BottomAppBar の扱い | **JSDoc で `Toolbar variant="docked"` を案内、deprecated 化は v2 で再判断** | なし | 未決(ユーザー判断待ち) |
-| B28 | #265 | Badge のラベルと非表示時の扱い | **visually-hidden の既定英語ラベル + `label` で上書き、`role="status"` 廃止、非表示時は AT からも隠す** | a11y のみ | 未決(ユーザー判断待ち) |
-| B29 | #267 | Divider を既定で装飾扱いに | **既定 decorative(AT から隠す)+ `decorative={false}` で意味付き区切り** | a11y のみ | 未決(ユーザー判断待ち) |
+| B1 | 横断(#265 #251 #161 ほか) | 組み込み文言の i18n | **prop ごとのラベル(`*Label` / `get*Label`)を正とし、`LocaleProvider` は後から既定値供給として追加** | なし | 決定(2026-09-30・推奨どおり) |
+| B2 | 横断(button B5・nav 監査) | 既定の motion scheme | **expressive を既定、`ThemeProvider motionScheme="standard"` で切替** | 挙動のみ(bounce 量) | 決定(2026-09-30・推奨どおり) |
+| B3 | 横断(PI5・CR4 ほか) | reduced motion の方針 | **状態遷移は即時/フェードのみ、不定進捗だけ最小の動きで継続** | 挙動のみ | 決定(2026-09-30・推奨どおり) |
+| B4 | 横断(#259 #54) | ポップアップ位置決めの共通化 | **内製の `src/internal` ヘルパー(flip + clamp)+ Popover API の top layer** | なし(内部) | 決定(2026-09-30・推奨どおり) |
+| B5 | #217 #301 #247 | 操作可能な面(リンク化・入れ子の操作要素・Carousel 項目) | **`href` → `<a>` / `onClick` → ボタン。入れ子は ListItem = 内部で主アクションと `trailing` を兄弟に、Card = `CardActionArea` / `CardActions` を追加** | ListItem の DOM のみ | 決定(2026-09-30・推奨どおり) |
+| B6 | #161 #168 | ピッカーの OK / Cancel と dialog 構成 | **組み込みアクション行 + `onAccept`(下書き/確定モデル)+ `open` 指定でモーダル表示** | TimePicker `mode` のみ(下記) | 決定(2026-09-30・推奨どおり) |
+| B7 | 横断 | ピッカー確定と Snackbar host の共通パターン | **仕組みは共通化しない。語彙(`reason`)と内部プリミティブだけ共有** | なし | 決定(2026-09-30・推奨どおり) |
+| B8 | #169 | TimePicker 24 時間制 | **`ampm?: boolean`(MUI X)、既定は `locale`(既定 `'en-US'`)から導出** | なし | 決定(2026-09-30・推奨どおり) |
+| B9 | #251 | Snackbar host(キュー・自動消去) | **`SnackbarProvider` + `useSnackbar().show()`(Promise を返す)、`Snackbar` は見た目部品のまま** | なし | 決定(2026-09-30・推奨どおり) |
+| B10 | #253 | 長い action を別行に | **`actionOnNewLine?: boolean`(自動判定なし)** | なし | 決定(2026-09-30・推奨どおり) |
+| B11 | #257 #261 | rich tooltip の操作性と persistent | **action 付き rich は非モーダル `role="dialog"`、`persistent?: boolean` を追加** | a11y ロールのみ | 決定(2026-09-30・推奨どおり) |
+| B12 | #259 | rich tooltip の既定配置 | **rich は `bottom` 既定(plain は `top` のまま)** | 既定値変更(VRT) | 決定(2026-09-30・推奨どおり) |
+| B13 | #281 | ButtonGroup の選択モデル | **`selectionMode` + `value` / `defaultValue` / `onChange(event, value)` + `selectionRequired`** | なし | 決定(2026-09-30・推奨どおり) |
+| B14 | 横断(SG 軽微欄) | SegmentedButton の存廃 | **維持 + JSDoc / Storybook で ButtonGroup を案内(`@deprecated` は付けない)** | なし | 決定(2026-09-30・推奨どおり) |
+| B15 | #213 | アイコンのみセグメント | **option に `ariaLabel`、アイコンは選択時も残す(check + icon)** | なし(見た目は新ストーリーのみ) | 決定(2026-09-30・推奨どおり) |
+| B16 | #184 #185 #189 | input chip の選択・avatar・ChipSet | **filter と同じ選択 API / `avatar` prop / `ChipSet` 新設** | なし | 決定(2026-09-30・推奨どおり) |
+| B17 | #225 | List の選択を支援技術へ | **`List selectionMode` + `value` → `listbox` / `option` + `aria-selected`** | なし(追加) | 決定(2026-09-30・推奨どおり) |
+| B18 | #224 | Expressive リストの形・segmented・既定の見た目 | **Expressive の形を既定、`variant="standard" \| "segmented"`** | 見た目(VRT) | 決定(2026-09-30・推奨どおり) |
+| B19 | #293 | SwipeToDismiss のライフサイクル | **`onDismiss` は退場後、`dismissed` の controlled / uncontrolled で reset / プログラム dismiss** | タイミングのみ | 決定(2026-09-30・推奨どおり) |
+| B20 | #294 | 方向別の背景 | **`startToEndBackground` / `endToStartBackground` + `data-*` / 進捗 CSS 変数** | なし | 決定(2026-09-30・推奨どおり) |
+| B21 | #295 | List 内での list 構造 | **context で自動: List 内の SwipeToDismiss が `<li>`、中の ListItem は `<div>`** | DOM のみ | 決定(2026-09-30・推奨どおり) |
+| B22 | #174 | ナビ項目の `selectedIcon` | **`selectedIcon?: ReactNode`(Switch / IconButton と同名)** | なし | 決定(2026-09-30・推奨どおり) |
+| B23 | #180 | モーダル NavigationRail | **`modal` + `hideOnCollapse` + `onClose`(useModal ベース)** | なし | 決定(2026-09-30・推奨どおり) |
+| B24 | #203 #208 | FabMenu の名前固定とサイズ | **`closeAriaLabel` を deprecated(無視)/ `size` + `tonal` を追加** | 実質なし(prop は残す) | 決定(2026-09-30・推奨どおり) |
+| B25 | #233 #243 | AppBar / Toolbar のスクロール連動 | **状態 prop(`scrolled` 等)+ 便利 prop `scrollBehavior` / `scrollTarget` の二層** | なし | 決定(2026-09-30・推奨どおり) |
+| B26 | #238 | AppBar の flexible・subtitle・配置 | **`medium` / `large` を flexible に置換、`subtitle`、`titleAlignment`、`variant="center"` は deprecated エイリアス** | あり(見た目・型) | 決定(2026-09-30・推奨どおり) |
+| B27 | 横断(AB / TL 軽微欄) | BottomAppBar の扱い | **JSDoc で `Toolbar variant="docked"` を案内、deprecated 化は v2 で再判断** | なし | 決定(2026-09-30・推奨どおり) |
+| B28 | #265 | Badge のラベルと非表示時の扱い | **visually-hidden の既定英語ラベル + `label` で上書き、`role="status"` 廃止、非表示時は AT からも隠す** | a11y のみ | 決定(2026-09-30・推奨どおり) |
+| B29 | #267 | Divider を既定で装飾扱いに | **既定 decorative(AT から隠す)+ `decorative={false}` で意味付き区切り** | a11y のみ | 決定(2026-09-30・推奨どおり) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -68,7 +74,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 ### B1: 組み込み文言の i18n
 
 - **Issue**: 横断(#265 Badge、#251 / SN 軽微欄 "Dismiss"、#161 DatePicker、TextField の `getCounterLabel`)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: 英語が直書きの文言が散在する — Snackbar "Dismiss"、Dialog "Close"、DatePickerField "Open calendar"、
   DatePicker "Previous month" / "Next month" / "Select date"、TimePicker "Hour" / "Minute" / "AM or PM" / "Switch to dial"、
   Chip `Remove ${label}`、Badge `${n} notifications`。一方で一部は既に prop 化済み(SideSheet `closeLabel` / `backLabel`、
@@ -106,7 +112,7 @@ TimePicker / Chip / Badge ほか。
 ### B2: 既定の motion scheme(standard / expressive)
 
 - **Issue**: 横断(button.md B5、navigation-bar 監査「MotionScheme 既定は横断判断」、toolbar / list 監査の FastSpatial 指定)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: Compose は `MotionScheme.standard()` / `.expressive()` を持ち、`MaterialTheme` の既定は standard、
   `MaterialExpressiveTheme` の既定は expressive。差があるのは spatial ばね(Fast 0.9/1400 ↔ 0.6/800 など)だけで、
   effects ばねは同一。本ライブラリは現状コンポーネントごとに cubic-bezier を直書き(トグル系の `0.34,1.4,0.5,1` 等)。
@@ -136,7 +142,7 @@ Toolbar / List ほか)。
 ### B3: reduced motion の方針
 
 - **Issue**: 横断(progress 監査 PI5 軽微欄、carousel CR4、各監査の「reduced motion」行)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: 現状は `transition: none` が多数派だが統一方針がない。不定進捗は linear / wavy / LoadingIndicator が静止フレーム、
   flat circular だけ 6s で回り続ける。静止した不定進捗は「止まった determinate」に見える懸念がある。m3 / Compose とも規定なし
   (Compose は `InfiniteAnimationPolicy` のみ)。
@@ -165,7 +171,7 @@ Toolbar / List ほか)。
 ### B4: ポップアップ位置決めの共通化
 
 - **Issue**: #259(TT4)、Menu の flip(#54)、DatePickerField(docked)、SearchBar のビュー
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: Menu は flip を `Menu.tsx` 内にインライン実装、Tooltip は CSS だけ(flip も clamp もなく、祖先の `overflow` で切れる)。
   Compose はどのポップアップも「anchor 基準 + flip + window 内に clamp、clipping なし」。
 
@@ -188,7 +194,7 @@ Toolbar / List ほか)。
 ### B5: 操作可能な面 — Card / ListItem / CarouselItem の起動要素と入れ子の操作要素
 
 - **Issue**: #217(CD2 — リンクカード)、#301(Card / ListItem の入れ子操作要素 — axe `nested-interactive`)、#247(CR5 — Carousel 項目)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: クリック可能な Card は `<div role="button">` 固定で `href` がない(`role="link"` を渡しても Space で起動)。
   さらに Card / ListItem は `role="button"` の容器の中にボタンや Switch を入れられる構造で、axe `nested-interactive`
   (入れ子の操作要素が支援技術に公開されない恐れ)。キー / クリックの横取りは PR #298(#216 / #226)で修正済みで、
@@ -254,7 +260,7 @@ Carousel 項目はストーリー追加でベースライン追加。対象: Car
 ### B6: ピッカーの確定 / キャンセルと dialog 構成
 
 - **Issue**: #161(DP14)、#168(TP8)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: DatePicker / TimePicker とも OK / Cancel がなく、JSDoc は「Dialog で包め」とだけ言う。m3 は全 variant の anatomy に
   テキストボタンを含め、「OK で確定・Cancel と外側で破棄」「Enter で確定して閉じる」。Compose は
   `DatePickerDialog(confirmButton, dismissButton)` / `TimePickerDialog(title, …)`。TimePicker は見出し
@@ -306,7 +312,7 @@ VRT: 新ストーリー(アクション付き・モーダル)でベースライ�
 ### B7: ピッカー確定と Snackbar host は共通パターンにするか
 
 - **Issue**: 横断(#161 / #168 と #251 の関係)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: どちらも「ユーザーの応答を待つ一時 UI」に見えるが、ピッカーは値を編集する宣言的コンポーネント、
   Snackbar はアプリ全体で 1 件ずつ出す通知キュー。
 
@@ -328,7 +334,7 @@ VRT: 新ストーリー(アクション付き・モーダル)でベースライ�
 ### B8: TimePicker の 24 時間制
 
 - **Issue**: #169(TP9)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: 24 時間制がなく、AM/PM が常に出る。m3 は 24h で内外 2 リングの文字盤・AM/PM なし。Compose は `is24Hour`
   (既定はシステム設定)。
 
@@ -355,7 +361,7 @@ SSR とハイドレーションで食い違う)か。
 ### B9: Snackbar host(キュー・自動消去・配置・入退場)
 
 - **Issue**: #251(SN1)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: `Snackbar` は見た目だけで、キュー・duration・配置・モーション・フォーカス復帰は利用者任せ。live region が内容と
   同時に挿入されるので読まれない支援技術がある。Compose は `SnackbarHost` + `SnackbarHostState.showSnackbar()`(1 件ずつ、
   Short 4s / Long 10s / Indefinite)。
@@ -385,7 +391,7 @@ SSR とハイドレーションで食い違う)か。
 ### B10: 長い action を別行に置く
 
 - **Issue**: #253(SN5)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: 常に 1 行 flex で、狭い幅では message が潰れる。m3 は「長い action は 3 行目に」、Compose は
   `actionOnNewLine: Boolean = false`(自動判定なし)。
 
@@ -408,7 +414,7 @@ SSR とハイドレーションで食い違う)か。
 ### B11: rich tooltip の操作性(キーボード到達)と persistent
 
 - **Issue**: #257(TT1)、#261(TT6)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: trigger の blur で必ず閉じるため、Tab で rich tooltip の action に到達できない(フォーカスが `<body>` へ落ちる)。
   操作要素を含むのに `role="tooltip"` のまま(APG 非許容)。クリックで開き外側操作まで残る persistent 型もない。
   m3「Tooltip role, or similar」「persistent はクリック/タップでのみ表示、hover では出ない」、Compose `isPersistent`。
@@ -441,7 +447,7 @@ Persistent ストーリーを追加。対象: Tooltip(TT2 #258 / TT7 #262 と同
 ### B12: rich tooltip の既定配置
 
 - **Issue**: #259(API 判断部分)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: m3 は rich を「親の右下」(desktop は中央下)、Compose の現行 provider は両 variant とも `Above` 既定、
   実装は両方 `top` 既定。スペック優先順位では rich = 下。
 
@@ -464,7 +470,7 @@ Persistent ストーリーを追加。対象: Tooltip(TT2 #258 / TT7 #262 と同
 ### B13: ButtonGroup の選択モデル
 
 - **Issue**: #281(BGR7)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: m3 Expressive は connected ButtonGroup を「単一 / 複数 / 選択必須」の選択に使い、baseline の segmented button を
   置き換えるとしている。現状 ButtonGroup は選択を持たず、各 `Button toggle` を手で配線する。`role="group"` は `{...rest}` の
   後にあり上書き不可。
@@ -494,7 +500,7 @@ Persistent ストーリーを追加。対象: Tooltip(TT2 #258 / TT7 #262 と同
 ### B14: SegmentedButton の存廃(Expressive では「推奨されない」)
 
 - **Issue**: 横断(segmentedbutton 監査の軽微欄、buttongroup 監査 BGR7)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: m3 は「Expressive では segmented button は推奨されない、connected ButtonGroup を使う」と明記。Compose は
   `SegmentedButton` を非推奨にしておらず(Expressive トークンはないが motion scheme には追従)、コンポーネントの存在は
   Compose が決める(CLAUDE.md)。
@@ -514,7 +520,7 @@ Compose が決める方針で Compose は存続しているが、m3 の推奨先
 ### B15: SegmentedButton のアイコンのみセグメント
 
 - **Issue**: #213(SG4)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: `{ value, icon }`(label なし)のセグメントはアクセシブルネームを渡せず axe `button-name`。さらに選択時に
   check がアイコンを置き換え、どれも同じ見た目になる。m3 は「icon と label の両方があるときだけ icon を check に置換」、
   Compose は check を icon スロット、表示アイコンを label スロットに置くのでアイコンは消えない。
@@ -544,7 +550,7 @@ Compose が決める方針で Compose は存続しているが、m3 の推奨先
 ### B16: input chip の選択状態・avatar・ChipSet
 
 - **Issue**: #184(CH4)、#185(CH5)、#189(CH10)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: `variant="input"` に `selected` を渡しても黙って無視される(m3 / Compose `InputChip(selected)` は選択状態を持つ)。
   input chip の 24dp 円形 avatar スロットがない(18dp の `icon` のみ)。chip 間を矢印キーで移動する chip set がない
   (m3 キー表「Arrows: chip 間を移動」、material-web `md-chip-set`)。
@@ -580,7 +586,7 @@ m3 ラベル表の `gridcell` は remove ボタン付き input chip で 2 つの
 ### B17: List の選択を支援技術へ公開
 
 - **Issue**: #225(LS4)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: `selected` は見た目(`data-selected`)だけで `aria-selected` 等がない。`role` prop は内側の `<div>`、`aria-*` は `<li>` に
   落ちるため、利用者が自力で `role="option" aria-selected` を足すと axe `aria-allowed-attr`。m3 は web の単一 / 複数選択リストを
   container `listbox` + item `option`(selected)と明記。Compose は項目全体に RadioButton / Checkbox ロール。
@@ -609,7 +615,7 @@ Switch 等)は置けない旨を JSDoc に明記(それらは選択モードで�
 ### B18: Expressive リストの形・segmented・既定の見た目
 
 - **Issue**: #224(LS3)+ 横断「baseline と Expressive のどちらを既定にするか」
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: m3 は List を Expressive(推奨)と baseline(「Not recommended」)に分ける。実装は baseline のみ(角丸 0 固定、
   segmented なし)。Compose の既定 `ListItem` は Expressive の形(4 / 12 / 16dp のモーフ)、`SegmentedListItem` で segmented
   (surface container・2dp gap・外側 16dp)。
@@ -635,7 +641,7 @@ B2 の FastSpatial、reduced motion は B3(即時)。
 ### B19: SwipeToDismiss のライフサイクル(通知タイミング・reset・プログラム dismiss)
 
 - **Issue**: #293(SW4 + SW5)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: `onDismiss` がリリース直後(退場アニメ前)に発火し、ストーリーでは行が即 DOM から消える。dismiss 後に戻す手段・
   プログラムで dismiss する手段がなく、ジェスチャも有効なまま(再度 `onDismiss` が発火し得る)。Compose は settle 後に
   `onDismiss`、`reset()` / `dismiss(direction)`、dismiss 後はジェスチャ無効。m3 は「スワイプには代替操作を」。
@@ -668,7 +674,7 @@ VRT: 既存なし、代替ボタンのストーリーを追加。対象: SwipeTo
 ### B20: スワイプ方向ごとの背景
 
 - **Issue**: #294(SW6)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: `background` は静的な ReactNode で方向も進捗も知らない。Compose は state(`dismissDirection` / `targetValue` /
   `progress`)で左右別の背景を描くよう KDoc で勧める。
 
@@ -692,7 +698,7 @@ VRT: 既存なし、代替ボタンのストーリーを追加。対象: SwipeTo
 ### B21: List の中で list 構造を壊さない
 
 - **Issue**: #295(SW7)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: 推奨の `<List><SwipeToDismiss><ListItem/></SwipeToDismiss></List>` が `ul > div > div > li` になり、実ブラウザ axe で
   `list` / `listitem` 違反。
 
@@ -717,7 +723,7 @@ VRT: 既存なし、代替ボタンのストーリーを追加。対象: SwipeTo
 ### B22: ナビ項目の選択時アイコン(`selectedIcon`)
 
 - **Issue**: #174(NB6、NavigationBar / NavigationRail 共通)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: m3 は選択中を塗り(filled)アイコン、その他を outlined にするよう求める。項目は `icon` 1 つだけで、親の値から全項目を
   描き直さないと実現できない。
 
@@ -739,7 +745,7 @@ NavigationRail/*)。対象: NavigationBar / NavigationRail。
 ### B23: モーダルの展開 NavigationRail
 
 - **Issue**: #180(NR6)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: rail は `collapsed` / `expanded` のみで、expanded は常にコンテンツの横。m3 は Expanded layout に Modal、
   Expanded behavior に「Hide when collapsed」を持つ。Compose `ModalWideNavigationRail(hideOnCollapse)`(スクリム 0.32、
   Escape / スクリムで閉じる)。
@@ -763,7 +769,7 @@ NavigationRail/*)。対象: NavigationBar / NavigationRail。
 ### B24: FabMenu — トグルの名前を固定、medium / large 対応
 
 - **Issue**: #203(FM4)、#208(FM9)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: 開くとトグルの `aria-label` が `closeAriaLabel`("Close menu")に入れ替わる(`aria-expanded` と二重)。APG / m3 /
   Compose は名前固定 + 状態を別に伝える。トグルは 56dp・tonal 配色固定で、m3 / Compose の medium(80)/ large(96)がない。
 
@@ -792,7 +798,7 @@ NavigationRail/*)。対象: NavigationBar / NavigationRail。
 ### B25: AppBar / Toolbar のスクロール連動
 
 - **Issue**: #233(AB1)、#243(TL5)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: どちらもスクロールを観測しない。m3: AppBar はスクロールで container を surface-container に、隠す / 再表示、
   medium / large は small へ畳む。Toolbar は画面外へ退避、floating は 1 つの主アクションへ畳む。Compose は
   `pinned` / `enterAlways` / `exitUntilCollapsed` / `exitAlways` の scroll behavior。
@@ -827,7 +833,7 @@ A4 の controlled / uncontrolled とも合うため。
 ### B26: AppBar の Expressive 構成(flexible・subtitle・配置)
 
 - **Issue**: #238(AB6)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: variant は baseline の `small` / `center` / `medium` / `large` のみ、subtitle なし。m3 は baseline medium / large を
   「Not recommended — flexible を使う」とし、配置(leading / centered)は全 variant の構成、center-aligned は「small に統合」。
   Compose は `MediumFlexibleTopAppBar` / `LargeFlexibleTopAppBar` と `titleHorizontalAlignment`。
@@ -859,7 +865,7 @@ subtitle / centered ストーリー追加(`update-vrt-baselines`)。対象: TopA
 ### B27: BottomAppBar の扱い
 
 - **Issue**: 横断(appbar / toolbar 監査の軽微欄)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: m3 は「Bottom app bar(not recommended)。docked toolbar を使う」。Compose の `BottomAppBar` は非推奨ではない。
 
 **選択肢**
@@ -879,7 +885,7 @@ subtitle / centered ストーリー追加(`update-vrt-baselines`)。対象: TopA
 ### B28: Badge のアクセシブルラベルと非表示時の扱い
 
 - **Issue**: #265(BG1 + BG2)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: dot badge は `role="status"` で名前なし、数値 badge は英語直書き `"{n} notifications"` の `aria-label`(上書き不可)。
   `role="status"` で全 badge が live region になるが、m3 / Compose とも求めていない。`visible={false}` でも AT に読まれる。
   m3「数えない badge は New notification と読む」、Compose サンプル「8 new notifications」。
@@ -907,7 +913,7 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 ### B29: Divider を既定で装飾扱いに
 
 - **Issue**: #267(DV1)
-- **状態**: 未決(ユーザー判断待ち)
+- **状態**: 決定(2026-09-30・推奨どおり)
 - **背景**: 全 Divider が `<hr role="separator" aria-orientation>` で毎回「区切り」と読まれる。m3「Divider は装飾要素」、
   Compose は semantics なし。`<hr>` の `role="separator"` は冗長。
 
