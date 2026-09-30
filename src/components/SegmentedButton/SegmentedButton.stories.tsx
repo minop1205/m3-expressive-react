@@ -5,7 +5,18 @@ import { SegmentedButton } from './SegmentedButton'
 const meta = {
   title: 'Components/SegmentedButton',
   component: SegmentedButton,
-  parameters: { layout: 'centered' },
+  parameters: {
+    layout: 'centered',
+    docs: {
+      description: {
+        component:
+          'In Material 3 Expressive, connected button groups replace the segmented button. ' +
+          'Prefer `<ButtonGroup variant="connected" selectionMode="single">` (or `"multiple"`) ' +
+          'with `Button` / `IconButton` children that carry a `value` — see ' +
+          'Components/ButtonGroup → SingleSelect / MultiSelect. SegmentedButton remains supported.',
+      },
+    },
+  },
   args: {
     options: [
       { value: 'd', label: 'Day' },

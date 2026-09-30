@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { Button } from '../Button'
 import { IconButton } from '../IconButton'
@@ -113,6 +114,54 @@ export const ConnectedSizes: Story = {
         </ButtonGroup>
       ))}
     </div>
+  ),
+}
+
+/**
+ * Single select (`selectionMode="single"`): a radiogroup with one Tab stop;
+ * arrow keys move focus and selection. With `selectionRequired` the selected
+ * item cannot be cleared. The Expressive replacement for the baseline
+ * segmented button.
+ */
+export const SingleSelect: Story = {
+  render: () => {
+    const [view, setView] = useState<string | null>('week')
+    return (
+      <ButtonGroup
+        variant="connected"
+        selectionMode="single"
+        selectionRequired
+        value={view}
+        onChange={(_, next) => setView(next)}
+        aria-label="Calendar view"
+      >
+        <Button variant="tonal" value="day">
+          Day
+        </Button>
+        <Button variant="tonal" value="week">
+          Week
+        </Button>
+        <Button variant="tonal" value="month">
+          Month
+        </Button>
+      </ButtonGroup>
+    )
+  },
+}
+
+/** Multi select (`selectionMode="multiple"`): toggle buttons with `aria-pressed`. */
+export const MultiSelect: Story = {
+  render: () => (
+    <ButtonGroup
+      variant="connected"
+      selectionMode="multiple"
+      defaultValue={['bold', 'underline']}
+      aria-label="Text style"
+    >
+      <IconButton variant="tonal" value="bold" icon={<span aria-hidden="true">B</span>} aria-label="Bold" />
+      <IconButton variant="tonal" value="italic" icon={<span aria-hidden="true">I</span>} aria-label="Italic" />
+      <IconButton variant="tonal" value="underline" icon={<span aria-hidden="true">U</span>} aria-label="Underline" />
+    </ButtonGroup>
   ),
 }
 

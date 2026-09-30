@@ -49,6 +49,12 @@ export interface SegmentedButtonProps
  * with SecondaryContainer / OnSecondaryContainer and show an 18dp check;
  * unselected are transparent with OnSurface content — per Compose
  * OutlinedSegmentedButtonTokens. Segments are toggle buttons (aria-pressed).
+ *
+ * In Material 3 Expressive the segmented button is no longer recommended:
+ * m3.material.io says connected button groups replace it. Prefer
+ * `<ButtonGroup variant="connected" selectionMode="single" | "multiple">` with
+ * `Button` / `IconButton` children that carry a `value`. SegmentedButton stays
+ * available (Compose still ships it) and is not deprecated.
  */
 export const SegmentedButton = forwardRef<HTMLDivElement, SegmentedButtonProps>(
   function SegmentedButton(
