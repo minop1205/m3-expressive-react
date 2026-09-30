@@ -43,6 +43,16 @@ describe('Dialog', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
+  it('overrides the full-screen close button label with closeLabel', () => {
+    render(
+      <Dialog open fullScreen title="Settings" closeLabel="閉じる">
+        Body
+      </Dialog>,
+    )
+    expect(screen.getByRole('button', { name: '閉じる' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Close' })).not.toBeInTheDocument()
+  })
+
   it('forwards a ref', () => {
     const ref = createRef<HTMLDivElement>()
     render(<Dialog ref={ref} open title="T">x</Dialog>)
