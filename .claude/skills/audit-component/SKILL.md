@@ -40,6 +40,8 @@ every token set (use `page.evaluate` clicks ONLY — `page.locator().click()` ha
 3. Click the `expand_all` control inside the first `token-viewer` (find by
    `textContent.trim() === 'expand_all'`, click its closest button) → wait 800ms
 4. Extract `token-viewer` `innerText`; strip the header chrome
+   (menu item `innerText` of the CURRENTLY selected set is prefixed with `check\n` — strip it
+   before matching set names, or the active set is silently skipped)
 
 Values render as resolved baseline-light hexes — map them back to color roles
 (#6750A4=primary, #49454F=on-surface-variant, #CAC4D0=outline-variant, #1D1B20=on-surface,
@@ -69,6 +71,9 @@ Spawn an agent to fetch raw `.kt` from
 - Keyboard: expected keys from the WAI-ARIA APG pattern for the widget class
   (menu button, dialog, radio group, slider…) + Compose semantics (Role, focus behavior)
 - Check the implementation actually handles them (read the handlers; run existing tests)
+- Layout-derived values (flex widths, indicator widths vs. label width) can't be read from CSS —
+  start Storybook (`npx storybook dev -p 6007 --ci --no-open`, background), measure with
+  `getBoundingClientRect` via Playwright, then `pkill -f "storybook dev -p 6007"`
 - Focus management: initial focus, trap, restore; ARIA attributes and roles
 - State layers hover 0.08 / focus 0.10 / pressed 0.10 / dragged 0.16; Ripple/FocusRing
   usage; 48dp touch targets; `prefers-reduced-motion` for JS-driven animation
