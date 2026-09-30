@@ -167,8 +167,9 @@
   height: 18px;
   flex-shrink: 0;
   fill: currentColor;
-  transition: transform var(--md-sys-motion-duration-short4)
-    var(--md-sys-motion-easing-standard);
+  /* Menu-button arrow rotation: a small spatial move → FastSpatial. */
+  transition: transform var(--md-sys-motion-spring-fast-spatial-duration)
+    var(--md-sys-motion-spring-fast-spatial-easing);
 }
 
 .menuButton[data-expanded] .menuButtonIcon {
@@ -189,8 +190,9 @@
   height: 336px;
   overflow-y: auto;
   overscroll-behavior: contain;
-  animation: md-date-selection-enter var(--md-sys-motion-duration-short4)
-    var(--md-sys-motion-easing-standard);
+  /* Compose YearPicker reveal: expand + fade on DefaultEffects. */
+  animation: md-date-selection-enter var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
 }
 
 .yearGrid {
@@ -478,10 +480,11 @@
   white-space: nowrap;
 }
 
-/* Calendar / input switch: a short fade (Compose slides + fades). */
+/* Calendar / input switch: a fade-in on DefaultEffects (Compose also slides on
+   DefaultSpatial; the fade alone reads cleaner at web layout sizes). */
 .content[data-animate] {
-  animation: md-date-content-enter var(--md-sys-motion-duration-short4)
-    var(--md-sys-motion-easing-standard);
+  animation: md-date-content-enter var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
 }
 
 @keyframes md-date-content-enter {

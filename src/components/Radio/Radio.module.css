@@ -2,7 +2,8 @@
  * MD3 Radio Button. Icon 20dp, state layer 40dp, touch target 48dp.
  * Spec: docs/specs/radio-button.md (adjudicated from m3.material.io /
  * Compose androidx-main / material-web). Motion follows Compose's
- * FastSpatial standard spring (~150ms, both directions).
+ * RadioButton: dot on FastSpatial, ring color on DefaultEffects
+ * (motion-scheme spring tokens).
  */
 
 /* =========================================================================== */
@@ -62,11 +63,11 @@
   height: 20px;
 }
 
-/* Outer ring — color ≈ Compose DefaultEffects spring (no overshoot), in
-   sync with the dot's 150ms scale */
+/* Outer ring — color on the DefaultEffects spring (no overshoot) */
 .outer {
   stroke: var(--md-sys-color-on-surface-variant);
-  transition: stroke 150ms var(--md-sys-motion-easing-standard);
+  transition: stroke var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
 }
 
 /* :not(.disabled) keeps this below `.disabled .outer` so a disabled+checked
@@ -76,16 +77,22 @@
 }
 
 /* Inner dot — scales 0 ↔ 1 in both directions (Compose animates the dot
-   radius on uncheck too; damping 0.9 ⇒ no visible overshoot) */
+   radius on FastSpatial, also on uncheck). Growing uses FastSpatial (may
+   overshoot in the expressive scheme); shrinking uses the critically damped
+   DefaultEffects, since an overshoot past scale(0) would render a mirrored
+   dot (a Compose radius just stops at 0). */
 .inner {
   fill: var(--md-sys-color-primary);
   transform: scale(0);
   transform-origin: center;
-  transition: transform 150ms var(--md-sys-motion-easing-standard);
+  transition: transform var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
 }
 
 .radio:has(.input:checked) .inner {
   transform: scale(1);
+  transition: transform var(--md-sys-motion-spring-fast-spatial-duration)
+    var(--md-sys-motion-spring-fast-spatial-easing);
 }
 
 /* =========================================================================== */
@@ -238,6 +245,7 @@
 @media (prefers-reduced-motion: reduce) {
   .outer,
   .inner,
+  .radio:has(.input:checked) .inner,
   .stateLayer,
   .stateLayer::after {
     transition: none;

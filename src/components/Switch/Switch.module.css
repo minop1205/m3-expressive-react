@@ -2,9 +2,10 @@
  * MD3 Switch. Track 52×32dp, handle slides via logical margins.
  * Handle sizes: 16dp (unselected), 24dp (selected / with-icon), 28dp (pressed).
  * Structure follows material-web (material-components/material-web); motion
- * follows Compose's FastSpatial standard spring (spring(0.9, 1400) ≈ 150ms,
- * near-critically damped — NOT a bouncy bezier, which is Expressive-only)
- * with changes snapping while pressed. Spec: docs/specs/switch.md.
+ * follows Compose Switch: thumb offset and size on the FastSpatial spring
+ * (--md-sys-motion-spring-fast-spatial-*: expressive 0.6 / 800 by default,
+ * standard 0.9 / 1400 under ThemeProvider motionScheme="standard"), with
+ * changes snapping while pressed. Spec: docs/specs/switch.md.
  */
 
 /* =========================================================================== */
@@ -107,9 +108,9 @@
   place-content: center;
   place-items: center;
   position: relative;
-  /* Slide ≈ Compose FastSpatial spring(0.9, 1400): ~150ms, no visible
-     overshoot (same mapping as Radio's dot) */
-  transition: margin 150ms var(--md-sys-motion-easing-standard);
+  /* Slide: Compose FastSpatial (motion-scheme spring tokens). */
+  transition: margin var(--md-sys-motion-spring-fast-spatial-duration)
+    var(--md-sys-motion-spring-fast-spatial-easing);
 }
 
 /* margin = track-width - track-height = 52 - 32 = 20px */
@@ -139,12 +140,10 @@
   height: 16px;
   width: 16px;
   transform-origin: center;
-  /* Size shares the slide's FastSpatial spec (~150ms standard) */
+  /* Size shares the slide's FastSpatial spring */
   transition-property: height, width;
-  transition-duration: 150ms, 150ms;
-  transition-timing-function:
-    var(--md-sys-motion-easing-standard),
-    var(--md-sys-motion-easing-standard);
+  transition-duration: var(--md-sys-motion-spring-fast-spatial-duration);
+  transition-timing-function: var(--md-sys-motion-spring-fast-spatial-easing);
   z-index: 0;
   position: relative;
   display: flex;
@@ -324,7 +323,8 @@
   transition:
     fill 67ms linear,
     opacity 33ms linear,
-    transform 167ms var(--md-sys-motion-easing-standard);
+    transform var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing);
   opacity: 0;
 }
 

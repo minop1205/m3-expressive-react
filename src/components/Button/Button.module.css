@@ -51,12 +51,12 @@
   --md-ripple-color: var(--_state-layer-color);
   --md-focus-ring-color: var(--md-sys-color-secondary);
 
-  /* Press morph ≈ spec spring (damping 0.9 / stiffness 1400 → ~150ms with no
-     visible bounce; Compose regular buttons use the equally bounce-free
-     DefaultEffects). Toggle buttons override these vars below with the
-     springy FastSpatial-like curve. */
-  --_shape-morph-duration: var(--md-sys-motion-duration-short3);
-  --_shape-morph-easing: var(--md-sys-motion-easing-standard);
+  /* Press morph: Compose Button animates the pressed shape with
+     MotionSchemeKeyTokens.DefaultEffects ("intentional here to prevent any
+     bounce") — critically damped, identical in both motion schemes (B5, B2).
+     Toggle buttons override these vars below with FastSpatial (ToggleButton). */
+  --_shape-morph-duration: var(--md-sys-motion-spring-default-effects-duration);
+  --_shape-morph-easing: var(--md-sys-motion-spring-default-effects-easing);
   transition:
     box-shadow var(--md-sys-motion-duration-short3)
       var(--md-sys-motion-easing-standard),

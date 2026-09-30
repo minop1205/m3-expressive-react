@@ -4,8 +4,9 @@
  * widths exactly. Shape state (round / square / selected-swap / pressed) is
  * resolved in JS into a single data-shape-state attribute for clean precedence.
  * Press and selected morphs do not bounce (Compose shapeForInteraction uses
- * DefaultEffects 1.0/1600 "to prevent any bounce"; site 0.9/1400) → short3 +
- * standard easing, as Button's plain press morph (docs/audits/iconbutton.md IB6).
+ * DefaultEffects 1.0/1600 "to prevent any bounce"; site 0.9/1400) → the
+ * --md-sys-motion-spring-default-effects-* tokens, as Button's plain press
+ * morph (docs/audits/iconbutton.md IB6, #314).
  * Reduced motion: instant (Phase B B3).
  * Values: docs/md3-token-reference.md + MD3 icon-button specs.
  *
@@ -68,13 +69,16 @@
   --md-ripple-color: var(--_state-layer-color);
   --md-focus-ring-color: var(--md-sys-color-secondary);
 
+  /* Shape: Compose shapeForInteraction animates press / selected morphs with
+     MotionSchemeKeyTokens.DefaultEffects (bounce-free, scheme-independent).
+     Colors: FastEffects. Reduced motion: instant (rule at the end). */
   transition:
-    background-color var(--md-sys-motion-duration-short3)
-      var(--md-sys-motion-easing-standard),
-    color var(--md-sys-motion-duration-short3)
-      var(--md-sys-motion-easing-standard),
-    border-radius var(--md-sys-motion-duration-short3)
-      var(--md-sys-motion-easing-standard);
+    background-color var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing),
+    color var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing),
+    border-radius var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing);
 }
 
 /* Outline (outlined variant): drawn inside the container like Compose's

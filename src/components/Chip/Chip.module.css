@@ -305,8 +305,7 @@
  * Filter checkmark slot: collapses to 0 width (the 8dp gap stays, so the label
  * sits at 8 + 0 + 8 = 16) and expands to 18dp when selected — Compose
  * AnimatingChipContent: expand (FastSpatial) + fade in (SlowEffects), shrink
- * (DefaultEffects) + fade out (FastEffects).
- * TODO(#314): switch to the motion-scheme spring tokens (FastSpatial etc.).
+ * (DefaultEffects) + fade out (FastEffects) — the motion-scheme spring tokens.
  */
 .checkSlot {
   justify-content: flex-start;
@@ -314,16 +313,20 @@
   width: 0;
   opacity: 0;
   transition:
-    width var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard),
-    opacity var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+    width var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing),
+    opacity var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing);
 }
 
 .checkSlot[data-visible] {
   width: var(--_icon-size);
   opacity: 1;
   transition:
-    width var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-emphasized-decelerate),
-    opacity var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard);
+    width var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    opacity var(--md-sys-motion-spring-slow-effects-duration)
+      var(--md-sys-motion-spring-slow-effects-easing);
 }
 
 .checkSlot svg {

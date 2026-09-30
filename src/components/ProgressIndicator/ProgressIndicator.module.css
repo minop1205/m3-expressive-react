@@ -7,9 +7,11 @@
   --_active-indicator-color: var(--md-sys-color-primary);
   --_track-color: var(--md-sys-color-secondary-container);
   --_stop-indicator-color: var(--md-sys-color-primary);
-  /* Determinate progress transition. Compose recommends a spring
-     (ProgressIndicatorDefaults.ProgressAnimationSpec) for the flat
-     indicators. TODO(#314): switch to the motion-scheme spring tokens. */
+  /* Determinate progress transition. Compose recommends
+     ProgressIndicatorDefaults.ProgressAnimationSpec — a fixed, non-bouncy
+     spring (DampingRatioNoBouncy / StiffnessVeryLow) that is NOT a
+     MotionScheme key, so it does not switch with ThemeProvider motionScheme
+     and stays on the duration / easing tokens (#314). */
   --_duration: var(--md-sys-motion-duration-medium4);
   --_easing: var(--md-sys-motion-easing-standard);
 }

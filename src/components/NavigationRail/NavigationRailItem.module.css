@@ -101,11 +101,13 @@
      (16 + 24 / 2), mirrored under RTL. */
   transform: scaleX(0);
   transform-origin: 28px 50%;
-  /* TODO(#314): switch to the DefaultSpatial / DefaultEffects spring tokens
-     once --md-sys-motion-spring-* land (PR #319). */
+  /* Compose NavigationItem: indicator progress on DefaultSpatial, alpha on
+     DefaultEffects (motion-scheme spring tokens). */
   transition:
-    opacity 100ms var(--md-sys-motion-easing-standard),
-    transform 200ms var(--md-sys-motion-easing-emphasized-decelerate);
+    opacity var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing),
+    transform var(--md-sys-motion-spring-default-spatial-duration)
+      var(--md-sys-motion-spring-default-spatial-easing);
 }
 
 .item:dir(rtl) .shape::before {

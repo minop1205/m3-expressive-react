@@ -259,3 +259,21 @@
   --md-sys-motion-spring-slow-effects-easing: linear(0, 0.0059 1.21%, 0.022 2.42%, 0.0461 3.64%, 0.0844 5.15%, 0.1583 7.58%, 0.3635 13.64%, 0.4606 16.67%, 0.5567 20%, 0.64 23.33%, 0.7104 26.67%, 0.7689 30%, 0.8207 33.64%, 0.8619 37.27%, 0.9011 41.82%, 0.9313 46.67%, 0.9548 52.12%, 0.9718 58.18%, 0.9838 65.15%, 0.9916 73.33%, 1);
 }
 /* motion-scheme:generated:end */
+
+/* Reduced motion (ruling B3): under prefers-reduced-motion: reduce, spatial
+   motion (position / size / shape / scale) is instant, while effects springs
+   (color / opacity) keep their fade. Components that animate spatially with
+   the spring tokens therefore need no reduced-motion rule of their own; a
+   component rule is still required where a spatial property uses an effects
+   token (e.g. the bounce-free Button press morph, B5), for keyframe
+   animations, and for JS-driven motion (read
+   matchMedia('(prefers-reduced-motion: reduce)')). Same specificity as the
+   scheme rules above and later in source order, so it wins in both schemes. */
+@media (prefers-reduced-motion: reduce) {
+  :root,
+  [data-md-motion-scheme] {
+    --md-sys-motion-spring-fast-spatial-duration: 0ms;
+    --md-sys-motion-spring-default-spatial-duration: 0ms;
+    --md-sys-motion-spring-slow-spatial-duration: 0ms;
+  }
+}

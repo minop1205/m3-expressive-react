@@ -61,18 +61,31 @@
   color: var(--md-sys-color-on-surface);
   box-shadow: var(--md-sys-elevation-shadow-level2);
 
-  /* Open/close motion ≈ Compose DropdownMenu: scale 0.8→1 (FastSpatial,
-     standard scheme 0.9/1400 ≈ 150ms with no visible bounce) + fade
-     (FastEffects 1.0/3800 ≈ 80ms), growing from the anchored top corner.
-     Exit relies on `transition-behavior: allow-discrete`; browsers without
-     it (or @starting-style) fall back to instant show/hide. */
+  /* Open/close motion = Compose DropdownMenu: scale 0.8→1 on FastSpatial +
+     fade on FastEffects (motion-scheme spring tokens), growing from the
+     anchored corner. Exit relies on `transition-behavior: allow-discrete`
+     (held for the longer of the two); browsers without it (or
+     @starting-style) fall back to instant show/hide. Reduced motion (B3):
+     the spatial token is 0ms, so the menu only fades. */
   opacity: 0;
   transform: scale(0.8);
   transition:
-    opacity 80ms linear,
-    transform 150ms var(--md-sys-motion-easing-standard),
-    display 150ms allow-discrete,
-    overlay 150ms allow-discrete;
+    opacity var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing),
+    transform var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    display
+      max(
+        var(--md-sys-motion-spring-fast-spatial-duration),
+        var(--md-sys-motion-spring-fast-effects-duration)
+      )
+      allow-discrete,
+    overlay
+      max(
+        var(--md-sys-motion-spring-fast-spatial-duration),
+        var(--md-sys-motion-spring-fast-effects-duration)
+      )
+      allow-discrete;
 }
 
 .menu[data-open] {
@@ -104,12 +117,6 @@
 
 .menu[data-align='end'][data-placement='above'] {
   transform-origin: bottom right;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .menu {
-    transition: none;
-  }
 }
 
 /* A baseline menu taller than the viewport scrolls inside it (Compose
@@ -169,7 +176,7 @@
    2dp vertical content padding (DropdownMenuGroupContentPadding). Position
    resolves the corner shape (MenuDefaults.groupShape): single group
    CornerLarge; first 16/8dp, middle 8dp, last 8/16dp. The shape morph uses
-   the springy easing because Compose animates it with a FastSpatial spring. */
+   the FastSpatial spring tokens (Compose morphSpec). */
 .group {
   display: flex;
   flex-direction: column;
@@ -178,8 +185,8 @@
   border-radius: var(--md-sys-shape-corner-small);
   background-color: var(--_group-container-color);
   box-shadow: var(--md-sys-elevation-shadow-level2);
-  transition: border-radius var(--md-sys-motion-duration-medium3)
-    cubic-bezier(0.34, 1.4, 0.5, 1);
+  transition: border-radius var(--md-sys-motion-spring-fast-spatial-duration)
+    var(--md-sys-motion-spring-fast-spatial-easing);
 }
 
 .group:first-of-type {
@@ -271,18 +278,19 @@
 /* Vertical-variant items: 4dp horizontal inset inside the group
    (DropdownMenuSelectableItemPadding), 12dp vertical content padding
    (SelectableItemVerticalPadding). Container color and radius animate like
-   Compose (color: FastEffects ≈ 80ms; shape morph: FastSpatial spring →
-   springy easing per the toggle-morph convention). */
+   Compose (color: FastEffects; shape morph: FastSpatial). */
 .menu[data-variant='vertical'] .item {
   width: auto;
   align-self: stretch;
   margin-inline: 4px;
   padding-block: 12px;
   transition:
-    background-color 80ms linear,
-    color 80ms linear,
-    border-radius var(--md-sys-motion-duration-medium3)
-      cubic-bezier(0.34, 1.4, 0.5, 1);
+    background-color var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing),
+    color var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing),
+    border-radius var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing);
 }
 
 /* Positional item shapes inside a group (MenuDefaults.itemShape): first item
@@ -330,12 +338,8 @@
   color: color-mix(in srgb, var(--_selected-item-label-text-color) 38%, transparent);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .menu[data-variant='vertical'] .item,
-  .group {
-    transition: none;
-  }
-}
+/* Reduced motion (B3): handled by the spring tokens — the spatial ones
+   resolve to 0ms (tokens.css), so shape morphs are instant and colors fade. */
 
 .label {
   position: relative;

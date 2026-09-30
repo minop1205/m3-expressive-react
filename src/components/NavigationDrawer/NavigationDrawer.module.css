@@ -36,11 +36,14 @@
   display: flex;
   visibility: hidden;
   pointer-events: none;
+  /* Stay visible for the close motion (FastEffects, below). */
+  transition: visibility 0s linear var(--md-sys-motion-spring-fast-effects-duration);
 }
 
 .modalRoot[data-open] {
   visibility: visible;
   pointer-events: auto;
+  transition-delay: 0s;
 }
 
 .scrim {
@@ -48,23 +51,30 @@
   inset: 0;
   background-color: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
   opacity: 0;
-  transition: opacity var(--md-sys-motion-duration-medium2)
-    var(--md-sys-motion-easing-standard);
+  /* Compose closeDrawerMotionSpec: FastEffects. */
+  transition: opacity var(--md-sys-motion-spring-fast-effects-duration)
+    var(--md-sys-motion-spring-fast-effects-easing);
 }
 
 .modalRoot[data-open] .scrim {
   opacity: 1;
+  transition: opacity var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
 }
 
 .modalRoot .drawer {
   position: relative;
   transform: translateX(-100%);
-  transition: transform var(--md-sys-motion-duration-medium4)
-    var(--md-sys-motion-easing-emphasized-decelerate);
+  /* Compose ModalNavigationDrawer: closes on FastEffects (no bounce) … */
+  transition: transform var(--md-sys-motion-spring-fast-effects-duration)
+    var(--md-sys-motion-spring-fast-effects-easing);
 }
 
 .modalRoot[data-open] .drawer {
   transform: translateX(0);
+  /* … and opens on DefaultSpatial (openDrawerMotionSpec). */
+  transition: transform var(--md-sys-motion-spring-default-spatial-duration)
+    var(--md-sys-motion-spring-default-spatial-easing);
 }
 
 /* --------------------------------------------------------------------------- */
@@ -168,8 +178,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .modalRoot,
   .scrim,
-  .modalRoot .drawer {
+  .modalRoot[data-open] .scrim,
+  .modalRoot .drawer,
+  .modalRoot[data-open] .drawer {
     transition: none;
   }
 }

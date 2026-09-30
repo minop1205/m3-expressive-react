@@ -102,9 +102,25 @@ Reference tokens → System tokens (--md-sys-*) → Component tokens (--_*)
   `lint:tokens` check in CI rejects new fallbacks). Private `--_*` and
   `--md-ripple-*`/`--md-focus-ring-*` vars may keep contract defaults.
 - Shape morph: use `calc(var(--_height) / 2)` for round (not `9999px`)
-- Springy easing `cubic-bezier(0.34, 1.4, 0.5, 1)` only where Compose uses a
-  bouncy spring (e.g. toggle shape morphs); plain press morphs use ~150ms
-  standard easing (see docs/audits/button.md B5)
+- Motion: use the motion-scheme spring tokens
+  `--md-sys-motion-spring-{fast|default|slow}-{spatial|effects}-{duration|easing}`
+  (always pair duration + easing of the same spring), picking the key Compose
+  uses for that animation (`MotionSchemeKeyTokens.*`): spatial for
+  position / size / shape, effects for color / opacity. Never hardcode
+  `cubic-bezier(` or fixed ms for scheme motion (a lint test rejects
+  `cubic-bezier(` in component code). Bounce-free press morphs use
+  DefaultEffects, as Compose Button does (docs/audits/button.md B5). JS
+  springs read the raw `-damping` / `-stiffness` via `src/internal/spring.ts`.
+  Compose tweens that are not scheme keys (elevation, sheets, ripple) keep the
+  `--md-sys-motion-duration-*` / `-easing-*` tokens. Mapping + exceptions:
+  docs/md3-token-reference.md §5
+- Reduced motion (ruling B3): state changes are instant or fade-only. The
+  spatial spring durations resolve to 0ms under `prefers-reduced-motion:
+  reduce` (tokens.css), so token-driven spatial motion needs no rule; add a
+  component rule for keyframe animations and for spatial properties on
+  effects tokens, and read `matchMedia('(prefers-reduced-motion: reduce)')`
+  (`prefersReducedMotion()`) in JS-driven motion. Only indeterminate progress
+  keeps a minimal motion
 - `outline: none` on interactive components (FocusRing provides the accessible indicator)
 
 ## Component Conventions

@@ -185,7 +185,63 @@ for size / position / shape, effects for color / opacity:
 A CSS transition interrupted mid-flight restarts from the current value with
 zero velocity (a true spring keeps its momentum) — acceptable for press and
 toggle morphs; JS-driven animations that need velocity continuity should read
-the raw damping / stiffness instead.
+the raw damping / stiffness instead (`readSpring` / `stepSpring` in
+`src/internal/spring.ts`).
+
+**Reduced motion (ruling B3).** Under `prefers-reduced-motion: reduce`,
+tokens.css redeclares the three **spatial** durations as `0ms` (for `:root`
+and every `[data-md-motion-scheme]`, after the scheme rules), so spatial
+motion driven by the tokens is instant while effects springs keep their
+color / opacity fade — "instant or fade-only" with no per-component rule.
+A component rule is still needed for keyframe animations, for spatial
+properties animated on an effects token (e.g. the bounce-free press morph),
+and JS motion must check `prefersReducedMotion()`. Only indeterminate
+progress keeps a minimal motion (ProgressIndicator / LoadingIndicator).
+VRT captures with reduced motion and animations disabled, so baselines are
+unaffected.
+
+**Component mapping** (Compose `MotionSchemeKeyTokens` per animation; #314):
+
+| Component | Spatial | Effects |
+| --- | --- | --- |
+| Button / IconButton / SplitButton press morph | — (DefaultEffects: "prevent any bounce", B5) | DefaultEffects (shape), FastEffects (IconButton colors) |
+| Button toggle (selected) morph, ButtonGroup press width | FastSpatial | — |
+| SplitButton chevron rotate / offset | FastSpatial | — |
+| SegmentedButton check scale-in, label shift | FastSpatial | DefaultEffects (check fade, icon crossfade) |
+| Chip filter check slot | FastSpatial (expand) | DefaultEffects (shrink), SlowEffects / FastEffects (fade in / out) |
+| Fab extended morph, FabMenu | FastSpatial | FastEffects |
+| Tooltip / Menu open-close; Menu item + group shape morph | FastSpatial (scale, shape) | FastEffects (fade, item color) |
+| Snackbar enter / exit | FastSpatial (scale) | FastEffects (fade; exit length = 150ms) |
+| NavigationBar / NavigationRail item indicator | DefaultSpatial | DefaultEffects |
+| NavigationRail expand / modal slide (JS) | DefaultSpatial | DefaultEffects (scrim, shadow) |
+| NavigationDrawer (modal) | DefaultSpatial (open) | FastEffects (close), DefaultEffects (scrim in) |
+| Tabs indicator; tab label color | DefaultSpatial | DefaultEffects (to selected) / FastEffects |
+| SearchBar docked view | DefaultSpatial (expand) / FastSpatial (collapse) | content fades stay Compose tweens |
+| AppBar / Toolbar | FastSpatial (slots, padding) | DefaultEffects (color, snap / hide) |
+| DatePicker | FastSpatial (menu arrow) | DefaultEffects (year reveal, mode switch) |
+| TimePicker | DefaultSpatial (hand) | DefaultEffects (dial crossfade) |
+| Checkbox | DefaultSpatial (draw, check↔dash, fill scale) | DefaultEffects in / FastEffects out |
+| RadioButton | FastSpatial (dot grow) | DefaultEffects (ring color, dot shrink†) |
+| Switch | FastSpatial (thumb offset + size, icon) | — (colors: material-web 67ms) |
+| TextField | FastSpatial (label, indicator / outline width, notch) | FastEffects (colors), SlowEffects / FastEffects (content show / hide) |
+| Badge | FastSpatial (scale-in) | DefaultEffects (scale-out†) |
+| Carousel item press shape | — (DefaultEffects, as B5) | — |
+| BottomSheet / SideSheet scrim | — | DefaultEffects |
+
+† Shrinking to `scale(0)` uses the critically damped DefaultEffects: an
+expressive overshoot past 0 would render a mirrored dot / badge.
+
+**Not scheme keys — stay on `--md-sys-motion-duration-*` / `-easing-*`:**
+elevation (`box-shadow`; Compose `ElevationDefaults` tweens), state layers /
+Ripple / FocusRing, Dialog and the DatePicker / TimePicker modal enter
+(platform dialog), BottomSheet / SideSheet slide (`BottomSheetAnimationSpec`
+tween 300ms FastOutSlowIn), SwipeToDismiss settle (`AnchoredDraggableDefaults`
+tween), determinate progress (`ProgressAnimationSpec`, a fixed non-bouncy
+spring), Slider (no Compose motion), Switch colors, Checkbox mark
+visibility gating and the any→unchecked `snap(delayMillis = 100)` hold.
+`src/theme/motionUsage.test.ts` rejects `cubic-bezier(` in component code,
+leftover `TODO(#314)`, unpaired spring easing / duration, and JS motion
+without a reduced-motion check.
 
 ## 6. Color System / Dynamic Color
 
