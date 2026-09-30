@@ -1,0 +1,136 @@
+---
+title: Radio
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Radio, RadioGroup } from 'm3-expressive-react'
+
+# Radio
+
+MD3 radio button, built on a native `<input type="radio">`. Wrap radios in a
+`RadioGroup` to share a `name`, manage the selected value, and expose a
+`role="radiogroup"`.
+
+## RadioGroup
+
+`RadioGroup` hands a shared `name` to every `Radio` inside it (at any depth)
+and tracks the selection. Use `defaultValue` for an uncontrolled group.
+
+<Demo>
+  <RadioGroup aria-label="Notification frequency" defaultValue="daily">
+    <label style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <Radio value="realtime" /> Real time
+    </label>
+    <label style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <Radio value="daily" /> Daily digest
+    </label>
+    <label style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <Radio value="off" /> Off
+    </label>
+  </RadioGroup>
+</Demo>
+
+```tsx
+<RadioGroup aria-label="Notification frequency" defaultValue="daily">
+  <label>
+    <Radio value="realtime" /> Real time
+  </label>
+  <label>
+    <Radio value="daily" /> Daily digest
+  </label>
+</RadioGroup>
+```
+
+## Controlled
+
+Pass `value` and `onChange`. `onChange` receives the native event and the
+newly selected value (MUI-style `(event, value)`).
+
+export function ControlledRadioDemo() {
+  const [value, setValue] = useState('medium')
+  return (
+    <div>
+      <RadioGroup
+        aria-label="Size"
+        value={value}
+        onChange={(event, next) => setValue(next)}
+        style={{ display: 'flex', gap: 24 }}
+      >
+        {['small', 'medium', 'large'].map((size) => (
+          <label key={size} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Radio value={size} /> {size}
+          </label>
+        ))}
+      </RadioGroup>
+      <p style={{ margin: '12px 0 0' }}>Selected: {value}</p>
+    </div>
+  )
+}
+
+<Demo>
+  <ControlledRadioDemo />
+</Demo>
+
+```tsx
+const [value, setValue] = useState('medium')
+
+<RadioGroup aria-label="Size" value={value} onChange={(event, next) => setValue(next)}>
+  <label><Radio value="small" /> Small</label>
+  <label><Radio value="medium" /> Medium</label>
+  <label><Radio value="large" /> Large</label>
+</RadioGroup>
+```
+
+## Standalone radios
+
+Without a group, radios that share a `name` behave like native radios: the
+browser keeps them mutually exclusive. A `Radio`'s own `onChange` fires with
+`(event, value)` when that radio becomes selected.
+
+<Demo>
+  <Radio name="standalone" value="a" defaultChecked aria-label="Option A" />
+  <Radio name="standalone" value="b" aria-label="Option B" />
+</Demo>
+
+```tsx
+<Radio name="plan" value="a" defaultChecked aria-label="Option A" />
+<Radio name="plan" value="b" aria-label="Option B" />
+```
+
+## Disabled
+
+Disable a single radio, or every radio at once with `<RadioGroup disabled>`.
+
+<Demo>
+  <Radio disabled aria-label="Disabled unselected" />
+  <Radio disabled checked onChange={() => {}} aria-label="Disabled selected" />
+</Demo>
+
+```tsx
+<RadioGroup aria-label="Plan" defaultValue="free" disabled>
+  …
+</RadioGroup>
+```
+
+## Accessibility
+
+- Each radio is a native `<input type="radio">`: Tab moves into the group
+  (to the selected radio), arrow keys move the selection within it, and
+  Space selects — all native behavior.
+- Give every radio an accessible name: wrap it in a `<label>` with visible
+  text, or pass `aria-label`.
+- Name the group with `aria-label` or `aria-labelledby` on `RadioGroup`.
+- The touch target is 48dp. `ref` points at the root element; `inputRef`
+  reaches the native input.
+
+## Props
+
+### Radio
+
+<PropsTable component="Radio" />
+
+### RadioGroup
+
+<PropsTable component="RadioGroup" />

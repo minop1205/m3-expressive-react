@@ -1,0 +1,181 @@
+---
+title: TimePicker
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { TimePicker, Button } from 'm3-expressive-react'
+
+# TimePicker
+
+MD3 time picker with a clock dial and a keyboard input mode, shown inline
+or as a modal dialog, in 12-hour (AM/PM) or 24-hour format.
+
+export const formatTime = (t) =>
+  t ? `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}` : '—'
+
+## Dial
+
+The value is a `TimeValue` — `{ hour, minute }` with `hour` always in
+24-hour form (0–23). `onChange(value)` is value-first. Use `value` for a
+controlled picker or `defaultValue` (default `{ hour: 12, minute: 0 }`) for
+an uncontrolled one. Picking an hour on the dial with a pointer switches to
+minutes.
+
+export function DialTimePickerDemo() {
+  const [time, setTime] = useState({ hour: 9, minute: 30 })
+  return (
+    <div>
+      <TimePicker value={time} onChange={setTime} />
+      <p style={{ margin: '12px 0 0' }}>Selected: {formatTime(time)}</p>
+    </div>
+  )
+}
+
+<Demo>
+  <DialTimePickerDemo />
+</Demo>
+
+```tsx
+const [time, setTime] = useState<TimeValue>({ hour: 9, minute: 30 })
+
+<TimePicker value={time} onChange={setTime} />
+```
+
+## Input mode
+
+The keyboard / clock toggle switches between the dial and text input.
+Start in input mode with `defaultMode="input"`, control it with `mode` +
+`onModeChange`, or hide the toggle with `showModeToggle={false}`. Input is
+validated (two digits, in range): invalid text shows an error and is never
+reported through `onChange`.
+
+<Demo>
+  <TimePicker defaultMode="input" defaultValue={{ hour: 14, minute: 15 }} />
+</Demo>
+
+```tsx
+<TimePicker defaultMode="input" defaultValue={{ hour: 14, minute: 15 }} />
+```
+
+:::note
+Passing `mode` without `onModeChange` is deprecated: it only sets the
+initial mode (v1.0 behavior). Use `defaultMode` for that; in v2 `mode` will
+always be controlled.
+:::
+
+## 24-hour clock
+
+`ampm={false}` shows a 24-hour dial (an inner 12–23 ring) without AM/PM.
+When `ampm` is omitted it follows the `locale`'s hour cycle (default
+`'en-US'`, 12-hour), so `locale="ja-JP"` or `"de-DE"` gives a 24-hour clock.
+
+<Demo>
+  <TimePicker ampm={false} defaultValue={{ hour: 18, minute: 45 }} />
+  <TimePicker locale="de-DE" defaultMode="input" defaultValue={{ hour: 18, minute: 45 }} />
+</Demo>
+
+```tsx
+<TimePicker ampm={false} />
+<TimePicker locale="de-DE" />
+```
+
+## Modal dialog
+
+Pass `open` to show the picker as a modal dialog (scrim, focus trap,
+Escape) — the equivalent of Compose's `TimePickerDialog`; it renders
+nothing while `false`. It adds the "Select time" headline and the
+Cancel / OK row with draft / commit semantics: `onChange` reports the draft,
+OK (or Enter in the minute field) calls `onAccept`, and Cancel, Escape, or a
+scrim click reverts the value and calls `onCancel`. `onClose(reason)` asks
+you to close, with `'accept' | 'cancel' | 'escapeKeyDown' | 'backdropClick'`.
+
+export function ModalTimePickerDemo() {
+  const [open, setOpen] = useState(false)
+  const [draft, setDraft] = useState({ hour: 8, minute: 0 })
+  const [saved, setSaved] = useState(null)
+  return (
+    <>
+      <Button variant="filled" onClick={() => setOpen(true)}>
+        Set alarm
+      </Button>
+      <span>Alarm: {formatTime(saved)}</span>
+      <TimePicker
+        open={open}
+        onClose={() => setOpen(false)}
+        value={draft}
+        onChange={setDraft}
+        onAccept={setSaved}
+      />
+    </>
+  )
+}
+
+<Demo>
+  <ModalTimePickerDemo />
+</Demo>
+
+```tsx
+const [open, setOpen] = useState(false)
+const [draft, setDraft] = useState<TimeValue>({ hour: 8, minute: 0 })
+
+<Button onClick={() => setOpen(true)}>Set alarm</Button>
+<TimePicker
+  open={open}
+  onClose={(reason) => setOpen(false)}
+  value={draft}
+  onChange={setDraft}
+  onAccept={(time) => saveAlarm(time)}
+/>
+```
+
+Passing `onAccept` or `onCancel` without `open` renders the headline and
+action row on an inline picker.
+
+## Localization
+
+Every built-in string is a prop with an English default: `titleLabel`,
+`hourLabel`, `minuteLabel`, `amLabel`, `pmLabel`, `okLabel`, `cancelLabel`,
+`switchToInputLabel`, `switchToDialLabel`, and the `getHourLabel` /
+`getMinuteLabel` / `getErrorLabel` functions.
+
+<Demo>
+  <TimePicker
+    locale="ja-JP"
+    defaultValue={{ hour: 7, minute: 20 }}
+    onAccept={() => {}}
+    titleLabel="時刻を選択"
+    hourLabel="時"
+    minuteLabel="分"
+    okLabel="OK"
+    cancelLabel="キャンセル"
+    getHourLabel={(hour) => `${hour}時`}
+    getMinuteLabel={(minute) => `${minute}分`}
+  />
+</Demo>
+
+```tsx
+<TimePicker
+  locale="ja-JP"
+  titleLabel="時刻を選択"
+  cancelLabel="キャンセル"
+  getHourLabel={(hour) => `${hour}時`}
+  getMinuteLabel={(minute) => `${minute}分`}
+/>
+```
+
+## Accessibility
+
+- The hour / minute selectors and AM / PM are radio groups (one Tab stop
+  each; arrow keys move).
+- The dial is a single Tab stop on the selected number: arrow keys move
+  around the ring (continuing into the inner ring in 24-hour mode) and
+  Enter / Space select. Numbers are read as "3 o'clock" / "15 minutes"
+  (customize with `getHourLabel` / `getMinuteLabel`).
+- The modal picker traps focus, closes on Escape, and returns focus to the
+  opener.
+
+## Props
+
+<PropsTable component="TimePicker" />

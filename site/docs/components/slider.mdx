@@ -1,0 +1,169 @@
+---
+title: Slider
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Slider } from 'm3-expressive-react'
+
+# Slider
+
+MD3 Expressive slider: native `<input type="range">` controls under MD3
+visuals, in five sizes, with range, centered, and vertical configurations.
+
+export const PlusIcon = () => (
+  <svg viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true">
+    <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z" />
+  </svg>
+)
+
+## Basic
+
+<Demo>
+  <Slider defaultValue={40} aria-label="Volume" style={{ width: 320 }} />
+</Demo>
+
+```tsx
+<Slider defaultValue={40} aria-label="Volume" />
+```
+
+## Controlled
+
+`onChange` receives the native event and the new value — a `number`, or a
+`[start, end]` pair for a range slider. `min` / `max` / `step` default to
+the native `0` / `100` / `1`.
+
+export function ControlledSliderDemo() {
+  const [value, setValue] = useState(30)
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <Slider
+        value={value}
+        onChange={(event, next) => setValue(next)}
+        aria-label="Brightness"
+        style={{ width: 280 }}
+      />
+      <span>{value}</span>
+    </div>
+  )
+}
+
+<Demo>
+  <ControlledSliderDemo />
+</Demo>
+
+```tsx
+const [value, setValue] = useState(30)
+
+<Slider value={value} onChange={(event, next) => setValue(next as number)} aria-label="Brightness" />
+```
+
+## Sizes
+
+Five Expressive sizes set the track thickness and handle height. `insetIcon`
+insets an icon in the slider at sizes `md`, `lg`, and `xl`.
+
+<Demo>
+  <div style={{ display: 'grid', gap: 24, width: 320 }}>
+    <Slider size="xs" defaultValue={50} aria-label="Extra small" />
+    <Slider size="sm" defaultValue={50} aria-label="Small" />
+    <Slider size="md" defaultValue={50} aria-label="Medium" insetIcon={<PlusIcon />} />
+    <Slider size="lg" defaultValue={50} aria-label="Large" insetIcon={<PlusIcon />} />
+    <Slider size="xl" defaultValue={50} aria-label="Extra large" insetIcon={<PlusIcon />} />
+  </div>
+</Demo>
+
+```tsx
+<Slider size="md" insetIcon={<VolumeUp />} aria-label="Volume" />
+```
+
+## Range
+
+Pass a `[start, end]` value to get two handles. Name them with
+`rangeStartLabel` / `rangeEndLabel` (English defaults `Minimum` / `Maximum`); `aria-label` names the group.
+
+<Demo>
+  <Slider
+    defaultValue={[20, 70]}
+    aria-label="Price"
+    rangeStartLabel="Minimum price"
+    rangeEndLabel="Maximum price"
+    style={{ width: 320 }}
+  />
+</Demo>
+
+```tsx
+<Slider defaultValue={[20, 70]} aria-label="Price" rangeStartLabel="Minimum price" rangeEndLabel="Maximum price" />
+```
+
+## Steps, ticks & value label
+
+`showTicks` marks each step; `showValueLabel` shows the value bubble while
+hovering, focusing, or dragging. `valueLabelFormat` formats it — a string or
+number result is also announced through `aria-valuetext`.
+
+<Demo>
+  <Slider
+    defaultValue={60}
+    step={10}
+    showTicks
+    showValueLabel
+    valueLabelFormat={(v) => `${v}%`}
+    aria-label="Opacity"
+    style={{ width: 320 }}
+  />
+</Demo>
+
+```tsx
+<Slider step={10} showTicks showValueLabel valueLabelFormat={(v) => `${v}%`} aria-label="Opacity" />
+```
+
+## Centered
+
+`centered` draws the active track from the midpoint outward — useful for
+signed adjustments.
+
+<Demo>
+  <Slider centered min={-50} max={50} defaultValue={20} aria-label="Balance" style={{ width: 320 }} />
+</Demo>
+
+```tsx
+<Slider centered min={-50} max={50} defaultValue={20} aria-label="Balance" />
+```
+
+## Vertical
+
+Give the slider (or its container) a height.
+
+<Demo>
+  <div style={{ height: 200 }}>
+    <Slider orientation="vertical" defaultValue={60} aria-label="Vertical" />
+  </div>
+</Demo>
+
+```tsx
+<div style={{ height: 200 }}>
+  <Slider orientation="vertical" defaultValue={60} aria-label="Level" />
+</div>
+```
+
+## Disabled
+
+<Demo>
+  <Slider disabled defaultValue={40} aria-label="Disabled" style={{ width: 320 }} />
+</Demo>
+
+## Accessibility
+
+- Each handle is a native range input: arrow keys step, Home / End jump to
+  `min` / `max`, and PageUp / PageDown move by a larger step (10%).
+- Vertical sliders expose `aria-orientation="vertical"`.
+- Name the slider with `aria-label` or `aria-labelledby`; range sliders name
+  each handle via `rangeStartLabel` / `rangeEndLabel`.
+- `ref` and extra props land on the root; `inputRef` reaches the first
+  native input.
+
+## Props
+
+<PropsTable component="Slider" />
