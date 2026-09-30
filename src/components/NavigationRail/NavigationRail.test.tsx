@@ -1,7 +1,7 @@
 import { createRef } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { NavigationRail, NavigationRailItem } from './NavigationRail'
 
@@ -63,7 +63,8 @@ describe('NavigationRailItem (standalone)', () => {
     const { container, rerender } = render(
       <NavigationRailItem value="a" icon={Icon} label="Alpha" badge="3" />,
     )
-    expect(screen.getByText('3')).toBeInTheDocument()
+    // One on the icon (collapsed) and one beside the expanded label (#178).
+    expect(screen.getAllByText('3')).toHaveLength(2)
     expect(container.querySelector('[class*="badgeDot"]')).not.toBeInTheDocument()
     rerender(<NavigationRailItem value="a" icon={Icon} label="Alpha" badge />)
     expect(container.querySelector('[class*="badgeDot"]')).toBeInTheDocument()
@@ -139,5 +140,53 @@ describe('NavigationRailItem icons and badges (#174 / #175)', () => {
     expect(screen.getByRole('button', { name: /^Alpha ?3 new notifications$/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Beta ?New notification$/ })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /^Gamma ?2 nuevas$/ })).toBeInTheDocument()
+  })
+})
+
+describe('NavigationRail expanded width (#178)', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  // jsdom has no layout: stub the natural label widths the items measure.
+  function stubLabelWidths(widths: Record<string, number>) {
+    vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return widths[this.textContent ?? ''] ?? 0
+    })
+  }
+
+  it('fits the widest label, at least 220dp', () => {
+    stubLabelWidths({ Alpha: 40, 'A longer label': 150 })
+    render(
+      <NavigationRail value="a" variant="expanded" aria-label="Rail">
+        <NavigationRailItem value="a" icon={Icon} label="Alpha" />
+        <NavigationRailItem value="b" icon={Icon} label="A longer label" />
+      </NavigationRail>,
+    )
+    // 150 + 104 (20 + 16 + 24 + 8 … 16 + 20)
+    expect(screen.getByRole('navigation').style.getPropertyValue('--_expanded-w')).toBe('254px')
+  })
+
+  it('clamps to 220–360dp', () => {
+    stubLabelWidths({ Alpha: 40, 'Very very long destination label': 900 })
+    const { rerender } = render(
+      <NavigationRail value="a" variant="expanded" aria-label="Rail">
+        <NavigationRailItem value="a" icon={Icon} label="Alpha" />
+      </NavigationRail>,
+    )
+    const nav = screen.getByRole('navigation')
+    expect(nav.style.getPropertyValue('--_expanded-w')).toBe('220px')
+    rerender(
+      <NavigationRail value="a" variant="expanded" aria-label="Rail">
+        <NavigationRailItem value="a" icon={Icon} label="Alpha" />
+        <NavigationRailItem value="b" icon={Icon} label="Very very long destination label" />
+      </NavigationRail>,
+    )
+    expect(nav.style.getPropertyValue('--_expanded-w')).toBe('360px')
+    // Removing the long item shrinks the rail back.
+    rerender(
+      <NavigationRail value="a" variant="expanded" aria-label="Rail">
+        <NavigationRailItem value="a" icon={Icon} label="Alpha" />
+      </NavigationRail>,
+    )
+    expect(nav.style.getPropertyValue('--_expanded-w')).toBe('220px')
   })
 })
