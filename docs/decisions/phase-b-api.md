@@ -191,6 +191,24 @@ Toolbar / List ほか)。
 **影響**: 公開 API なし。VRT: Tooltip の Plain / Rich(#259 の修正で位置と幅が変わる — `update-vrt-baselines`)。
 対象: Menu / Tooltip / DatePickerField / SearchBar(順次移行)。
 
+**実装メモ(#312 Tooltip、#317 Menu / DatePickerField / SearchBar)**
+
+- ヘルパーは開いている間、scroll / resize に加えて anchor と popup のサイズ変化(ResizeObserver)と、サイズが変わらない
+  anchor の移動(レイアウトシフト。IntersectionObserver の rootMargin を anchor の矩形に絞る Floating UI `autoUpdate`
+  と同じ手法)でも再配置する。使った側の余白を `--_popup-available-height` として popup に書く
+- **Menu**: top layer + flip + clamp(端から 8dp。Compose `MenuVerticalMargin` は縦 48dp だが、Web の viewport には
+  システムバーがないため Tooltip と同じ 8dp に統一)。幅モデルは従来の実測値を維持 — 内容幅(`max-content`)を 112–280dp
+  に収め、trigger の幅には合わせない(Compose `DropdownMenu` も内容幅)。viewport より高い baseline メニューは内部スクロール
+  (`max-height: 100dvh - 16px`、Compose の縦スクロールに相当)。vertical variant はグループの影を切らないため overflow を
+  変えない
+- **DatePickerField(docked)**: top layer + flip + clamp(8dp)、field の下に start 揃え。狭い viewport では 360dp の
+  popup を `100vw - 16px` まで縮める(従来は右へはみ出していた)
+- **SearchBar(docked view)**: view だけを top layer に置き、**flip / clamp はしない**(`avoidCollisions: false`)。
+  Compose `ExpandedDockedSearchBar` の Popup はバー位置に固定・clipping 無効で、上に反転しない。幅はバーに一致
+  (`matchAnchorWidth`)。高さは従来の 240dp〜viewport の 2/3 に加え、バー下の余白を上限にして結果を view 内でスクロール
+  させる(240dp 未満にはしない)。**scrim は top layer に入れない** — top layer は通常フローのバーより必ず上に描かれるため、
+  scrim がバーを覆ってしまう。scrim は従来どおりページ内(`position: fixed`、wrapper の z-index でバーの下)に残す
+
 ### B5: 操作可能な面 — Card / ListItem / CarouselItem の起動要素と入れ子の操作要素
 
 - **Issue**: #217(CD2 — リンクカード)、#301(Card / ListItem の入れ子操作要素 — axe `nested-interactive`)、#247(CR5 — Carousel 項目)

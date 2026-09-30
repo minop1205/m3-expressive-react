@@ -34,6 +34,20 @@ describe('DatePickerField', () => {
     expect(toggle()).toHaveAttribute('aria-controls', dialog.id)
   })
 
+  it('positions the popup below the field via the shared popup helper', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<DatePickerField />)
+    const field = container.firstElementChild as HTMLElement
+    vi.spyOn(field, 'getBoundingClientRect').mockReturnValue({
+      top: 100, bottom: 180, left: 40, right: 320, width: 280, height: 80,
+    } as DOMRect)
+    await user.click(toggle())
+    const popup = screen.getByRole('dialog')
+    // Fixed coordinates: 4dp under the field, start-aligned.
+    expect(popup.style.top).toBe('184px')
+    expect(popup.style.left).toBe('40px')
+  })
+
   it('moves focus to the selected day on open', async () => {
     const user = userEvent.setup()
     render(<DatePickerField defaultValue={new Date(2024, 6, 10)} />)
