@@ -231,8 +231,8 @@ export const SegmentedButton = forwardRef<HTMLDivElement, SegmentedButtonProps>(
   },
 )
 
-/** @deprecated Use SegmentedButton — removed in the next release. */
+/** @deprecated Use SegmentedButton — removed in v2. */
 export const SegmentedButtons = SegmentedButton
 
-/** @deprecated Use SegmentedButtonProps — removed in the next release. */
+/** @deprecated Use SegmentedButtonProps — removed in v2. */
 export type SegmentedButtonsProps = SegmentedButtonProps
