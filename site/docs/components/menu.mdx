@@ -1,0 +1,179 @@
+---
+title: Menu
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Menu, MenuItem, MenuGroup, MenuDivider, Button, IconButton } from 'm3-expressive-react'
+import CopyIcon from '@material-symbols/svg-400/outlined/content_copy.svg'
+import ShareIcon from '@material-symbols/svg-400/outlined/share.svg'
+import EditIcon from '@material-symbols/svg-400/outlined/edit.svg'
+import DeleteIcon from '@material-symbols/svg-400/outlined/delete.svg'
+import MoreVertIcon from '@material-symbols/svg-400/outlined/more_vert.svg'
+import BoldIcon from '@material-symbols/svg-400/outlined/format_bold.svg'
+import ItalicIcon from '@material-symbols/svg-400/outlined/format_italic.svg'
+import UnderlineIcon from '@material-symbols/svg-400/outlined/format_underlined.svg'
+
+# Menu
+
+MD3 dropdown menu anchored to a trigger. It renders in the top layer, below
+the trigger (flipping above when there is no room) and clamped to the
+viewport, so ancestors' `overflow` or `z-index` never clip it.
+
+## Basic usage
+
+`trigger` is a single button-like element; the menu wires up its click,
+keyboard and ARIA attributes. The menu closes on item selection, outside
+click, <kbd>Escape</kbd> and Tab-out.
+
+export function BasicDemo() {
+  const [last, setLast] = useState('—')
+  return (
+    <>
+      <Menu trigger={<Button variant="outlined">Open menu</Button>}>
+        <MenuItem startIcon={<EditIcon />} onClick={() => setLast('Edit')}>Edit</MenuItem>
+        <MenuItem startIcon={<CopyIcon />} onClick={() => setLast('Copy')}>Copy</MenuItem>
+        <MenuItem startIcon={<ShareIcon />} onClick={() => setLast('Share')}>Share</MenuItem>
+        <MenuDivider />
+        <MenuItem startIcon={<DeleteIcon />} disabled>Delete</MenuItem>
+      </Menu>
+      <span>Last action: {last}</span>
+    </>
+  )
+}
+
+<Demo>
+  <BasicDemo />
+</Demo>
+
+```tsx
+<Menu trigger={<Button variant="outlined">Open menu</Button>}>
+  <MenuItem startIcon={<EditIcon />} onClick={handleEdit}>Edit</MenuItem>
+  <MenuItem startIcon={<CopyIcon />}>Copy</MenuItem>
+  <MenuDivider />
+  <MenuItem disabled>Delete</MenuItem>
+</Menu>
+```
+
+`startIcon` / `endIcon` are decorative. `MenuDivider` renders a separator.
+
+## Alignment and controlled state
+
+`align="end"` aligns the menu to the trigger's end edge — handy for an
+overflow button. Control the open state with `open` + `onOpenChange`, or set
+an initial state with `defaultOpen`.
+
+export function ControlledDemo() {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <span>Menu is {open ? 'open' : 'closed'}</span>
+      <Menu
+        align="end"
+        open={open}
+        onOpenChange={setOpen}
+        trigger={<IconButton variant="standard" icon={<MoreVertIcon />} aria-label="More options" />}
+      >
+        <MenuItem>Settings</MenuItem>
+        <MenuItem>Help</MenuItem>
+        <MenuItem>Sign out</MenuItem>
+      </Menu>
+    </>
+  )
+}
+
+<Demo>
+  <ControlledDemo />
+</Demo>
+
+```tsx
+const [open, setOpen] = useState(false)
+
+<Menu
+  align="end"
+  open={open}
+  onOpenChange={setOpen}
+  trigger={<IconButton icon={<MoreVertIcon />} aria-label="More options" />}
+>
+  <MenuItem>Settings</MenuItem>
+</Menu>
+```
+
+## Vertical menu (Expressive)
+
+`variant="vertical"` is the MD3 Expressive vertical menu: segmented
+`MenuGroup` containers (with an optional section `label`), 44dp items, and a
+selected state. Setting `selected` (even to `false`) makes an item a
+`menuitemcheckbox`; a selected item morphs to a 12dp corner shape.
+`color="vibrant"` switches to the tertiary-based, higher-emphasis colors.
+
+export function VerticalDemo({ color }) {
+  const [format, setFormat] = useState({ bold: true, italic: false, underline: false })
+  const toggle = (key) => setFormat((f) => ({ ...f, [key]: !f[key] }))
+  return (
+    <Menu
+      variant="vertical"
+      color={color}
+      trigger={<Button variant={color === 'vibrant' ? 'tonal' : 'outlined'}>{color === 'vibrant' ? 'Vibrant' : 'Standard'}</Button>}
+    >
+      <MenuGroup label="Format">
+        <MenuItem selected={format.bold} startIcon={<BoldIcon />} onClick={() => toggle('bold')}>Bold</MenuItem>
+        <MenuItem selected={format.italic} startIcon={<ItalicIcon />} onClick={() => toggle('italic')}>Italic</MenuItem>
+        <MenuItem selected={format.underline} startIcon={<UnderlineIcon />} onClick={() => toggle('underline')}>Underline</MenuItem>
+      </MenuGroup>
+      <MenuGroup>
+        <MenuItem startIcon={<CopyIcon />}>Copy</MenuItem>
+        <MenuItem startIcon={<ShareIcon />}>Share</MenuItem>
+      </MenuGroup>
+    </Menu>
+  )
+}
+
+<Demo>
+  <VerticalDemo />
+  <VerticalDemo color="vibrant" />
+</Demo>
+
+```tsx
+<Menu variant="vertical" color="vibrant" trigger={<Button>Format</Button>}>
+  <MenuGroup label="Format">
+    <MenuItem selected={bold} startIcon={<BoldIcon />} onClick={() => setBold(!bold)}>
+      Bold
+    </MenuItem>
+  </MenuGroup>
+  <MenuGroup>
+    <MenuItem startIcon={<CopyIcon />}>Copy</MenuItem>
+  </MenuGroup>
+</Menu>
+```
+
+## Accessibility
+
+Follows the WAI-ARIA APG menu-button pattern:
+
+- The trigger gets `aria-haspopup` / `aria-expanded`; the popup is
+  `role="menu"` with `menuitem` (or `menuitemcheckbox`) items and
+  `role="group"` for labelled `MenuGroup`s.
+- <kbd>Enter</kbd> / <kbd>Space</kbd> / <kbd>↓</kbd> on the trigger open the
+  menu and focus the first item (<kbd>↑</kbd>: the last). <kbd>↑</kbd> /
+  <kbd>↓</kbd> cycle with wrap, <kbd>Home</kbd> / <kbd>End</kbd> jump, and
+  typing a character moves focus by typeahead.
+- <kbd>Escape</kbd> and item activation close the menu and return focus to
+  the trigger.
+- Items use a roving tabindex, so the menu never adds Tab stops to the page.
+  Disabled items stay focusable but inert (`aria-disabled`).
+
+## Props
+
+### Menu
+
+<PropsTable component="Menu" />
+
+### MenuItem
+
+<PropsTable component="MenuItem" />
+
+### MenuGroup
+
+<PropsTable component="MenuGroup" />
