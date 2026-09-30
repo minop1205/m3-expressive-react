@@ -6,7 +6,10 @@
 .circular {
   --_active-indicator-color: var(--md-sys-color-primary);
   --_track-color: var(--md-sys-color-secondary-container);
-  --_surface-color: var(--md-sys-color-surface);
+  --_stop-indicator-color: var(--md-sys-color-primary);
+  /* Determinate progress transition. Compose recommends a spring
+     (ProgressIndicatorDefaults.ProgressAnimationSpec) for the flat
+     indicators. TODO(#314): switch to the motion-scheme spring tokens. */
   --_duration: var(--md-sys-motion-duration-medium4);
   --_easing: var(--md-sys-motion-easing-standard);
 }
@@ -20,6 +23,11 @@
   --_wavy-amplitude: 3px;
   --_gap-size: 4px;
   --_stop-size: 4px;
+  /* Compose drawStopIndicator: offset = ((height - stop) / 2), at most 6dp */
+  --_stop-trailing-space: min(
+    6px,
+    max(0px, calc((var(--_thickness) - var(--_stop-size)) / 2))
+  );
 
   position: relative;
   display: block;
@@ -44,7 +52,10 @@
 .linearStop,
 .linearIndeterminate,
 .linearIndeterminateTrackSegment,
-.linearIndeterminateSegment {
+.linearIndeterminateSegment,
+.linearReducedMotion,
+.linearReducedMotionTrack,
+.linearReducedMotionSegment {
   position: absolute;
   pointer-events: none;
 }
@@ -64,10 +75,12 @@
   transition: none;
 }
 
+/* Any progress > 0 is at least a thickness-sized dot (Compose coerces the
+   round-capped bar into [thickness / 2, width - thickness / 2]). */
 .linearIndicator {
   top: 50%;
   inset-inline-start: 0;
-  width: var(--_progress);
+  width: max(var(--_progress), var(--_thickness));
   max-width: 100%;
   height: var(--_thickness);
   background-color: var(--_active-indicator-color);
@@ -88,6 +101,12 @@
   overflow: visible;
 }
 
+/* The wave paths are computed from the physical left edge; mirror them in
+   RTL (Compose draws the wavy linear indicator rotated 180° in RTL). */
+.linear:dir(rtl) .linearWavySvg {
+  transform: scaleX(-1);
+}
+
 .linearWavyPath {
   fill: none;
   stroke: var(--_active-indicator-color);
@@ -96,17 +115,14 @@
 }
 
 .linearStop {
-  inset-inline-end: 0;
+  inset-inline-end: var(--_stop-trailing-space);
   top: 50%;
-  width: var(--_stop-size);
-  height: var(--_stop-size);
-  background-color: var(--_active-indicator-color);
+  /* Compose: the stop can't be bigger than the track */
+  width: min(var(--_stop-size), var(--_thickness));
+  height: min(var(--_stop-size), var(--_thickness));
+  background-color: var(--_stop-indicator-color);
   border-radius: var(--md-sys-shape-corner-full);
   transform: translateY(-50%);
-}
-
-.linear[data-thickness='8'] .linearStop {
-  inset-inline-end: 2px;
 }
 
 .linearIndeterminate {
@@ -115,20 +131,80 @@
 }
 
 .linearIndeterminateTrackSegment,
-.linearIndeterminateSegment {
+.linearIndeterminateSegment,
+.linearReducedMotionTrack,
+.linearReducedMotionSegment {
   top: 50%;
   height: var(--_thickness);
   border-radius: var(--md-sys-shape-corner-full);
   transform: translateY(-50%);
+}
+
+.linearIndeterminateTrackSegment,
+.linearIndeterminateSegment {
   will-change: inset-inline-start, width;
 }
 
-.linearIndeterminateTrackSegment {
+.linearIndeterminateTrackSegment,
+.linearReducedMotionTrack {
   background-color: var(--_track-color);
 }
 
-.linearIndeterminateSegment {
+.linearIndeterminateSegment,
+.linearReducedMotionSegment {
   background-color: var(--_active-indicator-color);
+}
+
+/* --- Reduced-motion indeterminate (B3) ------------------------------------
+   Under prefers-reduced-motion the stretching two-line animation (and the
+   wave) is replaced by one fixed-length bar sweeping slowly across the
+   track, so the indicator still reads as "in progress". CSS-only: the static
+   (animation-less) frame is the bar at 35%. */
+
+@property --_linear-sweep {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 35%;
+}
+
+.linearReducedMotion {
+  --_sweep-length: 30%;
+
+  display: none;
+  inset: 0;
+  overflow: hidden;
+}
+
+/* track on the inline-start side, ending 4dp before the bar */
+.linearReducedMotionTrack[data-part='start'] {
+  inset-inline-start: 0;
+  inset-inline-end: calc(100% - var(--_linear-sweep) + var(--_gap-size));
+}
+
+.linearReducedMotionSegment {
+  inset-inline-start: max(0%, var(--_linear-sweep));
+  inset-inline-end: max(
+    0%,
+    calc(100% - var(--_linear-sweep) - var(--_sweep-length))
+  );
+}
+
+/* track on the inline-end side, starting 4dp after the bar */
+.linearReducedMotionTrack[data-part='end'] {
+  inset-inline-start: max(
+    0px,
+    calc(var(--_linear-sweep) + var(--_sweep-length) + var(--_gap-size))
+  );
+  inset-inline-end: 0;
+}
+
+@keyframes linear-reduced-motion-sweep {
+  from {
+    --_linear-sweep: -30%;
+  }
+  to {
+    --_linear-sweep: 100%;
+  }
 }
 
 /* --------------------------------------------------------------------------
@@ -169,7 +245,9 @@
   transition: stroke-dasharray var(--_duration) var(--_easing);
 }
 
-.circular[data-shape='wavy']:not([data-indeterminate]) .circularIndicator {
+/* Wavy paths are already drawn from 12 o'clock at their exact length. */
+.circular[data-shape='wavy'] .circularIndicator,
+.circular[data-shape='wavy'] .circularWavyTrack {
   stroke-dasharray: none;
   transform: none;
   transition: none;
@@ -179,218 +257,62 @@
   transition: none;
 }
 
-.circular[data-shape='wavy'] .circularWavyTrack,
-.circular[data-shape='wavy'][data-indeterminate] .circularIndicator {
-  stroke-dasharray: none;
-  transform: none;
+/* Indeterminate: sweep and rotation are driven per frame in JS. */
+.circular[data-indeterminate] .circularTrack,
+.circular[data-indeterminate] .circularIndicator {
   transition: none;
-  animation: none;
 }
 
 .circular[data-indeterminate] .circularLayer {
   transform-origin: center;
 }
 
-.circular[data-indeterminate] .circularIndicator {
-  stroke-dasharray: 0.25 0.75;
-  animation: circular-indeterminate-active 6.183s linear infinite;
-  transition: none;
-}
-
-.circular[data-indeterminate] .circularTrack {
-  animation: circular-indeterminate-track-4 6.183s linear infinite;
-  transition: none;
-}
-
-.circular[data-indeterminate][data-thickness='8'] .circularTrack {
-  animation-name: circular-indeterminate-track-8;
-}
-
-@keyframes circular-indeterminate-active {
-  0% {
-    stroke-dasharray: 0.25 0.75;
-    stroke-dashoffset: -0.361;
-  }
-  8.1% {
-    stroke-dasharray: 0.181 0.819;
-    stroke-dashoffset: -0.644;
-  }
-  16.2% {
-    stroke-dasharray: 0.15 0.85;
-    stroke-dashoffset: -0.886;
-  }
-  24.3% {
-    stroke-dasharray: 0.275 0.725;
-    stroke-dashoffset: -1.292;
-  }
-  32.3% {
-    stroke-dasharray: 0.525 0.475;
-    stroke-dashoffset: -1.606;
-  }
-  40.4% {
-    stroke-dasharray: 0.714 0.286;
-    stroke-dashoffset: -1.853;
-  }
-  48.5% {
-    stroke-dasharray: 0.803 0.197;
-    stroke-dashoffset: -2.269;
-  }
-  56.6% {
-    stroke-dasharray: 0.786 0.214;
-    stroke-dashoffset: -2.589;
-  }
-  64.7% {
-    stroke-dasharray: 0.85 0.15;
-    stroke-dashoffset: -2.836;
-  }
-  72.8% {
-    stroke-dasharray: 0.8 0.2;
-    stroke-dashoffset: -3.025;
-  }
-  80.9% {
-    stroke-dasharray: 0.422 0.578;
-    stroke-dashoffset: -3.564;
-  }
-  88.9% {
-    stroke-dasharray: 0.25 0.75;
-    stroke-dashoffset: -3.822;
-  }
-  97% {
-    stroke-dasharray: 0.244 0.756;
-    stroke-dashoffset: -4.225;
-  }
-  100% {
-    stroke-dasharray: 0.25 0.75;
-    stroke-dashoffset: -4.361;
+@keyframes circular-reduced-motion-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
-@keyframes circular-indeterminate-track-4 {
-  0% {
-    stroke-dasharray: 0.634251 0.365749;
-    stroke-dashoffset: -0.668875;
-  }
-  8.1% {
-    stroke-dasharray: 0.703251 0.296749;
-    stroke-dashoffset: -0.882875;
-  }
-  16.2% {
-    stroke-dasharray: 0.734251 0.265749;
-    stroke-dashoffset: -1.093875;
-  }
-  24.3% {
-    stroke-dasharray: 0.609251 0.390749;
-    stroke-dashoffset: -1.624875;
-  }
-  32.3% {
-    stroke-dasharray: 0.359251 0.640749;
-    stroke-dashoffset: -2.188875;
-  }
-  40.4% {
-    stroke-dasharray: 0.170251 0.829749;
-    stroke-dashoffset: -2.624875;
-  }
-  48.5% {
-    stroke-dasharray: 0.081251 0.918749;
-    stroke-dashoffset: -3.129875;
-  }
-  56.6% {
-    stroke-dasharray: 0.098251 0.901749;
-    stroke-dashoffset: -3.432875;
-  }
-  64.7% {
-    stroke-dasharray: 0.034251 0.965749;
-    stroke-dashoffset: -3.743875;
-  }
-  72.8% {
-    stroke-dasharray: 0.084251 0.915749;
-    stroke-dashoffset: -3.882875;
-  }
-  80.9% {
-    stroke-dasharray: 0.462251 0.537749;
-    stroke-dashoffset: -4.043875;
-  }
-  88.9% {
-    stroke-dasharray: 0.634251 0.365749;
-    stroke-dashoffset: -4.129875;
-  }
-  97% {
-    stroke-dasharray: 0.640251 0.359749;
-    stroke-dashoffset: -4.526875;
-  }
-  100% {
-    stroke-dasharray: 0.634251 0.365749;
-    stroke-dashoffset: -4.668875;
-  }
-}
-
-@keyframes circular-indeterminate-track-8 {
-  0% {
-    stroke-dasharray: 0.559014 0.440986;
-    stroke-dashoffset: -0.706493;
-  }
-  8.1% {
-    stroke-dasharray: 0.628014 0.371986;
-    stroke-dashoffset: -0.920493;
-  }
-  16.2% {
-    stroke-dasharray: 0.659014 0.340986;
-    stroke-dashoffset: -1.131493;
-  }
-  24.3% {
-    stroke-dasharray: 0.534014 0.465986;
-    stroke-dashoffset: -1.662493;
-  }
-  32.3% {
-    stroke-dasharray: 0.284014 0.715986;
-    stroke-dashoffset: -2.226493;
-  }
-  40.4% {
-    stroke-dasharray: 0.095014 0.904986;
-    stroke-dashoffset: -2.662493;
-  }
-  48.5% {
-    stroke-dasharray: 0.006014 0.993986;
-    stroke-dashoffset: -3.167493;
-  }
-  56.6% {
-    stroke-dasharray: 0.023014 0.976986;
-    stroke-dashoffset: -3.470493;
-  }
-  64.7% {
-    stroke-dasharray: 0 1;
-    stroke-dashoffset: -3.781493;
-  }
-  72.8% {
-    stroke-dasharray: 0.009014 0.990986;
-    stroke-dashoffset: -3.920493;
-  }
-  80.9% {
-    stroke-dasharray: 0.387014 0.612986;
-    stroke-dashoffset: -4.081493;
-  }
-  88.9% {
-    stroke-dasharray: 0.559014 0.440986;
-    stroke-dashoffset: -4.167493;
-  }
-  97% {
-    stroke-dasharray: 0.565014 0.434986;
-    stroke-dashoffset: -4.564493;
-  }
-  100% {
-    stroke-dasharray: 0.559014 0.440986;
-    stroke-dashoffset: -4.706493;
-  }
-}
+/* --------------------------------------------------------------------------
+   Reduced motion (B3): state changes are instant; indeterminate progress
+   keeps a minimal motion (linear: slow bar sweep; circular: constant
+   rotation of a fixed arc).
+   -------------------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
+  .linearTrack,
   .linearIndicator,
+  .circularTrack,
   .circularIndicator {
-    transition-duration: 0ms;
+    transition: none;
   }
 
-  .circular[data-indeterminate] .circularTrack,
-  .circular[data-indeterminate] .circularIndicator {
-    animation-duration: 6s;
+  .linear[data-indeterminate] .linearIndeterminate {
+    display: none;
+  }
+
+  .linear[data-indeterminate] .linearReducedMotion {
+    display: block;
+    animation: linear-reduced-motion-sweep 2500ms linear infinite;
+  }
+
+  .circular[data-indeterminate] .circularLayer {
+    animation: circular-reduced-motion-spin 2000ms linear infinite;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Forced colors: background-color is forced to Canvas, which would erase the
+   flat linear indicator. Paint every part with system colors instead
+   (active / stop = CanvasText, track = GrayText), for the SVG strokes too.
+   -------------------------------------------------------------------------- */
+
+@media (forced-colors: active) {
+  .linear,
+  .circular {
+    forced-color-adjust: none;
+    --_active-indicator-color: CanvasText;
+    --_stop-indicator-color: CanvasText;
+    --_track-color: GrayText;
   }
 }

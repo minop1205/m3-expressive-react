@@ -49,7 +49,13 @@ const FIGMA_RADII: Record<string, number[]> = {
   cookie4: [0.65,0.6521,0.6587,0.6703,0.6877,0.7129,0.7404,0.7683,0.7931,0.8149,0.8334,0.8489,0.8613,0.8708,0.8775,0.8815,0.8828,0.8815,0.8775,0.8708,0.8613,0.8489,0.8334,0.8149,0.7931,0.7683,0.7404,0.7129,0.6877,0.6703,0.6587,0.6521,0.65,0.6521,0.6587,0.6703,0.6877,0.7129,0.7404,0.7683,0.7931,0.8149,0.8334,0.8489,0.8613,0.8708,0.8775,0.8815,0.8828,0.8815,0.8775,0.8708,0.8613,0.8489,0.8334,0.8149,0.7931,0.7683,0.7404,0.7129,0.6877,0.6703,0.6587,0.6521,0.65,0.6521,0.6587,0.6703,0.6877,0.7129,0.7404,0.7683,0.7931,0.8149,0.8334,0.8489,0.8613,0.8708,0.8775,0.8815,0.8828,0.8815,0.8775,0.8708,0.8613,0.8489,0.8334,0.8149,0.7931,0.7683,0.7404,0.7129,0.6877,0.6703,0.6587,0.6521,0.65,0.6521,0.6587,0.6703,0.6877,0.7129,0.7404,0.7683,0.7931,0.8149,0.8334,0.8489,0.8613,0.8708,0.8775,0.8815,0.8828,0.8815,0.8775,0.8708,0.8613,0.8489,0.8334,0.8149,0.7931,0.7683,0.7404,0.7129,0.6877,0.6703,0.6587,0.6521],
   oval: [0.7195,0.7055,0.6922,0.6803,0.6687,0.6588,0.6492,0.641,0.6334,0.6268,0.6214,0.6161,0.6128,0.6095,0.6074,0.6063,0.6052,0.6063,0.6074,0.6095,0.6128,0.6161,0.6214,0.6268,0.6334,0.641,0.6492,0.6588,0.6687,0.6803,0.6922,0.7055,0.7195,0.7344,0.7502,0.7666,0.7838,0.8013,0.8191,0.837,0.8545,0.8713,0.8871,0.9014,0.9139,0.9242,0.9317,0.9364,0.9381,0.9364,0.9317,0.9242,0.9139,0.9014,0.8871,0.8713,0.8544,0.837,0.8191,0.8013,0.7838,0.7666,0.7502,0.7344,0.7195,0.7055,0.6922,0.6803,0.6687,0.6588,0.6492,0.641,0.6334,0.6268,0.6214,0.6161,0.6128,0.6095,0.6074,0.6063,0.6052,0.6063,0.6074,0.6095,0.6128,0.6161,0.6214,0.6268,0.6334,0.641,0.6492,0.6588,0.6687,0.6803,0.6922,0.7055,0.7195,0.7344,0.7502,0.7666,0.7838,0.8013,0.8191,0.837,0.8544,0.8713,0.8871,0.9014,0.9139,0.9242,0.9317,0.9364,0.9381,0.9364,0.9317,0.9242,0.9139,0.9014,0.8871,0.8713,0.8545,0.837,0.8191,0.8013,0.7838,0.7666,0.7502,0.7344],
   // A plain circle for the determinate morph (Circle → SoftBurst), sized to sit
-  // between the shapes' extents.
+  // between the shapes' extents. Compose starts from `MaterialShapes.Circle`
+  // rotated by 18° (360/20) so its vertices line up with SoftBurst's ten lobes
+  // (the traced lobes sit at 18° + k·36°, within the 2.8° sampling step) and
+  // each vertex morphs straight out to a lobe.
+  // With every shape sampled at the same equal angles, point k of the circle
+  // already morphs radially to SoftBurst's point k — the phase-aligned morph,
+  // with no twist.
   circle: Array.from({ length: SAMPLES }, () => 0.88),
 }
 
@@ -64,6 +70,10 @@ function radiiToPoints(r: number[]): P[] {
 const UNIT: Record<string, P[]> = Object.fromEntries(
   Object.keys(FIGMA_RADII).map((name) => [name, radiiToPoints(FIGMA_RADII[name])]),
 )
+
+// Determinate: Compose `rotate(-progress * 180)` — counter-clockwise, half a
+// turn over the full range.
+const DETERMINATE_ROTATION = 180
 
 const SEQUENCE = ['softBurst', 'cookie9', 'pentagon', 'pill', 'sunny', 'cookie4', 'oval']
 // Cadence measured from the m3.material.io reference (~0.6–0.67s/shape): hold
@@ -125,12 +135,12 @@ export const LoadingIndicator = forwardRef<SVGSVGElement, LoadingIndicatorProps>
     const [frame, setFrame] = useState(() =>
       indeterminate
         ? { d: toPath(UNIT[SEQUENCE[0]]), rot: 0, scale: 1 }
-        : { d: toPath(lerpPts(UNIT.circle, UNIT.softBurst, progress)), rot: progress * 90, scale: 1 },
+        : { d: toPath(lerpPts(UNIT.circle, UNIT.softBurst, progress)), rot: -progress * DETERMINATE_ROTATION, scale: 1 },
     )
 
     useEffect(() => {
       if (!indeterminate) {
-        setFrame({ d: toPath(lerpPts(UNIT.circle, UNIT.softBurst, progress)), rot: progress * 90, scale: 1 })
+        setFrame({ d: toPath(lerpPts(UNIT.circle, UNIT.softBurst, progress)), rot: -progress * DETERMINATE_ROTATION, scale: 1 })
         return
       }
       const reduce =
@@ -219,10 +229,14 @@ export const LoadingIndicator = forwardRef<SVGSVGElement, LoadingIndicatorProps>
         {variant === 'contained' && (
           <circle className={styles.container} cx={CENTER} cy={CENTER} r={CENTER} />
         )}
-        <g
-          transform={`translate(${CENTER} ${CENTER}) rotate(${frame.rot}) scale(${frame.scale}) translate(${-CENTER} ${-CENTER})`}
-        >
-          <path className={styles.shape} d={frame.d} />
+        {/* Reduced motion: the JS morph is frozen; this layer keeps a slow
+            constant rotation (CSS) so the indicator still reads as busy. */}
+        <g className={styles.spin}>
+          <g
+            transform={`translate(${CENTER} ${CENTER}) rotate(${frame.rot}) scale(${frame.scale}) translate(${-CENTER} ${-CENTER})`}
+          >
+            <path className={styles.shape} d={frame.d} />
+          </g>
         </g>
       </svg>
     )
