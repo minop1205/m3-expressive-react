@@ -1,0 +1,124 @@
+---
+title: ProgressIndicator
+---
+
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import {
+  LinearProgressIndicator,
+  CircularProgressIndicator,
+} from 'm3-expressive-react'
+
+export const linearBox = { width: '100%', maxWidth: 360, display: 'grid', gap: 24 }
+
+# ProgressIndicator
+
+MD3 progress indicators show the status of a process: `LinearProgressIndicator`
+and `CircularProgressIndicator`, each determinate or indeterminate, in the flat
+or Expressive wavy shape.
+
+## Linear
+
+Pass `value` (0 to 1) for determinate progress; omit it for indeterminate.
+
+<Demo>
+  <div style={linearBox}>
+    <LinearProgressIndicator value={0.5} aria-label="Uploading photo" />
+    <LinearProgressIndicator aria-label="Loading messages" />
+  </div>
+</Demo>
+
+```tsx
+<LinearProgressIndicator value={0.5} aria-label="Uploading photo" />
+<LinearProgressIndicator aria-label="Loading messages" />
+```
+
+## Circular
+
+<Demo>
+  <CircularProgressIndicator value={0.7} aria-label="Uploading photo" />
+  <CircularProgressIndicator aria-label="Loading messages" />
+</Demo>
+
+```tsx
+<CircularProgressIndicator value={0.7} aria-label="Uploading photo" />
+<CircularProgressIndicator aria-label="Loading messages" />
+```
+
+## Wavy
+
+`shape="wavy"` is the Expressive variant. A determinate wave flattens near
+0% and 100%.
+
+<Demo>
+  <div style={linearBox}>
+    <LinearProgressIndicator shape="wavy" value={0.4} aria-label="Wavy determinate" />
+    <LinearProgressIndicator shape="wavy" aria-label="Wavy indeterminate" />
+  </div>
+  <CircularProgressIndicator shape="wavy" value={0.7} aria-label="Wavy determinate" />
+  <CircularProgressIndicator shape="wavy" aria-label="Wavy indeterminate" />
+</Demo>
+
+```tsx
+<LinearProgressIndicator shape="wavy" value={0.4} aria-label="Downloading" />
+<CircularProgressIndicator shape="wavy" aria-label="Loading" />
+```
+
+## Thickness & size
+
+`thickness` sets the track / stroke in dp — the two baseline values are `4`
+(default) and `8`. The circular default diameter follows the configuration:
+40 (flat 4dp), 44 (flat 8dp), 48 (wavy 4dp), 52 (wavy 8dp). `size` overrides
+the diameter; the stroke, the 4dp track gap and the wave keep their dp size
+whatever the diameter.
+
+<Demo>
+  <div style={linearBox}>
+    <LinearProgressIndicator value={0.65} thickness={8} aria-label="Flat 8dp" />
+    <LinearProgressIndicator value={0.65} thickness={8} shape="wavy" aria-label="Wavy 8dp" />
+  </div>
+</Demo>
+
+<Demo>
+  <CircularProgressIndicator value={0.7} aria-label="Flat 4dp" />
+  <CircularProgressIndicator value={0.7} thickness={8} aria-label="Flat 8dp" />
+  <CircularProgressIndicator value={0.7} shape="wavy" aria-label="Wavy 4dp" />
+  <CircularProgressIndicator value={0.7} shape="wavy" thickness={8} aria-label="Wavy 8dp" />
+  <CircularProgressIndicator value={0.45} size={24} aria-label="24px" />
+</Demo>
+
+```tsx
+<LinearProgressIndicator value={0.65} thickness={8} aria-label="Uploading" />
+<CircularProgressIndicator value={0.45} size={24} aria-label="Saving" />
+```
+
+## Reduced motion
+
+Under `prefers-reduced-motion: reduce`, value changes jump instead of
+animating and the wave stops moving. Indeterminate indicators keep a minimal
+motion so they don't look like stalled determinate progress: a linear
+indicator (flat or wavy) becomes one fixed-length bar sweeping slowly across
+the track, and a circular indicator becomes a fixed arc rotating at a
+constant speed (no growing / shrinking sweep). No extra prop is needed.
+
+## Accessibility
+
+- Renders `role="progressbar"`. Determinate indicators expose
+  `aria-valuemin={0}`, `aria-valuemax={1}` and `aria-valuenow` (the
+  0–1 value, as in Compose); indeterminate ones omit the value attributes.
+- Always give the indicator an accessible name that describes the process
+  (`aria-label` or `aria-labelledby`) — it is not enforced.
+- Put `aria-busy="true"` on the region that is loading, not on the
+  indicator.
+- In forced-colors mode the track, indicator and stop indicator are drawn
+  with system colors so they stay visible.
+
+## Props
+
+### LinearProgressIndicator
+
+<PropsTable component="LinearProgressIndicator" />
+
+### CircularProgressIndicator
+
+<PropsTable component="CircularProgressIndicator" />

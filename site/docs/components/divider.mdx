@@ -1,0 +1,119 @@
+---
+title: Divider
+---
+
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Divider } from 'm3-expressive-react'
+
+export const rows = ['Item one', 'Item two', 'Item three']
+
+export const listBox = {
+  width: '100%',
+  maxWidth: 360,
+  border: '1px solid var(--md-sys-color-outline-variant)',
+  borderRadius: 12,
+}
+
+# Divider
+
+MD3 divider: a thin `outline-variant` line that groups content in lists and
+layouts. Renders a native `<hr>`, horizontal or vertical.
+
+## Horizontal
+
+<Demo>
+  <div style={{ width: '100%' }}>
+    <div style={{ padding: '12px 0' }}>Above</div>
+    <Divider />
+    <div style={{ padding: '12px 0' }}>Below</div>
+  </div>
+</Demo>
+
+```tsx
+<Divider />
+```
+
+## Inset
+
+`variant="inset"` indents the start by 16dp (e.g. to align with list text);
+`variant="middle-inset"` indents both ends.
+
+<Demo>
+  <div style={listBox}>
+    {rows.map((item, i) => (
+      <div key={item}>
+        {i > 0 && <Divider variant="inset" />}
+        <div style={{ padding: '12px 16px' }}>{item}</div>
+      </div>
+    ))}
+  </div>
+  <div style={listBox}>
+    {rows.map((item, i) => (
+      <div key={item}>
+        {i > 0 && <Divider variant="middle-inset" />}
+        <div style={{ padding: '12px 16px' }}>{item}</div>
+      </div>
+    ))}
+  </div>
+</Demo>
+
+```tsx
+<Divider variant="inset" />
+<Divider variant="middle-inset" />
+```
+
+## Vertical
+
+`orientation="vertical"` stretches to the height of its flex / grid row.
+
+<Demo>
+  <div style={{ display: 'flex', alignItems: 'center', gap: 16, height: 48 }}>
+    <span>Bold</span>
+    <Divider orientation="vertical" />
+    <span>Italic</span>
+    <Divider orientation="vertical" />
+    <span>Underline</span>
+  </div>
+</Demo>
+
+```tsx
+<div style={{ display: 'flex', gap: 16 }}>
+  <span>Bold</span>
+  <Divider orientation="vertical" />
+  <span>Italic</span>
+</div>
+```
+
+## Decorative vs. semantic
+
+Dividers are decorative by default: they are hidden from assistive
+technology (`aria-hidden`), matching MD3 and Compose. When the line marks a
+real thematic break, pass `decorative={false}` — it is then exposed as a
+separator (the implicit role of `<hr>`, plus `aria-orientation="vertical"`
+for vertical dividers).
+
+<Demo>
+  <div style={{ width: '100%' }}>
+    <p style={{ margin: '0 0 12px' }}>Chapter one ends here.</p>
+    <Divider decorative={false} />
+    <p style={{ margin: '12px 0 0' }}>Chapter two begins.</p>
+  </div>
+</Demo>
+
+```tsx
+<Divider decorative={false} />
+```
+
+## Accessibility
+
+- Decorative by default (`aria-hidden`), so screen readers don't announce
+  a separator between every list row. Use `decorative={false}` for a
+  meaningful section break.
+- MD3 treats dividers as decorative, so they have no contrast minimum. In
+  forced-colors mode (Windows High Contrast) the line is drawn with the
+  system `CanvasText` color so it stays visible.
+
+## Props
+
+<PropsTable component="Divider" />

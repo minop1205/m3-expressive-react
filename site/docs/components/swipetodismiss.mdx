@@ -1,0 +1,253 @@
+---
+title: SwipeToDismiss
+---
+
+import { useEffect, useRef, useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { SwipeToDismiss, List, ListItem, IconButton, Button } from 'm3-expressive-react'
+
+export const ArchiveIcon = () => (
+  <svg viewBox="0 -960 960 960" width={24} height={24} fill="currentColor" aria-hidden="true">
+    <path d="m480-270 156-156-40-40-86 86v-201h-60v201l-86-86-40 40 156 156ZM180-674v494h600v-494H180Zm0 554q-24.75 0-42.37-17.63Q120-155.25 120-180v-529q0-9.88 3-19.06 3-9.18 9-16.94l52-71q8-11 20.94-17.5Q217.88-840 232-840h495q14.12 0 27.06 6.5T775-816l53 71q6 7.76 9 16.94 3 9.18 3 19.06v529q0 24.75-17.62 42.37Q804.75-120 780-120H180Zm17-614h565l-36.41-46H233l-36 46Zm283 307Z" />
+  </svg>
+)
+
+export const DeleteIcon = () => (
+  <svg viewBox="0 -960 960 960" width={24} height={24} fill="currentColor" aria-hidden="true">
+    <path d="M261-120q-24.75 0-42.37-17.63Q201-155.25 201-180v-570h-41v-60h188v-30h264v30h188v60h-41v570q0 24-18 42t-42 18H261Zm438-630H261v570h438v-570ZM367-266h60v-399h-60v399Zm166 0h60v-399h-60v399ZM261-750v570-570Z" />
+  </svg>
+)
+
+export const listStyle = {
+  width: '100%',
+  maxWidth: 360,
+  border: '1px solid var(--md-sys-color-outline-variant)',
+  borderRadius: 12,
+  overflow: 'hidden',
+}
+
+export function SwipeBackground({ icon, label, align, color, background }) {
+  return (
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: align === 'start' ? 'flex-start' : 'flex-end',
+        gap: 12,
+        padding: '0 24px',
+        boxSizing: 'border-box',
+        color,
+        background,
+      }}
+    >
+      {icon}
+      <span>{label}</span>
+    </div>
+  )
+}
+
+export const archiveBackground = (
+  <SwipeBackground
+    icon={<ArchiveIcon />}
+    label="Archive"
+    align="start"
+    color="var(--md-sys-color-on-secondary-container)"
+    background="var(--md-sys-color-secondary-container)"
+  />
+)
+
+export const deleteBackground = (
+  <SwipeBackground
+    icon={<DeleteIcon />}
+    label="Delete"
+    align="end"
+    color="var(--md-sys-color-on-error-container)"
+    background="var(--md-sys-color-error-container)"
+  />
+)
+
+# SwipeToDismiss
+
+MD3 swipe-to-dismiss row (Compose `SwipeToDismissBox`): a horizontally
+draggable row over a background that is revealed as it slides away.
+Typically wraps a `ListItem` inside a `List`.
+
+## In a list
+
+Swipe a row start→end to archive or end→start to delete. Each direction
+reveals its own background (`startToEndBackground` /
+`endToStartBackground`); the row slides out and `onDismiss` then removes it.
+Inside a `List`, `SwipeToDismiss` renders the `<li>` and the nested
+`ListItem` renders a `<div>`, so list semantics are kept.
+
+export function ListDemo() {
+  const [items, setItems] = useState([1, 2, 3, 4])
+  return (
+    <>
+      <List style={listStyle}>
+        {items.map((n) => (
+          <SwipeToDismiss
+            key={n}
+            onDismiss={() => setItems((prev) => prev.filter((x) => x !== n))}
+            startToEndBackground={archiveBackground}
+            endToStartBackground={deleteBackground}
+          >
+            <ListItem headline={`Swipe me #${n}`} supportingText="Drag left or right" />
+          </SwipeToDismiss>
+        ))}
+      </List>
+      <Button variant="text" onClick={() => setItems([1, 2, 3, 4])}>
+        Reset
+      </Button>
+    </>
+  )
+}
+
+<Demo>
+  <ListDemo />
+</Demo>
+
+```tsx
+<List>
+  {items.map((item) => (
+    <SwipeToDismiss
+      key={item.id}
+      onDismiss={(direction) => remove(item.id, direction)}
+      startToEndBackground={<ArchiveBackground />}
+      endToStartBackground={<DeleteBackground />}
+    >
+      <ListItem headline={item.title} />
+    </SwipeToDismiss>
+  ))}
+</List>
+```
+
+A single `background` is used for both directions when the
+direction-specific ones are omitted. `enableStartToEnd` /
+`enableEndToStart` turn a direction off, and `threshold` (default 56px) is
+the distance a slow release must pass to dismiss — a fling of at least
+125px/s dismisses regardless of distance. Directions are logical, so they
+mirror in RTL.
+
+## Delete button alternative
+
+Swiping must not be the only way to reach an action. The controlled
+`dismissed` prop dismisses programmatically: here each row's delete button
+sets it, which plays the same exit animation as a swipe; `onDismiss` then
+removes the row and moves focus to the next row's button so keyboard users
+are not dropped to `<body>`.
+
+export function DeleteButtonDemo() {
+  const [items, setItems] = useState([1, 2, 3, 4])
+  const [dismissed, setDismissed] = useState({})
+  const listRef = useRef(null)
+  const focusIndex = useRef(null)
+  const remove = (n) => {
+    if (listRef.current?.contains(document.activeElement)) focusIndex.current = items.indexOf(n)
+    setItems((prev) => prev.filter((x) => x !== n))
+  }
+  useEffect(() => {
+    if (focusIndex.current == null) return
+    const buttons = listRef.current?.querySelectorAll('button')
+    const next = buttons?.[Math.min(focusIndex.current, buttons.length - 1)]
+    ;(next ?? listRef.current)?.focus()
+    focusIndex.current = null
+  }, [items])
+  return (
+    <List ref={listRef} tabIndex={-1} style={listStyle}>
+      {items.map((n) => (
+        <SwipeToDismiss
+          key={n}
+          dismissed={dismissed[n] ?? null}
+          onDismissedChange={(value) => setDismissed((prev) => ({ ...prev, [n]: value }))}
+          onDismiss={() => remove(n)}
+          enableStartToEnd={false}
+          endToStartBackground={deleteBackground}
+        >
+          <ListItem
+            headline={`Message #${n}`}
+            supportingText="Swipe left or press delete"
+            trailing={
+              <IconButton
+                icon={<DeleteIcon />}
+                aria-label={`Delete message #${n}`}
+                variant="standard"
+                onClick={() => setDismissed((prev) => ({ ...prev, [n]: 'endToStart' }))}
+              />
+            }
+          />
+        </SwipeToDismiss>
+      ))}
+    </List>
+  )
+}
+
+<Demo>
+  <DeleteButtonDemo />
+</Demo>
+
+```tsx
+const [dismissed, setDismissed] = useState<SwipeDismissDirection | null>(null)
+
+<SwipeToDismiss
+  dismissed={dismissed}
+  onDismissedChange={setDismissed}
+  onDismiss={() => removeMessage(id)}
+  enableStartToEnd={false}
+  endToStartBackground={<DeleteBackground />}
+>
+  <ListItem
+    headline="Message"
+    trailing={
+      <IconButton
+        icon={<Delete />}
+        aria-label="Delete message"
+        onClick={() => setDismissed('endToStart')}
+      />
+    }
+  />
+</SwipeToDismiss>
+```
+
+Set `dismissed` back to `null` to reset the row (for example to undo, or to
+veto a swipe: in controlled mode, keeping the value `null` in
+`onDismissedChange` cancels the dismissal). Gestures are disabled while a
+row is dismissed.
+
+## Styling the background by direction
+
+The root exposes styling hooks for backgrounds that react to the swipe:
+`data-direction` (current swipe / dismiss direction), `data-target` (the
+anchor the row would settle at if released now: `settled` / `startToEnd` /
+`endToStart`), `data-dismissed`, `data-dragging`, and the
+`--md-swipe-to-dismiss-progress` custom property (0–1, swiped distance /
+row width).
+
+```css
+.row[data-target='endToStart'] .deleteIcon {
+  transform: scale(1.2);
+}
+.row .background {
+  opacity: calc(0.4 + var(--md-swipe-to-dismiss-progress) * 0.6);
+}
+```
+
+## Accessibility
+
+- Always provide a non-gesture alternative for the swipe action (a delete
+  button, a menu item) that sets `dismissed` — m3 requires swipeable list
+  items to expose their hidden actions another way.
+- Dragging starts only after an 8px touch slop, so nested buttons and
+  clickable rows keep their clicks.
+- The background is decorative (`aria-hidden`); put the action's label in
+  the alternative control.
+- `onDismiss` fires after the exit animation (immediately under reduced
+  motion). If focus was inside the removed row, move it somewhere sensible,
+  as in the delete-button demo.
+
+## Props
+
+<PropsTable component="SwipeToDismiss" />
