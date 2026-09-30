@@ -105,7 +105,9 @@
   transform: scaleX(1);
 }
 
-/* Hover / press state layer over the pill. */
+/* Hover / keyboard-focus / press state layer over the pill (0.08 / 0.10 /
+   0.10). Focus is declared after hover so hover + focus shows one layer at
+   0.10, never a sum (same ruling as the shared Ripple, #194). */
 .indicator::after {
   content: '';
   position: absolute;
@@ -120,6 +122,10 @@
 
 .item:hover:not(:disabled) .indicator::after {
   opacity: var(--md-sys-state-hover-state-layer-opacity);
+}
+
+.item:focus-visible:not(:disabled) .indicator::after {
+  opacity: var(--md-sys-state-focus-state-layer-opacity);
 }
 
 .item:active:not(:disabled) .indicator::after {
