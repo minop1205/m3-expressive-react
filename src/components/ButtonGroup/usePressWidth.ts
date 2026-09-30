@@ -39,15 +39,20 @@ export function pressedWidths(
 }
 
 function motion(el: Element): { duration: number; easing: string } {
-  // Site: pressed-width spring damping 0.9 / stiffness 1400 at every size
-  // (Compose FastSpatial, standard scheme) — ~150ms with no visible overshoot,
-  // the same approximation as the Button press morph (button audit B5).
+  // Compose ButtonGroup animates the pressed width with
+  // MotionSchemeKeyTokens.FastSpatial — read from the motion-scheme tokens so
+  // ThemeProvider motionScheme switches it (expressive 0.6 / 800 overshoots,
+  // standard 0.9 / 1400 does not). Fallback: expressive FastSpatial duration.
   const style = getComputedStyle(el)
-  const duration = parseFloat(style.getPropertyValue('--md-sys-motion-duration-short3'))
-  const easing = style.getPropertyValue('--md-sys-motion-easing-standard').trim()
+  const duration = parseFloat(
+    style.getPropertyValue('--md-sys-motion-spring-fast-spatial-duration'),
+  )
+  const easing = style
+    .getPropertyValue('--md-sys-motion-spring-fast-spatial-easing')
+    .trim()
   return {
-    duration: Number.isFinite(duration) ? duration : 150,
-    easing: easing || 'cubic-bezier(0.2, 0, 0, 1)',
+    duration: Number.isFinite(duration) ? duration : 360,
+    easing: easing || 'ease-out',
   }
 }
 

@@ -5,22 +5,18 @@
  * margin (Compose data-overload padding); the snackbar fills the width up to
  * 600dp (ContainerMaxWidth).
  *
- * Motion: enter / exit fade (Compose FastEffects spring, ≈150ms) + scale
- * 0.8↔1 (FastSpatial — bouncy in the Expressive scheme). Reduced motion: fade
- * only (Phase B, B3).
- * TODO(#314): switch to --md-sys-motion-spring-fast-effects-* /
- * --md-sys-motion-spring-fast-spatial-* once the motion-scheme tokens land.
+ * Motion: enter / exit fade on FastEffects + scale 0.8↔1 on FastSpatial
+ * (Compose FadeInFadeOutWithScale; bouncy in the Expressive scheme). As in
+ * Compose the item is removed when the fade finishes, so the exit scale is
+ * cut at the FastEffects duration. Reduced motion: fade only (B3).
  */
 
 .host {
   --_host-margin: 12px;
-  --_enter-effects-duration: var(--md-sys-motion-duration-short3);
-  --_enter-effects-easing: var(--md-sys-motion-easing-standard);
-  --_enter-spatial-duration: var(--md-sys-motion-duration-medium3);
-  --_enter-spatial-easing: cubic-bezier(0.34, 1.4, 0.5, 1);
-  /* Must equal EXIT_MS in SnackbarProvider.tsx. */
-  --_exit-duration: var(--md-sys-motion-duration-short3);
-  --_exit-easing: var(--md-sys-motion-easing-standard);
+  --_effects-duration: var(--md-sys-motion-spring-fast-effects-duration);
+  --_effects-easing: var(--md-sys-motion-spring-fast-effects-easing);
+  --_spatial-duration: var(--md-sys-motion-spring-fast-spatial-duration);
+  --_spatial-easing: var(--md-sys-motion-spring-fast-spatial-easing);
 
   position: fixed;
   inset-inline: 0;
@@ -49,15 +45,15 @@
   pointer-events: auto;
   transform-origin: center;
   animation:
-    md-snackbar-fade-in var(--_enter-effects-duration) var(--_enter-effects-easing) both,
-    md-snackbar-scale-in var(--_enter-spatial-duration) var(--_enter-spatial-easing) both;
+    md-snackbar-fade-in var(--_effects-duration) var(--_effects-easing) both,
+    md-snackbar-scale-in var(--_spatial-duration) var(--_spatial-easing) both;
 }
 
 .item[data-state='exiting'] {
   pointer-events: none;
   animation:
-    md-snackbar-fade-out var(--_exit-duration) var(--_exit-easing) both,
-    md-snackbar-scale-out var(--_exit-duration) var(--_exit-easing) both;
+    md-snackbar-fade-out var(--_effects-duration) var(--_effects-easing) both,
+    md-snackbar-scale-out var(--_spatial-duration) var(--_spatial-easing) both;
 }
 
 @keyframes md-snackbar-fade-in {
@@ -83,9 +79,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .item {
-    animation: md-snackbar-fade-in var(--_enter-effects-duration) var(--_enter-effects-easing) both;
+    animation: md-snackbar-fade-in var(--_effects-duration) var(--_effects-easing) both;
   }
   .item[data-state='exiting'] {
-    animation: md-snackbar-fade-out var(--_exit-duration) var(--_exit-easing) both;
+    animation: md-snackbar-fade-out var(--_effects-duration) var(--_effects-easing) both;
   }
 }

@@ -41,26 +41,33 @@
   visibility: hidden;
   pointer-events: none;
 
-  /* Show / hide ≈ Compose animateTooltip: scale 0.8 ↔ 1 from the center
-     (FastSpatial spring, standard scheme 0.9/1400 ≈ 150ms, no visible bounce)
-     + fade (FastEffects 1.0/3800 ≈ 80ms) — the same approximation as Menu.
-     No motion-scheme tokens exist yet (Phase B B2), so this uses the standard
-     easing token. */
+  /* Show / hide = Compose animateTooltip: scale 0.8 ↔ 1 from the center on
+     FastSpatial + fade on FastEffects (motion-scheme spring tokens). The
+     hide is held for the longer of the two so neither is cut off (under
+     reduced motion the spatial token is 0ms and only the fade remains). */
+  --_exit-duration: max(
+    var(--md-sys-motion-spring-fast-spatial-duration),
+    var(--md-sys-motion-spring-fast-effects-duration)
+  );
   transform: scale(0.8);
   transform-origin: center;
   transition:
-    opacity 80ms linear,
-    transform 150ms var(--md-sys-motion-easing-standard),
-    visibility 0s linear 150ms;
+    opacity var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing),
+    transform var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    visibility 0s linear var(--_exit-duration);
   /* Keep the top-layer popover rendered during the exit animation. Browsers
      that don't know `allow-discrete` drop this declaration and keep the one
      above. */
   transition:
-    opacity 80ms linear,
-    transform 150ms var(--md-sys-motion-easing-standard),
-    visibility 0s linear 150ms,
-    display 150ms allow-discrete,
-    overlay 150ms allow-discrete;
+    opacity var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing),
+    transform var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    visibility 0s linear var(--_exit-duration),
+    display var(--_exit-duration) allow-discrete,
+    overlay var(--_exit-duration) allow-discrete;
 }
 
 .open {

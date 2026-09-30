@@ -77,16 +77,18 @@
   background-color: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
   opacity: 0;
   visibility: hidden;
+  /* Scrim fade: Compose WideNavigationRail DefaultEffects. */
   transition:
-    opacity var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard),
-    visibility 0s linear var(--md-sys-motion-duration-medium2);
+    opacity var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing),
+    visibility 0s linear var(--md-sys-motion-spring-default-effects-duration);
 }
 
 .modalRoot[data-open] .scrim {
   opacity: 1;
   visibility: visible;
-  transition: opacity var(--md-sys-motion-duration-medium2)
-    var(--md-sys-motion-easing-standard);
+  transition: opacity var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
 }
 
 .modalSurface {
@@ -114,8 +116,8 @@
   );
   border-start-end-radius: calc(var(--md-sys-shape-corner-large) * var(--_t, 0));
   border-end-end-radius: calc(var(--md-sys-shape-corner-large) * var(--_t, 0));
-  transition: box-shadow var(--md-sys-motion-duration-medium2)
-    var(--md-sys-motion-easing-standard);
+  transition: box-shadow var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
 }
 
 .rail[data-modal]:dir(rtl) {
@@ -133,15 +135,17 @@
   --_t: 1;
   transform: translateX(calc(min(0%, (var(--_reveal, 0) - 1) * 100%) * var(--_dir)));
   visibility: hidden;
+  /* Hidden once the DefaultSpatial slide-out (useRailMorph) has settled. */
   transition:
-    box-shadow var(--md-sys-motion-duration-medium2) var(--md-sys-motion-easing-standard),
-    visibility 0s linear var(--md-sys-motion-duration-medium4);
+    box-shadow var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing),
+    visibility 0s linear var(--md-sys-motion-spring-default-spatial-duration);
 }
 
 .rail[data-hide-on-collapse][data-open] {
   visibility: visible;
-  transition: box-shadow var(--md-sys-motion-duration-medium2)
-    var(--md-sys-motion-easing-standard);
+  transition: box-shadow var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
 }
 
 @media (prefers-reduced-motion: reduce) {

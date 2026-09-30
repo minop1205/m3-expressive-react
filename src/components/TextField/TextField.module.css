@@ -82,9 +82,17 @@
     transparent
   );
 
-  /* Animation */
-  --_label-duration: 150ms;
-  --_label-easing: var(--md-sys-motion-easing-standard);
+  /* Animation (Compose TextFieldImpl): label position, indicator / outline
+     thickness and the notch on FastSpatial; label, indicator and outline
+     colors on FastEffects; placeholder / content shows on SlowEffects and
+     hides on FastEffects. Reduced motion (B3): the spatial tokens resolve to
+     0ms (tokens.css), so the label jumps and only the color / opacity fade. */
+  --_label-duration: var(--md-sys-motion-spring-fast-spatial-duration);
+  --_label-easing: var(--md-sys-motion-spring-fast-spatial-easing);
+  --_effects-duration: var(--md-sys-motion-spring-fast-effects-duration);
+  --_effects-easing: var(--md-sys-motion-spring-fast-effects-easing);
+  --_show-duration: var(--md-sys-motion-spring-slow-effects-duration);
+  --_show-easing: var(--md-sys-motion-spring-slow-effects-easing);
 
   position: relative;
   display: inline-flex;
@@ -159,7 +167,7 @@
 .activeIndicator::after {
   border-bottom: var(--_focus-active-indicator-height) solid var(--_focus-active-indicator-color);
   opacity: 0;
-  transition: opacity var(--_label-duration) var(--_label-easing);
+  transition: opacity var(--_effects-duration) var(--_effects-easing);
 }
 
 .focused .activeIndicator::after {
@@ -183,8 +191,8 @@
 .outlineEnd {
   box-sizing: border-box;
   transition:
-    border-color 150ms,
-    border-width 150ms;
+    border-color var(--_effects-duration) var(--_effects-easing),
+    border-width var(--_label-duration) var(--_label-easing);
 }
 
 /* Left segment: left + top + bottom borders, left corners rounded */
@@ -216,9 +224,9 @@
   width: 50%;
   border-top: var(--_outline-width) solid var(--_outline-color);
   transition:
-    transform 150ms var(--_label-easing),
-    border-color 150ms,
-    border-width 150ms;
+    transform var(--_label-duration) var(--_label-easing),
+    border-color var(--_effects-duration) var(--_effects-easing),
+    border-width var(--_label-duration) var(--_label-easing);
 }
 
 .outlineNotch::before {
@@ -335,7 +343,7 @@
     left var(--_label-duration) var(--_label-easing),
     font-size var(--_label-duration) var(--_label-easing),
     line-height var(--_label-duration) var(--_label-easing),
-    color var(--_label-duration);
+    color var(--_effects-duration) var(--_effects-easing);
 }
 
 /* With icons: adjust label horizontal position */
@@ -397,7 +405,7 @@
 
   /* Content is invisible when empty+unfocused, fades in on focus/populate */
   opacity: 0;
-  transition: opacity 83ms var(--_label-easing);
+  transition: opacity var(--_effects-duration) var(--_effects-easing);
 }
 
 /* With icons: remove horizontal padding (icons provide spacing) */
@@ -413,7 +421,8 @@
 .focused .content,
 .populated .content {
   opacity: 1;
-  transition-delay: 67ms;
+  /* Short hold so the label clears the input line first (material-web). */
+  transition: opacity var(--_show-duration) var(--_show-easing) 67ms;
 }
 
 .disabled .content {
@@ -463,13 +472,13 @@
 .input::placeholder {
   color: var(--_input-text-placeholder-color);
   opacity: 0;
-  transition: opacity 83ms var(--_label-easing);
+  transition: opacity var(--_effects-duration) var(--_effects-easing);
 }
 
 .noLabel .input::placeholder,
 .focused .input::placeholder {
   opacity: 1;
-  transition-delay: 67ms;
+  transition: opacity var(--_show-duration) var(--_show-easing) 67ms;
 }
 
 /* Textarea */

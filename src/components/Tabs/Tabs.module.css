@@ -58,10 +58,10 @@
   font-weight: var(--md-sys-typescale-title-small-weight);
   line-height: var(--md-sys-typescale-title-small-line-height);
   letter-spacing: var(--md-sys-typescale-title-small-tracking);
-  /* Approximates Compose `TabTransition` (DefaultEffects / FastEffects
-     springs). TODO(#314): switch to the motion-scheme effects tokens. */
-  transition: color var(--md-sys-motion-duration-short3)
-    var(--md-sys-motion-easing-standard);
+  /* Compose `TabTransition`: FastEffects towards unselected, DefaultEffects
+     towards selected (rule below). */
+  transition: color var(--md-sys-motion-spring-fast-effects-duration)
+    var(--md-sys-motion-spring-fast-effects-easing);
 
   --_label-text-color: var(--md-sys-color-on-surface-variant);
   --md-ripple-color: var(--_state-layer-color);
@@ -144,10 +144,15 @@
   white-space: nowrap;
 }
 
+.tab[data-selected] {
+  transition: color var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
+}
+
 /* --------------------------------------------------------------------------- */
 /* Active indicator — one element for the row, positioned from JS under the    */
-/* selected tab, sliding between tabs (Compose TabIndicatorOffsetNode, spring  */
-/* DefaultSpatial 0.9/700 ≈ 250ms). TODO(#314): motion-scheme spatial tokens.  */
+/* selected tab, sliding between tabs (Compose TabIndicatorOffsetNode:        */
+/* DefaultSpatial, motion-scheme spring tokens).                               */
 /* --------------------------------------------------------------------------- */
 .indicator {
   position: absolute;
@@ -159,8 +164,10 @@
   pointer-events: none;
   z-index: 1;
   transition:
-    transform var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-standard),
-    width var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-standard);
+    transform var(--md-sys-motion-spring-default-spatial-duration)
+      var(--md-sys-motion-spring-default-spatial-easing),
+    width var(--md-sys-motion-spring-default-spatial-duration)
+      var(--md-sys-motion-spring-default-spatial-easing);
 }
 
 .indicator[hidden] {
@@ -181,6 +188,7 @@
 /* Reduced motion (B3): state changes are instant. */
 @media (prefers-reduced-motion: reduce) {
   .tab,
+  .tab[data-selected],
   .indicator {
     transition: none;
   }

@@ -36,14 +36,13 @@
   /*
    * Motion (Compose ExpandedDockedSearchBarWithGap): the container expands on
    * DefaultSpatial and collapses on FastSpatial; the content fades in over
-   * 100ms after a 50ms delay and out over 100ms.
-   * TODO(#314): switch the spatial curves to the --md-sys-motion-spring-*
-   * tokens once the motion-scheme tokens land.
+   * 100ms after a 50ms delay and out over 100ms (Compose tweens — kept on
+   * the duration / easing tokens). Spatial: motion-scheme spring tokens.
    */
-  --_expand-duration: var(--md-sys-motion-duration-medium4);
-  --_expand-easing: var(--md-sys-motion-easing-emphasized-decelerate);
-  --_collapse-duration: var(--md-sys-motion-duration-short4);
-  --_collapse-easing: var(--md-sys-motion-easing-emphasized-accelerate);
+  --_expand-duration: var(--md-sys-motion-spring-default-spatial-duration);
+  --_expand-easing: var(--md-sys-motion-spring-default-spatial-easing);
+  --_collapse-duration: var(--md-sys-motion-spring-fast-spatial-duration);
+  --_collapse-easing: var(--md-sys-motion-spring-fast-spatial-easing);
 
   /* While open (and through the collapse) the whole component — scrim,
      view, bar — stacks above the page. */

@@ -93,8 +93,9 @@ const SnackbarContext = createContext<UseSnackbarResult | null>(null)
 const SHORT_MS = 4000
 const LONG_MS = 10000
 /**
- * Exit length — matches the fade-out in SnackbarProvider.module.css
- * (--md-sys-motion-duration-short3). The next queued snackbar enters after it.
+ * Exit length — the FastEffects fade-out in SnackbarProvider.module.css
+ * (--md-sys-motion-spring-fast-effects-duration, 150ms in both motion
+ * schemes). The next queued snackbar enters after it.
  */
 const EXIT_MS = 150
 

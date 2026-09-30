@@ -121,8 +121,11 @@
 
 .item[data-interactive] {
   cursor: pointer;
+  /* Press shape change: bounce-free like the Button press morph (Compose
+     DefaultEffects, B5). Elevation keeps the duration / easing tokens. */
   transition:
-    border-radius var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard),
+    border-radius var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing),
     box-shadow var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
 }
 

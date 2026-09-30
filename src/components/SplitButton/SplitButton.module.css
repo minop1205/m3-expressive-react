@@ -112,11 +112,13 @@
   height: var(--_trailing-icon-size);
   /* Closed: nudged towards the start edge (optical centre). */
   translate: var(--_chevron-offset) 0;
+  /* Rotation / offset are small spatial moves → FastSpatial (the trailing
+     button's own shape morph stays bounce-free: Button, DefaultEffects). */
   transition:
-    transform var(--md-sys-motion-duration-medium1)
-      var(--md-sys-motion-easing-standard),
-    translate var(--md-sys-motion-duration-medium1)
-      var(--md-sys-motion-easing-standard);
+    transform var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    translate var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing);
 }
 
 .split:dir(rtl) .chevron {

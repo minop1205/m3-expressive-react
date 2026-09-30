@@ -21,14 +21,12 @@
   --_icon-label-space: 8px;
   --_label-offset: calc((var(--_icon-size) + var(--_icon-label-space)) / -2);
 
-  /* Motion. TODO(#314): switch to the FastSpatial (0.9 / 1400) and
-     DefaultEffects (1.0 / 1600) spring tokens once
-     --md-sys-motion-spring-* land (PR #319). Until then: standard easing,
-     ~200ms spatial / ~150ms effects (FastSpatial settles in ~150–230ms). */
-  --_spatial-duration: var(--md-sys-motion-duration-short4);
-  --_spatial-easing: var(--md-sys-motion-easing-standard);
-  --_effects-duration: var(--md-sys-motion-duration-short3);
-  --_effects-easing: var(--md-sys-motion-easing-linear);
+  /* Motion (Compose SegmentedButton): check scaleIn + label shift use
+     FastSpatial, check fadeIn / icon crossfade use DefaultEffects. */
+  --_spatial-duration: var(--md-sys-motion-spring-fast-spatial-duration);
+  --_spatial-easing: var(--md-sys-motion-spring-fast-spatial-easing);
+  --_effects-duration: var(--md-sys-motion-spring-default-effects-duration);
+  --_effects-easing: var(--md-sys-motion-spring-default-effects-easing);
 
   display: inline-grid;
   grid-auto-flow: column;

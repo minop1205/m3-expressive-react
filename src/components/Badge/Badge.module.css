@@ -14,7 +14,6 @@
   --_large-padding: 4px;
   --_large-offset-bottom: 14px;
   --_large-offset-start: 12px;
-  --_easing: var(--md-sys-motion-easing-standard);
 }
 
 .anchor {
@@ -35,19 +34,24 @@
 
   /* Hidden by default; .visible triggers scale-in. Once scaled out the badge
      also becomes visibility: hidden so assistive technology stops reading it
-     (the visibility switch is delayed until the scale-out has finished). */
+     (the visibility switch is delayed until the scale-out has finished).
+     Scale-in: FastSpatial spring token (a small spatial move). Scale-out:
+     the critically damped DefaultEffects, since an overshoot past scale(0)
+     would briefly render a mirrored badge. */
   transform: scale(0);
   visibility: hidden;
   transition:
-    transform 150ms var(--_easing),
-    visibility 0s linear 150ms;
+    transform var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing),
+    visibility 0s linear var(--md-sys-motion-spring-default-effects-duration);
 }
 
 .visible {
   transform: scale(1);
   visibility: visible;
   transition:
-    transform 150ms var(--_easing),
+    transform var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
     visibility 0s linear 0s;
 }
 
