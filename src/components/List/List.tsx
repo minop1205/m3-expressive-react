@@ -1,37 +1,291 @@
 import {
   forwardRef,
+  type FocusEvent,
   type HTMLAttributes,
+  type KeyboardEvent,
   type KeyboardEventHandler,
   type LiHTMLAttributes,
   type MouseEvent,
   type MouseEventHandler,
   type ReactNode,
+  type SyntheticEvent,
   useCallback,
   useContext,
+  useId,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
-import { ListParentContext } from './ListContext'
-import { isFromNestedInteractive } from '../../internal/isFromNestedInteractive'
+import {
+  ListNavContext,
+  ListParentContext,
+  type ListNav,
+  type ListSelectionMode,
+} from './ListContext'
+import {
+  isContainerKeyActivation,
+  isFromNestedInteractive,
+} from '../../internal/isFromNestedInteractive'
 import { assignRef } from '../../internal/assignRef'
 import styles from './List.module.css'
 
-export interface ListProps extends HTMLAttributes<HTMLUListElement> {
+interface ListBaseProps
+  extends Omit<HTMLAttributes<HTMLUListElement>, 'onChange' | 'defaultValue'> {
   children?: ReactNode
 }
 
-/** MD3 list container — a vertical `<ul role="list">` with 8dp block padding. */
-export const List = forwardRef<HTMLUListElement, ListProps>(function List(
-  { className, children, ...rest },
-  ref,
-) {
+/** No selection model: a plain list (static, single-action or multi-action rows). */
+export interface ListNoSelectionProps extends ListBaseProps {
+  /** @default 'none' */
+  selectionMode?: 'none'
+  value?: never
+  /** Unused without a selection model (kept for HTMLAttributes compatibility). */
+  defaultValue?: HTMLAttributes<HTMLUListElement>['defaultValue']
+  /** Native `change` events bubbling from descendants. */
+  onChange?: HTMLAttributes<HTMLUListElement>['onChange']
+}
+
+/** Single-select list: `role="listbox"`, items are `option`s with `aria-selected`. */
+export interface ListSingleSelectionProps extends ListBaseProps {
+  selectionMode: 'single'
+  /** Controlled selected item value (`null` = none). */
+  value?: string | null
+  /** Uncontrolled initial selected item value. @default null */
+  defaultValue?: string | null
+  /** Fires with the triggering event and the next selected value. */
+  onChange?: (event: SyntheticEvent, value: string | null) => void
+}
+
+/** Multi-select list: `role="listbox"` + `aria-multiselectable`. */
+export interface ListMultipleSelectionProps extends ListBaseProps {
+  selectionMode: 'multiple'
+  /** Controlled selected item values. */
+  value?: string[]
+  /** Uncontrolled initial selected item values. @default [] */
+  defaultValue?: string[]
+  /** Fires with the triggering event and the next selected values. */
+  onChange?: (event: SyntheticEvent, value: string[]) => void
+}
+
+export type ListProps =
+  | ListNoSelectionProps
+  | ListSingleSelectionProps
+  | ListMultipleSelectionProps
+
+type SelectionValue = string | null | string[]
+
+/** Controls that use the arrow keys themselves (the list leaves them alone). */
+const ARROW_KEY_OWNER = [
+  'input:not([type="checkbox"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="image"])',
+  'textarea',
+  'select',
+  '[contenteditable]:not([contenteditable="false"])',
+  '[role="slider"]',
+  '[role="spinbutton"]',
+  '[role="combobox"]',
+  '[role="textbox"]',
+  '[role="radio"]',
+].join(',')
+
+const TRAILING_FOCUSABLE =
+  'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
+
+const isEnabled = (el: Element) =>
+  !el.matches(':disabled, [aria-disabled="true"]') && !el.closest('[inert]')
+
+/** The list's rows (primary actions / options) in DOM order. */
+function navItems(root: HTMLElement): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>('[data-list-nav]'))
+}
+
+/** Arrow-key sequence: every enabled row plus the focusable controls in the
+ * rows' trailing slots (m3 "multi-action lists: arrows move through all
+ * focusable actions in the items"). */
+function arrowSequence(root: HTMLElement): HTMLElement[] {
+  return Array.from(
+    root.querySelectorAll<HTMLElement>(
+      `[data-list-nav], [data-list-trailing] :is(${TRAILING_FOCUSABLE})`,
+    ),
+  ).filter(
+    (el) => isEnabled(el) && (el.hasAttribute('data-list-nav') || el.tabIndex >= 0),
+  )
+}
+
+/**
+ * MD3 list container — a vertical `<ul>` with 8dp block padding.
+ *
+ * Keyboard (m3 List accessibility): the focusable rows share **one Tab stop**
+ * — the selected row, else the first (then the last focused one); **Down /
+ * Right** move to the next row and **Up / Left** to the previous one,
+ * wrapping at the ends (Left / Right mirrored in RTL), Home / End jump to
+ * the ends. Controls in the rows' trailing slots stay Tab stops and are part
+ * of the arrow sequence.
+ *
+ * Selection (B17): set `selectionMode="single" | "multiple"` and give each
+ * `ListItem` a `value`; the list owns the state via `value` / `defaultValue` /
+ * `onChange(event, value)`. It then renders `role="listbox"` (label it with
+ * `aria-label` describing the choice) and its items `role="option"` with
+ * `aria-selected`; Enter / Space or a click selects. Options cannot hold
+ * interactive controls (that is a multi-action list, not a selection list),
+ * and selection should not rely on color alone — add a leading / trailing
+ * check indicator.
+ */
+export const List = forwardRef<HTMLUListElement, ListProps>(function List(props, ref) {
+  const {
+    selectionMode = 'none',
+    value,
+    defaultValue,
+    onChange,
+    className,
+    children,
+    onKeyDown,
+    onFocus,
+    role,
+    ...rest
+  } = props as ListBaseProps & {
+    selectionMode?: ListSelectionMode
+    value?: SelectionValue
+    defaultValue?: SelectionValue
+    onChange?: (event: SyntheticEvent, value: SelectionValue) => void
+  }
+  const multiple = selectionMode === 'multiple'
+  const selecting = selectionMode !== 'none'
+
+  const [inner, setInner] = useState<SelectionValue>(
+    () => (defaultValue as SelectionValue | undefined) ?? (multiple ? [] : null),
+  )
+  const controlled = value !== undefined
+  const current = controlled ? value : inner
+
+  const [tabStop, setTabStop] = useState<string | null>(null)
+  const rootRef = useRef<HTMLUListElement | null>(null)
+  const setRef = useCallback(
+    (node: HTMLUListElement | null) => {
+      rootRef.current = node
+      assignRef(ref, node)
+    },
+    [ref],
+  )
+
+  const currentRef = useRef(current)
+  currentRef.current = current
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
+
+  const isSelected = useCallback(
+    (v: string) =>
+      Array.isArray(current) ? current.includes(v) : current != null && current === v,
+    [current],
+  )
+
+  const toggle = useCallback(
+    (event: SyntheticEvent, v: string) => {
+      const prev = currentRef.current
+      let next: SelectionValue
+      if (multiple) {
+        const list = Array.isArray(prev) ? prev : []
+        next = list.includes(v) ? list.filter((x) => x !== v) : [...list, v]
+      } else {
+        // Single select behaves like a radio group: re-activating the
+        // selected option keeps it.
+        if (prev === v) return
+        next = v
+      }
+      if (!controlled) setInner(next)
+      onChangeRef.current?.(event, next)
+    },
+    [multiple, controlled],
+  )
+
+  // Resolve the roving Tab stop after every render: keep the current one
+  // while it is an enabled row, else the selected row, else the first.
+  useLayoutEffect(() => {
+    const root = rootRef.current
+    if (!root) return
+    const rows = navItems(root).filter(isEnabled)
+    if (rows.some((el) => el.dataset.listNav === tabStop)) return
+    const next =
+      rows.find((el) => el.getAttribute('aria-selected') === 'true' || el.hasAttribute('data-list-selected')) ??
+      rows[0]
+    const id = next?.dataset.listNav ?? null
+    if (id !== tabStop) setTabStop(id)
+  })
+
+  const handleFocus = (event: FocusEvent<HTMLUListElement>) => {
+    onFocus?.(event)
+    const row = (event.target as HTMLElement).closest?.('[data-list-nav]') as HTMLElement | null
+    if (row && row === event.target && rootRef.current?.contains(row)) {
+      const id = row.dataset.listNav ?? null
+      if (id !== tabStop) setTabStop(id)
+    }
+  }
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLUListElement>) => {
+    onKeyDown?.(event)
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return
+    const root = rootRef.current
+    const target = event.target as HTMLElement
+    if (!root) return
+    const rtl = window.getComputedStyle(root).direction === 'rtl'
+    let delta: number | 'first' | 'last'
+    switch (event.key) {
+      case 'ArrowDown':
+        delta = 1
+        break
+      case 'ArrowUp':
+        delta = -1
+        break
+      case 'ArrowRight':
+        delta = rtl ? -1 : 1
+        break
+      case 'ArrowLeft':
+        delta = rtl ? 1 : -1
+        break
+      case 'Home':
+        delta = 'first'
+        break
+      case 'End':
+        delta = 'last'
+        break
+      default:
+        return
+    }
+    const seq = arrowSequence(root)
+    const index = seq.indexOf(target)
+    if (index < 0) return
+    if (!target.hasAttribute('data-list-nav') && target.matches(ARROW_KEY_OWNER)) return
+    const next =
+      delta === 'first'
+        ? 0
+        : delta === 'last'
+          ? seq.length - 1
+          : (index + delta + seq.length) % seq.length
+    event.preventDefault()
+    seq[next].focus()
+  }
+
+  const nav = useMemo<ListNav>(
+    () => ({ selectionMode, isSelected, toggle, tabStop }),
+    [selectionMode, isSelected, toggle, tabStop],
+  )
+
   return (
-    <ul ref={ref} {...rest} className={clsx(styles.list, className)}>
-      <ListParentContext.Provider value="list">{children}</ListParentContext.Provider>
+    <ul
+      ref={setRef}
+      {...rest}
+      role={role ?? (selecting ? 'listbox' : undefined)}
+      aria-multiselectable={selecting && multiple ? true : undefined}
+      onKeyDown={handleKeyDown}
+      onFocus={handleFocus}
+      className={clsx(styles.list, className)}
+    >
+      <ListNavContext.Provider value={nav}>
+        <ListParentContext.Provider value="list">{children}</ListParentContext.Provider>
+      </ListNavContext.Provider>
     </ul>
   )
 })
@@ -123,8 +377,16 @@ export interface ListItemProps
   trailing?: ReactNode
   /** Trailing metadata text (right-aligned label). */
   trailingSupportingText?: ReactNode
-  /** Marks the item selected (secondary-container fill). */
+  /**
+   * Marks the item selected (secondary-container fill). Inside a `List` with
+   * a `selectionMode`, the list's `value` decides instead.
+   */
   selected?: boolean
+  /**
+   * The item's value in a `List` with a `selectionMode` (B17): the item then
+   * renders `role="option"` with `aria-selected`.
+   */
+  value?: string
   /** Disable the item and dim its content to 38%. */
   disabled?: boolean
 }
@@ -175,6 +437,7 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
       target,
       rel,
       onKeyDown,
+      value,
       className,
       role,
       tabIndex,
@@ -182,6 +445,10 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
     },
     ref,
   ) {
+    const nav = useContext(ListNavContext)
+    const navId = useId()
+    // Roving Tab stop managed by the List (before it resolves: every row).
+    const rovingTabIndex = nav && nav.tabStop != null ? (nav.tabStop === navId ? 0 : -1) : 0
     const isLink = href != null
     const actionable = onClick != null || isLink
     // Inside a SwipeToDismiss in a List, the SwipeToDismiss root is the <li>
@@ -219,8 +486,54 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
       <span className={styles.trailingText}>{trailingSupportingText}</span>
     )
     const trailingNode = trailing != null && (
-      <span className={styles.trailing}>{trailing}</span>
+      <span className={styles.trailing} data-list-trailing="">
+        {trailing}
+      </span>
     )
+
+    // Selection list (B17): the item itself is the option.
+    if (nav && nav.selectionMode !== 'none') {
+      const optionValue = value ?? navId
+      const isSelected = nav.isSelected(optionValue)
+      const handleOptionClick = (event: MouseEvent<HTMLLIElement>) => {
+        if (isFromNestedInteractive(event)) return
+        nav.toggle(event, optionValue)
+        onClick?.(event)
+      }
+      const handleOptionKeyDown = (event: KeyboardEvent<HTMLLIElement>) => {
+        onKeyDown?.(event)
+        if (!disabled && isContainerKeyActivation(event)) {
+          event.preventDefault()
+          event.currentTarget.click()
+        }
+      }
+      return (
+        <Root
+          ref={rootItemRef}
+          {...rest}
+          data-list-nav={navId}
+          role={role ?? 'option'}
+          aria-selected={isSelected}
+          aria-disabled={disabled || undefined}
+          tabIndex={disabled ? undefined : tabIndex ?? rovingTabIndex}
+          data-lines={lineCount}
+          data-align={align}
+          data-interactive="true"
+          data-selected={isSelected || undefined}
+          data-disabled={disabled || undefined}
+          onClick={disabled ? undefined : handleOptionClick}
+          onKeyDown={handleOptionKeyDown}
+          className={clsx(styles.item, className)}
+        >
+          {leadingNode}
+          {bodyNode}
+          {trailingTextNode}
+          {trailingNode}
+          {!disabled && <Ripple ignoreNestedPress />}
+          {!disabled && <FocusRing />}
+        </Root>
+      )
+    }
 
     if (actionable) {
       const { root, action } = splitActionProps(rest as Record<string, unknown>)
@@ -244,6 +557,8 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
       )
       const actionCommon = {
         ...action,
+        'data-list-nav': navId,
+        'data-list-selected': selected || undefined,
         className: styles.action,
         onKeyDown,
         onClick: disabled ? undefined : handleClick,
@@ -267,7 +582,7 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
                 target={target}
                 rel={rel}
                 role={role ?? (disabled ? 'link' : undefined)}
-                tabIndex={tabIndex}
+                tabIndex={disabled ? tabIndex : tabIndex ?? rovingTabIndex}
                 aria-disabled={disabled || undefined}
               >
                 {actionContent}
@@ -278,7 +593,7 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
                 type="button"
                 role={role}
                 disabled={disabled}
-                tabIndex={tabIndex}
+                tabIndex={tabIndex ?? rovingTabIndex}
               >
                 {actionContent}
               </button>
