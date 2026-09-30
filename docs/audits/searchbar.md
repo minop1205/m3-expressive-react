@@ -185,3 +185,22 @@ SB4a–e → #146(キー/フォーカスハンドラを書き直すため同梱)
   やめ、view は opacity のフェードのみ
 - **位置決め**: 当面は従来どおりバー直下の `position: absolute`(+ `position: fixed` の scrim)。共通ヘルパー
   `usePopupPosition`(B4)への移行は #317
+
+## 修正時の判断(2026-09-30、#145 #146)
+
+- **ロール(SB3a)**: view(`children`)があるときだけ input を `role="combobox"`(`aria-expanded` / `aria-controls` =
+  view の id / `aria-autocomplete="list"`)にする。view がない SearchBar は従来どおり `searchbox`。`children` は任意の
+  コンテンツ(List + ListItem など)なので、listbox / option を強制する `aria-activedescendant` 方式ではなく、**実フォーカスを
+  結果の項目に移す**方式(Compose の DirectionDown と同じ)を採用。`aria-haspopup` は付けない(implicit のまま)
+- **告知(SB3b)**: 視覚的に隠した `role="status"` に、view が開いたときだけ `suggestionsLabel`(既定
+  「Suggestions below」= Compose の stateDescription)を入れる。文言は B1 に従い prop で差し替える
+- **キー操作(SB4a/b)**: input で ArrowDown → view が閉じていれば開く、開いていれば最初の項目へ。項目間は
+  ArrowUp / ArrowDown / Home / End(無効な項目はスキップ、端で止まる)、先頭で ArrowUp → input。view 内の Escape → 閉じて
+  input へフォーカスを戻す(戻したフォーカスで再び開かない)。利用側の `onKeyDown` が `preventDefault()` したキーは
+  組み込み処理をしない
+- **フォーカスアウト(SB4c)**: ルートの `focusout` で `relatedTarget` がルート外なら閉じる。ルート内のポインター押下
+  (結果の非フォーカス領域・scrim)とウィンドウ切り替え(`document.hasFocus()` が false)は除外
+- **Escape とクリア(SB4d)**: view が開いているときの Escape は閉じるだけ(`preventDefault` でネイティブのクリアを
+  止め、`stopPropagation` で外側の dialog も閉じない)。閉じているとき(または view がないとき)はブラウザの
+  `type="search"` のネイティブ動作に任せる(Chromium / Safari はクエリを消す)= APG「popup が出ていないときに限り任意でクリア」
+- **IME(SB4e)**: `nativeEvent.isComposing` または `keyCode === 229` の Enter では `onSearch` を呼ばない
