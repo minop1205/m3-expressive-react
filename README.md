@@ -46,6 +46,13 @@ export function App() {
 > `ThemeProvider`, which generates the full MD3 color-role map (light/dark)
 > from your seed color.
 
+> **CSS minifiers**: the styles use modern CSS such as `@starting-style`
+> (popup entry transitions). cssnano and Lightning CSS handle it; **clean-css
+> does not** — it drops the rules inside `@starting-style` and corrupts the
+> rules that follow. If your build minifies CSS with clean-css (e.g.
+> Docusaurus' default minimizer — set `USE_SIMPLE_CSS_MINIFIER=true`),
+> switch to cssnano or Lightning CSS.
+
 ## Components
 
 Buttons & actions — `Button`, `IconButton`, `ButtonGroup`, `SplitButton`,
