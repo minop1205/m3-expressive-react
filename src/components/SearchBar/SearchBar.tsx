@@ -14,6 +14,7 @@ import {
 } from 'react'
 import clsx from 'clsx'
 import { SearchIcon } from '../../internal/icons'
+import { Ripple } from '../../primitives/Ripple/Ripple'
 import styles from './SearchBar.module.css'
 
 export interface SearchBarProps
@@ -29,9 +30,14 @@ export interface SearchBarProps
   onChange?: (event: ChangeEvent<HTMLInputElement>, value: string) => void
   /** Fires when the user submits (Enter). */
   onSearch?: (value: string) => void
-  /** Icon at the start of the bar (defaults to a search glyph). */
+  /**
+   * Leading content (defaults to a decorative search glyph). Rendered in a
+   * 48dp slot, so it may be a navigation `IconButton` (back / menu) — it
+   * stays in the tab order and the accessibility tree. A purely decorative
+   * custom icon should carry `aria-hidden` itself.
+   */
   startIcon?: ReactNode
-  /** Icon / control at the end of the bar. */
+  /** Trailing icon / control (48dp slot, e.g. a mic or clear `IconButton`). */
   endIcon?: ReactNode
   /** Suggestion / result content shown in the open search view. */
   children?: ReactNode
@@ -72,11 +78,14 @@ export interface SearchBarProps
 /**
  * Material Design 3 Search bar (docked field + search view).
  *
- * 56dp SurfaceContainerHigh stadium field; OnSurface BodyLarge input,
- * OnSurfaceVariant placeholder, OnSurface leading icon — per Compose
- * SearchBarTokens. Providing `children` (results) turns it into a docked search
- * view: a dropdown under the input (Outline divider) that opens on focus and
- * closes on Escape / outside click.
+ * 56dp SurfaceContainerHigh stadium field (360–720dp wide); OnSurface
+ * BodyLarge input with a Primary caret, OnSurfaceVariant placeholder, 48dp
+ * leading / trailing slots — per Compose SearchBarTokens and m3.material.io.
+ * Hover / pressed state layer and a keyboard-only focus ring on the bar.
+ * Providing `children` (results) turns it into a docked search view in the
+ * Expressive "contained" style: a 12dp results container 2dp under the bar
+ * over a scrim, opening on focus and closing on Escape / outside click /
+ * scrim click.
  *
  * MUI parity: the forwarded `ref` and any extra props (`{...rest}`) land on
  * the ROOT element (the `role="search"` landmark); input concerns are
@@ -121,6 +130,18 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
     const open = hasView && (openControlled ? controlledOpen : uncontrolledOpen)
     const wrapperRef = useRef<HTMLDivElement>(null)
+    const inputElRef = useRef<HTMLInputElement | null>(null)
+    const viewRef = useRef<HTMLDivElement>(null)
+    // Focus modality: the bar's focus ring is keyboard-only, but text inputs
+    // match :focus-visible on pointer focus too — so track pointer presses.
+    const pointerDownRef = useRef(false)
+    const [focusVisible, setFocusVisible] = useState(false)
+
+    const setInputRefs = (el: HTMLInputElement | null) => {
+      inputElRef.current = el
+      if (typeof inputRef === 'function') inputRef(el)
+      else if (inputRef) (inputRef as { current: HTMLInputElement | null }).current = el
+    }
 
     const setRootRefs = (el: HTMLDivElement | null) => {
       wrapperRef.current = el
@@ -132,6 +153,15 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
       if (!openControlled) setUncontrolledOpen(next)
       onOpenChange?.(next)
     }
+
+    // The closed view stays mounted (for the collapse motion) but must not be
+    // reachable. Set `inert` on the DOM so it works across React 18 / 19.
+    useEffect(() => {
+      const view = viewRef.current
+      if (!view) return
+      if (open) view.removeAttribute('inert')
+      else view.setAttribute('inert', '')
+    }, [open, hasView])
 
     useEffect(() => {
       if (!open) return
@@ -162,11 +192,45 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
         ref={setRootRefs}
         role="search"
         data-disabled={disabled || undefined}
+        data-open={open || undefined}
         className={clsx(styles.wrapper, className)}
+        onPointerDownCapture={() => {
+          pointerDownRef.current = true
+        }}
+        onPointerUpCapture={() => {
+          // After the press's focus changes have settled.
+          setTimeout(() => {
+            pointerDownRef.current = false
+          })
+        }}
       >
-        <div className={styles.bar}>
-          <span className={styles.leading} aria-hidden="true">
-            {startIcon ?? <SearchIcon />}
+        {hasView && (
+          <div
+            className={styles.scrim}
+            aria-hidden="true"
+            onClick={() => setOpen(false)}
+          />
+        )}
+        <div
+          className={styles.bar}
+          data-has-end={endIcon != null || undefined}
+          data-focus-visible={focusVisible || undefined}
+          onClick={(event) => {
+            // Clicking the bar outside the input / slot controls focuses the
+            // input, like a text field container.
+            const input = inputElRef.current
+            if (!input || event.target === input) return
+            const target = event.target as Element
+            if (target.closest('button, a[href], input, [role="button"], [tabindex]')) return
+            input.focus()
+          }}
+        >
+          <span className={clsx(styles.slot, styles.leading)}>
+            {startIcon ?? (
+              <span className={styles.glyph} aria-hidden="true">
+                <SearchIcon />
+              </span>
+            )}
           </span>
           {/* `inputProps` (the escape hatch) is spread FIRST; the component's
               own wiring wins. Optional dedicated props are spread only when
@@ -174,7 +238,7 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
               isn't actually setting. */}
           <input
             {...inputProps}
-            ref={inputRef}
+            ref={setInputRefs}
             type="search"
             className={styles.input}
             value={current}
@@ -186,17 +250,26 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
             {...(hasView && { 'aria-expanded': Boolean(open) })}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            {...(onBlur !== undefined && { onBlur })}
+            onBlur={(event) => {
+              setFocusVisible(false)
+              onBlur?.(event)
+            }}
             onFocus={(event) => {
+              setFocusVisible(!pointerDownRef.current)
               onFocus?.(event)
               if (hasView) setOpen(true)
             }}
           />
-          {endIcon != null && <span className={styles.trailing}>{endIcon}</span>}
+          {endIcon != null && (
+            <span className={clsx(styles.slot, styles.trailing)}>{endIcon}</span>
+          )}
+          <Ripple disabled={disabled} className={styles.stateLayer} />
+          <span aria-hidden="true" className={styles.focusRing} />
         </div>
         {hasView && (
-          <div className={styles.view} data-open={open || undefined}>
-            <div className={styles.divider} />
+          // TODO(#317): move onto the shared popup positioning helper
+          // (src/internal/usePopupPosition, B4) once it lands.
+          <div ref={viewRef} className={styles.view} data-open={open || undefined}>
             <div className={styles.results}>{children}</div>
           </div>
         )}

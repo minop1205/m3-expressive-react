@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
+import { IconButton } from '../IconButton'
 import { SearchBar } from './SearchBar'
 
 describe('SearchBar', () => {
@@ -144,5 +145,97 @@ describe('SearchBar', () => {
   it('has no axe violations', async () => {
     const { container } = render(<SearchBar aria-label="Search products" />)
     expect(await axe(container)).toHaveNoViolations()
+  })
+
+  describe('slots, state layer and focus indicator', () => {
+    it('hides only the default search glyph from assistive tech', () => {
+      const { container } = render(<SearchBar aria-label="Search" />)
+      const glyph = container.querySelector('svg')!
+      expect(glyph.closest('[aria-hidden="true"]')).not.toBeNull()
+    })
+
+    it('keeps an interactive startIcon reachable and named', async () => {
+      const user = userEvent.setup()
+      const onBack = vi.fn()
+      render(
+        <SearchBar
+          aria-label="Search"
+          startIcon={
+            <IconButton variant="standard" aria-label="Back" onClick={onBack} icon={<svg />} />
+          }
+          endIcon={
+            <IconButton variant="standard" aria-label="Voice search" icon={<svg />} />
+          }
+        />,
+      )
+      const back = screen.getByRole('button', { name: 'Back' })
+      expect(back.closest('[aria-hidden="true"]')).toBeNull()
+      await user.tab()
+      expect(back).toHaveFocus()
+      await user.keyboard('{Enter}')
+      expect(onBack).toHaveBeenCalledTimes(1)
+      await user.tab()
+      expect(screen.getByRole('searchbox')).toHaveFocus()
+      await user.tab()
+      expect(screen.getByRole('button', { name: 'Voice search' })).toHaveFocus()
+    })
+
+    it('has no axe violations with interactive slots', async () => {
+      const { container } = render(
+        <SearchBar
+          aria-label="Search"
+          startIcon={
+            <IconButton variant="standard" aria-label="Back" icon={<svg />} />
+          }
+        />,
+      )
+      expect(await axe(container)).toHaveNoViolations()
+    })
+
+    it('shows the bar focus ring on keyboard focus only', async () => {
+      const user = userEvent.setup()
+      render(<SearchBar aria-label="Search" />)
+      const input = screen.getByRole('searchbox')
+      const bar = input.parentElement!
+      await user.click(input)
+      expect(bar).not.toHaveAttribute('data-focus-visible')
+      await user.tab()
+      expect(input).not.toHaveFocus()
+      await user.tab({ shift: true })
+      expect(input).toHaveFocus()
+      expect(bar).toHaveAttribute('data-focus-visible')
+    })
+
+    it('focuses the input when the bar container is clicked', async () => {
+      const user = userEvent.setup()
+      const { container } = render(<SearchBar aria-label="Search" />)
+      await user.click(container.querySelector('svg')!)
+      expect(screen.getByRole('searchbox')).toHaveFocus()
+    })
+
+    it('closes the view when the scrim is clicked', async () => {
+      const user = userEvent.setup()
+      const onOpenChange = vi.fn()
+      const { container } = render(
+        <SearchBar aria-label="Search" defaultOpen onOpenChange={onOpenChange}>
+          <ul>
+            <li>Result one</li>
+          </ul>
+        </SearchBar>,
+      )
+      const scrim = container.querySelector('[class*="scrim"]')!
+      await user.click(scrim)
+      expect(onOpenChange).toHaveBeenLastCalledWith(false)
+    })
+
+    it('makes the closed view inert', () => {
+      render(
+        <SearchBar aria-label="Search">
+          <button type="button">Result one</button>
+        </SearchBar>,
+      )
+      const item = screen.getByText('Result one')
+      expect(item.closest('[inert]')).not.toBeNull()
+    })
   })
 })
