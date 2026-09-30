@@ -102,3 +102,53 @@ export const DockedYearMenu: StoryObj<typeof DatePickerField> = {
     )
   },
 }
+
+export const InputMode: Story = {
+  render: () => {
+    const [date, setDate] = useState<Date | null>(new Date(2026, 5, 10))
+    return <DatePicker defaultMode="input" value={date} onChange={(d) => setDate(d as Date)} />
+  },
+}
+
+/** Draft / commit: picks update the draft, OK commits, Cancel reverts. */
+export const WithActions: Story = {
+  render: () => {
+    const [draft, setDraft] = useState<Date | null>(new Date(2026, 5, 10))
+    const [saved, setSaved] = useState<Date | null>(draft)
+    return (
+      <div>
+        <DatePicker
+          value={draft}
+          onChange={(d) => setDraft(d as Date)}
+          onAccept={(d) => setSaved(d as Date)}
+          onCancel={() => {}}
+        />
+        <p>Saved: {saved ? saved.toDateString() : '—'}</p>
+      </div>
+    )
+  },
+}
+
+/** `open` shows the picker as a modal dialog (Compose DatePickerDialog). */
+export const ModalDialog: Story = {
+  render: () => {
+    const [open, setOpen] = useState(true)
+    const [draft, setDraft] = useState<Date | null>(new Date(2026, 5, 10))
+    const [saved, setSaved] = useState<Date | null>(draft)
+    return (
+      <div>
+        <button type="button" onClick={() => setOpen(true)}>
+          Pick a date
+        </button>
+        <p>Saved: {saved ? saved.toDateString() : '—'}</p>
+        <DatePicker
+          open={open}
+          onClose={() => setOpen(false)}
+          value={draft}
+          onChange={(d) => setDraft(d as Date)}
+          onAccept={(d) => setSaved(d as Date)}
+        />
+      </div>
+    )
+  },
+}

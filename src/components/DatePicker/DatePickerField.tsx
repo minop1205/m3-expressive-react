@@ -15,6 +15,7 @@ import { Calendar, type CalendarView } from './Calendar'
 import { CalendarIcon } from '../../internal/icons'
 import { assignRefs } from '../../internal/useModal'
 import {
+  defaultErrorLabel,
   formatDateInput,
   getDatePattern,
   isWithin,
@@ -74,12 +75,6 @@ export interface DatePickerFieldProps
   selectYearLabel?: string
   /** Prefix announced on today's cell. @default 'Today' */
   todayLabel?: string
-}
-
-export function defaultErrorLabel(error: DateInputError, pattern: string) {
-  if (error === 'invalid') return `Date does not match expected pattern: ${pattern}`
-  if (error === 'invalidRange') return 'Invalid date range input'
-  return 'Date not allowed'
 }
 
 /**

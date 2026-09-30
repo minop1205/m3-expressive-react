@@ -68,6 +68,13 @@ export function getMonthGrid(year: number, month: number, firstDayOfWeek: number
 /** Why a typed date was rejected. */
 export type DateInputError = 'invalid' | 'outOfRange' | 'invalidRange'
 
+/** Compose's English error strings (m3c_date_input_invalid_*). */
+export function defaultErrorLabel(error: DateInputError, pattern: string): string {
+  if (error === 'invalid') return `Date does not match expected pattern: ${pattern}`
+  if (error === 'invalidRange') return 'Invalid date range input'
+  return 'Date not allowed'
+}
+
 type DatePart = 'year' | 'month' | 'day'
 
 const numericOptions: Intl.DateTimeFormatOptions = {

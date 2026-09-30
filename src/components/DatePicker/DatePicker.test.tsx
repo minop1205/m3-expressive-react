@@ -313,6 +313,7 @@ describe('DatePicker keyboard grid', () => {
       .filter((el) => el.tabIndex === 0)
     expect(tabbable).toHaveLength(1)
     expect(tabbable[0]).toBe(day(15))
+    await user.tab() // calendar / input mode toggle
     await user.tab() // month / year menu
     await user.tab() // previous month
     await user.tab() // next month
