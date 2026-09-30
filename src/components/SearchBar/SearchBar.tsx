@@ -1,6 +1,7 @@
 import {
   forwardRef,
   useEffect,
+  useId,
   useRef,
   useState,
   type ChangeEvent,
@@ -60,6 +61,12 @@ export interface SearchBarProps
    * `disabled`, …).
    */
   inputProps?: InputHTMLAttributes<HTMLInputElement>
+  /**
+   * Text announced (polite live region) when the search view opens — the
+   * equivalent of Compose's "Suggestions below" state description.
+   * Localize it with the rest of your UI strings. @default 'Suggestions below'
+   */
+  suggestionsLabel?: string
   /** Native input `placeholder`. @default 'Search' */
   placeholder?: string
   /** Native input `name`. */
@@ -87,6 +94,20 @@ export interface SearchBarProps
  * over a scrim, opening on focus and closing on Escape / outside click /
  * scrim click.
  *
+ * With a view, the input is an APG-style `role="combobox"` (`aria-expanded`,
+ * `aria-controls`, `aria-autocomplete="list"`) and the view's opening is
+ * announced via `suggestionsLabel`. Keyboard: ArrowDown opens the view /
+ * moves into the results, ArrowUp / ArrowDown / Home / End move between the
+ * focusable result items (ArrowUp from the first returns to the input),
+ * Escape closes the view from anywhere in it and returns focus to the input,
+ * and moving focus out of the component closes it. While the view is open,
+ * Escape only closes it (the native `type="search"` clear is suppressed);
+ * with the view closed — or without a view — Escape keeps the browser's
+ * native behavior (Chromium / Safari clear the query). Enter calls
+ * `onSearch`, except while an IME composition is in progress.
+ * A consumer `onKeyDown` that calls `preventDefault()` opts out of the
+ * built-in key handling for that event.
+ *
  * MUI parity: the forwarded `ref` and any extra props (`{...rest}`) land on
  * the ROOT element (the `role="search"` landmark); input concerns are
  * dedicated props (`placeholder`, `name`, `onFocus`, `onKeyDown`, …),
@@ -108,6 +129,7 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
       onOpenChange,
       inputRef,
       inputProps,
+      suggestionsLabel = 'Suggestions below',
       placeholder = 'Search',
       name,
       disabled = false,
@@ -136,6 +158,10 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
     // match :focus-visible on pointer focus too — so track pointer presses.
     const pointerDownRef = useRef(false)
     const [focusVisible, setFocusVisible] = useState(false)
+    // Set while focus is returned to the input programmatically (Escape from
+    // the results) so that focus doesn't immediately reopen the view.
+    const suppressOpenRef = useRef(false)
+    const viewId = `${useId()}-view`
 
     const setInputRefs = (el: HTMLInputElement | null) => {
       inputElRef.current = el
@@ -180,10 +206,73 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
       onChange?.(event, event.target.value)
     }
 
+    /** Focusable, enabled elements inside the view, in DOM order. */
+    const getItems = () =>
+      Array.from(
+        viewRef.current?.querySelectorAll<HTMLElement>(
+          'button, a[href], input, select, textarea, [tabindex]',
+        ) ?? [],
+      ).filter(
+        (el) =>
+          el.tabIndex >= 0 &&
+          !(el as HTMLButtonElement).disabled &&
+          el.getAttribute('aria-disabled') !== 'true',
+      )
+
+    const focusInput = () => {
+      suppressOpenRef.current = true
+      inputElRef.current?.focus()
+      suppressOpenRef.current = false
+    }
+
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
       onKeyDown?.(event)
-      if (event.key === 'Enter') onSearch?.(current)
-      if (event.key === 'Escape' && open) setOpen(false)
+      if (event.defaultPrevented) return
+      switch (event.key) {
+        case 'Enter':
+          // IME: the Enter that commits a composition is not a submit.
+          if (event.nativeEvent.isComposing || event.keyCode === 229) return
+          onSearch?.(current)
+          break
+        case 'Escape':
+          if (open) {
+            // Close only — stops the native type="search" clear (and an
+            // enclosing dialog from closing on the same key).
+            event.preventDefault()
+            event.stopPropagation()
+            setOpen(false)
+          }
+          break
+        case 'ArrowDown':
+          if (!hasView) return
+          event.preventDefault()
+          if (!open) setOpen(true)
+          else getItems()[0]?.focus()
+          break
+      }
+    }
+
+    const handleViewKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+      if (event.defaultPrevented) return
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        event.stopPropagation()
+        setOpen(false)
+        focusInput()
+        return
+      }
+      const keys = ['ArrowDown', 'ArrowUp', 'Home', 'End']
+      if (!keys.includes(event.key)) return
+      const items = getItems()
+      const index = items.indexOf(event.target as HTMLElement)
+      // Only rove between the items themselves (leave nested widgets alone).
+      if (index === -1) return
+      event.preventDefault()
+      if (event.key === 'ArrowDown') items[Math.min(index + 1, items.length - 1)].focus()
+      else if (event.key === 'Home') items[0].focus()
+      else if (event.key === 'End') items[items.length - 1].focus()
+      else if (index === 0) focusInput()
+      else items[index - 1].focus()
     }
 
     return (
@@ -202,6 +291,16 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
           setTimeout(() => {
             pointerDownRef.current = false
           })
+        }}
+        onBlur={(event) => {
+          // Close when focus leaves the component (Tab-out). Pointer presses
+          // inside it (non-focusable result areas, the scrim) and window
+          // switches (document loses focus) don't count.
+          if (!open) return
+          const next = event.relatedTarget as Node | null
+          if (next && wrapperRef.current?.contains(next)) return
+          if (!next && (pointerDownRef.current || !document.hasFocus())) return
+          setOpen(false)
         }}
       >
         {hasView && (
@@ -247,7 +346,12 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
             disabled={disabled}
             {...(autoFocus !== undefined && { autoFocus })}
             {...(inputMode !== undefined && { inputMode })}
-            {...(hasView && { 'aria-expanded': Boolean(open) })}
+            {...(hasView && {
+              role: 'combobox',
+              'aria-expanded': Boolean(open),
+              'aria-controls': viewId,
+              'aria-autocomplete': 'list' as const,
+            })}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
             onBlur={(event) => {
@@ -257,7 +361,7 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
             onFocus={(event) => {
               setFocusVisible(!pointerDownRef.current)
               onFocus?.(event)
-              if (hasView) setOpen(true)
+              if (hasView && !open && !suppressOpenRef.current) setOpen(true)
             }}
           />
           {endIcon != null && (
@@ -269,9 +373,20 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
         {hasView && (
           // TODO(#317): move onto the shared popup positioning helper
           // (src/internal/usePopupPosition, B4) once it lands.
-          <div ref={viewRef} className={styles.view} data-open={open || undefined}>
+          <div
+            ref={viewRef}
+            id={viewId}
+            className={styles.view}
+            data-open={open || undefined}
+            onKeyDown={handleViewKeyDown}
+          >
             <div className={styles.results}>{children}</div>
           </div>
+        )}
+        {hasView && (
+          <span role="status" className={styles.visuallyHidden}>
+            {open ? suggestionsLabel : ''}
+          </span>
         )}
       </div>
     )
