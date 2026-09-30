@@ -1,7 +1,10 @@
 /**
- * MD3 App bars. Values from androidx.compose.material3 AppBar tokens:
- * Top app bar — Surface container; small/center 64dp, medium 112dp, large
- * 152dp; title TitleLarge / HeadlineSmall / HeadlineMedium, OnSurface; nav icon
+ * MD3 App bars. Values from androidx.compose.material3 AppBar.kt + AppBar
+ * tokens (AppBarSmall / AppBarMediumFlexible / AppBarLargeFlexible):
+ * Top app bar — Surface container; small 64dp (TitleLarge, subtitle
+ * LabelMedium); medium flexible 112dp / 136dp with subtitle (HeadlineMedium,
+ * LabelLarge); large flexible 120dp / 152dp with subtitle (DisplaySmall,
+ * TitleMedium). Title OnSurface, subtitle OnSurfaceVariant; nav icon
  * OnSurface, action icons OnSurfaceVariant; 4dp bar padding, 16dp title inset.
  * Bottom app bar — SurfaceContainer, 80dp, OnSurfaceVariant icons.
  *
@@ -23,12 +26,25 @@
   width: 100%;
   background-color: var(--md-sys-color-surface);
   color: var(--md-sys-color-on-surface);
+
+  /* Typography of the title / subtitle (small defaults). */
+  --_title-font: var(--md-sys-typescale-title-large-font);
+  --_title-size: var(--md-sys-typescale-title-large-size);
+  --_title-weight: var(--md-sys-typescale-title-large-weight);
+  --_title-line-height: var(--md-sys-typescale-title-large-line-height);
+  --_title-tracking: var(--md-sys-typescale-title-large-tracking);
+  --_subtitle-font: var(--md-sys-typescale-label-medium-font);
+  --_subtitle-size: var(--md-sys-typescale-label-medium-size);
+  --_subtitle-weight: var(--md-sys-typescale-label-medium-weight);
+  --_subtitle-line-height: var(--md-sys-typescale-label-medium-line-height);
+  --_subtitle-tracking: var(--md-sys-typescale-label-medium-tracking);
 }
 
 .row {
   display: flex;
   align-items: center;
-  height: 64px;
+  box-sizing: border-box;
+  min-height: 64px;
   padding-inline: 4px;
 }
 
@@ -63,58 +79,192 @@
   flex: 1 1 auto;
 }
 
-/* Single-row title (small / center). */
-.title {
-  flex: 1 1 auto;
+/* ---- Title block: title + optional subtitle ---- */
+.titleBox {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
   min-width: 0;
-  margin: 0;
+}
+
+.row > .titleBox {
+  flex: 1 1 auto;
   padding-inline: 12px;
-  color: var(--md-sys-color-on-surface);
-  font-family: var(--md-sys-typescale-title-large-font);
-  font-size: var(--md-sys-typescale-title-large-size);
-  font-weight: var(--md-sys-typescale-title-large-weight);
-  line-height: var(--md-sys-typescale-title-large-line-height);
-  letter-spacing: var(--md-sys-typescale-title-large-tracking);
-  white-space: nowrap;
+}
+
+/* 4 | 48 nav | 4 | title → title starts at 56dp (16dp without a nav icon). */
+.nav + .titleBox {
+  padding-inline-start: 4px;
+}
+
+.title,
+.subtitle {
+  margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* 4 | 48 nav | 4 | title → title starts at 56dp (16dp without a nav icon). */
-.nav + .title {
-  padding-inline-start: 4px;
+.title {
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--_title-font);
+  font-size: var(--_title-size);
+  font-weight: var(--_title-weight);
+  line-height: var(--_title-line-height);
+  letter-spacing: var(--_title-tracking);
 }
 
-.topBar[data-variant='center'] .title {
+.subtitle {
+  color: var(--md-sys-color-on-surface-variant);
+  font-family: var(--_subtitle-font);
+  font-size: var(--_subtitle-size);
+  font-weight: var(--_subtitle-weight);
+  line-height: var(--_subtitle-line-height);
+  letter-spacing: var(--_subtitle-tracking);
+  white-space: nowrap;
+}
+
+/* Small: single line ("Don't wrap text in a small app bar"). */
+.row .title {
+  white-space: nowrap;
+}
+
+/*
+ * Centered title (titleAlignment="center", every size). Compose centers the
+ * title across the full bar width and only pushes it inward when it collides
+ * with the nav icon / actions (TopAppBarLayout). A 3-column grid reproduces
+ * that: the side tracks are at least their content (the start one at least
+ * the 12dp title inset, via ::before) and otherwise share the leftover space
+ * equally, so the middle track sits at the bar center whenever it fits.
+ */
+.topBar[data-title-alignment='center'] .row {
+  display: grid;
+  grid-template-columns:
+    minmax(max-content, 1fr) minmax(0, auto) minmax(max-content, 1fr);
+  align-items: center;
+}
+
+.topBar[data-title-alignment='center'] .row::before {
+  content: '';
+  grid-row: 1;
+  grid-column: 1;
+  /* 4 (bar padding) + 8 → the 12dp TopAppBarTitleInset. */
+  width: 8px;
+}
+
+.topBar[data-title-alignment='center'] .nav {
+  grid-row: 1;
+  grid-column: 1;
+  justify-self: start;
+}
+
+.topBar[data-title-alignment='center'] .row > .titleBox,
+.topBar[data-title-alignment='center'] .row > .spacer {
+  grid-row: 1;
+  grid-column: 2;
+  padding-inline: 4px;
+}
+
+.topBar[data-title-alignment='center'] .actions {
+  grid-row: 1;
+  grid-column: 3;
+  justify-self: end;
+}
+
+.topBar[data-title-alignment='center'] .titleBox {
   text-align: center;
 }
 
-/* Second-row title (medium / large). */
-.titleLarge {
-  margin: 0;
-  padding: 0 16px 20px;
-  color: var(--md-sys-color-on-surface);
+/* ---- Medium / large flexible: second row with the title ---- */
+/*
+ * Compose TwoRowsTopAppBar: the expanded row is (expanded − 64dp) tall, grows
+ * with a taller (two-line) title, and bottom-aligns the title so that its LAST
+ * BASELINE sits --_title-bottom-padding (24 / 28dp) above the bottom edge —
+ * reduced when there isn't room (the title then touches the row top).
+ *
+ * CSS: the title box takes `margin-top: auto`, and ::after is a spacer that
+ * contributes nothing to the row's content height (flex-basis 0) but grows up
+ * to the padding measured from the line box: padding − (distance from the last
+ * baseline to the bottom of its line box). That distance is
+ * line-height / 2 − (ascent − descent) / 2 × font-size, i.e.
+ * line-height / 2 − 0.3418 × font-size for Roboto (hhea 1900 / −500 of 2048).
+ */
+.expandedRow {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  min-height: var(--_expanded-row-height);
+  padding-inline: 16px;
+  --_last-line-height: var(--_title-line-height);
+  --_last-font-size: var(--_title-size);
+}
+
+.expandedRow > .titleBox {
+  flex: none;
+  margin-block-start: auto;
+}
+
+.expandedRow::after {
+  content: '';
+  flex: 1 1 0;
+  max-height: max(
+    0px,
+    var(--_title-bottom-padding) -
+      (var(--_last-line-height) / 2 - 0.3418 * var(--_last-font-size))
+  );
+}
+
+.topBar[data-subtitle] .expandedRow {
+  --_last-line-height: var(--_subtitle-line-height);
+  --_last-font-size: var(--_subtitle-size);
+}
+
+/* Flexible headlines wrap to two lines at most (m3 guidelines). */
+.expandedRow .title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
 }
 
 .topBar[data-variant='medium'] {
-  /* row 64 + title area 48 = 112dp */
+  /* 64 + 48 = 112dp; 64 + 72 = 136dp with a subtitle. */
+  --_expanded-row-height: 48px;
+  --_title-bottom-padding: 24px;
+  --_title-font: var(--md-sys-typescale-headline-medium-font);
+  --_title-size: var(--md-sys-typescale-headline-medium-size);
+  --_title-weight: var(--md-sys-typescale-headline-medium-weight);
+  --_title-line-height: var(--md-sys-typescale-headline-medium-line-height);
+  --_title-tracking: var(--md-sys-typescale-headline-medium-tracking);
+  --_subtitle-font: var(--md-sys-typescale-label-large-font);
+  --_subtitle-size: var(--md-sys-typescale-label-large-size);
+  --_subtitle-weight: var(--md-sys-typescale-label-large-weight);
+  --_subtitle-line-height: var(--md-sys-typescale-label-large-line-height);
+  --_subtitle-tracking: var(--md-sys-typescale-label-large-tracking);
 }
 
-.topBar[data-variant='medium'] .titleLarge {
-  font-family: var(--md-sys-typescale-headline-small-font);
-  font-size: var(--md-sys-typescale-headline-small-size);
-  font-weight: var(--md-sys-typescale-headline-small-weight);
-  line-height: var(--md-sys-typescale-headline-small-line-height);
-  letter-spacing: var(--md-sys-typescale-headline-small-tracking);
+.topBar[data-variant='medium'][data-subtitle] {
+  --_expanded-row-height: 72px;
 }
 
-.topBar[data-variant='large'] .titleLarge {
-  padding-bottom: 28px;
-  font-family: var(--md-sys-typescale-headline-medium-font);
-  font-size: var(--md-sys-typescale-headline-medium-size);
-  font-weight: var(--md-sys-typescale-headline-medium-weight);
-  line-height: var(--md-sys-typescale-headline-medium-line-height);
-  letter-spacing: var(--md-sys-typescale-headline-medium-tracking);
+.topBar[data-variant='large'] {
+  /* 64 + 56 = 120dp; 64 + 88 = 152dp with a subtitle. */
+  --_expanded-row-height: 56px;
+  --_title-bottom-padding: 28px;
+  --_title-font: var(--md-sys-typescale-display-small-font);
+  --_title-size: var(--md-sys-typescale-display-small-size);
+  --_title-weight: var(--md-sys-typescale-display-small-weight);
+  --_title-line-height: var(--md-sys-typescale-display-small-line-height);
+  --_title-tracking: var(--md-sys-typescale-display-small-tracking);
+  --_subtitle-font: var(--md-sys-typescale-title-medium-font);
+  --_subtitle-size: var(--md-sys-typescale-title-medium-size);
+  --_subtitle-weight: var(--md-sys-typescale-title-medium-weight);
+  --_subtitle-line-height: var(--md-sys-typescale-title-medium-line-height);
+  --_subtitle-tracking: var(--md-sys-typescale-title-medium-tracking);
+}
+
+.topBar[data-variant='large'][data-subtitle] {
+  --_expanded-row-height: 88px;
 }
 
 /* --------------------------------------------------------------------------- */
