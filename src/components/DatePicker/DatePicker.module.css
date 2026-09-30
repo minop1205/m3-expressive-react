@@ -19,6 +19,13 @@
   box-shadow: var(--md-sys-elevation-shadow-level3);
 }
 
+/* Docked variant (DatePickerField popup): Date picker - Docked container
+   shape large (16dp), no headline header. */
+.docked {
+  padding-top: 8px;
+  border-radius: var(--md-sys-shape-corner-large);
+}
+
 .header {
   display: flex;
   flex-direction: column;
