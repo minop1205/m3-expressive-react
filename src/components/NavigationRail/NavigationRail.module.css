@@ -1,7 +1,8 @@
 /**
  * MD3 (Expressive) Navigation rail container. Width, inline padding and item
  * spacing interpolate from the spring `--_t` (0 = collapsed 96dp, 1 = expanded
- * 220dp); the per-item morph lives in NavigationRailItem.module.css. Header
+ * `--_expanded-w`, 220–360dp fitting the widest item — measured in JS); the
+ * per-item morph lives in NavigationRailItem.module.css. Header
  * (menu button / FAB) is pinned at the top. Surface container, 44dp top space.
  */
 
@@ -10,9 +11,9 @@
   flex-direction: column;
   box-sizing: border-box;
   height: 100%;
-  /* 96dp (collapsed) → 220dp (expanded). No inline padding: items span the full
-     width and position their pill/icon at fixed x (see NavigationRailItem). */
-  width: calc(96px + 124px * var(--_t, 0));
+  /* 96dp (collapsed) → 220–360dp (expanded). No inline padding: items span the
+     full width and position their pill/icon at fixed x (see NavigationRailItem). */
+  width: calc(96px + (var(--_expanded-w, 220px) - 96px) * var(--_t, 0));
   padding-block: 44px 8px;
   background-color: var(--md-sys-color-surface);
 }

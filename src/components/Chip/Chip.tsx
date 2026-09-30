@@ -1,6 +1,7 @@
 import {
   forwardRef,
   useCallback,
+  useContext,
   useRef,
   useState,
   type ButtonHTMLAttributes,
@@ -12,50 +13,80 @@ import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { CheckIcon, CloseIcon } from '../../internal/icons'
+import { ChipSetContext } from './ChipSetContext'
 import styles from './Chip.module.css'
 
 export type ChipVariant = 'assist' | 'filter' | 'input' | 'suggestion'
+
+/** The event that triggered a removal: the remove-button click or Backspace / Delete. */
+export type ChipRemoveEvent = MouseEvent<HTMLButtonElement> | KeyboardEvent<HTMLElement>
 
 export interface ChipProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children' | 'onChange'> {
   /** Visual variant. @default 'assist' */
   variant?: ChipVariant
-  /** Whether the chip uses elevated styling (no outline, shadow). @default false */
+  /**
+   * Whether the chip uses elevated styling (no outline, shadow). MD3 defines
+   * elevated assist / filter / suggestion chips only. @default false
+   */
   elevated?: boolean
-  /** Chip label text. */
+  /** Chip label text. Truncated with an ellipsis when the chip is narrower than it. */
   label: string
-  /** Leading icon. */
+  /** Leading icon (18dp). */
   icon?: ReactNode
-  /** Controlled selected state (filter / input chips). */
+  /**
+   * Leading avatar (input chips only) — rendered 24dp and clipped to a circle,
+   * e.g. an `<img>`. Takes precedence over `icon`.
+   */
+  avatar?: ReactNode
+  /**
+   * Controlled selected state. Filter chips are always selectable; input chips
+   * become selectable when `selected`, `defaultSelected` or `onChange` is given.
+   */
   selected?: boolean
-  /** Uncontrolled initial selected state. @default false */
+  /** Uncontrolled initial selected state (filter / input chips). @default false */
   defaultSelected?: boolean
-  /** Fires with the triggering event and the next selected state (filter chip). */
+  /** Fires with the triggering event and the next selected state (filter / input chips). */
   onChange?: (event: MouseEvent<HTMLButtonElement>, selected: boolean) => void
   /** Whether a trailing remove button is shown (input / filter removable). */
   removable?: boolean
-  /** Fires when the remove button is clicked. */
-  onRemove?: () => void
+  /**
+   * Fires when the chip asks to be removed: a click on the remove button, or
+   * Backspace / Delete while the chip has focus. When the parent then unmounts
+   * the chip, focus moves to the next chip (or the previous one).
+   */
+  onRemove?: (event: ChipRemoveEvent) => void
+  /**
+   * Accessible name of the remove button, from the chip label.
+   * @default (label) => `Remove ${label}`
+   */
+  getRemoveLabel?: (label: string) => string
   /** Whether to show a leading checkmark when selected (filter chip). @default true */
   showSelectedIcon?: boolean
   /** Apply the MD3 dragged appearance (state layer + elevation) — for drag-and-drop. */
   dragged?: boolean
 }
 
+const defaultGetRemoveLabel = (label: string) => `Remove ${label}`
+
 /**
  * Material Design 3 Chip.
  *
  * Supports assist, filter, input, and suggestion variants.
  * Uses a native `<button>` for the primary action. Filter chips toggle
- * selection. Input chips support a trailing remove button.
+ * selection (`aria-pressed`); input chips opt into the same selection API by
+ * passing `selected` / `defaultSelected` / `onChange`. Removable chips have a
+ * trailing remove button.
  *
  * Structure mirrors material-web: each action has its own Ripple/FocusRing.
  * Primary Ripple is scoped to the action button. The trailing remove button
  * has its own circular 24dp Ripple/FocusRing.
  *
  * Keyboard: Arrow keys move focus between primary and trailing actions
- * (matching material-web's multi-action chip pattern). Trailing action is
- * not in the Tab order; only reachable via arrow keys.
+ * (matching material-web's multi-action chip pattern); at the boundary they
+ * propagate to an enclosing `ChipSet`. Trailing action is not in the Tab
+ * order; only reachable via arrow keys. Backspace / Delete on a removable
+ * chip calls `onRemove`.
  *
  * The forwarded `ref` points at the ROOT `<span>` (MUI parity); extra props
  * (`{...rest}`) still land on the primary action `<button>`.
@@ -67,11 +98,13 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
       elevated = false,
       label,
       icon,
+      avatar,
       selected: controlledSelected,
-      defaultSelected = false,
+      defaultSelected,
       onChange,
       removable = false,
       onRemove,
+      getRemoveLabel = defaultGetRemoveLabel,
       showSelectedIcon = true,
       disabled = false,
       dragged = false,
@@ -81,15 +114,39 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
     },
     forwardedRef,
   ) {
-    const isSelectable = variant === 'filter'
+    // Input chips opt into selection so existing (v1.0) input chips do not
+    // start toggling on click.
+    const isSelectable =
+      variant === 'filter' ||
+      (variant === 'input' &&
+        (controlledSelected !== undefined ||
+          defaultSelected !== undefined ||
+          onChange !== undefined))
     const isControlled = controlledSelected !== undefined
-    const [uncontrolledSelected, setUncontrolledSelected] = useState(defaultSelected)
+    const [uncontrolledSelected, setUncontrolledSelected] = useState(defaultSelected ?? false)
     const selected = isSelectable && (isControlled ? controlledSelected : uncontrolledSelected)
-    const hasLeadingIcon = icon != null || (isSelectable && selected && showSelectedIcon)
+
+    const hasAvatar = variant === 'input' && avatar != null
+    const hasIcon = !hasAvatar && icon != null
+    // Filter chips without their own icon keep an animated checkmark slot that
+    // collapses to 0 width while unselected (Compose AnimatingChipContent).
+    const hasCheckSlot = variant === 'filter' && showSelectedIcon && !hasIcon
+    const showCheck = variant === 'filter' && selected && showSelectedIcon
     const hasTrailingAction = removable && (variant === 'input' || variant === 'filter')
 
+    const rootRef = useRef<HTMLSpanElement | null>(null)
     const primaryRef = useRef<HTMLButtonElement>(null)
     const trailingRef = useRef<HTMLButtonElement>(null)
+    const chipSetRef = useContext(ChipSetContext)
+
+    const setRootRef = useCallback(
+      (node: HTMLSpanElement | null) => {
+        rootRef.current = node
+        if (typeof forwardedRef === 'function') forwardedRef(node)
+        else if (forwardedRef) forwardedRef.current = node
+      },
+      [forwardedRef],
+    )
 
     const handleClick = useCallback(
       (event: MouseEvent<HTMLButtonElement>) => {
@@ -103,17 +160,55 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
       [isSelectable, isControlled, selected, onChange, onClick],
     )
 
-    const handleRemove = useCallback(
+    /**
+     * Calls `onRemove`, then — if the parent unmounted this chip while it held
+     * focus — moves focus to the next chip in the set (or the previous one)
+     * instead of letting it fall to `<body>`.
+     */
+    const remove = useCallback(
+      (event: ChipRemoveEvent) => {
+        const root = rootRef.current
+        const scope = chipSetRef?.current ?? root?.parentElement
+        let target: HTMLButtonElement | undefined
+        if (root && scope) {
+          const chips = Array.from(scope.querySelectorAll<HTMLElement>(`.${styles.chip}`))
+          const index = chips.indexOf(root)
+          const candidates = [...chips.slice(index + 1), ...chips.slice(0, index).reverse()]
+          target = candidates
+            .map((chip) => chip.querySelector<HTMLButtonElement>(`.${styles.action}`))
+            .find((button): button is HTMLButtonElement => !!button && !button.disabled)
+        }
+        onRemove?.(event)
+        if (!root || !target) return
+        const focusTarget = target
+        setTimeout(() => {
+          if (root.isConnected || !focusTarget.isConnected) return
+          const active = document.activeElement
+          if (active && active !== document.body) return
+          focusTarget.focus()
+        })
+      },
+      [onRemove, chipSetRef],
+    )
+
+    const handleRemoveClick = useCallback(
       (event: MouseEvent<HTMLButtonElement>) => {
         event.stopPropagation()
-        onRemove?.()
+        remove(event)
       },
-      [onRemove],
+      [remove],
     )
 
     const handleKeyDown = useCallback(
       (event: KeyboardEvent<HTMLSpanElement>) => {
-        if (!hasTrailingAction) return
+        if (!hasTrailingAction || disabled) return
+
+        // m3 keyboard table: Backspace / Delete removes the focused chip.
+        if (event.key === 'Backspace' || event.key === 'Delete') {
+          event.preventDefault()
+          remove(event)
+          return
+        }
 
         const isLeft = event.key === 'ArrowLeft'
         const isRight = event.key === 'ArrowRight'
@@ -143,22 +238,24 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
           primary.focus()
         }
       },
-      [hasTrailingAction],
+      [hasTrailingAction, disabled, remove],
     )
 
     // When trailing action receives focus, temporarily remove primary from
-    // tab order so Shift+Tab moves to the previous focusable element.
+    // tab order so Shift+Tab moves to the previous focusable element. The
+    // previous tabIndex is restored (a ChipSet may have made it -1).
     const handleTrailingFocus = useCallback(() => {
       const primary = primaryRef.current
       if (!primary) return
+      const previous = primary.tabIndex
       primary.tabIndex = -1
-      const restore = () => { primary.tabIndex = 0 }
+      const restore = () => { primary.tabIndex = previous }
       trailingRef.current?.addEventListener('focusout', restore, { once: true })
     }, [])
 
     return (
       <span
-        ref={forwardedRef}
+        ref={setRootRef}
         className={clsx(
           styles.chip,
           styles[variant],
@@ -166,7 +263,8 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
           selected && styles.selected,
           disabled && styles.disabled,
           dragged && styles.dragged,
-          hasLeadingIcon && styles.hasLeadingIcon,
+          (hasIcon || hasCheckSlot) && styles.hasLeadingIcon,
+          hasAvatar && styles.hasAvatar,
           hasTrailingAction && styles.hasTrailingAction,
           className,
         )}
@@ -182,9 +280,23 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
           aria-pressed={isSelectable ? selected : undefined}
           onClick={handleClick}
         >
-          {hasLeadingIcon && (
+          {hasAvatar && (
+            <span className={styles.avatar} aria-hidden="true">
+              {avatar}
+            </span>
+          )}
+          {hasIcon && (
             <span className={styles.leadingIcon} aria-hidden="true">
-              {isSelectable && selected && showSelectedIcon ? <CheckIcon /> : icon}
+              {showCheck ? <CheckIcon /> : icon}
+            </span>
+          )}
+          {hasCheckSlot && (
+            <span
+              className={clsx(styles.leadingIcon, styles.checkSlot)}
+              data-visible={showCheck || undefined}
+              aria-hidden="true"
+            >
+              <CheckIcon />
             </span>
           )}
           <span className={styles.label}>{label}</span>
@@ -198,8 +310,8 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
             className={styles.trailingAction}
             disabled={disabled}
             tabIndex={-1}
-            aria-label={`Remove ${label}`}
-            onClick={handleRemove}
+            aria-label={getRemoveLabel(label)}
+            onClick={handleRemoveClick}
             onFocus={handleTrailingFocus}
           >
             <span className={styles.trailingIcon} aria-hidden="true">
@@ -213,4 +325,3 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
     )
   },
 )
-

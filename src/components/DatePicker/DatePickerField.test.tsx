@@ -25,7 +25,7 @@ describe('DatePickerField', () => {
     const onChange = vi.fn()
     render(<DatePickerField defaultValue={new Date(2024, 6, 1)} onChange={onChange} />)
     await user.click(screen.getByRole('button', { name: 'Open calendar' }))
-    await user.click(screen.getByRole('button', { name: '12' }))
+    await user.click(screen.getByRole('gridcell', { name: /July 12, 2024/ }))
     expect(onChange).toHaveBeenCalledTimes(1)
     expect(onChange.mock.calls[0][0].getDate()).toBe(12)
     expect(screen.getByRole('button', { name: 'Open calendar' })).toHaveAttribute('aria-expanded', 'false')

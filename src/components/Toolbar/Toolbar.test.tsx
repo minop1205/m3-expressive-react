@@ -37,6 +37,23 @@ describe('Toolbar', () => {
     expect(screen.getByRole('toolbar')).toHaveAttribute('data-color', 'vibrant')
   })
 
+  // Item layout (48dp slots, docked gap counted with `:has(> :nth-child(n))`)
+  // and the color-scheme contract require items to be direct children.
+  it('renders items as direct children of the toolbar', () => {
+    render(
+      <Toolbar color="vibrant" aria-label="Actions">
+        <IconButton icon={icon} aria-label="A" variant="standard" />
+        <IconButton icon={icon} aria-label="B" variant="standard" toggle defaultSelected />
+      </Toolbar>,
+    )
+    const bar = screen.getByRole('toolbar')
+    expect(screen.getByRole('button', { name: 'A' }).parentElement).toBe(bar)
+    const b = screen.getByRole('button', { name: 'B' })
+    expect(b.parentElement).toBe(bar)
+    expect(b).toHaveAttribute('data-variant', 'standard')
+    expect(b).toHaveAttribute('data-selected', 'true')
+  })
+
   it('forwards a ref', () => {
     const ref = createRef<HTMLDivElement>()
     render(<Toolbar ref={ref} aria-label="t" />)

@@ -1,14 +1,39 @@
 /**
  * MD3 Segmented Buttons. Values from androidx.compose.material3
- * OutlinedSegmentedButtonTokens: 40dp height, stadium (CornerFull, 20dp outer),
- * Outline 1dp border, segments overlap borders by 1dp. Selected =
- * SecondaryContainer / OnSecondaryContainer + 18dp check; unselected =
- * transparent / OnSurface. Label = LabelLarge, min-width 58dp, padding 12dp.
+ * OutlinedSegmentedButtonTokens / SegmentedButton.kt: 40dp height, stadium
+ * (CornerFull), Outline 1dp border, segments overlap borders by 1dp
+ * (`spacedBy(-1dp)`). Selected = SecondaryContainer / OnSecondaryContainer +
+ * 18dp check; unselected = transparent / OnSurface. Label = LabelLarge,
+ * min-width 58dp, padding 12dp.
+ *
+ * Layout follows Compose: every segment is `weight(1f)` in a row sized
+ * `IntrinsicSize.Min` — i.e. all segments take the width of the widest one
+ * (m3: "Segment width = Container width / total segments"). Inside a segment
+ * the icon slot (18 + 8dp) is always reserved (SegmentedButtonContent); when
+ * it is empty the label is offset by -(18 + 8) / 2 so it stays centered, and
+ * slides into place as the check scales in. Selection never resizes the row.
  */
 
 .group {
-  display: inline-flex;
-  height: 40px;
+  --_container-height: 40px;
+  --_container-shape: calc(var(--_container-height) / 2);
+  --_icon-size: 18px;
+  --_icon-label-space: 8px;
+  --_label-offset: calc((var(--_icon-size) + var(--_icon-label-space)) / -2);
+
+  /* Motion. TODO(#314): switch to the FastSpatial (0.9 / 1400) and
+     DefaultEffects (1.0 / 1600) spring tokens once
+     --md-sys-motion-spring-* land (PR #319). Until then: standard easing,
+     ~200ms spatial / ~150ms effects (FastSpatial settles in ~150–230ms). */
+  --_spatial-duration: var(--md-sys-motion-duration-short4);
+  --_spatial-easing: var(--md-sys-motion-easing-standard);
+  --_effects-duration: var(--md-sys-motion-duration-short3);
+  --_effects-easing: var(--md-sys-motion-easing-linear);
+
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  height: var(--_container-height);
   isolation: isolate;
 }
 
@@ -17,7 +42,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--_icon-label-space);
   box-sizing: border-box;
   min-width: 58px;
   height: 100%;
@@ -40,6 +65,17 @@
   --md-focus-ring-color: var(--md-sys-color-secondary);
 }
 
+/* 48dp touch target (Compose minimumInteractiveComponentSize) — vertical
+   extension only; segments are adjacent horizontally. */
+.segment::before {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: max(100%, 48px);
+  transform: translateY(-50%);
+}
+
 /* Overlap adjacent borders (1dp shared line). */
 .segment:not(:first-child) {
   margin-inline-start: -1px;
@@ -47,13 +83,13 @@
 
 /* Outer corners are fully rounded (stadium). */
 .segment:first-child {
-  border-start-start-radius: 20px;
-  border-end-start-radius: 20px;
+  border-start-start-radius: var(--_container-shape);
+  border-end-start-radius: var(--_container-shape);
 }
 
 .segment:last-child {
-  border-start-end-radius: 20px;
-  border-end-end-radius: 20px;
+  border-start-end-radius: var(--_container-shape);
+  border-end-end-radius: var(--_container-shape);
 }
 
 /* Selected fill + raised so its border wins over neighbors. */
@@ -75,26 +111,95 @@
   border-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
 }
 
-.icon,
+.slot,
 .label {
   position: relative;
   z-index: 1;
 }
 
-.icon {
+/* Always-reserved icon slot; its layers stack in one cell. */
+.slot {
+  display: inline-grid;
+  flex: none;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+}
+
+.slotIcon,
+.check {
+  grid-area: 1 / 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
 }
 
-.icon svg {
+.slot svg,
+.labelIcon svg {
   width: 100%;
   height: 100%;
   fill: currentColor;
 }
 
+/* Check: enters with scaleIn from bottom-start (FastSpatial) + fadeIn
+   (DefaultEffects); exits instantly (Compose ExitTransition.None) — the
+   transition lives on the shown state only. */
+.check {
+  opacity: 0;
+  scale: 0;
+  transform-origin: 0 100%;
+}
+
+.check:dir(rtl) {
+  transform-origin: 100% 100%;
+}
+
+.segment[data-check] .check {
+  opacity: 1;
+  scale: 1;
+  transition:
+    scale var(--_spatial-duration) var(--_spatial-easing),
+    opacity var(--_effects-duration) var(--_effects-easing);
+}
+
+/* Icon + label: the icon and the check crossfade in the slot (Compose
+   Crossfade, DefaultEffects) in both directions. */
+.segment[data-slot-filled] .check {
+  scale: 1;
+  transition: opacity var(--_effects-duration) var(--_effects-easing);
+}
+
+.slotIcon {
+  transition: opacity var(--_effects-duration) var(--_effects-easing);
+}
+
+.segment[data-check] .slotIcon {
+  opacity: 0;
+}
+
 .label {
   white-space: nowrap;
+  transition: margin var(--_spatial-duration) var(--_spatial-easing);
+}
+
+/* Empty slot: pull the label back over half the slot so it stays centered.
+   Equal and opposite inline margins keep the segment's width unchanged. */
+.segment:not([data-slot-filled], [data-check]) .label {
+  margin-inline-start: var(--_label-offset);
+  margin-inline-end: calc(-1 * var(--_label-offset));
+}
+
+.labelIcon {
+  display: inline-flex;
+  flex: none;
+  width: var(--_icon-size);
+  height: var(--_icon-size);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segment[data-check] .check,
+  .segment[data-slot-filled] .check,
+  .slotIcon,
+  .label {
+    transition: none;
+  }
 }
