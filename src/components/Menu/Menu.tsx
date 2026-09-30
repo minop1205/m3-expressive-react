@@ -19,6 +19,7 @@ import {
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import { moveMenuFocus } from '../../internal/menuNavigation'
 import styles from './Menu.module.css'
 
 interface MenuContextValue {
@@ -187,27 +188,12 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     if (items.length === 0) return
     const current = items.indexOf(document.activeElement as HTMLElement)
 
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault()
-        items[(current + 1) % items.length]?.focus()
-        return
-      case 'ArrowUp':
-        event.preventDefault()
-        items[(current - 1 + items.length) % items.length]?.focus()
-        return
-      case 'Home':
-        event.preventDefault()
-        items[0]?.focus()
-        return
-      case 'End':
-        event.preventDefault()
-        items[items.length - 1]?.focus()
-        return
-      case 'Tab':
-        // APG: Tab closes the menu and moves focus per the page's Tab order.
-        setOpen(false)
-        return
+    if (moveMenuFocus(event, items)) return
+
+    if (event.key === 'Tab') {
+      // APG: Tab closes the menu and moves focus per the page's Tab order.
+      setOpen(false)
+      return
     }
 
     // Typeahead: printable characters move focus to the next matching item.
