@@ -49,7 +49,7 @@ export function App() {
 ## Components
 
 Buttons & actions — `Button`, `IconButton`, `ButtonGroup`, `SplitButton`,
-`SegmentedButton`, `Fab`, `FabMenu`, `Chip`
+`SegmentedButton`, `Fab`, `FabMenu`, `Chip` / `ChipSet`
 
 Selection & input — `Checkbox`, `Radio` / `RadioGroup`, `Switch`, `Slider`,
 `TextField`, `SearchBar`, `DatePicker`, `TimePicker`

@@ -1,9 +1,20 @@
 /**
- * MD3 (Expressive) Button group. An invisible layout container. `standard`
- * spaces buttons by the size's between-space (Compose ButtonGroupSmallTokens
- * BetweenSpace = 12dp at sm) and pops the pressed button (ExpandedRatio 0.15).
- * `connected` joins buttons with a 2dp gap (ConnectedButtonGroupSmallTokens),
- * rounding the outer corners fully and the inner corners a small amount.
+ * MD3 (Expressive) Button group. An invisible layout container around `Button`
+ * / `IconButton` children — it has no color of its own and never sets the
+ * children's `transition` (their own shape / shadow morphs keep running).
+ *
+ * `standard` spaces buttons by the size's between-space (m3.material.io
+ * tokens: XS 18 / S 12 / M 8 / L 8 / XL 8dp — Compose ships only the S value,
+ * ButtonGroupSmallTokens.BetweenSpace = 12dp). The press interaction (the
+ * pressed button widens 15% and squeezes its neighbours) is driven from JS
+ * (usePressWidth.ts) because it animates the neighbours' widths.
+ *
+ * `connected` joins buttons with a 2dp gap (ConnectedButtonGroupSmallTokens):
+ * outer corners stay fully round in every state, inner corners take the size
+ * token (8/8/8/16/20), shrink while pressed (4/4/4/12/16, Compose
+ * connected*PressShape) and the whole button goes fully round when selected
+ * (site "selected inner corner 50%", Compose connectedButtonCheckedShape =
+ * CircleShape).
  */
 
 .group {
@@ -16,80 +27,94 @@
   align-items: stretch;
 }
 
-/* ---- Standard: visible gap + press pop ---- */
+/* ---- Standard: between-space per size ---- */
 .group[data-variant='standard'] {
-  gap: var(--_gap);
+  gap: var(--_between-space);
 }
 
 .group[data-variant='standard'][data-size='xs'] {
-  --_gap: 8px;
+  --_between-space: 18px;
 }
 .group[data-variant='standard'][data-size='sm'] {
-  --_gap: 12px;
+  --_between-space: 12px;
 }
-.group[data-variant='standard'][data-size='md'] {
-  --_gap: 16px;
-}
-.group[data-variant='standard'][data-size='lg'] {
-  --_gap: 20px;
-}
+.group[data-variant='standard'][data-size='md'],
+.group[data-variant='standard'][data-size='lg'],
 .group[data-variant='standard'][data-size='xl'] {
-  --_gap: 24px;
-}
-
-/* The pressed button briefly grows — approximates the neighbour squish with a
-   FastSpatial-style spring. */
-.group[data-variant='standard'] > button {
-  transition: transform var(--md-sys-motion-duration-short4)
-    cubic-bezier(0.34, 1.4, 0.5, 1);
-}
-
-.group[data-variant='standard'] > button:active:not(:disabled) {
-  transform: scale(1.06);
-  z-index: 1;
+  --_between-space: 8px;
 }
 
 /* ---- Connected: 2dp gap, joined shape ---- */
 .group[data-variant='connected'] {
   gap: 2px;
-  --_inner: var(--md-sys-shape-corner-small);
-  --_outer: var(--md-sys-shape-corner-full);
 }
 
-/* Horizontal joined corners (specificity > Button's own :active rule). */
+.group[data-variant='connected'][data-size='xs'],
+.group[data-variant='connected'][data-size='sm'],
+.group[data-variant='connected'][data-size='md'] {
+  --_inner-corner-size: 8px;
+  --_pressed-inner-corner-size: 4px;
+}
+.group[data-variant='connected'][data-size='lg'] {
+  --_inner-corner-size: 16px;
+  --_pressed-inner-corner-size: 12px;
+}
+.group[data-variant='connected'][data-size='xl'] {
+  --_inner-corner-size: 20px;
+  --_pressed-inner-corner-size: 16px;
+}
+
+/* XS / S connected groups: every button is at least 48dp wide (site "Minimum
+   widths"). :where() keeps this at 0,0,1 so a Button's own larger min-width
+   (64dp) still wins; only narrower children such as IconButton grow. */
+:where(.group[data-variant='connected'][data-size='xs']) > button,
+:where(.group[data-variant='connected'][data-size='sm']) > button {
+  min-width: 48px;
+}
+
+/* Per-corner shape of each child, resolved on the child (where --_height is
+   defined). Every corner starts as an inner corner; the outer ones are
+   switched to round below. `[data-size]` lifts the border-radius rule to
+   0,3,1 so it beats the children's own `:active` / `data-shape-state` radius
+   rules (0,3,0). */
+.group[data-variant='connected'] > button {
+  --_connected-outer: calc(var(--_height) / 2);
+  --_connected-inner: var(--_inner-corner-size);
+  --_connected-ss: var(--_connected-inner);
+  --_connected-se: var(--_connected-inner);
+  --_connected-es: var(--_connected-inner);
+  --_connected-ee: var(--_connected-inner);
+}
+
+.group[data-variant='connected'][data-size] > button {
+  border-start-start-radius: var(--_connected-ss);
+  border-start-end-radius: var(--_connected-se);
+  border-end-start-radius: var(--_connected-es);
+  border-end-end-radius: var(--_connected-ee);
+}
+
 .group[data-variant='connected'][data-orientation='horizontal'] > button:first-child {
-  border-start-end-radius: var(--_inner);
-  border-end-end-radius: var(--_inner);
+  --_connected-ss: var(--_connected-outer);
+  --_connected-es: var(--_connected-outer);
 }
-
 .group[data-variant='connected'][data-orientation='horizontal'] > button:last-child {
-  border-start-start-radius: var(--_inner);
-  border-end-start-radius: var(--_inner);
+  --_connected-se: var(--_connected-outer);
+  --_connected-ee: var(--_connected-outer);
 }
-
-.group[data-variant='connected'][data-orientation='horizontal']
-  > button:not(:first-child):not(:last-child) {
-  border-radius: var(--_inner);
-}
-
-/* Vertical joined corners. */
 .group[data-variant='connected'][data-orientation='vertical'] > button:first-child {
-  border-end-start-radius: var(--_inner);
-  border-end-end-radius: var(--_inner);
+  --_connected-ss: var(--_connected-outer);
+  --_connected-se: var(--_connected-outer);
 }
-
 .group[data-variant='connected'][data-orientation='vertical'] > button:last-child {
-  border-start-start-radius: var(--_inner);
-  border-start-end-radius: var(--_inner);
+  --_connected-es: var(--_connected-outer);
+  --_connected-ee: var(--_connected-outer);
 }
 
-.group[data-variant='connected'][data-orientation='vertical']
-  > button:not(:first-child):not(:last-child) {
-  border-radius: var(--_inner);
+/* Selected (toggle): fully round. Pressed wins over selected (Compose
+   ToggleButton shape precedence), and only ever changes the inner corners. */
+.group[data-variant='connected'] > button[data-selected='true'] {
+  --_connected-inner: var(--_connected-outer);
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .group[data-variant='standard'] > button {
-    transition: none;
-  }
+.group[data-variant='connected'] > button:active:not(:disabled) {
+  --_connected-inner: var(--_pressed-inner-corner-size);
 }

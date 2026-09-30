@@ -1,6 +1,5 @@
 import {
   forwardRef,
-  useState,
   type ButtonHTMLAttributes,
   type MouseEvent,
   type ReactNode,
@@ -8,6 +7,7 @@ import {
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import { useButtonToggle } from '../ButtonGroup/ButtonGroupContext'
 import styles from './Button.module.css'
 
 export type ButtonVariant = 'elevated' | 'filled' | 'tonal' | 'outlined' | 'text'
@@ -30,7 +30,9 @@ export interface ButtonProps
   startIcon?: ReactNode
   /** Trailing icon (decorative). */
   endIcon?: ReactNode
-  /** Enable toggle (selectable) behavior with `aria-pressed` (Expressive). */
+  /** Enable toggle (selectable) behavior with `aria-pressed` (Expressive).
+   * Inside a `ButtonGroup` with `selectionMode`, give the button a `value`
+   * instead — the group then owns its selection. */
   toggle?: boolean
   /** Controlled selected state (toggle mode). */
   selected?: boolean
@@ -64,42 +66,42 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     onClick,
     disabled = false,
     type = 'button',
+    value,
+    tabIndex,
     className,
     children,
     ...rest
   },
   ref,
 ) {
-  const isControlled = selected !== undefined
-  const [internalSelected, setInternalSelected] = useState(defaultSelected)
-  const isSelected = toggle ? (isControlled ? selected : internalSelected) : false
-
-  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
-    if (toggle) {
-      const next = !isSelected
-      if (!isControlled) setInternalSelected(next)
-      onChange?.(event, next)
-    }
-    onClick?.(event)
-  }
+  const { isToggle, isSelected, handleClick, a11y } = useButtonToggle({
+    value,
+    toggle,
+    selected,
+    defaultSelected,
+    onChange,
+    onClick,
+    tabIndex,
+  })
 
   // Toggle buttons swap their resting shape when selected: round → square and
   // square → round (Expressive). Resolved in JS to a single data-shape-state
   // attribute; the pressed shape still wins via CSS :active.
-  const shapeState = toggle && isSelected ? (shape === 'round' ? 'square' : 'round') : shape
+  const shapeState = isToggle && isSelected ? (shape === 'round' ? 'square' : 'round') : shape
 
   return (
     <button
       ref={ref}
       {...rest}
       type={type}
+      value={value}
       disabled={disabled}
       onClick={handleClick}
-      aria-pressed={toggle ? isSelected : undefined}
+      {...a11y}
       data-variant={variant}
       data-size={size}
       data-shape-state={shapeState}
-      data-selected={toggle ? String(isSelected) : undefined}
+      data-selected={isToggle ? String(isSelected) : undefined}
       className={clsx(styles.button, className)}
     >
       {startIcon != null && (

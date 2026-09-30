@@ -21,10 +21,13 @@ export interface ToolbarProps extends HTMLAttributes<HTMLDivElement> {
  * Material Design 3 (Expressive) Toolbar — a container of action slots.
  *
  * `docked` renders a full-width 64dp bar (SurfaceContainer / PrimaryContainer),
- * center-aligned with a 16dp minimum outside padding. `floating` renders a
- * rounded, elevated pill (CornerFull) with 8dp inner padding and 4dp gaps that
- * can flow horizontally or vertically — per m3.material.io / Compose
- * FloatingToolbarTokens. Standard = SurfaceContainer, vibrant = PrimaryContainer.
+ * items centered 32dp apart (shrinking to 4dp when tight) inside a 16dp outside
+ * padding. `floating` renders a rounded, elevated 64dp pill (CornerFull) with 8dp
+ * inner padding and 4dp gaps that can flow horizontally or vertically — per
+ * m3.material.io / Compose FloatingToolbarTokens. Each `IconButton` item takes a
+ * 48dp slot; standard `IconButton`s pick up the scheme's content colors
+ * (standard: OnSurfaceVariant, selected SecondaryContainer / OnSecondaryContainer;
+ * vibrant: OnPrimaryContainer, selected SurfaceContainer / OnSurface).
  */
 export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar(
   { variant = 'docked', color = 'standard', orientation = 'horizontal', className, children, ...rest },
