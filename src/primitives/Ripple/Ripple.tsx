@@ -18,13 +18,17 @@ interface RippleInstance {
 
 /**
  * Self-contained MD3 state layer + press ripple. Render it as the last child of
- * a `position: relative` interactive element; it attaches pointer listeners to
- * that parent and paints hover/press feedback using the state-layer opacity
- * tokens. Purely decorative (aria-hidden, pointer-events: none).
+ * a `position: relative` interactive element; it attaches pointer and focus
+ * listeners to that parent and paints hover / keyboard-focus / press feedback
+ * using the state-layer opacity tokens (hover 0.08, focus 0.10, pressed 0.10).
+ * The focus layer follows the parent's `:focus-visible` — the same trigger as
+ * `FocusRing`, so both appear together on keyboard focus only. Purely
+ * decorative (aria-hidden, pointer-events: none).
  */
 export function Ripple({ disabled = false, className }: RippleProps) {
   const hostRef = useRef<HTMLSpanElement>(null)
   const [hovered, setHovered] = useState(false)
+  const [focused, setFocused] = useState(false)
   const [ripples, setRipples] = useState<RippleInstance[]>([])
   const idRef = useRef(0)
 
@@ -35,6 +39,15 @@ export function Ripple({ disabled = false, className }: RippleProps) {
 
     const handleEnter = () => setHovered(true)
     const handleLeave = () => setHovered(false)
+    // Keyboard / assistive focus only (same rule as FocusRing): pointer focus
+    // already shows the hover + press feedback.
+    const handleFocus = () => {
+      if (surface.matches(':focus-visible')) setFocused(true)
+    }
+    const handleBlur = () => setFocused(false)
+    // The listeners attach after mount, so pick up a focus that is already
+    // there (e.g. autoFocus, or re-enabling a focused control).
+    if (surface.matches(':focus-visible')) setFocused(true)
 
     const handleDown = (event: PointerEvent) => {
       if (event.pointerType === 'mouse' && event.button !== 0) return
@@ -63,10 +76,15 @@ export function Ripple({ disabled = false, className }: RippleProps) {
     surface.addEventListener('pointerenter', handleEnter)
     surface.addEventListener('pointerleave', handleLeave)
     surface.addEventListener('pointerdown', handleDown)
+    surface.addEventListener('focus', handleFocus)
+    surface.addEventListener('blur', handleBlur)
     return () => {
+      setFocused(false)
       surface.removeEventListener('pointerenter', handleEnter)
       surface.removeEventListener('pointerleave', handleLeave)
       surface.removeEventListener('pointerdown', handleDown)
+      surface.removeEventListener('focus', handleFocus)
+      surface.removeEventListener('blur', handleBlur)
     }
   }, [disabled])
 
@@ -76,7 +94,13 @@ export function Ripple({ disabled = false, className }: RippleProps) {
   return (
     <span ref={hostRef} className={clsx(styles.host, className)} aria-hidden="true">
       {!disabled && (
-        <span className={clsx(styles.stateLayer, hovered && styles.hovered)} />
+        <span
+          className={clsx(
+            styles.stateLayer,
+            hovered && styles.hovered,
+            focused && styles.focused,
+          )}
+        />
       )}
       {ripples.map((r) => (
         <span
