@@ -4,6 +4,20 @@
  * widths exactly. Shape state (round / square / selected-swap / pressed) is
  * resolved in JS into a single data-shape-state attribute for clean precedence.
  * Values: docs/md3-token-reference.md + MD3 icon-button specs.
+ *
+ * Host-slot contract (public, inherited custom properties; unset = standalone
+ * spec appearance). Hosts such as TopAppBar / BottomAppBar / Toolbar set them on
+ * their slot containers — the CSS analogue of Compose providing
+ * `LocalContentColor` (which the standard IconButton inherits) and of
+ * `minimumInteractiveComponentSize` taking 48dp of layout:
+ *   --md-icon-button-icon-color               standard variant icon + state layer
+ *   --md-icon-button-selected-icon-color      standard toggle, selected: icon + state layer
+ *   --md-icon-button-selected-container-color standard toggle, selected: container
+ *   --md-icon-button-layout-min-size          minimum layout footprint (e.g. 48px);
+ *                                             filled with symmetric margins, the
+ *                                             visual container keeps its size
+ * Only the `standard` variant consumes the colors (filled / tonal / outlined keep
+ * their own spec colors, as in Compose); disabled colors always win.
  */
 
 .iconButton {
@@ -14,7 +28,15 @@
   box-sizing: border-box;
   flex-shrink: 0;
   appearance: none;
-  margin: 0;
+  /* 0 unless a host sets --md-icon-button-layout-min-size (see contract). */
+  margin: max(0px, (var(--md-icon-button-layout-min-size, 0px) - var(--_height)) / 2)
+    max(
+      0px,
+      (
+          var(--md-icon-button-layout-min-size, 0px) - var(--_icon-size) - 2 *
+            var(--_pad) - 2 * var(--_outline-width)
+        ) / 2
+    );
   cursor: pointer;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -23,11 +45,14 @@
   height: var(--_height);
   padding-inline: var(--_pad);
 
-  /* Defaults (= standard / non-toggle neutral appearance). */
+  /* Defaults (= standard / non-toggle neutral appearance; host-overridable). */
   --_container-color: transparent;
-  --_icon-color: var(--md-sys-color-on-surface-variant);
-  --_state-layer-color: var(--md-sys-color-on-surface-variant);
-  --_outline-width: 0;
+  --_icon-color: var(--md-icon-button-icon-color, var(--md-sys-color-on-surface-variant));
+  --_state-layer-color: var(
+    --md-icon-button-icon-color,
+    var(--md-sys-color-on-surface-variant)
+  );
+  --_outline-width: 0px;
   --_outline-color: transparent;
 
   border: var(--_outline-width) solid var(--_outline-color);
@@ -197,8 +222,12 @@
 
 /* Selected appearances. */
 .iconButton[data-variant='standard'][data-selected='true'] {
-  --_icon-color: var(--md-sys-color-primary);
-  --_state-layer-color: var(--md-sys-color-primary);
+  --_container-color: var(--md-icon-button-selected-container-color, transparent);
+  --_icon-color: var(--md-icon-button-selected-icon-color, var(--md-sys-color-primary));
+  --_state-layer-color: var(
+    --md-icon-button-selected-icon-color,
+    var(--md-sys-color-primary)
+  );
 }
 .iconButton[data-variant='tonal'][data-selected='true'] {
   --_container-color: var(--md-sys-color-secondary);
@@ -209,7 +238,7 @@
   --_container-color: var(--md-sys-color-inverse-surface);
   --_icon-color: var(--md-sys-color-inverse-on-surface);
   --_state-layer-color: var(--md-sys-color-inverse-on-surface);
-  --_outline-width: 0;
+  --_outline-width: 0px;
 }
 
 /* --------------------------------------------------------------------------- */
@@ -230,7 +259,7 @@
 }
 .iconButton[data-variant='outlined'][data-selected='true']:disabled {
   --_container-color: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
-  --_outline-width: 0;
+  --_outline-width: 0px;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -21,7 +21,10 @@ export interface TopAppBarProps extends Omit<HTMLAttributes<HTMLElement>, 'title
  * Surface container, 64dp (small / center) or two-row 112dp (medium) / 152dp
  * (large). Title uses TitleLarge (small/center), HeadlineSmall (medium) or
  * HeadlineMedium (large); OnSurface title, OnSurface nav icon,
- * OnSurfaceVariant actions; 16dp title inset — per Compose AppBar tokens.
+ * OnSurfaceVariant actions; icon buttons laid out in 48dp slots with no gaps
+ * (icons 16dp from the edges); title at 16dp, or 56dp after a nav icon — per
+ * m3.material.io / Compose AppBar tokens. Standard `IconButton`s in the slots
+ * pick up the slot color.
  */
 export const TopAppBar = forwardRef<HTMLElement, TopAppBarProps>(
   function TopAppBar(
@@ -66,7 +69,8 @@ export interface BottomAppBarProps extends HTMLAttributes<HTMLDivElement> {
  * Material Design 3 Bottom app bar.
  *
  * 80dp SurfaceContainer bar hosting action icons (OnSurfaceVariant) at the
- * start and an optional FAB at the end, per Compose BottomAppBarTokens.
+ * start (48dp slots, no gaps) and an optional FAB at the end, per Compose
+ * BottomAppBarTokens.
  */
 export const BottomAppBar = forwardRef<HTMLDivElement, BottomAppBarProps>(
   function BottomAppBar(
