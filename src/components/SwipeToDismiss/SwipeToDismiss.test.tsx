@@ -384,6 +384,31 @@ describe('SwipeToDismiss', () => {
       expect(await axe(container)).toHaveNoViolations()
     })
 
+    it('keeps an actionable ListItem with trailing controls valid (B5)', async () => {
+      vi.useRealTimers()
+      const { container } = render(
+        <List>
+          <SwipeToDismiss>
+            <ListItem
+              headline="Mail"
+              onClick={() => {}}
+              trailing={
+                <button type="button" aria-label="Archive">
+                  A
+                </button>
+              }
+            />
+          </SwipeToDismiss>
+        </List>,
+      )
+      const li = container.querySelector('ul > li')!
+      expect(li.querySelector('[data-lines]')?.tagName).toBe('DIV')
+      expect(screen.getByRole('button', { name: 'Mail' }).contains(
+        screen.getByRole('button', { name: 'Archive' }),
+      )).toBe(false)
+      expect(await axe(container)).toHaveNoViolations()
+    })
+
     it('stays a <div> outside a List', () => {
       render(
         <SwipeToDismiss data-testid="swipe">
