@@ -12,6 +12,9 @@ component selected by `variant`, `onChange(event, value)`,
 `startIcon`/`endIcon`, controlled/uncontrolled pairs), while appearance,
 defaults, and behavior follow the MD3 spec and Jetpack Compose `material3`.
 
+**Documentation:** [minop1205.github.io/m3-expressive-react](https://minop1205.github.io/m3-expressive-react/) —
+guides, live demos, and generated prop tables.
+
 ## Install
 
 ```bash
@@ -58,6 +61,9 @@ Containment & communication — `Card`, `List`, `Carousel`, `Dialog`,
 `BottomSheet`, `SideSheet`, `Snackbar`, `Tooltip`, `Badge`, `Divider`,
 `ProgressIndicator`, `LoadingIndicator`, `SwipeToDismiss`
 
+See the [components page](https://minop1205.github.io/m3-expressive-react/components) of the docs site for live demos
+and prop tables.
+
 ## Theming
 
 ```
@@ -71,6 +77,8 @@ Reference tokens  →  System tokens (--md-sys-*)  →  Component tokens (--_*)
   role from `seedColor`, for `mode="light" | "dark"`.
 - Focus rings and ripples expose small `--md-focus-ring-*` / `--md-ripple-*`
   contract variables for tuning.
+
+More in the [theming guide](https://minop1205.github.io/m3-expressive-react/theming).
 
 ## Icons
 
@@ -100,7 +108,8 @@ state layers), and motion approximates Compose's spring specs.
 
 ## Migrating from 0.x
 
-See [docs/migration-v1.md](docs/migration-v1.md) for the complete v1
+See the [migration guide](https://minop1205.github.io/m3-expressive-react/migration-v1)
+([docs/migration-v1.md](docs/migration-v1.md)) for the complete v1
 breaking-change guide with before/after tables and a checklist.
 
 ## Development
@@ -111,6 +120,13 @@ npm run dev      # Storybook
 npm test         # Vitest (+ Testing Library + axe)
 npm run build    # library build (dist/)
 npm run vrt      # visual regression (see CLAUDE.md for baseline rules)
+```
+
+The docs site lives in [`site/`](site/) (Docusaurus) and deploys to GitHub
+Pages from `develop`:
+
+```bash
+cd site && npm install && npm start
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. This project uses
@@ -124,7 +140,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. This project uses
 | Styling | CSS Modules + CSS custom properties (design tokens) |
 | A11y    | Native elements + hand-rolled APG patterns; axe-tested |
 | Color   | @material/material-color-utilities (Dynamic Color) |
-| Docs/dev| Storybook |
+| Docs/dev| Storybook; Docusaurus docs site |
 | Tests   | Vitest + Testing Library + axe; Playwright visual regression |
 
 ## License
