@@ -108,23 +108,14 @@
   box-shadow: var(--md-sys-elevation-shadow-level1);
 }
 
-/* Dragged (drag-and-drop): level-4 elevation + 0.16 state layer per MD3. */
+/* Dragged (drag-and-drop): level-4 elevation per MD3. The 0.16 state layer is
+   the primary action's Ripple (`dragged` prop), tinted by --md-ripple-color. */
 .dragged {
   cursor: grabbing;
 }
 
 .dragged::before {
   box-shadow: var(--md-sys-elevation-shadow-level4);
-}
-
-.dragged .action::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background-color: var(--_state-layer-color);
-  opacity: var(--md-sys-state-dragged-state-layer-opacity);
-  pointer-events: none;
 }
 
 .selected.disabled::before {

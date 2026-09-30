@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event'
 import { axe } from 'vitest-axe'
 import { Chip } from './Chip'
 import styles from './Chip.module.css'
+import rippleStyles from '../../primitives/Ripple/Ripple.module.css'
 
 describe('Chip', () => {
   it('renders with a label', () => {
@@ -135,6 +136,25 @@ describe('Chip', () => {
   it('applies the dragged state', () => {
     const { container } = render(<Chip label="Tag" dragged />)
     expect(container.querySelector('[class*="dragged"]')).toBeInTheDocument()
+  })
+
+  it('paints the 0.16 dragged state layer through the primary Ripple', () => {
+    render(<Chip label="Tag" dragged />)
+    const primary = screen.getByRole('button', { name: 'Tag' })
+    const layer = primary.querySelector(`.${rippleStyles.stateLayer}`)
+    expect(layer).toHaveClass(rippleStyles.dragged)
+  })
+
+  it('keeps the dragged state layer on a disabled chip', () => {
+    render(<Chip label="Tag" dragged disabled />)
+    const primary = screen.getByRole('button', { name: 'Tag' })
+    expect(primary.querySelector(`.${rippleStyles.dragged}`)).toBeInTheDocument()
+  })
+
+  it('has no dragged state layer at rest', () => {
+    render(<Chip label="Tag" />)
+    const primary = screen.getByRole('button', { name: 'Tag' })
+    expect(primary.querySelector(`.${rippleStyles.dragged}`)).toBeNull()
   })
 
   it('has no axe violations (assist)', async () => {
