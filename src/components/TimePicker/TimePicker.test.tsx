@@ -43,7 +43,7 @@ describe('TimePicker', () => {
     render(<TimePicker value={{ hour: 10, minute: 0 }} />)
     // Dial mode: hour is a button.
     expect(screen.getByRole('button', { name: 'Hour' })).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Switch to keyboard input' }))
+    await user.click(screen.getByRole('button', { name: 'Toggle input picker' }))
     // Input mode: hour is a textbox, dial numbers gone.
     expect(screen.getByRole('textbox', { name: 'Hour' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '3' })).not.toBeInTheDocument()

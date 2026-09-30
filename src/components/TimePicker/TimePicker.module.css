@@ -1,10 +1,15 @@
 /**
- * MD3 Time picker. Values from androidx.compose.material3 TimePickerTokens:
- * SurfaceContainerHigh surface, 28dp corners, elevation 3. Time fields 96×80,
- * CornerSmall (8dp): active PrimaryContainer / OnPrimaryContainer, inactive
- * SurfaceContainerHighest / OnSurface, DisplayLarge. AM/PM toggle selected
- * TertiaryContainer / OnTertiaryContainer, Outline 1dp. Clock dial 256dp
- * SurfaceContainerHighest, Primary selector; selected number OnPrimary.
+ * MD3 Time picker. Values from m3.material.io + androidx.compose.material3
+ * TimePickerTokens / TimeInputTokens (docs/audits/timepicker.md):
+ * SurfaceContainerHigh surface, 28dp corners, elevation 3. Time selectors
+ * 96×80, CornerSmall (8dp): active PrimaryContainer / OnPrimaryContainer,
+ * inactive SurfaceContainerHighest / OnSurface, DisplayLarge (−0.25). Input
+ * fields 96×72 DisplayMedium, borderless until focused. AM/PM 52 wide,
+ * selected TertiaryContainer / OnTertiaryContainer, Outline 1dp, TitleMedium.
+ * Clock dial 256dp SurfaceContainerHighest, Primary selector; selected
+ * number OnPrimary. State layers come from the shared Ripple, whose
+ * currentColor is the per-state content color (OnPrimaryContainer / OnSurface
+ * for the time selectors, OnTertiaryContainer / OnSurfaceVariant for AM/PM).
  */
 
 .picker {
@@ -29,18 +34,25 @@
   gap: 12px;
 }
 
+/* Input mode reserves the supporting-text line (7 + 16) under the row. */
+.picker[data-mode='input'] .fields {
+  padding-bottom: 23px;
+}
+
 .timeFields {
   display: flex;
   align-items: center;
-  gap: 8px;
 }
 
 .field {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 96px;
   height: 80px;
+  margin: 0;
+  padding: 0;
   border: none;
   border-radius: var(--md-sys-shape-corner-small);
   background-color: var(--md-sys-color-surface-container-highest);
@@ -51,6 +63,7 @@
   font-size: var(--md-sys-typescale-display-large-size);
   font-weight: var(--md-sys-typescale-display-large-weight);
   line-height: var(--md-sys-typescale-display-large-line-height);
+  letter-spacing: var(--md-sys-typescale-display-large-tracking);
 }
 
 .field[data-active] {
@@ -58,21 +71,31 @@
   color: var(--md-sys-color-on-primary-container);
 }
 
-/* Editable field (input mode). */
+/* Field + its supporting text (input mode). */
+.fieldColumn {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Editable field (input mode): 96×72 DisplayMedium, no border until focused
+   (site has no unfocused outline token; Compose draws a borderless Surface). */
 .fieldInput {
   box-sizing: border-box;
   width: 96px;
-  height: 80px;
-  border: 1px solid var(--md-sys-color-outline);
+  height: 72px;
+  margin: 0;
+  padding: 0;
+  border: none;
   border-radius: var(--md-sys-shape-corner-small);
   background-color: var(--md-sys-color-surface-container-highest);
   color: var(--md-sys-color-on-surface);
   text-align: center;
   outline: none;
-  font-family: var(--md-sys-typescale-display-large-font);
-  font-size: var(--md-sys-typescale-display-large-size);
-  font-weight: var(--md-sys-typescale-display-large-weight);
-  line-height: var(--md-sys-typescale-display-large-line-height);
+  font-family: var(--md-sys-typescale-display-medium-font);
+  font-size: var(--md-sys-typescale-display-medium-size);
+  font-weight: var(--md-sys-typescale-display-medium-weight);
+  line-height: var(--md-sys-typescale-display-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-display-medium-tracking);
 }
 
 .fieldInput:focus {
@@ -86,32 +109,41 @@
  * error-container container. Out-of-range text is kept, never clamped.
  */
 .fieldInput[data-error] {
-  border-color: var(--md-sys-color-error);
+  border: 2px solid var(--md-sys-color-error);
   background-color: var(--md-sys-color-error-container);
   color: var(--md-sys-color-error);
 }
 
-.fieldInput[data-error]:focus {
-  border-color: var(--md-sys-color-error);
+/* Hover state layer (site "Time input field hover state layer": OnSurface
+   0.08). An <input> can't host the Ripple, so this is a sibling overlay. */
+.fieldStateLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border-radius: var(--md-sys-shape-corner-small);
+  background-color: var(--md-sys-color-on-surface);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--md-sys-motion-duration-short3)
+    var(--md-sys-motion-easing-standard);
 }
 
-/* Field + its supporting (error) text. */
-.fieldColumn {
-  position: relative;
-  display: inline-flex;
+.fieldColumn:hover .fieldStateLayer {
+  opacity: var(--md-sys-state-hover-state-layer-opacity);
 }
 
 /*
- * Error supporting text (Compose SupportingText: body-small, error, 7dp
- * below the field, polite live region). Absolutely positioned into the gap
- * under the fields row so showing it causes no layout shift.
+ * Supporting text (Compose SupportingText: body-small, 7dp below the field):
+ * the field name in OnSurfaceVariant, replaced by the error message (Error,
+ * polite live region) while out of range. Absolutely positioned into the
+ * space reserved under the fields row, so swapping causes no layout shift.
  */
 .supportingText {
   position: absolute;
   top: calc(100% + 7px);
   left: 0;
   white-space: nowrap;
-  color: var(--md-sys-color-error);
+  color: var(--md-sys-color-on-surface-variant);
   font-family: var(--md-sys-typescale-body-small-font);
   font-size: var(--md-sys-typescale-body-small-size);
   font-weight: var(--md-sys-typescale-body-small-weight);
@@ -119,32 +151,49 @@
   letter-spacing: var(--md-sys-typescale-body-small-tracking);
 }
 
-.field:focus-visible {
-  outline: 2px solid var(--md-sys-color-primary);
-  outline-offset: 2px;
+.supportingText[data-error] {
+  color: var(--md-sys-color-error);
 }
 
+/* Compose DisplaySeparatorWidth: a 24dp box, no extra gaps. */
 .separator {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  width: 24px;
   color: var(--md-sys-color-on-surface);
   font-family: var(--md-sys-typescale-display-large-font);
   font-size: var(--md-sys-typescale-display-large-size);
+  font-weight: var(--md-sys-typescale-display-large-weight);
   line-height: var(--md-sys-typescale-display-large-line-height);
+  letter-spacing: var(--md-sys-typescale-display-large-tracking);
 }
 
+/* AM/PM: 52 wide including the 1dp outline; 80 tall beside the selectors
+   (it stretches with the row), 72 beside the input fields. */
 .period {
   display: inline-flex;
   flex-direction: column;
+  box-sizing: border-box;
   width: 52px;
   border: 1px solid var(--md-sys-color-outline);
   border-radius: var(--md-sys-shape-corner-small);
-  overflow: hidden;
+}
+
+.picker[data-mode='input'] .period {
+  align-self: flex-start;
+  height: 72px;
 }
 
 .periodButton {
+  position: relative;
   flex: 1 1 0;
+  margin: 0;
+  padding: 0;
   border: none;
+  /* Inner corners of the 8dp outlined container (8 − 1dp border). */
+  border-radius: calc(var(--md-sys-shape-corner-small) - 1px)
+    calc(var(--md-sys-shape-corner-small) - 1px) 0 0;
   background: transparent;
   cursor: pointer;
   outline: none;
@@ -152,20 +201,21 @@
   font-family: var(--md-sys-typescale-title-medium-font);
   font-size: var(--md-sys-typescale-title-medium-size);
   font-weight: var(--md-sys-typescale-title-medium-weight);
+  line-height: var(--md-sys-typescale-title-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-title-medium-tracking);
+  /* Keep the focus ring inside the outlined container. */
+  --md-focus-ring-offset: -3px;
 }
 
 .periodButton + .periodButton {
   border-top: 1px solid var(--md-sys-color-outline);
+  border-radius: 0 0 calc(var(--md-sys-shape-corner-small) - 1px)
+    calc(var(--md-sys-shape-corner-small) - 1px);
 }
 
 .periodButton[data-selected] {
   background-color: var(--md-sys-color-tertiary-container);
   color: var(--md-sys-color-on-tertiary-container);
-}
-
-.periodButton:focus-visible {
-  outline: 2px solid var(--md-sys-color-secondary);
-  outline-offset: -2px;
 }
 
 /* --------------------------------------------------------------------------- */
@@ -220,6 +270,9 @@
   color: var(--md-sys-color-on-surface);
   font-family: var(--md-sys-typescale-body-large-font);
   font-size: var(--md-sys-typescale-body-large-size);
+  font-weight: var(--md-sys-typescale-body-large-weight);
+  line-height: var(--md-sys-typescale-body-large-line-height);
+  letter-spacing: var(--md-sys-typescale-body-large-tracking);
 }
 
 .number[data-selected] {
@@ -228,7 +281,7 @@
 }
 
 /* --------------------------------------------------------------------------- */
-/* Actions (dial/keyboard toggle)                                              */
+/* Actions (dial/keyboard toggle — a standard IconButton)                      */
 /* --------------------------------------------------------------------------- */
 .actions {
   display: flex;
@@ -236,41 +289,9 @@
   align-self: stretch;
 }
 
-.modeToggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  cursor: pointer;
-  outline: none;
-  color: var(--md-sys-color-on-surface-variant);
-}
-
-.modeToggle:hover {
-  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
-}
-
-.modeToggle:focus-visible {
-  outline: 2px solid var(--md-sys-color-secondary);
-}
-
-.modeToggle svg {
-  width: 24px;
-  height: 24px;
-  fill: currentColor;
-}
-
-.number:focus-visible {
-  outline: 2px solid var(--md-sys-color-secondary);
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .hand {
+  .hand,
+  .fieldStateLayer {
     transition: none;
   }
 }
