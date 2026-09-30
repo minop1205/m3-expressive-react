@@ -1,10 +1,17 @@
 /**
- * MD3 Tooltip. Values from androidx.compose.material3 tooltip tokens:
- * Plain — InverseSurface container, InverseOnSurface text (BodySmall), corner
- * 4dp, min-height 24dp, padding 8/4, max-width 200dp.
- * Rich — SurfaceContainer container, corner 12dp, elevation Level2, max-width
- * 320dp; subhead OnSurfaceVariant (TitleSmall), text OnSurfaceVariant
- * (BodyMedium), action Primary (LabelLarge).
+ * MD3 Tooltip. Values from androidx.compose.material3 tooltip tokens and the
+ * m3.material.io measurement diagrams (see docs/audits/tooltip.md):
+ * Plain — InverseSurface container, InverseOnSurface text (BodySmall, start
+ * aligned), corner 4dp, min 40×24dp, padding 8/4, max-width 200dp.
+ * Rich — SurfaceContainer container, corner 12dp, elevation Level2,
+ * 40–320dp wide; padding top 12 / sides 16 / bottom 16 (8 with an action);
+ * subhead OnSurfaceVariant (TitleSmall), 4dp, text OnSurfaceVariant
+ * (BodyMedium), 12dp, action row min 36dp in Primary (LabelLarge).
+ *
+ * Width is the content's own (`max-content`, capped) — never the anchor's.
+ * Position (`top` / `left`, flip + clamp) is written inline by the shared
+ * popup helper (src/internal/usePopupPosition); the popup is a
+ * `popover="manual"` element drawn in the top layer.
  */
 
 .wrapper {
@@ -13,79 +20,116 @@
 }
 
 .tooltip {
-  position: absolute;
-  left: 50%;
+  /* Reset the UA [popover] box (inset: 0; margin: auto; border; padding…). */
+  position: fixed;
+  inset: auto;
+  top: 0;
+  left: 0;
   z-index: 10;
   box-sizing: border-box;
+  width: max-content;
+  height: auto;
+  margin: 0;
+  border: 0;
+  overflow: visible;
+  border-radius: var(--_container-shape);
+  background-color: var(--_container-color);
+  color: var(--_supporting-text-color);
+  box-shadow: var(--_container-elevation, none);
+
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translateX(-50%) scale(0.9);
-  transform-origin: center bottom;
+
+  /* Show / hide ≈ Compose animateTooltip: scale 0.8 ↔ 1 from the center
+     (FastSpatial spring, standard scheme 0.9/1400 ≈ 150ms, no visible bounce)
+     + fade (FastEffects 1.0/3800 ≈ 80ms) — the same approximation as Menu.
+     No motion-scheme tokens exist yet (Phase B B2), so this uses the standard
+     easing token. */
+  transform: scale(0.8);
+  transform-origin: center;
   transition:
-    opacity 100ms var(--md-sys-motion-easing-standard),
-    transform 100ms var(--md-sys-motion-easing-standard),
-    visibility 0s linear 100ms;
-}
-
-.tooltip[data-placement='top'] {
-  bottom: calc(100% + 4px);
-}
-
-.tooltip[data-placement='bottom'] {
-  top: calc(100% + 4px);
-  transform-origin: center top;
+    opacity 80ms linear,
+    transform 150ms var(--md-sys-motion-easing-standard),
+    visibility 0s linear 150ms;
+  /* Keep the top-layer popover rendered during the exit animation. Browsers
+     that don't know `allow-discrete` drop this declaration and keep the one
+     above. */
+  transition:
+    opacity 80ms linear,
+    transform 150ms var(--md-sys-motion-easing-standard),
+    visibility 0s linear 150ms,
+    display 150ms allow-discrete,
+    overlay 150ms allow-discrete;
 }
 
 .open {
   opacity: 1;
   visibility: visible;
-  transform: translateX(-50%) scale(1);
+  pointer-events: auto; /* hoverable (WCAG 1.4.13) */
+  transform: none;
   transition-delay: 0s;
+}
+
+@starting-style {
+  .open {
+    opacity: 0;
+    transform: scale(0.8);
+  }
 }
 
 /* --------------------------------------------------------------------------- */
 /* Plain                                                                       */
 /* --------------------------------------------------------------------------- */
 .tooltip[data-variant='plain'] {
+  --_container-color: var(--md-sys-color-inverse-surface);
+  --_container-shape: var(--md-sys-shape-corner-extra-small);
+  --_supporting-text-color: var(--md-sys-color-inverse-on-surface);
+
+  min-width: 40px;
   min-height: 24px;
-  max-width: 200px;
+  max-width: min(200px, 100vw - 16px);
   padding: 4px 8px;
-  border-radius: var(--md-sys-shape-corner-extra-small);
-  background-color: var(--md-sys-color-inverse-surface);
-  color: var(--md-sys-color-inverse-on-surface);
 }
 
 .tooltip[data-variant='plain'] .text {
-  color: var(--md-sys-color-inverse-on-surface);
   font-family: var(--md-sys-typescale-body-small-font);
   font-size: var(--md-sys-typescale-body-small-size);
   font-weight: var(--md-sys-typescale-body-small-weight);
   line-height: var(--md-sys-typescale-body-small-line-height);
   letter-spacing: var(--md-sys-typescale-body-small-tracking);
-  text-align: center;
+  text-align: start;
 }
 
 /* --------------------------------------------------------------------------- */
 /* Rich                                                                        */
 /* --------------------------------------------------------------------------- */
 .tooltip[data-variant='rich'] {
-  max-width: 320px;
+  --_container-color: var(--md-sys-color-surface-container);
+  --_container-shape: var(--md-sys-shape-corner-medium);
+  --_container-elevation: var(--md-sys-elevation-shadow-level2);
+  --_subhead-color: var(--md-sys-color-on-surface-variant);
+  --_supporting-text-color: var(--md-sys-color-on-surface-variant);
+  --_action-label-text-color: var(--md-sys-color-primary);
+  --_top-space: 12px;
+  --_bottom-space: 16px;
+  --_horizontal-space: 16px;
+  --_action-row-min-height: 36px;
+
   min-width: 40px;
-  padding: 16px;
-  border-radius: var(--md-sys-shape-corner-medium);
-  background-color: var(--md-sys-color-surface-container);
-  color: var(--md-sys-color-on-surface-variant);
-  box-shadow: var(--md-sys-elevation-shadow-level2);
+  max-width: min(320px, 100vw - 16px);
+  padding-block: var(--_top-space) var(--_bottom-space);
+  padding-inline: var(--_horizontal-space);
   text-align: start;
 }
 
-.tooltip[data-variant='rich'].open {
-  pointer-events: auto;
+/* With actions the bottom padding is 8dp below the 36dp action row. */
+.tooltip[data-variant='rich'][data-has-action] {
+  --_bottom-space: 8px;
 }
 
 .subhead {
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--_subhead-color);
   font-family: var(--md-sys-typescale-title-small-font);
   font-size: var(--md-sys-typescale-title-small-size);
   font-weight: var(--md-sys-typescale-title-small-weight);
@@ -95,7 +139,7 @@
 }
 
 .tooltip[data-variant='rich'] .text {
-  color: var(--md-sys-color-on-surface-variant);
+  color: var(--_supporting-text-color);
   font-family: var(--md-sys-typescale-body-medium-font);
   font-size: var(--md-sys-typescale-body-medium-size);
   font-weight: var(--md-sys-typescale-body-medium-weight);
@@ -103,17 +147,26 @@
   letter-spacing: var(--md-sys-typescale-body-medium-tracking);
 }
 
+/* Up to two text buttons, side by side. */
 .action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--_action-row-min-height);
   margin-top: 12px;
-  color: var(--md-sys-color-primary);
+  color: var(--_action-label-text-color);
 }
 
+/* Reduced motion (Phase B B3): fade only. */
 @media (prefers-reduced-motion: reduce) {
-  .tooltip {
-    transition: opacity 100ms linear, visibility 0s linear 100ms;
-    transform: translateX(-50%);
-  }
+  .tooltip,
   .open {
-    transform: translateX(-50%);
+    transform: none;
+  }
+  @starting-style {
+    .open {
+      transform: none;
+    }
   }
 }

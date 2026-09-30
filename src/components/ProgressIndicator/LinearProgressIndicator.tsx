@@ -28,6 +28,13 @@ function clampProgress(value: number) {
   return Math.min(1, Math.max(0, value))
 }
 
+function prefersReducedMotion() {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+  )
+}
+
 function cubicBezier(
   progress: number,
   x1: number,
@@ -70,6 +77,8 @@ function emphasizedAccelerateEasing(progress: number) {
   return cubicBezier(progress, 0.3, 0, 0.8, 0.15)
 }
 
+/** Space between the active indicator and the track, in dp. */
+const GAP = 4
 const WAVY_AMPLITUDE = 3
 const WAVY_DETERMINATE_WAVELENGTH = 40
 const WAVY_INDETERMINATE_WAVELENGTH = 20
@@ -276,6 +285,13 @@ function getWavySegmentPath({
   const pathEndX = endX - thickness / 2
 
   if (pathEndX <= startX) {
+    // Too short for a wave: any visible progress is still a round dot
+    // (a zero-length subpath painted with round caps).
+    if (endX > (startXInput ?? 0)) {
+      const x = Math.min(startX, Math.max(thickness / 2, endX)).toFixed(2)
+      const y = centerY.toFixed(2)
+      return `M ${x} ${y} L ${x} ${y}`
+    }
     return ''
   }
 
@@ -344,9 +360,11 @@ export const LinearProgressIndicator = forwardRef<
     wavy && (determinateProgress > 0 || wavyVisualProgress > 0.001)
   const wavyHeight = getWavyHeight(thickness)
   const wavyProgressWidth = width * displayProgress
+  // The gap shrinks with the progress at low values (Compose
+  // `p + min(p, gapFraction)`), so the dot and the track don't jump apart.
   const wavyTrackStart = `${Math.min(
     width,
-    Math.max(wavyProgressWidth, thickness) + 4,
+    Math.max(wavyProgressWidth, thickness) + Math.min(wavyProgressWidth, GAP),
   )}px`
   const wavyPath = getWavySegmentPath({
     amplitude: wavyAmplitude,
@@ -380,7 +398,7 @@ export const LinearProgressIndicator = forwardRef<
     wavy && displayProgress > 0 && displayProgress < 1
       ? wavyTrackStart
       : determinateProgress > 0 && determinateProgress < 1
-      ? `calc(${determinateProgress * 100}% + 4px)`
+      ? `calc(max(${determinateProgress * 100}%, ${thickness}px) + min(${determinateProgress * 100}%, ${GAP}px))`
       : `${determinateProgress * 100}%`
   const progressStyle = {
     ...style,
@@ -416,7 +434,7 @@ export const LinearProgressIndicator = forwardRef<
     const from = wavyVisualProgressRef.current
     const to = determinateProgress
 
-    if (Math.abs(from - to) < 0.001) {
+    if (Math.abs(from - to) < 0.001 || prefersReducedMotion()) {
       wavyVisualProgressRef.current = to
       setWavyVisualProgress(to)
       return
@@ -462,7 +480,7 @@ export const LinearProgressIndicator = forwardRef<
     const from = wavyAmplitudeRef.current
     const to = targetWavyAmplitude
 
-    if (Math.abs(from - to) < 0.001) {
+    if (Math.abs(from - to) < 0.001 || prefersReducedMotion()) {
       wavyAmplitudeRef.current = to
       setWavyAmplitude(to)
       return
@@ -632,6 +650,14 @@ export const LinearProgressIndicator = forwardRef<
               />
             ))
           )}
+        </span>
+      ) : null}
+      {indeterminate ? (
+        // Shown instead of the above under prefers-reduced-motion (CSS).
+        <span className={styles.linearReducedMotion} aria-hidden="true">
+          <span className={styles.linearReducedMotionTrack} data-part="start" />
+          <span className={styles.linearReducedMotionSegment} />
+          <span className={styles.linearReducedMotionTrack} data-part="end" />
         </span>
       ) : (
         <>

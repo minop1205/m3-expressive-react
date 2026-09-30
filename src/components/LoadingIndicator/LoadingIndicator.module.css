@@ -22,3 +22,24 @@
 
 /* Rotation is applied per-frame via the SVG `transform="rotate(a cx cy)"`
    attribute, pivoting on the viewBox center (= each shape's centroid). */
+
+/* Pivot for the reduced-motion spin: the viewBox center. */
+.spin {
+  transform-box: view-box;
+  transform-origin: center;
+}
+
+@keyframes loading-indicator-reduced-motion-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Reduced motion (B3): no morph, no spring kick, no scale pulse — the
+   indeterminate indicator keeps only a slow constant rotation of the
+   (static) first shape. */
+@media (prefers-reduced-motion: reduce) {
+  .svg[data-indeterminate] .spin {
+    animation: loading-indicator-reduced-motion-spin 4666ms linear infinite;
+  }
+}

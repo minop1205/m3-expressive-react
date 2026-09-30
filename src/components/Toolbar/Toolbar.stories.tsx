@@ -59,6 +59,27 @@ export const Vibrant: Story = {
   ),
 }
 
+/** Both color schemes with a selected toggle item (Toolbar - Color token sets). */
+export const ColorSchemes: Story = {
+  render: () => {
+    const items = (
+      <>
+        <IconButton variant="standard" toggle defaultSelected icon={<span aria-hidden="true">B</span>} aria-label="Bold" />
+        {i('Italic', 'I')}
+        {i('Underline', 'U')}
+      </>
+    )
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: 412 }}>
+        <Toolbar variant="docked" aria-label="Standard docked">{items}</Toolbar>
+        <Toolbar variant="docked" color="vibrant" aria-label="Vibrant docked">{items}</Toolbar>
+        <Toolbar variant="floating" aria-label="Standard floating">{items}</Toolbar>
+        <Toolbar variant="floating" color="vibrant" aria-label="Vibrant floating">{items}</Toolbar>
+      </div>
+    )
+  },
+}
+
 export const FloatingWithFab: Story = {
   render: () => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -67,7 +88,8 @@ export const FloatingWithFab: Story = {
         {i('Italic', 'I')}
         {i('Underline', 'U')}
       </Toolbar>
-      <Fab icon={<span aria-hidden="true">✎</span>} aria-label="Compose" />
+      {/* m3 Floating - FAB: a standard toolbar pairs with a secondary FAB. */}
+      <Fab color="secondary" icon={<span aria-hidden="true">✎</span>} aria-label="Compose" />
     </div>
   ),
 }

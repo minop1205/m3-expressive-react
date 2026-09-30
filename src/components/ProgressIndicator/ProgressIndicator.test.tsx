@@ -2,7 +2,12 @@ import { createRef } from 'react'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { axe } from 'vitest-axe'
-import { CircularProgressIndicator } from './CircularProgressIndicator'
+import {
+  CircularProgressIndicator,
+  getAdditionalRotation,
+  getIndeterminateRotation,
+  getIndeterminateSweep,
+} from './CircularProgressIndicator'
 import { LinearProgressIndicator } from './LinearProgressIndicator'
 
 describe('LinearProgressIndicator', () => {
@@ -81,6 +86,25 @@ describe('LinearProgressIndicator', () => {
     expect(container.querySelector('[class*="linearWavySvg"]')).toBeInTheDocument()
   })
 
+  it('renders low progress as a dot with a shrinking gap', () => {
+    const { container } = render(<LinearProgressIndicator value={0.005} />)
+    const bar = screen.getByRole('progressbar')
+    expect(bar.style.getPropertyValue('--_track-start')).toBe(
+      'calc(max(0.5%, 4px) + min(0.5%, 4px))',
+    )
+    expect(container.querySelector('[class*="linearIndicator"]')).toBeInTheDocument()
+  })
+
+  it('renders the reduced-motion sweep for indeterminate progress', () => {
+    const { container } = render(<LinearProgressIndicator aria-label="Loading" />)
+    expect(
+      container.querySelector('[class*="linearReducedMotionSegment"]'),
+    ).toBeInTheDocument()
+    expect(
+      container.querySelectorAll('[class*="linearReducedMotionTrack"]'),
+    ).toHaveLength(2)
+  })
+
   it('forwards ref', () => {
     const ref = createRef<HTMLDivElement>()
     render(<LinearProgressIndicator ref={ref} value={0} />)
@@ -138,7 +162,7 @@ describe('CircularProgressIndicator', () => {
     expect(track).toHaveAttribute('stroke-dasharray')
     expect(track).toHaveAttribute('stroke-dashoffset')
 
-    const radius = (48 - 4) / 2
+    const radius = (40 - 4) / 2
     const circumference = 2 * Math.PI * radius
     const gap = (4 + 4) / circumference
     const [trackLength] = track
@@ -208,6 +232,62 @@ describe('CircularProgressIndicator', () => {
     expect(container.querySelector('path[class*="circularIndicator"]')).toBeInTheDocument()
   })
 
+  it.each([
+    ['flat', 4, 40],
+    ['flat', 8, 44],
+    ['wavy', 4, 48],
+    ['wavy', 8, 52],
+  ] as const)(
+    'defaults the size for %s %idp to %i',
+    (shape, thickness, expected) => {
+      render(
+        <CircularProgressIndicator
+          value={0.5}
+          shape={shape}
+          thickness={thickness}
+        />,
+      )
+      const svg = screen.getByRole('progressbar')
+      expect(svg).toHaveAttribute('width', String(expected))
+      expect(svg).toHaveAttribute('viewBox', `0 0 ${expected} ${expected}`)
+    },
+  )
+
+  it('keeps the stroke in px whatever the size (viewBox = size)', () => {
+    const { container } = render(
+      <CircularProgressIndicator value={0.45} size={24} />,
+    )
+    expect(screen.getByRole('progressbar')).toHaveAttribute(
+      'viewBox',
+      '0 0 24 24',
+    )
+    const indicator = container.querySelector('circle[class*="circularIndicator"]')
+    expect(indicator).toHaveAttribute('stroke-width', '4')
+    expect(indicator).toHaveAttribute('r', String((24 - 4) / 2))
+  })
+
+  it('keeps the wavy stroke inside the box', () => {
+    const { container } = render(
+      <CircularProgressIndicator value={0.5} shape="wavy" />,
+    )
+    const d =
+      container.querySelector('path[class*="circularIndicator"]')?.getAttribute('d') ?? ''
+    const coords = d.match(/-?\d+(\.\d+)?/g)?.map(Number) ?? []
+    // stroke half-width (2) must stay within [0, 48]
+    expect(Math.min(...coords)).toBeGreaterThanOrEqual(2 - 0.01)
+    expect(Math.max(...coords)).toBeLessThanOrEqual(46 + 0.01)
+  })
+
+  it('shrinks the track gap at very low progress', () => {
+    const { container } = render(<CircularProgressIndicator value={0.01} />)
+    const track = container.querySelector('[class*="circularTrack"]')
+    // gap = min(sweep, gapSweep) = 0.01
+    expect(Number(track?.getAttribute('stroke-dashoffset'))).toBeCloseTo(
+      -0.02,
+      4,
+    )
+  })
+
   it('has no axe violations', async () => {
     const { container } = render(
       <CircularProgressIndicator value={0.5} aria-label="Loading" />,
@@ -220,5 +300,33 @@ describe('CircularProgressIndicator', () => {
       <CircularProgressIndicator aria-label="Loading" />,
     )
     expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('circular indeterminate motion (Compose constants)', () => {
+  it('steps the additional rotation by 90° in 300ms, then holds', () => {
+    expect(getAdditionalRotation(0)).toBe(0)
+    expect(getAdditionalRotation(150)).toBeCloseTo(45)
+    expect(getAdditionalRotation(300)).toBe(90)
+    expect(getAdditionalRotation(1499)).toBe(90)
+    expect(getAdditionalRotation(1800)).toBe(180)
+    expect(getAdditionalRotation(5999)).toBe(360)
+  })
+
+  it('rotates 1080° per 6000ms cycle on top of the steps', () => {
+    expect(getIndeterminateRotation(3000)).toBeCloseTo(540 + 180)
+  })
+
+  it('sweeps 0.1 → 0.87 at 3000ms → 0.1 at 6000ms', () => {
+    expect(getIndeterminateSweep(0)).toBeCloseTo(0.1)
+    expect(getIndeterminateSweep(1500)).toBeCloseTo(0.1 + 0.77 / 2) // linear growth
+    expect(getIndeterminateSweep(3000)).toBeCloseTo(0.87)
+    expect(getIndeterminateSweep(6000)).toBeCloseTo(0.1)
+  })
+
+  it('drives flat and wavy with the same JS driver (no CSS keyframes)', () => {
+    const { container } = render(<CircularProgressIndicator aria-label="Loading" />)
+    const layer = container.querySelector('[class*="circularLayer"] > g')
+    expect(layer?.getAttribute('style')).toMatch(/rotate\(/)
   })
 })

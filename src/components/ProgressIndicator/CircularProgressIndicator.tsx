@@ -16,7 +16,12 @@ export interface CircularProgressIndicatorProps
   extends Omit<SVGAttributes<SVGSVGElement>, 'role'> {
   /** Progress value from 0 to 1. Omit for indeterminate progress. */
   value?: number
-  /** Diameter of the indicator in pixels. @default 48 */
+  /**
+   * Outer diameter of the indicator in pixels. The stroke thickness, the 4dp
+   * track gap and the wave keep their dp size whatever the diameter.
+   * @default 40 (flat) / 48 (wavy) for a 4dp thickness; each extra dp of
+   * thickness adds 1 (flat 8dp = 44, wavy 8dp = 52)
+   */
   size?: number
   /** Indicator thickness in dp. @default 4 */
   thickness?: CircularProgressIndicatorThickness
@@ -24,19 +29,31 @@ export interface CircularProgressIndicatorProps
   shape?: ProgressIndicatorShape
 }
 
-const VIEWBOX_SIZE = 48
-const CENTER = VIEWBOX_SIZE / 2
+/** Compose CircularProgressIndicatorTokens.Size / WaveSize (4dp thickness). */
+const FLAT_SIZE = 40
+const WAVY_SIZE = 48
+const BASE_THICKNESS = 4
 const GAP = 4
 const WAVY_AMPLITUDE = 1.6
 const WAVY_WAVELENGTH = 15
 const PROGRESS_TRANSITION_DURATION_MS = 600
 const AMPLITUDE_TRANSITION_DURATION_MS = 500
+// Indeterminate motion — Compose ProgressIndicator.kt
+// (`circularIndeterminate*AnimationSpec`), shared by flat and wavy.
 const INDETERMINATE_DURATION_MS = 6000
+const INDETERMINATE_GLOBAL_ROTATION = 1080
 const INDETERMINATE_MIN_PROGRESS = 0.1
 const INDETERMINATE_MAX_PROGRESS = 0.87
 const ADDITIONAL_ROTATION_DELAY_MS = 1500
-const ADDITIONAL_ROTATION_DURATION_MS = 1500
+const ADDITIONAL_ROTATION_DURATION_MS = 300
+/**
+ * Frame shown under prefers-reduced-motion. The arc then keeps only a slow
+ * constant rotation (CSS), without the sweep growing and shrinking (B3).
+ */
+const REDUCED_MOTION_FRAME_MS = 1800
 const MIN_CIRCULAR_VERTEX_COUNT = 5
+
+type Point = { x: number; y: number }
 
 function cubicBezier(
   progress: number,
@@ -80,12 +97,15 @@ function emphasizedAccelerateEasing(progress: number) {
   return cubicBezier(progress, 0.3, 0, 0.8, 0.15)
 }
 
-function emphasizedDecelerateEasing(progress: number) {
-  return cubicBezier(progress, 0.05, 0.7, 0.1, 1)
-}
-
 function clampProgress(value: number) {
   return Math.min(1, Math.max(0, value))
+}
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+  )
 }
 
 function getWavyTargetAmplitude(progress: number) {
@@ -96,22 +116,32 @@ function getWavyTargetAmplitude(progress: number) {
   return WAVY_AMPLITUDE
 }
 
-function getTrackArc(
-  progress: number,
-  radius: number,
-  strokeWidth: CircularProgressIndicatorThickness,
+/**
+ * Gap (as a fraction of the circumference) between the active arc and the
+ * track. It shrinks with the sweep at low progress (Compose
+ * `min(sweep, gapSizeSweep)`), so the arc and track do not jump apart. The
+ * stroke width is added because the round caps overhang both arcs.
+ */
+function getGapFraction(
+  sweep: number,
+  circumference: number,
+  strokeWidth: number,
 ) {
-  if (progress <= 0) {
+  return Math.min(sweep, (GAP + strokeWidth) / circumference)
+}
+
+/** Track arc after the active arc, as pathLength=1 dash values. */
+function getTrackArc(sweep: number, circumference: number, strokeWidth: number) {
+  if (sweep <= 0) {
     return { dasharray: '1 0', dashoffset: 0 }
   }
 
-  if (progress >= 1) {
+  if (sweep >= 1) {
     return null
   }
 
-  const circumference = 2 * Math.PI * radius
-  const gap = (GAP + strokeWidth) / circumference
-  const trackLength = Math.max(0, 1 - progress - gap * 2)
+  const gap = getGapFraction(sweep, circumference, strokeWidth)
+  const trackLength = Math.max(0, 1 - sweep - gap * 2)
 
   if (trackLength <= 0) {
     return null
@@ -119,26 +149,26 @@ function getTrackArc(
 
   return {
     dasharray: `${trackLength} ${1 - trackLength}`,
-    dashoffset: -(progress + gap),
+    dashoffset: -(sweep + gap),
   }
 }
 
-function polarToPoint(radius: number, angle: number) {
+function polarToPoint(center: number, radius: number, angle: number): Point {
   return {
-    x: CENTER + Math.cos(angle) * radius,
-    y: CENTER + Math.sin(angle) * radius,
+    x: center + Math.cos(angle) * radius,
+    y: center + Math.sin(angle) * radius,
   }
 }
 
-function rotatePoint(point: { x: number; y: number }, angle: number) {
-  const x = point.x - CENTER
-  const y = point.y - CENTER
+function rotatePoint(center: number, point: Point, angle: number): Point {
+  const x = point.x - center
+  const y = point.y - center
   const cos = Math.cos(angle)
   const sin = Math.sin(angle)
 
   return {
-    x: CENTER + x * cos - y * sin,
-    y: CENTER + x * sin + y * cos,
+    x: center + x * cos - y * sin,
+    y: center + x * sin + y * cos,
   }
 }
 
@@ -151,6 +181,7 @@ function getCircularVertexCount(radius: number) {
 
 function getCircularWavyPath(
   progress: number,
+  center: number,
   radius: number,
   phase: number,
   amplitude: number,
@@ -162,14 +193,14 @@ function getCircularWavyPath(
   const circumference = 2 * Math.PI * radius
   const vertexCount = getCircularVertexCount(radius)
   const sampleCount = vertexCount * 24
-  const samples: Array<{ x: number; y: number; distance: number }> = []
+  const samples: Array<Point & { distance: number }> = []
   let totalLength = 0
 
   for (let index = 0; index <= sampleCount; index += 1) {
     const fraction = index / sampleCount
     const angle = -Math.PI / 2 + Math.PI * 2 * fraction
     const wave = Math.cos(fraction * vertexCount * Math.PI * 2)
-    const point = polarToPoint(radius + wave * amplitude, angle)
+    const point = polarToPoint(center, radius + wave * amplitude, angle)
 
     if (index > 0) {
       const previous = samples[index - 1]
@@ -202,6 +233,7 @@ function getCircularWavyPath(
     const span = next.distance - previous.distance || 1
     const sampleFraction = (distance - previous.distance) / span
     const point = rotatePoint(
+      center,
       {
         x: previous.x + (next.x - previous.x) * sampleFraction,
         y: previous.y + (next.y - previous.y) * sampleFraction,
@@ -215,7 +247,12 @@ function getCircularWavyPath(
   return path.trim()
 }
 
-function getCircularArcPath(startProgress: number, endProgress: number, radius: number) {
+function getCircularArcPath(
+  startProgress: number,
+  endProgress: number,
+  center: number,
+  radius: number,
+) {
   if (endProgress <= startProgress) {
     return ''
   }
@@ -228,7 +265,7 @@ function getCircularArcPath(startProgress: number, endProgress: number, radius: 
   for (let index = 0; index <= steps; index += 1) {
     const fraction = index / steps
     const angle = startAngle + (endAngle - startAngle) * fraction
-    const point = polarToPoint(radius, angle)
+    const point = polarToPoint(center, radius, angle)
 
     path += `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(3)} ${point.y.toFixed(3)} `
   }
@@ -236,38 +273,42 @@ function getCircularArcPath(startProgress: number, endProgress: number, radius: 
   return path.trim()
 }
 
-function getIndeterminateSweep(cycleTime: number) {
-  if (cycleTime <= INDETERMINATE_DURATION_MS / 2) {
-    return (
-      INDETERMINATE_MIN_PROGRESS +
-      (INDETERMINATE_MAX_PROGRESS - INDETERMINATE_MIN_PROGRESS) *
-        standardEasing(cycleTime / (INDETERMINATE_DURATION_MS / 2))
-    )
+/**
+ * Indeterminate sweep: 0.1 → 0.87 over the first 3000ms (linear — Compose's
+ * keyframe easing applies to the interval *starting* at a keyframe), then
+ * back to 0.1 with standard easing (`CircularProgressEasing`).
+ */
+export function getIndeterminateSweep(cycleTime: number) {
+  const half = INDETERMINATE_DURATION_MS / 2
+  const range = INDETERMINATE_MAX_PROGRESS - INDETERMINATE_MIN_PROGRESS
+
+  if (cycleTime <= half) {
+    return INDETERMINATE_MIN_PROGRESS + range * (cycleTime / half)
   }
 
   return (
     INDETERMINATE_MAX_PROGRESS -
-    (INDETERMINATE_MAX_PROGRESS - INDETERMINATE_MIN_PROGRESS) *
-      standardEasing(
-        (cycleTime - INDETERMINATE_DURATION_MS / 2) /
-          (INDETERMINATE_DURATION_MS / 2),
-      )
+    range * standardEasing((cycleTime - half) / half)
   )
 }
 
-function getAdditionalRotation(cycleTime: number) {
+/**
+ * Additional rotation: +90° over 300ms (linear), then hold until the next
+ * 1500ms step — four steps per 6000ms cycle.
+ */
+export function getAdditionalRotation(cycleTime: number) {
   const step = Math.floor(cycleTime / ADDITIONAL_ROTATION_DELAY_MS)
   const stepTime = cycleTime - step * ADDITIONAL_ROTATION_DELAY_MS
-  const baseRotation = step * 90
+  const stepProgress = Math.min(1, stepTime / ADDITIONAL_ROTATION_DURATION_MS)
 
-  if (stepTime >= ADDITIONAL_ROTATION_DURATION_MS) {
-    return baseRotation + 90
-  }
+  return step * 90 + 90 * stepProgress
+}
 
+/** Global linear rotation (1080° per cycle) + the stepped additional rotation. */
+export function getIndeterminateRotation(cycleTime: number) {
   return (
-    baseRotation +
-    90 *
-      emphasizedDecelerateEasing(stepTime / ADDITIONAL_ROTATION_DURATION_MS)
+    (INDETERMINATE_GLOBAL_ROTATION * cycleTime) / INDETERMINATE_DURATION_MS +
+    getAdditionalRotation(cycleTime)
   )
 }
 
@@ -277,7 +318,7 @@ export const CircularProgressIndicator = forwardRef<
 >(function CircularProgressIndicator(
   {
     value,
-    size = 48,
+    size: sizeProp,
     thickness = 4,
     shape = 'flat',
     className,
@@ -299,49 +340,53 @@ export const CircularProgressIndicator = forwardRef<
   const [wavyAmplitude, setWavyAmplitude] = useState(() =>
     getWavyTargetAmplitude(determinateProgress),
   )
-  const radius = (VIEWBOX_SIZE - thickness) / 2
+
+  // Geometry in real px: the viewBox matches the rendered size so the stroke,
+  // the gap and the wave are never scaled with the diameter.
+  const size =
+    sizeProp ?? (wavy ? WAVY_SIZE : FLAT_SIZE) + (thickness - BASE_THICKNESS)
+  const center = size / 2
+  // The stroke (and, for wavy, the wave crest) stays inside the box.
+  const radius = Math.max(
+    1,
+    (size - thickness) / 2 - (wavy ? WAVY_AMPLITUDE : 0),
+  )
   const circumference = 2 * Math.PI * radius
   const wavyVertexCount = getCircularVertexCount(radius)
   const wavyActualWavelength = circumference / wavyVertexCount
+
+  const indeterminateSweep = getIndeterminateSweep(indeterminateCycleTime)
+  const indeterminateRotation = getIndeterminateRotation(indeterminateCycleTime)
+  const sweep = indeterminate ? indeterminateSweep : displayProgress
+  const trackArc = getTrackArc(sweep, circumference, thickness)
+
   const wavyPath = wavy
     ? getCircularWavyPath(
-        displayProgress,
+        sweep,
+        center,
         radius,
         wavyPhase,
-        wavyAmplitude,
+        indeterminate ? WAVY_AMPLITUDE : wavyAmplitude,
       )
     : undefined
-  const trackArc = indeterminate
-    ? undefined
-    : getTrackArc(displayProgress, radius, thickness)
-  const visualGap = (GAP + thickness) / circumference
-  const indeterminateSweep = getIndeterminateSweep(indeterminateCycleTime)
-  const indeterminateRotation =
-    (1080 * indeterminateCycleTime) / INDETERMINATE_DURATION_MS +
-    getAdditionalRotation(indeterminateCycleTime)
-  const indeterminateWavyPath =
-    wavy && indeterminate
-      ? getCircularWavyPath(
-          indeterminateSweep,
-          radius,
-          wavyPhase,
-          WAVY_AMPLITUDE,
-        )
-      : ''
+  const indeterminateGap = getGapFraction(
+    indeterminateSweep,
+    circumference,
+    thickness,
+  )
   const indeterminateWavyTrackPath =
     wavy && indeterminate
       ? getCircularArcPath(
-          Math.min(1, indeterminateSweep + visualGap),
-          Math.max(0, 1 - visualGap),
+          Math.min(1, indeterminateSweep + indeterminateGap),
+          Math.max(0, 1 - indeterminateGap),
+          center,
           radius,
         )
       : ''
   const indicatorStyle = {
     ...style,
-    '--_progress': progress ?? 0,
-    '--_remaining-progress': 1 - (progress ?? 0),
-    '--_circular-gap': visualGap,
-    '--_circular-gap-pair': visualGap * 2,
+    '--_progress': sweep,
+    '--_remaining-progress': 1 - sweep,
   } as CSSProperties
 
   useEffect(() => {
@@ -353,7 +398,7 @@ export const CircularProgressIndicator = forwardRef<
     const from = wavyVisualProgress
     const to = determinateProgress
 
-    if (Math.abs(from - to) < 0.001) {
+    if (Math.abs(from - to) < 0.001 || prefersReducedMotion()) {
       setWavyVisualProgress(to)
       return
     }
@@ -396,7 +441,7 @@ export const CircularProgressIndicator = forwardRef<
     const from = wavyAmplitude
     const to = targetWavyAmplitude
 
-    if (Math.abs(from - to) < 0.001) {
+    if (Math.abs(from - to) < 0.001 || prefersReducedMotion()) {
       setWavyAmplitude(to)
       return
     }
@@ -432,15 +477,13 @@ export const CircularProgressIndicator = forwardRef<
     }
   }, [indeterminate, targetWavyAmplitude, wavy])
 
+  // Wave travel (1 wavelength / second). Stopped under reduced motion.
   useEffect(() => {
     if (!wavy || (!indeterminate && determinateProgress <= 0)) {
       setWavyPhase(0)
       return
     }
-    const reduce =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    if (reduce) {
+    if (prefersReducedMotion()) {
       setWavyPhase(0)
       return
     }
@@ -477,17 +520,15 @@ export const CircularProgressIndicator = forwardRef<
     wavyActualWavelength,
   ])
 
+  // One indeterminate driver for flat and wavy (Compose constants).
   useEffect(() => {
-    if (!indeterminate || !wavy) {
+    if (!indeterminate) {
       setIndeterminateCycleTime(0)
       return
     }
-    const reduce =
-      typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-    if (reduce) {
-      // Freeze mid-cycle so a visible arc is shown.
-      setIndeterminateCycleTime(INDETERMINATE_DURATION_MS * 0.3)
+    if (prefersReducedMotion()) {
+      // Fixed sweep; the CSS keeps a slow constant rotation (B3).
+      setIndeterminateCycleTime(REDUCED_MOTION_FRAME_MS)
       return
     }
 
@@ -510,7 +551,48 @@ export const CircularProgressIndicator = forwardRef<
     return () => {
       cancelAnimationFrame(animationFrame)
     }
-  }, [indeterminate, wavy])
+  }, [indeterminate])
+
+  const track =
+    wavy && indeterminate ? (
+      indeterminateWavyTrackPath && (
+        <path
+          className={styles.circularWavyTrack}
+          d={indeterminateWavyTrackPath}
+          strokeWidth={thickness}
+        />
+      )
+    ) : (
+      trackArc && (
+        <circle
+          className={styles.circularTrack}
+          cx={center}
+          cy={center}
+          r={radius}
+          strokeWidth={thickness}
+          pathLength={1}
+          strokeDasharray={trackArc.dasharray}
+          strokeDashoffset={trackArc.dashoffset}
+        />
+      )
+    )
+
+  const indicator = wavy ? (
+    <path
+      className={styles.circularIndicator}
+      d={wavyPath}
+      strokeWidth={thickness}
+    />
+  ) : (
+    <circle
+      className={styles.circularIndicator}
+      cx={center}
+      cy={center}
+      r={radius}
+      strokeWidth={thickness}
+      pathLength={1}
+    />
+  )
 
   return (
     <svg
@@ -525,7 +607,7 @@ export const CircularProgressIndicator = forwardRef<
       data-thickness={thickness}
       className={clsx(styles.circular, className)}
       style={indicatorStyle}
-      viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}
+      viewBox={`0 0 ${size} ${size}`}
       width={size}
       height={size}
     >
@@ -533,53 +615,21 @@ export const CircularProgressIndicator = forwardRef<
         key={indeterminate ? `indeterminate-${thickness}` : 'determinate'}
         className={styles.circularLayer}
       >
-        {wavy && indeterminate ? (
+        {indeterminate ? (
           <g
             style={{
               transform: `rotate(${indeterminateRotation}deg)`,
               transformOrigin: 'center',
             }}
           >
-            {indeterminateWavyTrackPath && (
-              <path
-                className={styles.circularWavyTrack}
-                d={indeterminateWavyTrackPath}
-                strokeWidth={thickness}
-              />
-            )}
-            <path
-              className={styles.circularIndicator}
-              d={indeterminateWavyPath}
-              strokeWidth={thickness}
-            />
+            {track}
+            {indicator}
           </g>
-        ) : (indeterminate || trackArc) && (
-          <circle
-            className={styles.circularTrack}
-            cx={CENTER}
-            cy={CENTER}
-            r={radius}
-            strokeWidth={thickness}
-            pathLength={1}
-            strokeDasharray={trackArc?.dasharray}
-            strokeDashoffset={trackArc?.dashoffset}
-          />
-        )}
-        {wavy && indeterminate ? null : wavy && !indeterminate ? (
-          <path
-            className={styles.circularIndicator}
-            d={wavyPath}
-            strokeWidth={thickness}
-          />
         ) : (
-          <circle
-            className={styles.circularIndicator}
-            cx={CENTER}
-            cy={CENTER}
-            r={radius}
-            strokeWidth={thickness}
-            pathLength={1}
-          />
+          <>
+            {track}
+            {indicator}
+          </>
         )}
       </g>
     </svg>

@@ -1,30 +1,48 @@
 /**
- * MD3 Snackbar. Values from androidx.compose.material3 SnackbarTokens:
+ * MD3 Snackbar. Values from androidx.compose.material3 SnackbarTokens and the
+ * fixed (isSnackbarStylingFixEnabled) layouts in Snackbar.kt:
  * InverseSurface container, InverseOnSurface message (BodyMedium),
  * InversePrimary action (LabelLarge), InverseOnSurface dismiss icon (24dp),
  * corner ExtraSmall (4dp), elevation Level3, single-line min-height 48dp,
- * max-width 600dp, 16dp start padding / 8dp button-side padding.
+ * fills the available width up to 600dp (ContainerMaxWidth).
+ *
+ * One row (OneRowSnackbar): 16dp start padding; end padding 8dp
+ * (TextEndExtraSpacing), or 0 when the dismiss action is present so its 48dp
+ * area touches the trailing edge; the text keeps an extra 8dp from the action
+ * only when there is no dismiss action; text has 14dp vertical padding
+ * (SnackbarVerticalPadding) → 48 / 68dp for one / two lines.
+ *
+ * New line (NewLineButtonSnackbar): text with 14dp vertical and 16dp end
+ * padding; the button row is end-aligned with 4dp bottom padding
+ * (ActionButtonBottomPadding) and 8dp end padding (0 with dismiss).
  */
 
 .snackbar {
-  display: inline-flex;
+  --_container-color: var(--md-sys-color-inverse-surface);
+  --_container-shape: var(--md-sys-shape-corner-extra-small);
+  --_container-shadow: var(--md-sys-elevation-shadow-level3);
+  --_supporting-text-color: var(--md-sys-color-inverse-on-surface);
+  --_action-label-text-color: var(--md-sys-color-inverse-primary);
+  --_dismiss-icon-color: var(--md-sys-color-inverse-on-surface);
+
+  display: flex;
   align-items: center;
-  gap: 8px;
   box-sizing: border-box;
-  min-height: 48px;
+  width: 100%;
   max-width: 600px;
-  padding-block: 6px;
+  min-height: 48px;
   padding-inline: 16px 8px;
-  border-radius: var(--md-sys-shape-corner-extra-small);
-  background-color: var(--md-sys-color-inverse-surface);
-  color: var(--md-sys-color-inverse-on-surface);
-  box-shadow: var(--md-sys-elevation-shadow-level3);
+  border-radius: var(--_container-shape);
+  background-color: var(--_container-color);
+  color: var(--_supporting-text-color);
+  box-shadow: var(--_container-shadow);
 }
 
 .message {
   flex: 1 1 auto;
-  padding-block: 8px;
-  color: var(--md-sys-color-inverse-on-surface);
+  min-width: 0;
+  padding-block: 14px;
+  color: var(--_supporting-text-color);
   font-family: var(--md-sys-typescale-body-medium-font);
   font-size: var(--md-sys-typescale-body-medium-size);
   font-weight: var(--md-sys-typescale-body-medium-weight);
@@ -32,63 +50,61 @@
   letter-spacing: var(--md-sys-typescale-body-medium-tracking);
 }
 
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
 .actionSlot {
+  display: flex;
   flex-shrink: 0;
-}
-
-/* Text-button-styled action, tinted inverse-primary. */
-.action {
-  display: inline-flex;
   align-items: center;
-  height: 36px;
-  padding-inline: 8px;
-  border: none;
-  border-radius: var(--md-sys-shape-corner-full);
-  background: transparent;
-  cursor: pointer;
-  color: var(--md-sys-color-inverse-primary);
-  font-family: var(--md-sys-typescale-label-large-font);
-  font-size: var(--md-sys-typescale-label-large-size);
-  font-weight: var(--md-sys-typescale-label-large-weight);
-  line-height: var(--md-sys-typescale-label-large-line-height);
-  letter-spacing: var(--md-sys-typescale-label-large-tracking);
-  -webkit-tap-highlight-color: transparent;
 }
 
-.action:hover {
-  background-color: color-mix(
-    in srgb,
-    var(--md-sys-color-inverse-primary) 8%,
-    transparent
-  );
+/* ---- One row ------------------------------------------------------------ */
+.snackbar[data-layout='one-row'][data-dismiss-action] {
+  padding-inline-end: 0;
+}
+.snackbar[data-layout='one-row']:not([data-dismiss-action]) .message {
+  margin-inline-end: 8px;
 }
 
-.dismiss {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: none;
-  border-radius: var(--md-sys-shape-corner-full);
-  background: transparent;
-  cursor: pointer;
-  color: var(--md-sys-color-inverse-on-surface);
-  -webkit-tap-highlight-color: transparent;
+/* ---- Action on its own line ------------------------------------------- */
+.snackbar[data-layout='new-line'] {
+  flex-direction: column;
+  align-items: stretch;
+  padding-inline-end: 0;
+}
+.snackbar[data-layout='new-line'] .message {
+  padding-inline-end: 16px;
+}
+.snackbar[data-layout='new-line'] .actions {
+  align-self: flex-end;
+  /* The buttons' 48dp layout height (touch target), as in Compose. */
+  min-height: 48px;
+  padding-block-end: 4px;
+  padding-inline-end: 8px;
+}
+.snackbar[data-layout='new-line'][data-dismiss-action] .actions {
+  padding-inline-end: 0;
 }
 
-.dismiss:hover {
-  background-color: color-mix(
-    in srgb,
-    var(--md-sys-color-inverse-on-surface) 8%,
-    transparent
-  );
+/* ---- Action: Button variant="text" size="sm" (Compose TextButton) -------- */
+/* [data-variant] raises specificity above the Button variant rules. */
+.snackbar .action[data-variant] {
+  --_label-text-color: var(--_action-label-text-color);
+  --_state-layer-color: var(--_action-label-text-color);
+  /* Compose ButtonDefaults.MinWidth (58dp); height 40 / padding 12 come from
+     the text variant at size sm. */
+  min-width: 58px;
 }
 
-.dismiss svg {
-  width: 18px;
-  height: 18px;
-  fill: currentColor;
+/* ---- Dismiss: IconButton variant="standard" size="sm" -------------------- */
+/* 40dp container + 24dp icon, centered in a 48dp area (12 | 24 | 12) that
+   touches the trailing edge. */
+.snackbar .dismiss[data-variant] {
+  --_icon-color: var(--_dismiss-icon-color);
+  --_state-layer-color: var(--_dismiss-icon-color);
+  margin-inline: 4px;
 }

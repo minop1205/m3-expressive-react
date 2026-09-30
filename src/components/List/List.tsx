@@ -6,10 +6,12 @@ import {
   type MouseEvent,
   type MouseEventHandler,
   type ReactNode,
+  useContext,
 } from 'react'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import { ListParentContext } from './ListContext'
 import {
   isContainerKeyActivation,
   isFromNestedInteractive,
@@ -27,7 +29,7 @@ export const List = forwardRef<HTMLUListElement, ListProps>(function List(
 ) {
   return (
     <ul ref={ref} {...rest} className={clsx(styles.list, className)}>
-      {children}
+      <ListParentContext.Provider value="list">{children}</ListParentContext.Provider>
     </ul>
   )
 })
@@ -62,6 +64,9 @@ export interface ListItemProps
  * interactive (role="button", keyboard activation, ripple, focus ring).
  * Colors follow ListTokens: headline OnSurface / BodyLarge, supporting &
  * overline OnSurfaceVariant, leading/trailing OnSurfaceVariant.
+ *
+ * Renders an `<li>`, except inside a `SwipeToDismiss` in a `List`, where the
+ * SwipeToDismiss root is the `<li>` and the item renders a `<div>`.
  */
 export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
   function ListItem(
@@ -84,6 +89,10 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
     ref,
   ) {
     const interactive = onClick != null
+    // Inside a SwipeToDismiss in a List, the SwipeToDismiss root is the <li>
+    // and this item renders a <div> (docs/decisions/phase-b-api.md B21).
+    // (Typed as 'li': the props / ref shape is the same for both tags.)
+    const Root = (useContext(ListParentContext) === 'swipe' ? 'div' : 'li') as 'li'
     const lines = 1 + (supportingText != null ? 1 : 0) + (overline != null ? 1 : 0)
     const lineCount = Math.min(lines, 3)
 
@@ -130,7 +139,7 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
     // an inner element (role="button" is not valid on <li>).
     if (interactive) {
       return (
-        <li ref={ref} {...rest} className={clsx(styles.host, className)}>
+        <Root ref={ref} {...rest} className={clsx(styles.host, className)}>
           <div
             data-lines={lineCount}
             data-interactive="true"
@@ -145,12 +154,12 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
           >
             {content}
           </div>
-        </li>
+        </Root>
       )
     }
 
     return (
-      <li
+      <Root
         ref={ref}
         {...rest}
         data-lines={lineCount}
@@ -162,7 +171,7 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
         className={clsx(styles.item, className)}
       >
         {content}
-      </li>
+      </Root>
     )
   },
 )
