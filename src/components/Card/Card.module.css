@@ -3,7 +3,9 @@
  * Values from androidx.compose.material3 FilledCardTokens / ElevatedCardTokens /
  * OutlinedCardTokens: filled = SurfaceContainerHighest @ Level0, elevated =
  * SurfaceContainerLow @ Level1, outlined = Surface @ Level0 + OutlineVariant 1dp.
- * Interactive (clickable) cards bump elevation one level on hover.
+ * Interactive (clickable) cards follow the per-state elevation tokens
+ * (hover filled / outlined 1dp, elevated 3dp; pressed back to the resting
+ * level) and outlined focus paints the outline on-surface.
  */
 
 .card {
@@ -43,6 +45,12 @@
   border: 1px solid var(--md-sys-color-outline-variant);
 }
 
+/* Link card (`href` → <a>): no link styling of its own. */
+.link {
+  color: var(--_content-color);
+  text-decoration: none;
+}
+
 /* --------------------------------------------------------------------------- */
 /* Interactive (clickable) — hover elevation bump                              */
 /* --------------------------------------------------------------------------- */
@@ -52,16 +60,40 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-.card[data-interactive][data-variant='filled']:hover {
+.card[data-interactive]:not([data-dragged])[data-variant='filled']:hover,
+.card[data-interactive]:not([data-dragged])[data-variant='outlined']:hover,
+.card:not([data-dragged])[data-variant='filled']:has(> .actionArea:not([data-disabled]):hover),
+.card:not([data-dragged])[data-variant='outlined']:has(> .actionArea:not([data-disabled]):hover) {
   --_elevation: var(--md-sys-elevation-shadow-level1);
 }
 
-.card[data-interactive][data-variant='elevated']:hover {
+.card[data-interactive]:not([data-dragged])[data-variant='elevated']:hover,
+.card:not([data-dragged])[data-variant='elevated']:has(> .actionArea:not([data-disabled]):hover) {
   --_elevation: var(--md-sys-elevation-shadow-level2);
 }
-/* Outlined interactive stays at Level0 on hover (Compose). */
 
-/* Dragged (drag-and-drop): raised elevation per Compose card dragged tokens. */
+/* Pressed: the latest interaction wins over hover (Compose CardElevation) —
+   filled / outlined 0, elevated 1dp. A press on a nested control is that
+   control's, not the card's (#299). A CardActionArea drives the card's
+   hover / pressed elevation the same way. */
+.card[data-interactive]:not([data-dragged]):active:not(:has(:is(button, a[href], input, select, textarea, label, [role], [tabindex]):active)),
+.card:not([data-dragged])[data-variant]:has(> .actionArea:not([data-disabled]):active) {
+  --_elevation: var(--md-sys-elevation-shadow-level0);
+}
+
+.card[data-interactive]:not([data-dragged])[data-variant='elevated']:active:not(:has(:is(button, a[href], input, select, textarea, label, [role], [tabindex]):active)),
+.card:not([data-dragged])[data-variant='elevated']:has(> .actionArea:not([data-disabled]):active) {
+  --_elevation: var(--md-sys-elevation-shadow-level1);
+}
+
+/* Outlined keyboard focus: outline on-surface (m3 "focus outline color",
+   OutlinedCardTokens.FocusOutlineColor). */
+.card[data-interactive][data-variant='outlined']:focus-visible {
+  border-color: var(--md-sys-color-on-surface);
+}
+
+/* Dragged (drag-and-drop): raised elevation per Compose card dragged tokens
+   (the 0.16 state layer is the Ripple's `dragged` layer). */
 .card[data-dragged] {
   --_elevation: var(--md-sys-elevation-shadow-level3);
   cursor: grabbing;
@@ -80,26 +112,56 @@
   --_content-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
 }
 
+/* Disabled containers: m3 token tables (re-verified 2026-09-30 — filled
+   disabled container color on-surface / opacity 0.38, elevated surface / 0.38;
+   docs/audits/card.md CD3), applied as a translucent layer (Button B4). */
 .card[data-disabled][data-variant='filled'] {
-  --_container-color: color-mix(
-    in srgb,
-    var(--md-sys-color-surface-container-highest) 38%,
-    transparent
-  );
+  --_container-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
   --_elevation: var(--md-sys-elevation-shadow-level0);
 }
 
 .card[data-disabled][data-variant='elevated'] {
-  --_container-color: color-mix(
-    in srgb,
-    var(--md-sys-color-surface-container-low) 38%,
-    transparent
-  );
+  --_container-color: color-mix(in srgb, var(--md-sys-color-surface) 38%, transparent);
   --_elevation: var(--md-sys-elevation-shadow-level1);
 }
 
 .card[data-disabled][data-variant='outlined'] {
   border-color: color-mix(in srgb, var(--md-sys-color-outline) 12%, transparent);
+}
+
+/* --------------------------------------------------------------------------- */
+/* CardActionArea / CardActions (B5)                                           */
+/* --------------------------------------------------------------------------- */
+/* The primary action wrapping the card content: button (`div[role=button]`,
+   which — unlike <button> — may hold headings / paragraphs / media) or link.
+   Its ripple and focus ring follow the card's corners. */
+.actionArea {
+  position: relative;
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: inherit;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  --md-ripple-color: var(--md-sys-color-on-surface);
+  --md-focus-ring-color: var(--md-sys-color-secondary);
+}
+
+.actionArea[data-disabled] {
+  cursor: default;
+}
+
+/* Actions beside the action area: end-aligned, 8dp apart, 16dp padding. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 16px 16px;
 }
 
 @media (prefers-reduced-motion: reduce) {

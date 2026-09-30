@@ -2,8 +2,14 @@
  * MD3 List / ListItem. Values from androidx.compose.material3 ListTokens:
  * one-line 56dp, two-line 72dp, three-line 88dp; 16dp horizontal padding;
  * headline OnSurface/BodyLarge, supporting OnSurfaceVariant/BodyMedium,
- * overline OnSurfaceVariant/LabelSmall; leading/trailing OnSurfaceVariant;
- * 16dp gap between leading/trailing and text. Selected = SecondaryContainer.
+ * overline OnSurfaceVariant/LabelSmall; leading/trailing OnSurfaceVariant.
+ * Expressive spacing (ListItemDefaults.ContentPadding 16/16/10/10, between
+ * space 12dp — the 8/12/16 constants belong to the deprecated baseline
+ * ListItem). Content 60dp or taller (three-line, wrapped supporting text)
+ * aligns top (ListItemDefaults.verticalAlignment). Selected =
+ * SecondaryContainer; selected + disabled = on-surface @0.38.
+ * Expressive shapes 4 / 12 / 16dp (ListItemDefaults.shapes) morph with the
+ * FastSpatial spring (--md-sys-motion-spring-fast-spatial-*, B2).
  */
 
 .list {
@@ -11,6 +17,29 @@
   margin: 0;
   padding-block: 8px;
   padding-inline: 0;
+  /* Standard: transparent item containers, no segment corners (reset for
+     lists nested in a segmented list). */
+  --_list-container-color: transparent;
+  --_segment-start-shape: 0px;
+  --_segment-end-shape: 0px;
+}
+
+/* Segmented (Compose SegmentedListItem / ListItemDefaults.segmentedShapes):
+   surface segments 2dp apart (SegmentedGap), 16dp outer corners on the
+   first / last item (List container shape). */
+.list[data-variant='segmented'] {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  --_list-container-color: var(--md-sys-color-surface);
+}
+
+.list[data-variant='segmented'] > :first-child {
+  --_segment-start-shape: var(--md-sys-shape-corner-large);
+}
+
+.list[data-variant='segmented'] > :last-child {
+  --_segment-end-shape: var(--md-sys-shape-corner-large);
 }
 
 /* --------------------------------------------------------------------------- */
@@ -27,22 +56,35 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
   box-sizing: border-box;
   min-height: var(--_min-height);
   padding-block: var(--_padding-block);
   padding-inline: 16px;
-  background-color: var(--_container-color, transparent);
+  background-color: var(--_container-color, var(--_list-container-color, transparent));
   color: var(--_headline-color);
+  /* Expressive shapes (ListItemDefaults.shapes): the state shape, never
+     below the segmented outer corners. */
+  border-start-start-radius: max(var(--_container-shape), var(--_segment-start-shape, 0px));
+  border-start-end-radius: max(var(--_container-shape), var(--_segment-start-shape, 0px));
+  border-end-start-radius: max(var(--_container-shape), var(--_segment-end-shape, 0px));
+  border-end-end-radius: max(var(--_container-shape), var(--_segment-end-shape, 0px));
+  transition-property: border-radius;
+  transition-duration: var(--md-sys-motion-spring-fast-spatial-duration);
+  transition-timing-function: var(--md-sys-motion-spring-fast-spatial-easing);
 
+  --_container-shape: var(--md-sys-shape-corner-extra-small);
   --_min-height: 56px;
-  --_padding-block: 8px;
+  --_padding-block: 10px;
   --_headline-color: var(--md-sys-color-on-surface);
   --_supporting-color: var(--md-sys-color-on-surface-variant);
   --_leading-color: var(--md-sys-color-on-surface-variant);
   --md-ripple-color: var(--md-sys-color-on-surface);
   --md-focus-ring-color: var(--md-sys-color-secondary);
+  /* m3 List focus indicator offset −3dp: drawn inside the row, so stacked
+     rows never cover it and scroll containers never clip it. */
+  --md-focus-ring-offset: -3px;
 }
 
 .item[data-lines='2'] {
@@ -51,7 +93,11 @@
 
 .item[data-lines='3'] {
   --_min-height: 88px;
-  --_padding-block: 12px;
+}
+
+/* Top alignment once the content box is 60dp or taller (measured in JS). */
+.item[data-lines='3'],
+.item[data-align='top'] {
   align-items: flex-start;
 }
 
@@ -59,6 +105,62 @@
   cursor: pointer;
   outline: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+/* Primary action of an actionable row (B5): a <button> / <a> holding the
+   leading slot and the text. It stays position: static so its ripple, focus
+   ring and ::before hit area span the whole row (positioned .item), while
+   the trailing slot is its sibling on top. */
+.action {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: inherit;
+  align-self: stretch;
+  gap: inherit;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: start;
+  text-decoration: none;
+  cursor: inherit;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.action::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+/* Trailing slot of an actionable row: decorative content lets clicks / hover
+   through to the row's action; controls receive their own pointer events. */
+.item[data-interactive] > .trailing {
+  pointer-events: none;
+}
+
+.item[data-interactive] > .trailing :where(a[href], button, input, select, textarea, label, [tabindex], [role='button'], [role='switch'], [role='checkbox'], [role='radio'], [role='link'], [role='slider']) {
+  pointer-events: auto;
+}
+
+/* Shape morph: hovered 12dp; focused / pressed / selected 16dp (a press on a
+   trailing control is that control's). Declared in that order so the
+   16dp states win over hover. */
+.item[data-interactive]:hover {
+  --_container-shape: var(--md-sys-shape-corner-medium);
+}
+
+.item[data-interactive]:is(:focus-visible, :has(> .action:focus-visible)),
+.item[data-interactive]:active:not(:has(> .trailing :active)),
+.item[data-selected] {
+  --_container-shape: var(--md-sys-shape-corner-large);
 }
 
 .item[data-selected] {
@@ -77,6 +179,19 @@
   --_leading-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
 }
 
+/* m3 "selected disabled container" on-surface @0.38 (ListTokens
+   ItemSelectedDisabledContainerColor / Opacity). */
+.item[data-selected][data-disabled] {
+  --_container-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+/* B3: state transitions are immediate under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .item {
+    transition: none;
+  }
+}
+
 /* --------------------------------------------------------------------------- */
 /* Slots                                                                       */
 /* --------------------------------------------------------------------------- */
@@ -90,11 +205,18 @@
   z-index: 1;
 }
 
-.leading :where(svg, img),
-.trailing :where(svg, img) {
+/* Icons default to 24dp. Images / media (avatar 40dp, image 56dp, video
+   thumbnails) keep the consumer's size — Compose does not constrain slots. */
+.leading :where(svg),
+.trailing :where(svg) {
   width: 24px;
   height: 24px;
   fill: currentColor;
+}
+
+.leading :where(img, video),
+.trailing :where(img, video) {
+  display: block;
 }
 
 .body {

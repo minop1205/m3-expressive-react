@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import clsx from 'clsx'
+import { isFromNestedInteractive } from '../../internal/isFromNestedInteractive'
 import styles from './Ripple.module.css'
 
 export interface RippleProps {
@@ -15,6 +16,20 @@ export interface RippleProps {
    * (Compose offsets the press position into the indicator the same way).
    */
   control?: RefObject<HTMLElement | null>
+  /**
+   * Paint the dragged state layer (`--md-sys-state-dragged-state-layer-opacity`,
+   * 0.16). Shown even when `disabled` (a static, non-clickable surface can
+   * still be dragged); it replaces the hover / focus layer while set, as
+   * Compose's state layer shows one interaction at a time.
+   */
+  dragged?: boolean
+  /**
+   * Ignore presses that start on an interactive element nested inside the
+   * surface (a button, link, form control, focusable element): only the nested
+   * control shows its press, not the container (Compose — a child's
+   * interaction does not trigger the parent's indication).
+   */
+  ignoreNestedPress?: boolean
 }
 
 interface RippleInstance {
@@ -34,7 +49,13 @@ interface RippleInstance {
  * `FocusRing`, so both appear together on keyboard focus only. Purely
  * decorative (aria-hidden, pointer-events: none).
  */
-export function Ripple({ disabled = false, className, control }: RippleProps) {
+export function Ripple({
+  disabled = false,
+  className,
+  control,
+  dragged = false,
+  ignoreNestedPress = false,
+}: RippleProps) {
   const hostRef = useRef<HTMLSpanElement>(null)
   const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
@@ -60,6 +81,12 @@ export function Ripple({ disabled = false, className, control }: RippleProps) {
 
     const handleDown = (event: PointerEvent) => {
       if (event.pointerType === 'mouse' && event.button !== 0) return
+      if (
+        ignoreNestedPress &&
+        isFromNestedInteractive({ target: event.target, currentTarget: surface })
+      ) {
+        return
+      }
       // Relative to the painted host (== the parent unless `control` is set).
       const rect = (host ?? surface).getBoundingClientRect()
       const x = event.clientX - rect.left
@@ -96,19 +123,20 @@ export function Ripple({ disabled = false, className, control }: RippleProps) {
       surface.removeEventListener('focus', handleFocus)
       surface.removeEventListener('blur', handleBlur)
     }
-  }, [disabled])
+  }, [disabled, ignoreNestedPress])
 
   const removeRipple = (id: number) =>
     setRipples((prev) => prev.filter((r) => r.id !== id))
 
   return (
     <span ref={hostRef} className={clsx(styles.host, className)} aria-hidden="true">
-      {!disabled && (
+      {(!disabled || dragged) && (
         <span
           className={clsx(
             styles.stateLayer,
-            hovered && styles.hovered,
-            focused && styles.focused,
+            !disabled && hovered && styles.hovered,
+            !disabled && focused && styles.focused,
+            dragged && styles.dragged,
           )}
         />
       )}

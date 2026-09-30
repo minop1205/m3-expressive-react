@@ -22,6 +22,15 @@ const INTERACTIVE_SELECTOR = [
   '[tabindex]',
 ].join(',')
 
+/**
+ * First interactive element nested inside `root` (not `root` itself), or
+ * null — used to warn about clickable containers that hold their own
+ * controls (axe `nested-interactive`, docs/decisions/phase-b-api.md B5).
+ */
+export function findNestedInteractive(root: Element): Element | null {
+  return root.querySelector(INTERACTIVE_SELECTOR)
+}
+
 interface ContainerEvent {
   target: EventTarget | null
   currentTarget: EventTarget | null

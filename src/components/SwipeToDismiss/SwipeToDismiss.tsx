@@ -13,7 +13,7 @@ import {
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
-import { ListParentContext } from '../List/ListContext'
+import { ListNavContext, ListParentContext } from '../List/ListContext'
 import styles from './SwipeToDismiss.module.css'
 
 /**
@@ -175,6 +175,9 @@ export const SwipeToDismiss = forwardRef<HTMLDivElement, SwipeToDismissProps>(
   ) {
     const listParent = useContext(ListParentContext)
     const inList = listParent === 'list'
+    // In a selection List (role=listbox) the <li> is presentational so the
+    // ListItem inside is the listbox's option (B17 / B21).
+    const listSelection = useContext(ListNavContext)?.selectionMode ?? 'none'
 
     const [dismissedState, setDismissedState] = useState(defaultDismissed)
     const controlled = dismissedProp !== undefined
@@ -416,6 +419,7 @@ export const SwipeToDismiss = forwardRef<HTMLDivElement, SwipeToDismissProps>(
     return (
       <Root
         ref={setRootRef}
+        role={inList && listSelection !== 'none' ? 'none' : undefined}
         {...rest}
         className={clsx(styles.root, className)}
         data-direction={direction ?? undefined}
