@@ -48,3 +48,14 @@
   margin-block-start: var(--_inset);
   margin-block-end: var(--_inset);
 }
+
+/* --- Forced colors ------------------------------------------------------- */
+/* The line is painted with background-color, which forced-colors mode
+   replaces with Canvas (the divider would vanish on a Canvas surface).
+   Keep it visible with a system color. */
+@media (forced-colors: active) {
+  .divider {
+    --_color: CanvasText;
+    forced-color-adjust: none;
+  }
+}
