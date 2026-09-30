@@ -1,0 +1,173 @@
+---
+title: Snackbar
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Snackbar, SnackbarProvider, useSnackbar, Button } from 'm3-expressive-react'
+
+# Snackbar
+
+MD3 snackbar: a brief message at the bottom of the screen with an optional
+action. Wrap your app in `SnackbarProvider` and call `useSnackbar().show()`
+— the provider queues snackbars, times them out, places them and animates
+them in and out.
+
+export function ShowButtons() {
+  const { show } = useSnackbar()
+  const [result, setResult] = useState(null)
+  return (
+    <>
+      <Button variant="tonal" onClick={() => show('Photo saved')}>
+        Short message
+      </Button>
+      <Button
+        variant="tonal"
+        onClick={async () => {
+          const reason = await show({ message: 'Conversation archived', actionLabel: 'Undo' })
+          setResult(reason)
+        }}
+      >
+        With action
+      </Button>
+      <Button
+        variant="tonal"
+        onClick={() =>
+          show({ message: 'Connection lost. Retrying…', duration: 'long', withDismissAction: true })
+        }
+      >
+        Long + dismiss
+      </Button>
+      <Button
+        variant="tonal"
+        onClick={() =>
+          show({
+            message: 'Your draft could not be synced to the server.',
+            actionLabel: 'Open sync settings',
+            actionOnNewLine: true,
+            withDismissAction: true,
+          })
+        }
+      >
+        Action on new line
+      </Button>
+      {result && <span>Closed with: <code>{result}</code></span>}
+    </>
+  )
+}
+
+## Showing snackbars
+
+`show()` takes a message string or options and returns a promise that
+resolves with why the snackbar closed: `'action'`, `'dismiss'`,
+`'timeout'` or `'escapeKeyDown'`. Snackbars show one at a time; later calls
+queue behind the current one.
+
+<Demo>
+  <SnackbarProvider>
+    <ShowButtons />
+  </SnackbarProvider>
+</Demo>
+
+```tsx
+// Once, near the root (inside ThemeProvider):
+<SnackbarProvider>
+  <App />
+</SnackbarProvider>
+
+// Anywhere below it:
+const { show } = useSnackbar()
+
+const reason = await show({ message: 'Conversation archived', actionLabel: 'Undo' })
+if (reason === 'action') restoreConversation()
+```
+
+## Duration
+
+`duration` is `'short'` (4s), `'long'` (10s), `'indefinite'`, or a number
+of milliseconds. It defaults to `'indefinite'` when there is an action
+(the snackbar stays until the user acts) and `'short'` otherwise. The
+timer pauses while the snackbar is hovered or has focus inside it. Add
+`withDismissAction` to show a close button — recommended for indefinite
+snackbars. `close()` from `useSnackbar()` closes the current one.
+
+```tsx
+show({ message: 'Connection lost', duration: 'long', withDismissAction: true })
+show({ message: 'Saved', duration: 2500 })
+```
+
+## Long action
+
+`actionOnNewLine` places the action on its own line below the message,
+end-aligned — for a long action label. It is opt-in; the layout is never
+chosen automatically.
+
+<Demo>
+  <div style={{ display: 'grid', gap: 16, width: '100%', maxWidth: 600 }}>
+    <Snackbar message="Message sent" />
+    <Snackbar
+      message="Conversation archived"
+      action={{ label: 'Undo' }}
+      onDismiss={() => {}}
+    />
+    <Snackbar
+      message="Your draft could not be synced to the server."
+      action={{ label: 'Open sync settings' }}
+      actionOnNewLine
+    />
+  </div>
+</Demo>
+
+## The Snackbar component
+
+`Snackbar` is the presentational bar the provider renders. Use it directly
+only when you manage placement and timing yourself: `action` takes
+`{ label, onClick }` (rendered as a text button) or a custom node, and
+`onDismiss(event, reason)` adds the dismiss icon button. Standalone, it is
+a polite live region (`role="status"`); override `role` / `aria-live` when a
+surrounding host already provides the live region.
+
+```tsx
+<Snackbar
+  message="Conversation archived"
+  action={{ label: 'Undo', onClick: undo }}
+  onDismiss={(event, reason) => hide()}
+/>
+```
+
+## Accessibility
+
+- The provider mounts one persistent polite live region
+  (`role="status"`) and only swaps its content, so screen readers announce
+  every message.
+- <kbd>Escape</kbd> dismisses a snackbar while focus is inside it; when a
+  focused snackbar closes, focus returns to where it was before.
+- Auto-dismiss pauses on hover and focus (WCAG 2.2.1). Snackbars with an
+  action stay until the user acts by default.
+- Information in an auto-dismissing snackbar must also be available
+  elsewhere in the UI; for snackbars with an action, consider a documented
+  shortcut that moves focus to it.
+- Keep messages short and plain — no inline links or icons. Localize the
+  dismiss button with `dismissLabel`.
+
+## Props
+
+### SnackbarProvider
+
+<PropsTable component="SnackbarProvider" />
+
+### Snackbar
+
+<PropsTable component="Snackbar" />
+
+### useSnackbar().show() options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `message` | `ReactNode` | — | The message text. Keep it short and plain. |
+| `actionLabel` | `string` | — | Label of the single action button; activating it resolves `'action'`. |
+| `withDismissAction` | `boolean` | `false` | Show a trailing dismiss (close) icon button. |
+| `duration` | `'short' \| 'long' \| 'indefinite' \| number` | `'indefinite'` with an action, else `'short'` | How long the snackbar stays; pauses on hover / focus. |
+| `actionOnNewLine` | `boolean` | `false` | Place the action on its own line. |
+| `dismissLabel` | `string` | `'Dismiss'` | Accessible label of the dismiss icon button. |
