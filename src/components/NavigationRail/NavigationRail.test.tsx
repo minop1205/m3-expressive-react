@@ -100,3 +100,44 @@ describe('NavigationRail uncontrolled mode', () => {
     expect(screen.getByRole('button', { name: /Sent/ })).toHaveAttribute('aria-current', 'page')
   })
 })
+
+describe('NavigationRailItem icons and badges (#174 / #175)', () => {
+  it('renders selectedIcon only while selected (#174)', () => {
+    const { rerender } = render(
+      <NavigationRailItem
+        value="a"
+        icon={<svg data-testid="outlined" aria-hidden="true" />}
+        selectedIcon={<svg data-testid="filled" aria-hidden="true" />}
+        label="Alpha"
+        selected
+      />,
+    )
+    expect(screen.getByTestId('filled')).toBeInTheDocument()
+    expect(screen.queryByTestId('outlined')).not.toBeInTheDocument()
+    rerender(
+      <NavigationRailItem
+        value="a"
+        icon={<svg data-testid="outlined" aria-hidden="true" />}
+        selectedIcon={<svg data-testid="filled" aria-hidden="true" />}
+        label="Alpha"
+      />,
+    )
+    expect(screen.getByTestId('outlined')).toBeInTheDocument()
+    expect(screen.queryByTestId('filled')).not.toBeInTheDocument()
+  })
+
+  it('announces the badge after the label (#175)', () => {
+    render(
+      <NavigationRail value="a" aria-label="Rail">
+        <NavigationRailItem value="a" icon={Icon} label="Alpha" badge="3" />
+        <NavigationRailItem value="b" icon={Icon} label="Beta" badge />
+        <NavigationRailItem value="c" icon={Icon} label="Gamma" badge="2" badgeLabel="2 nuevas" />
+      </NavigationRail>,
+    )
+    // Browsers compute "Alpha 5 new notifications"; jsdom trims the hidden
+    // suffix's leading space, hence the optional space.
+    expect(screen.getByRole('button', { name: /^Alpha ?3 new notifications$/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Beta ?New notification$/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /^Gamma ?2 nuevas$/ })).toBeInTheDocument()
+  })
+})
