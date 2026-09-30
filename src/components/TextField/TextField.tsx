@@ -46,6 +46,12 @@ export interface TextFieldProps
   suffixText?: string
   /** Native input `maxLength`; also shows a `length / maxLength` counter in the supporting line. */
   maxLength?: number
+  /**
+   * Accessible wording for the `maxLength` counter (the visible `3 / 20` is
+   * hidden from assistive tech in favor of this text).
+   * @default (length, maxLength) => `Character count: ${length} of ${maxLength}`
+   */
+  getCounterLabel?: (length: number, maxLength: number) => string
   /** Render a `<textarea>` that auto-grows with its content. @default false */
   multiline?: boolean
   /** Initial visible rows of the `multiline` textarea. @default 2 */
@@ -93,6 +99,9 @@ export interface TextFieldProps
   disabled?: boolean
 }
 
+const defaultCounterLabel = (length: number, maxLength: number) =>
+  `Character count: ${length} of ${maxLength}`
+
 /**
  * Material Design 3 Text field (filled / outlined).
  *
@@ -123,6 +132,7 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
       prefixText,
       suffixText,
       maxLength,
+      getCounterLabel = defaultCounterLabel,
       multiline = false,
       rows = 2,
       disabled = false,
@@ -151,6 +161,8 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
     const generatedId = useId()
     const inputId = providedId ?? generatedId
     const supportingId = `${inputId}-supporting`
+    const prefixId = `${inputId}-prefix`
+    const suffixId = `${inputId}-suffix`
 
     const [focused, setFocused] = useState(false)
     const [internalValue, setInternalValue] = useState(defaultValue ?? '')
@@ -222,6 +234,18 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
       showError && errorText ? errorText : supportingText
     const counterText =
       maxLength != null ? `${currentValue.length} / ${maxLength}` : undefined
+    const showErrorText = showError && !!errorText
+
+    // Prefix/suffix are read with the input (m3 a11y: they need their own
+    // ids), followed by the supporting line.
+    const describedBy =
+      [
+        prefixText && prefixId,
+        suffixText && suffixId,
+        showSupportingText && supportingId,
+      ]
+        .filter(Boolean)
+        .join(' ') || undefined
 
     const labelText = label ? `${label}${required ? '*' : ''}` : undefined
 
@@ -242,7 +266,7 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
       onFocus: handleFocus,
       onBlur: handleBlur,
       'aria-invalid': showError || undefined,
-      'aria-describedby': showSupportingText ? supportingId : undefined,
+      'aria-describedby': describedBy,
       maxLength,
     }
 
@@ -313,7 +337,9 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
             {/* Input content */}
             <div className={styles.content}>
               {prefixText && (
-                <span className={styles.prefix}>{prefixText}</span>
+                <span className={styles.prefix} id={prefixId}>
+                  {prefixText}
+                </span>
               )}
               {multiline ? (
                 <textarea
@@ -329,7 +355,9 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
                 />
               )}
               {suffixText && (
-                <span className={styles.suffix}>{suffixText}</span>
+                <span className={styles.suffix} id={suffixId}>
+                  {suffixText}
+                </span>
               )}
             </div>
           </div>
@@ -342,14 +370,22 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
 
         {/* Supporting text */}
         {showSupportingText && (
-          <div
-            className={styles.supportingText}
-            id={supportingId}
-            role={showError && errorText ? 'alert' : undefined}
-          >
-            <span>{displaySupportingText}</span>
+          <div className={styles.supportingText} id={supportingId}>
+            {/* Only the error message is the alert — the counter updates on
+                every keystroke and must not be announced as one. */}
+            <span role={showErrorText ? 'alert' : undefined}>
+              {displaySupportingText}
+            </span>
+            {/* Separates the two parts in the accessible description; the
+                flex container ignores it visually. */}
+            {counterText && ' '}
             {counterText && (
-              <span className={styles.counter}>{counterText}</span>
+              <span className={styles.counter}>
+                <span aria-hidden="true">{counterText}</span>
+                <span className={styles.visuallyHidden}>
+                  {getCounterLabel(currentValue.length, maxLength!)}
+                </span>
+              </span>
             )}
           </div>
         )}
