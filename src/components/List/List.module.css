@@ -68,8 +68,50 @@
 
 .item[data-interactive] {
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Primary action of an actionable row (B5): a <button> / <a> holding the
+   leading slot and the text. It stays position: static so its ripple, focus
+   ring and ::before hit area span the whole row (positioned .item), while
+   the trailing slot is its sibling on top. */
+.action {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: inherit;
+  align-self: stretch;
+  gap: inherit;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: start;
+  text-decoration: none;
+  cursor: inherit;
   outline: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+.action::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+/* Trailing slot of an actionable row: decorative content lets clicks / hover
+   through to the row's action; controls receive their own pointer events. */
+.item[data-interactive] > .trailing {
+  pointer-events: none;
+}
+
+.item[data-interactive] > .trailing :where(a[href], button, input, select, textarea, label, [tabindex], [role='button'], [role='switch'], [role='checkbox'], [role='radio'], [role='link'], [role='slider']) {
+  pointer-events: auto;
 }
 
 .item[data-selected] {

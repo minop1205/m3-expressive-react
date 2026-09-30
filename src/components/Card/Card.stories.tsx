@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { fn } from 'storybook/test'
-import { Card } from './Card'
+import { Button } from '../Button'
+import { Card, CardActionArea, CardActions } from './Card'
 
 const meta = {
   title: 'Components/Card',
@@ -51,6 +52,40 @@ export const Clickable: Story = {
         Passing onClick adds ripple, focus ring, and keyboard activation.
       </p>
     </Card>
+  ),
+}
+
+/** `href` renders the whole card as a link (`<a>`, Enter only). */
+export const Link: Story = {
+  render: () => (
+    <Card variant="outlined" href="#article-42" style={{ width: 300, padding: 16 }}>
+      <strong>Link card</strong>
+      <p style={{ margin: '8px 0 0' }}>Opens the article — middle-click and new-tab work.</p>
+    </Card>
+  ),
+}
+
+/**
+ * A card with a primary action and separate buttons: `CardActionArea` wraps
+ * the content in one button / link, `CardActions` holds the other actions as
+ * its siblings (never nest controls inside a clickable card).
+ */
+export const WithActions: Story = {
+  render: () => (
+    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+      {(['filled', 'elevated', 'outlined'] as const).map((variant) => (
+        <Card key={variant} variant={variant} style={{ width: 240 }}>
+          <CardActionArea onClick={fn()} style={{ padding: 16 }}>
+            <strong style={{ textTransform: 'capitalize' }}>{variant}</strong>
+            <p style={{ margin: '8px 0 0' }}>The content is the primary action.</p>
+          </CardActionArea>
+          <CardActions>
+            <Button variant="text">Share</Button>
+            <Button variant="filled">Open</Button>
+          </CardActions>
+        </Card>
+      ))}
+    </div>
   ),
 }
 

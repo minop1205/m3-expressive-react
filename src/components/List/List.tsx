@@ -1,13 +1,11 @@
 import {
   forwardRef,
   type HTMLAttributes,
-  type KeyboardEvent,
   type KeyboardEventHandler,
   type LiHTMLAttributes,
   type MouseEvent,
   type MouseEventHandler,
   type ReactNode,
-  type Ref,
   useCallback,
   useContext,
   useLayoutEffect,
@@ -18,10 +16,8 @@ import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { ListParentContext } from './ListContext'
-import {
-  isContainerKeyActivation,
-  isFromNestedInteractive,
-} from '../../internal/isFromNestedInteractive'
+import { isFromNestedInteractive } from '../../internal/isFromNestedInteractive'
+import { assignRef } from '../../internal/assignRef'
 import styles from './List.module.css'
 
 export interface ListProps extends HTMLAttributes<HTMLUListElement> {
@@ -43,11 +39,6 @@ export const List = forwardRef<HTMLUListElement, ListProps>(function List(
 /** Content box height (px) from which the item aligns its content to the
  * top (Compose `ListItemDefaults.verticalAlignment`: 60dp). */
 const TOP_ALIGN_MIN_CONTENT = 60
-
-function assignRef<T>(ref: Ref<T> | undefined, value: T | null) {
-  if (typeof ref === 'function') ref(value)
-  else if (ref) (ref as { current: T | null }).current = value
-}
 
 /**
  * Measures what props alone cannot tell (docs/audits/list.md LS2): whether
@@ -92,12 +83,21 @@ function useMeasuredLayout(hasSupporting: boolean) {
 
 export interface ListItemProps
   extends Omit<LiHTMLAttributes<HTMLLIElement>, 'onChange' | 'onClick' | 'onKeyDown'> {
-  /** Click handler. Providing it makes the row interactive (role="button"). */
-  onClick?: MouseEventHandler<HTMLElement>
   /**
-   * Key handler of the focusable row (the root for a static item). Runs
-   * before the row's own Enter / Space activation — call
-   * `event.preventDefault()` to suppress it.
+   * Click handler. Providing it makes the row actionable: the leading slot
+   * and the text become one `<button>` (the primary action).
+   */
+  onClick?: MouseEventHandler<HTMLElement>
+  /** Make the row a link: the primary action becomes an `<a href>`. */
+  href?: string
+  /** `<a target>` — only with `href`. */
+  target?: string
+  /** `<a rel>` — only with `href`. */
+  rel?: string
+  /**
+   * Key handler of the focusable element — the primary action of an
+   * actionable row, else the root. Runs before the row's own activation:
+   * `event.preventDefault()` suppresses it.
    */
   onKeyDown?: KeyboardEventHandler<HTMLElement>
   /** Primary text (headline). */
@@ -106,9 +106,20 @@ export interface ListItemProps
   overline?: ReactNode
   /** Secondary text below the headline. */
   supportingText?: ReactNode
-  /** Leading element (icon, avatar, image, control). */
+  /**
+   * Leading element (icon, avatar, image, video; or a checkbox / radio /
+   * switch on a static row). Not hidden from assistive technology — give
+   * decorative icons `aria-hidden` and images an `alt`. On an actionable row
+   * it is part of the primary action, so do not put controls here.
+   */
   leading?: ReactNode
-  /** Trailing element (icon, control, metadata). */
+  /**
+   * Trailing element (icon, metadata, or controls such as a Switch / icon
+   * button). On an actionable row it is rendered **beside** the primary
+   * action, not inside it, so its controls stay separately focusable
+   * (multi-action list). Non-interactive trailing content lets clicks
+   * through to the row.
+   */
   trailing?: ReactNode
   /** Trailing metadata text (right-aligned label). */
   trailingSupportingText?: ReactNode
@@ -118,15 +129,32 @@ export interface ListItemProps
   disabled?: boolean
 }
 
+/** Props that belong on the focusable primary action rather than the root. */
+function splitActionProps(rest: Record<string, unknown>) {
+  const root: Record<string, unknown> = {}
+  const action: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(rest)) {
+    if (key.startsWith('aria-') || key === 'onFocus' || key === 'onBlur') action[key] = value
+    else root[key] = value
+  }
+  return { root, action }
+}
+
 /**
  * Material Design 3 list item.
  *
  * Auto-sizes to one- (56dp), two- (72dp) or three-line (88dp) based on the
  * presence of `overline` / `supportingText`; supporting text that wraps also
- * makes the item three-line, and content 60dp or taller aligns top. Passing `onClick` makes the row
- * interactive (role="button", keyboard activation, ripple, focus ring).
+ * makes the item three-line, and content 60dp or taller aligns top.
  * Colors follow ListTokens: headline OnSurface / BodyLarge, supporting &
  * overline OnSurfaceVariant, leading/trailing OnSurfaceVariant.
+ *
+ * **Actionable rows** (`onClick` → `<button>`, `href` → `<a>`, B5): the
+ * leading slot and the text form the primary action, which covers the whole
+ * row (ripple, focus ring, click target); `trailing` is rendered as its
+ * sibling, so trailing controls (Switch, icon button) are not nested inside
+ * the button (MUI `ListItemButton` + `secondaryAction`). `role`, `tabIndex`,
+ * `onKeyDown` and `aria-*` props go to the primary action.
  *
  * Renders an `<li>`, except inside a `SwipeToDismiss` in a `List`, where the
  * SwipeToDismiss root is the `<li>` and the item renders a `<div>`.
@@ -143,6 +171,9 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
       selected = false,
       disabled = false,
       onClick,
+      href,
+      target,
+      rel,
       onKeyDown,
       className,
       role,
@@ -151,7 +182,8 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
     },
     ref,
   ) {
-    const interactive = onClick != null
+    const isLink = href != null
+    const actionable = onClick != null || isLink
     // Inside a SwipeToDismiss in a List, the SwipeToDismiss root is the <li>
     // and this item renders a <div> (docs/decisions/phase-b-api.md B21).
     // (Typed as 'li': the props / ref shape is the same for both tags.)
@@ -171,55 +203,53 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
       [ref, setItemRef],
     )
 
-    const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-      // The caller's handler first; preventDefault() suppresses activation
-      // (isContainerKeyActivation checks defaultPrevented).
-      onKeyDown?.(event)
-      // Only when the row itself is focused — keys from controls in the
-      // leading/trailing slots belong to them (docs/audits/list.md LS5).
-      if (!disabled && isContainerKeyActivation(event)) {
-        event.preventDefault()
-        event.currentTarget.click()
-      }
-    }
-
-    // Clicks on nested controls (trailing Switch, icon button…) activate only
-    // that control, not the row as well.
-    const handleClick = (event: MouseEvent<HTMLDivElement>) => {
-      if (isFromNestedInteractive(event)) return
-      onClick?.(event)
-    }
-
-    const content = (
-      <>
-        {leading != null && (
-          <span className={styles.leading} aria-hidden="true">
-            {leading}
+    const leadingNode = leading != null && <span className={styles.leading}>{leading}</span>
+    const bodyNode = (
+      <span className={styles.body}>
+        {overline != null && <span className={styles.overline}>{overline}</span>}
+        <span className={styles.headline}>{headline}</span>
+        {supportingText != null && (
+          <span ref={measured.supportingRef} className={styles.supporting}>
+            {supportingText}
           </span>
         )}
-        <span className={styles.body}>
-          {overline != null && <span className={styles.overline}>{overline}</span>}
-          <span className={styles.headline}>{headline}</span>
-          {supportingText != null && (
-            <span ref={measured.supportingRef} className={styles.supporting}>
-              {supportingText}
-            </span>
-          )}
-        </span>
-        {trailingSupportingText != null && (
-          <span className={styles.trailingText}>{trailingSupportingText}</span>
-        )}
-        {trailing != null && <span className={styles.trailing}>{trailing}</span>}
-        {interactive && !disabled && <Ripple ignoreNestedPress />}
-        {interactive && !disabled && <FocusRing />}
-      </>
+      </span>
+    )
+    const trailingTextNode = trailingSupportingText != null && (
+      <span className={styles.trailingText}>{trailingSupportingText}</span>
+    )
+    const trailingNode = trailing != null && (
+      <span className={styles.trailing}>{trailing}</span>
     )
 
-    // Interactive rows keep the <li> as the listitem and put the button role on
-    // an inner element (role="button" is not valid on <li>).
-    if (interactive) {
+    if (actionable) {
+      const { root, action } = splitActionProps(rest as Record<string, unknown>)
+      // Clicks on a control placed in the leading slot / text activate only
+      // that control, not the row as well.
+      const handleClick = (event: MouseEvent<HTMLElement>) => {
+        if (isFromNestedInteractive(event)) {
+          if (isLink) event.preventDefault()
+          return
+        }
+        onClick?.(event)
+      }
+      const actionContent = (
+        <>
+          {leadingNode}
+          {bodyNode}
+          {trailingTextNode}
+          {!disabled && <Ripple ignoreNestedPress />}
+          {!disabled && <FocusRing />}
+        </>
+      )
+      const actionCommon = {
+        ...action,
+        className: styles.action,
+        onKeyDown,
+        onClick: disabled ? undefined : handleClick,
+      }
       return (
-        <Root ref={ref} {...rest} className={clsx(styles.host, className)}>
+        <Root ref={ref} {...root} className={clsx(styles.host, className)}>
           <div
             ref={measured.itemRef}
             data-lines={lineCount}
@@ -227,14 +257,33 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
             data-interactive="true"
             data-selected={selected || undefined}
             data-disabled={disabled || undefined}
-            role={role ?? 'button'}
-            tabIndex={disabled ? undefined : tabIndex ?? 0}
-            aria-disabled={disabled || undefined}
-            onClick={disabled ? undefined : handleClick}
-            onKeyDown={handleKeyDown}
             className={styles.item}
           >
-            {content}
+            {isLink ? (
+              <a
+                {...actionCommon}
+                // A disabled link has no href (not focusable, not followable).
+                href={disabled ? undefined : href}
+                target={target}
+                rel={rel}
+                role={role ?? (disabled ? 'link' : undefined)}
+                tabIndex={tabIndex}
+                aria-disabled={disabled || undefined}
+              >
+                {actionContent}
+              </a>
+            ) : (
+              <button
+                {...actionCommon}
+                type="button"
+                role={role}
+                disabled={disabled}
+                tabIndex={tabIndex}
+              >
+                {actionContent}
+              </button>
+            )}
+            {trailingNode}
           </div>
         </Root>
       )
@@ -253,7 +302,10 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
         onKeyDown={onKeyDown}
         className={clsx(styles.item, className)}
       >
-        {content}
+        {leadingNode}
+        {bodyNode}
+        {trailingTextNode}
+        {trailingNode}
       </Root>
     )
   },

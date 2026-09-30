@@ -2,6 +2,12 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { fn } from 'storybook/test'
 import Star from '@material-symbols/svg-400/outlined/star.svg?react'
 import ChevronRight from '@material-symbols/svg-400/outlined/chevron_right.svg?react'
+import Wifi from '@material-symbols/svg-400/outlined/wifi.svg?react'
+import Bluetooth from '@material-symbols/svg-400/outlined/bluetooth.svg?react'
+import MoreVert from '@material-symbols/svg-400/outlined/more_vert.svg?react'
+import { Checkbox } from '../Checkbox'
+import { IconButton } from '../IconButton'
+import { Switch } from '../Switch'
 import { List, ListItem } from './List'
 
 const meta = {
@@ -86,6 +92,39 @@ export const LeadingMedia: Story = {
         leading={<img src={swatch(114, 64, 20)} width={114} height={64} alt="" style={{ borderRadius: 12 }} />}
         headline="Video thumbnail"
         supportingText="114 × 64dp"
+      />
+    </List>
+  ),
+}
+
+/**
+ * Multi-action rows: the leading slot and text are the primary action
+ * (`onClick` → button, `href` → link) and `trailing` controls are its
+ * siblings, separately focusable (no nested interactive elements). A static
+ * row may hold a selection control in its leading slot.
+ */
+export const MultiAction: Story = {
+  render: () => (
+    <List style={{ width: 360 }} aria-label="Connections">
+      <ListItem
+        leading={<Wifi aria-hidden />}
+        headline="Wi-Fi"
+        supportingText="Home network"
+        onClick={fn()}
+        trailing={<Switch aria-label="Wi-Fi" defaultSelected />}
+      />
+      <ListItem
+        leading={<Bluetooth aria-hidden />}
+        headline="Bluetooth"
+        href="#bluetooth"
+        trailing={
+          <IconButton variant="standard" icon={<MoreVert />} aria-label="More Bluetooth options" />
+        }
+      />
+      <ListItem
+        leading={<Checkbox aria-label="Share usage data" />}
+        headline="Share usage data"
+        supportingText="Static row with a leading checkbox"
       />
     </List>
   ),
