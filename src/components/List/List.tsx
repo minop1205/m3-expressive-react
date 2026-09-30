@@ -33,8 +33,17 @@ import {
 import { assignRef } from '../../internal/assignRef'
 import styles from './List.module.css'
 
+export type ListVariant = 'standard' | 'segmented'
+
 interface ListBaseProps
   extends Omit<HTMLAttributes<HTMLUListElement>, 'onChange' | 'defaultValue'> {
+  /**
+   * `standard`: items on a transparent container. `segmented`: each item is
+   * its own surface-colored segment, 2dp apart, with 16dp outer corners on
+   * the first and last item (Compose `SegmentedListItem`). Both use the
+   * Expressive item shapes. @default 'standard'
+   */
+  variant?: ListVariant
   children?: ReactNode
 }
 
@@ -116,7 +125,12 @@ function arrowSequence(root: HTMLElement): HTMLElement[] {
 }
 
 /**
- * MD3 list container — a vertical `<ul>` with 8dp block padding.
+ * MD3 (Expressive) list container — a vertical `<ul>` with 8dp block padding.
+ *
+ * Items use the Expressive shapes (B18): 4dp corners at rest, 12dp while
+ * hovered, 16dp while focused / pressed / selected, morphing with the
+ * FastSpatial spring of the motion scheme (instant under reduced motion).
+ * `variant="segmented"` separates the items into surface-colored segments.
  *
  * Keyboard (m3 List accessibility): the focusable rows share **one Tab stop**
  * — the selected row, else the first (then the last focused one); **Down /
@@ -136,6 +150,7 @@ function arrowSequence(root: HTMLElement): HTMLElement[] {
  */
 export const List = forwardRef<HTMLUListElement, ListProps>(function List(props, ref) {
   const {
+    variant = 'standard',
     selectionMode = 'none',
     value,
     defaultValue,
@@ -279,6 +294,7 @@ export const List = forwardRef<HTMLUListElement, ListProps>(function List(props,
       {...rest}
       role={role ?? (selecting ? 'listbox' : undefined)}
       aria-multiselectable={selecting && multiple ? true : undefined}
+      data-variant={variant}
       onKeyDown={handleKeyDown}
       onFocus={handleFocus}
       className={clsx(styles.list, className)}

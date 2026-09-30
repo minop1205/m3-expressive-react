@@ -200,3 +200,49 @@ export const MultiSelect: Story = {
     )
   },
 }
+
+/**
+ * `variant="segmented"`: surface-colored segments 2dp apart with 16dp outer
+ * corners (Compose `SegmentedListItem`), shown on a surface-container
+ * background. Items morph 4 → 12 (hover) → 16dp (focus / press / selected).
+ */
+export const Segmented: Story = {
+  render: function Render() {
+    const [value, setValue] = useState<string | null>('b')
+    return (
+      <div
+        style={{
+          display: 'flex',
+          gap: 24,
+          flexWrap: 'wrap',
+          padding: 16,
+          borderRadius: 16,
+          background: 'var(--md-sys-color-surface-container)',
+        }}
+      >
+        <List variant="segmented" aria-label="Segmented actions" style={{ width: 300 }}>
+          <ListItem leading={<Star aria-hidden />} headline="First" onClick={fn()} />
+          <ListItem
+            leading={<Star aria-hidden />}
+            headline="Second"
+            supportingText="Supporting text"
+            onClick={fn()}
+          />
+          <ListItem leading={<Star aria-hidden />} headline="Third" onClick={fn()} />
+        </List>
+        <List
+          variant="segmented"
+          selectionMode="single"
+          value={value}
+          onChange={(_, next) => setValue(next)}
+          aria-label="Segmented selection"
+          style={{ width: 300 }}
+        >
+          <ListItem value="a" headline="Option A" />
+          <ListItem value="b" headline="Option B (selected)" />
+          <ListItem value="c" headline="Option C" />
+        </List>
+      </div>
+    )
+  },
+}
