@@ -77,6 +77,12 @@ button を持つ)ため、FabMenu 固有の所見は `docs/audits/fab-menu.md`(F
 Issue: FB1 → #197、FB2 → #198、FB3 → #199、FB4 → #200(FabMenu 分も同じ Issue。IconButton #194 と同じ `Ripple` 修正で
 まとめて解決できる)
 
+**対応(2026-09-30)**: FB1〜FB3 を修正。FB1 の `size="small"` + `label` は **56dp の small extended FAB に
+フォールバック**(dev 警告なし、JSDoc に記載)。モーフは Compose のサイズ別 Extended と同じく、アイコンを leading
+space に固定したまま幅を lerp(折りたたみ幅 = 高さ)し、ばねは往復とも FastSpatial / FastEffects(motion-scheme
+トークン `--md-sys-motion-spring-fast-*` から読む — B2)。ストーリーの meta `aria-label` を削除し Extended のサイズ別
+ストーリーを追加。
+
 **軽微(判断・記録のみ)**:
 
 - **disabled を持つこと自体**: site a11y「Don't disable the FAB. If the action is unavailable, the FAB shouldn't

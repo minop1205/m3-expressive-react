@@ -11,7 +11,6 @@ const meta = {
   parameters: { layout: 'centered' },
   args: {
     icon: <EditIcon />,
-    'aria-label': 'Edit',
     color: 'primary',
     tonal: true,
     size: 'regular',
@@ -37,7 +36,9 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-export const Playground: Story = {}
+export const Playground: Story = {
+  args: { 'aria-label': 'Edit' },
+}
 
 export const Sizes: Story = {
   render: (args) => (
@@ -74,10 +75,33 @@ export const Extended: Story = {
 }
 
 /**
+ * Expressive extended FAB sizes: `regular` → small extended (56dp,
+ * title-medium, 16/8/16), `medium` → medium extended (80dp, title-large,
+ * 26/12/26), `large` → large extended (96dp, headline-small, 28/16/28). The
+ * bottom row is the high-emphasis palette (`tonal={false}`).
+ */
+export const ExtendedSizes: Story = {
+  render: (args) => (
+    <div style={{ display: 'grid', gap: 16, justifyItems: 'start' }}>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+        <Fab {...args} icon={<AddIcon />} label="Create" size="regular" />
+        <Fab {...args} icon={<AddIcon />} label="Create" size="medium" />
+        <Fab {...args} icon={<AddIcon />} label="Create" size="large" />
+      </div>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+        <Fab {...args} icon={<EditIcon />} label="Compose" size="regular" tonal={false} />
+        <Fab {...args} icon={<EditIcon />} label="Compose" size="medium" tonal={false} />
+        <Fab {...args} icon={<EditIcon />} label="Compose" size="large" tonal={false} />
+      </div>
+    </div>
+  ),
+}
+
+/**
  * Toggle `expanded` to morph between the icon-only FAB and the Extended FAB —
- * the label row springs open (FastSpatial, slight overshoot) and collapses
- * (DefaultSpatial) while the label cross-fades, per Compose
- * `ExtendedFloatingActionButton(expanded=)`.
+ * the width springs open and closed on FastSpatial (slight overshoot in the
+ * expressive motion scheme) while the label fades on FastEffects, per Compose
+ * `Small / Medium / LargeExtendedFloatingActionButton(expanded=)`.
  */
 export const Morph: Story = {
   render: (args) => <Fab {...args} icon={<EditIcon />} label="Compose" />,
