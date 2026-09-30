@@ -148,3 +148,50 @@ export const Toggle: Story = {
     )
   },
 }
+
+/**
+ * The expanded rail fits its widest destination (min 220dp, max 360dp);
+ * badges sit beside the label while expanded.
+ */
+export const ExpandedLongLabels: Story = {
+  render: () => {
+    const [value, setValue] = useState('inbox')
+    return (
+      <div style={{ height: 520, display: 'flex' }}>
+        <NavigationRail aria-label="Mail" value={value} onChange={(_event, v) => setValue(v)} variant="expanded" header={<Header expanded />}>
+          <NavigationRailItem value="inbox" icon={<Inbox />} selectedIcon={<InboxFill />} label="Inbox" />
+          <NavigationRailItem value="outbox" icon={<Outbox />} selectedIcon={<OutboxFill />} label="Scheduled outbox" badge="12" />
+          <NavigationRailItem value="favorites" icon={<Favorite />} selectedIcon={<FavoriteFill />} label="Favorites" badge />
+          <NavigationRailItem value="trash" icon={<Delete />} selectedIcon={<DeleteFill />} label="Recently deleted items" />
+        </NavigationRail>
+      </div>
+    )
+  },
+}
+
+/** In right-to-left layouts the rail sits on the right and its items mirror. */
+export const RightToLeft: Story = {
+  render: () => {
+    const [value, setValue] = useState('inbox')
+    const [variant, setVariant] = useState<NavigationRailVariant>('expanded')
+    const expanded = variant === 'expanded'
+    return (
+      <div dir="rtl" style={{ height: 520, display: 'flex' }}>
+        <NavigationRail
+          aria-label="Mail"
+          value={value}
+          onChange={(_event, v) => setValue(v)}
+          variant={variant}
+          header={
+            <Header
+              expanded={expanded}
+              onMenuClick={() => setVariant(expanded ? 'collapsed' : 'expanded')}
+            />
+          }
+        >
+          <Items />
+        </NavigationRail>
+      </div>
+    )
+  },
+}
