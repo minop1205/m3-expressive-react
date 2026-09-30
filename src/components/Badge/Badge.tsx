@@ -7,14 +7,36 @@ export type BadgeSize = 'small' | 'large'
 export interface BadgeProps extends HTMLAttributes<HTMLDivElement> {
   /** Number to display inside the badge. Ignored when `size="small"`. */
   value?: number
-  /** Maximum value. Values above this show `{max}+`. @default 999 */
+  /**
+   * Maximum value. Values above this show `{max}+`. Keep it at 999 or below —
+   * MD3 limits a badge to four characters including the `+`.
+   * @default 999
+   */
   max?: number
   /** Badge size. `"small"` renders a dot; `"large"` renders a label. @default "large" */
   size?: BadgeSize
-  /** Whether the badge is visible. @default true */
+  /**
+   * Whether the badge is visible. A hidden badge scales out and is then
+   * removed from the accessibility tree as well.
+   * @default true
+   */
   visible?: boolean
+  /**
+   * Accessible description announced for the badge (rendered as visually
+   * hidden text right after the anchor content; the visible digits are
+   * hidden from assistive technology). Override it to localize.
+   * @default "New notification" for a dot, "{n} new notifications" for a count
+   */
+  label?: string
   /** Content the badge is attached to (e.g. an icon). */
   children?: ReactNode
+}
+
+function defaultLabel(displayValue: string | undefined) {
+  if (displayValue == null) return 'New notification'
+  return displayValue === '1'
+    ? `${displayValue} new notification`
+    : `${displayValue} new notifications`
 }
 
 export const Badge = forwardRef<HTMLDivElement, BadgeProps>(function Badge(
@@ -23,6 +45,7 @@ export const Badge = forwardRef<HTMLDivElement, BadgeProps>(function Badge(
     max = 999,
     size = 'large',
     visible = true,
+    label,
     children,
     className,
     ...rest
@@ -48,12 +71,15 @@ export const Badge = forwardRef<HTMLDivElement, BadgeProps>(function Badge(
             styles[size],
             visible && styles.visible,
           )}
-          role="status"
-          aria-label={
-            displayValue != null ? `${displayValue} notifications` : undefined
-          }
+          data-size={size}
+          aria-hidden={!visible || undefined}
         >
-          {displayValue}
+          {displayValue != null && (
+            <span aria-hidden="true">{displayValue}</span>
+          )}
+          <span className={styles.visuallyHidden}>
+            {label ?? defaultLabel(displayValue)}
+          </span>
         </span>
       )}
     </div>
