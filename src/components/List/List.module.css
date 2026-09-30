@@ -2,8 +2,12 @@
  * MD3 List / ListItem. Values from androidx.compose.material3 ListTokens:
  * one-line 56dp, two-line 72dp, three-line 88dp; 16dp horizontal padding;
  * headline OnSurface/BodyLarge, supporting OnSurfaceVariant/BodyMedium,
- * overline OnSurfaceVariant/LabelSmall; leading/trailing OnSurfaceVariant;
- * 16dp gap between leading/trailing and text. Selected = SecondaryContainer.
+ * overline OnSurfaceVariant/LabelSmall; leading/trailing OnSurfaceVariant.
+ * Expressive spacing (ListItemDefaults.ContentPadding 16/16/10/10, between
+ * space 12dp — the 8/12/16 constants belong to the deprecated baseline
+ * ListItem). Content 60dp or taller (three-line, wrapped supporting text)
+ * aligns top (ListItemDefaults.verticalAlignment). Selected =
+ * SecondaryContainer; selected + disabled = on-surface @0.38.
  */
 
 .list {
@@ -27,7 +31,7 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
   box-sizing: border-box;
   min-height: var(--_min-height);
@@ -37,12 +41,15 @@
   color: var(--_headline-color);
 
   --_min-height: 56px;
-  --_padding-block: 8px;
+  --_padding-block: 10px;
   --_headline-color: var(--md-sys-color-on-surface);
   --_supporting-color: var(--md-sys-color-on-surface-variant);
   --_leading-color: var(--md-sys-color-on-surface-variant);
   --md-ripple-color: var(--md-sys-color-on-surface);
   --md-focus-ring-color: var(--md-sys-color-secondary);
+  /* m3 List focus indicator offset −3dp: drawn inside the row, so stacked
+     rows never cover it and scroll containers never clip it. */
+  --md-focus-ring-offset: -3px;
 }
 
 .item[data-lines='2'] {
@@ -51,7 +58,11 @@
 
 .item[data-lines='3'] {
   --_min-height: 88px;
-  --_padding-block: 12px;
+}
+
+/* Top alignment once the content box is 60dp or taller (measured in JS). */
+.item[data-lines='3'],
+.item[data-align='top'] {
   align-items: flex-start;
 }
 
@@ -77,6 +88,12 @@
   --_leading-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
 }
 
+/* m3 "selected disabled container" on-surface @0.38 (ListTokens
+   ItemSelectedDisabledContainerColor / Opacity). */
+.item[data-selected][data-disabled] {
+  --_container-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
 /* --------------------------------------------------------------------------- */
 /* Slots                                                                       */
 /* --------------------------------------------------------------------------- */
@@ -90,11 +107,18 @@
   z-index: 1;
 }
 
-.leading :where(svg, img),
-.trailing :where(svg, img) {
+/* Icons default to 24dp. Images / media (avatar 40dp, image 56dp, video
+   thumbnails) keep the consumer's size — Compose does not constrain slots. */
+.leading :where(svg),
+.trailing :where(svg) {
   width: 24px;
   height: 24px;
   fill: currentColor;
+}
+
+.leading :where(img, video),
+.trailing :where(img, video) {
+  display: block;
 }
 
 .body {
