@@ -1,6 +1,5 @@
 import {
   forwardRef,
-  useState,
   type ButtonHTMLAttributes,
   type MouseEvent,
   type ReactNode,
@@ -8,6 +7,7 @@ import {
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import { useButtonToggle } from '../ButtonGroup/ButtonGroupContext'
 import styles from './IconButton.module.css'
 
 export type IconButtonVariant = 'standard' | 'filled' | 'tonal' | 'outlined'
@@ -70,6 +70,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       onClick,
       disabled = false,
       type = 'button',
+      value,
+      tabIndex,
       className,
       'aria-label': ariaLabel,
       selectedAriaLabel,
@@ -77,41 +79,39 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
     },
     ref,
   ) {
-    const isControlled = selected !== undefined
-    const [internalSelected, setInternalSelected] = useState(defaultSelected)
-    const isSelected = toggle ? (isControlled ? selected : internalSelected) : false
-
-    const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
-      if (toggle) {
-        const next = !isSelected
-        if (!isControlled) setInternalSelected(next)
-        onChange?.(event, next)
-      }
-      onClick?.(event)
-    }
+    const { isToggle, isSelected, handleClick, a11y } = useButtonToggle({
+      value,
+      toggle,
+      selected,
+      defaultSelected,
+      onChange,
+      onClick,
+      tabIndex,
+    })
 
     // Selection swaps round⇄square; press (CSS :active) morphs to the tighter corner.
     const shapeState = isSelected ? (shape === 'round' ? 'square' : 'round') : shape
-    const label = toggle && isSelected && selectedAriaLabel ? selectedAriaLabel : ariaLabel
+    const label = isToggle && isSelected && selectedAriaLabel ? selectedAriaLabel : ariaLabel
 
     return (
       <button
         ref={ref}
         {...rest}
         type={type}
+        value={value}
         disabled={disabled}
         onClick={handleClick}
         aria-label={label}
-        aria-pressed={toggle ? isSelected : undefined}
+        {...a11y}
         data-variant={variant}
         data-size={size}
         data-width={width}
-        data-selected={toggle ? String(isSelected) : undefined}
+        data-selected={isToggle ? String(isSelected) : undefined}
         data-shape-state={shapeState}
         className={clsx(styles.iconButton, className)}
       >
         <span className={styles.icon} aria-hidden="true">
-          {toggle && isSelected && selectedIcon != null ? selectedIcon : icon}
+          {isToggle && isSelected && selectedIcon != null ? selectedIcon : icon}
         </span>
         {!disabled && <Ripple />}
         {!disabled && <FocusRing />}
