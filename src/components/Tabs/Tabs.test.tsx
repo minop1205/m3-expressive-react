@@ -37,6 +37,67 @@ describe('Tabs', () => {
     expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveAttribute('tabindex', '-1')
   })
 
+  describe('fallback tab stop (value matches no enabled tab)', () => {
+    const tabIndexes = () =>
+      screen.getAllByRole('tab').map((t) => t.getAttribute('tabindex'))
+
+    it('uses the first tab when there is no selection', async () => {
+      const user = userEvent.setup()
+      render(
+        <Tabs aria-label="S">
+          <Tab value="a" label="Alpha" />
+          <Tab value="b" label="Beta" />
+        </Tabs>,
+      )
+      expect(tabIndexes()).toEqual(['0', '-1'])
+      await user.tab()
+      expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveFocus()
+    })
+
+    it('uses the first tab when the controlled value is null', () => {
+      render(<Example value={null as unknown as string} />)
+      expect(tabIndexes()).toEqual(['0', '-1', '-1'])
+    })
+
+    it('uses the first tab when the value is stale', async () => {
+      const user = userEvent.setup()
+      const { rerender } = render(<Example value="zzz" />)
+      expect(tabIndexes()).toEqual(['0', '-1', '-1'])
+      await user.tab()
+      expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveFocus()
+      await user.keyboard('{ArrowRight}')
+      expect(tabIndexes()).toEqual(['-1', '0', '-1'])
+      // A valid value takes the stop back once focus leaves.
+      screen.getByRole('tab', { name: 'Beta' }).blur()
+      rerender(<Example value="c" />)
+      expect(tabIndexes()).toEqual(['-1', '-1', '0'])
+    })
+
+    it('skips a disabled first tab', async () => {
+      const user = userEvent.setup()
+      render(
+        <Tabs value="zzz" onChange={() => {}} aria-label="S">
+          <Tab value="a" label="Alpha" disabled />
+          <Tab value="b" label="Beta" />
+          <Tab value="c" label="Gamma" />
+        </Tabs>,
+      )
+      expect(tabIndexes()).toEqual(['-1', '0', '-1'])
+      await user.tab()
+      expect(screen.getByRole('tab', { name: 'Beta' })).toHaveFocus()
+    })
+
+    it('falls back when the selected tab is disabled', () => {
+      render(
+        <Tabs value="a" onChange={() => {}} aria-label="S">
+          <Tab value="a" label="Alpha" disabled />
+          <Tab value="b" label="Beta" />
+        </Tabs>,
+      )
+      expect(tabIndexes()).toEqual(['-1', '0'])
+    })
+  })
+
   it('selects on click', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
