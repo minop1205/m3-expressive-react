@@ -18,11 +18,15 @@ const DAMPING = 2 * DAMPING_RATIO * Math.sqrt(STIFFNESS)
  * interpolate every layout value from it). A physical spring — interruptible by
  * nature: a change mid-flight keeps the current position and velocity. Also sets
  * `--_slide` (1 expanding / 0 collapsing) so the label only slides in on expand.
+ * `property` redirects the spring value to another custom property (the modal
+ * hide-on-collapse rail slides in on `--_reveal` while its layout stays
+ * expanded).
  */
 export function useRailMorph(
   expanded: boolean,
   ref: RefObject<HTMLElement | null>,
   enabled = true,
+  property = '--_t',
 ) {
   const t = useRef(expanded ? 1 : 0)
   const vel = useRef(0)
@@ -31,9 +35,9 @@ export function useRailMorph(
   // Resting value + direction flag on first paint.
   useEffect(() => {
     if (!enabled) return
-    ref.current?.style.setProperty('--_t', String(t.current))
+    ref.current?.style.setProperty(property, String(t.current))
     ref.current?.style.setProperty('--_slide', expanded ? '1' : '0')
-  }, [ref, expanded, enabled])
+  }, [ref, expanded, enabled, property])
 
   useEffect(() => {
     if (!enabled) return
@@ -47,7 +51,7 @@ export function useRailMorph(
     if (reduce) {
       t.current = target
       vel.current = 0
-      ref.current?.style.setProperty('--_t', String(target))
+      ref.current?.style.setProperty(property, String(target))
       return
     }
 
@@ -64,13 +68,13 @@ export function useRailMorph(
       if (Math.abs(t.current - target) < 0.001 && Math.abs(vel.current) < 0.001) {
         t.current = target
         vel.current = 0
-        ref.current?.style.setProperty('--_t', String(target))
+        ref.current?.style.setProperty(property, String(target))
         return
       }
-      ref.current?.style.setProperty('--_t', String(t.current))
+      ref.current?.style.setProperty(property, String(t.current))
       raf.current = requestAnimationFrame(tick)
     }
     raf.current = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf.current)
-  }, [expanded, ref, enabled])
+  }, [expanded, ref, enabled, property])
 }
