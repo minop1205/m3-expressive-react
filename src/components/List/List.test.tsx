@@ -429,6 +429,82 @@ describe('List / ListItem', () => {
       expect(input).toHaveFocus()
     })
 
+    it('includes a checkbox in the leading slot of a static row (#357)', async () => {
+      const user = userEvent.setup()
+      render(
+        <List aria-label="Tasks">
+          <ListItem headline="Open" onClick={() => {}} />
+          <ListItem headline="Milk" leading={<Checkbox aria-label="Milk done" />} />
+          <ListItem
+            headline="Eggs"
+            leading={<Checkbox aria-label="Eggs done" />}
+            trailing={<Switch aria-label="Eggs urgent" />}
+          />
+          <ListItem headline="Static text only" />
+          <ListItem headline="Close" onClick={() => {}} />
+        </List>,
+      )
+      const open = screen.getByRole('button', { name: 'Open' })
+      const milk = screen.getByRole('checkbox', { name: 'Milk done' })
+      const eggs = screen.getByRole('checkbox', { name: 'Eggs done' })
+      const urgent = screen.getByRole('switch', { name: 'Eggs urgent' })
+      const close = screen.getByRole('button', { name: 'Close' })
+      open.focus()
+      await user.keyboard('{ArrowDown}')
+      expect(milk).toHaveFocus()
+      await user.keyboard('{ArrowDown}')
+      expect(eggs).toHaveFocus()
+      // Leading before trailing within a row (DOM order).
+      await user.keyboard('{ArrowRight}')
+      expect(urgent).toHaveFocus()
+      // A row with no control is skipped.
+      await user.keyboard('{ArrowDown}')
+      expect(close).toHaveFocus()
+      await user.keyboard('{ArrowUp}{ArrowUp}{ArrowUp}')
+      expect(milk).toHaveFocus()
+      // Arrows move focus only; they do not toggle the checkbox.
+      expect(milk).not.toBeChecked()
+      await user.keyboard('{End}')
+      expect(close).toHaveFocus()
+    })
+
+    it('reaches leading checkboxes in a list of static rows only', async () => {
+      const user = userEvent.setup()
+      render(
+        <List aria-label="Tasks">
+          <ListItem headline="A" leading={<Checkbox aria-label="A done" />} />
+          <ListItem headline="B" leading={<Checkbox aria-label="B done" disabled />} />
+          <ListItem headline="C" leading={<Checkbox aria-label="C done" />} />
+        </List>,
+      )
+      const a = screen.getByRole('checkbox', { name: 'A done' })
+      const c = screen.getByRole('checkbox', { name: 'C done' })
+      a.focus()
+      // Disabled controls are skipped; the sequence wraps.
+      await user.keyboard('{ArrowDown}')
+      expect(c).toHaveFocus()
+      await user.keyboard('{ArrowDown}')
+      expect(a).toHaveFocus()
+      await user.keyboard('{ArrowUp}')
+      expect(c).toHaveFocus()
+      // Space still toggles the focused checkbox.
+      await user.keyboard(' ')
+      expect(c).toBeChecked()
+    })
+
+    it('does not add a separate stop for a leading control of a clickable row', async () => {
+      const user = userEvent.setup()
+      render(
+        <List aria-label="L">
+          <ListItem headline="A" onClick={() => {}} />
+          <ListItem headline="B" onClick={() => {}} leading={<span aria-hidden="true">*</span>} />
+        </List>,
+      )
+      screen.getByRole('button', { name: 'A' }).focus()
+      await user.keyboard('{ArrowDown}')
+      expect(screen.getByRole('button', { name: 'B' })).toHaveFocus()
+    })
+
     it("respects a caller's preventDefault", async () => {
       const user = userEvent.setup()
       render(

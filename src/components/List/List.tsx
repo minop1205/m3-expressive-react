@@ -100,7 +100,7 @@ const ARROW_KEY_OWNER = [
   '[role="radio"]',
 ].join(',')
 
-const TRAILING_FOCUSABLE =
+const SLOT_FOCUSABLE =
   'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])'
 
 const isEnabled = (el: Element) =>
@@ -111,13 +111,16 @@ function navItems(root: HTMLElement): HTMLElement[] {
   return Array.from(root.querySelectorAll<HTMLElement>('[data-list-nav]'))
 }
 
-/** Arrow-key sequence: every enabled row plus the focusable controls in the
- * rows' trailing slots (m3 "multi-action lists: arrows move through all
- * focusable actions in the items"). */
+/** Arrow-key sequence, in DOM order: every enabled row plus the focusable
+ * controls in the rows' control slots — the trailing slot of every row and
+ * the leading slot of a static (non-clickable) row, e.g. a leading Checkbox
+ * (m3 "multi-action lists: arrows move through all focusable actions in the
+ * items"; APG). A clickable row's leading slot is inside its primary action,
+ * so it is not a separate stop. */
 function arrowSequence(root: HTMLElement): HTMLElement[] {
   return Array.from(
     root.querySelectorAll<HTMLElement>(
-      `[data-list-nav], [data-list-trailing] :is(${TRAILING_FOCUSABLE})`,
+      `[data-list-nav], [data-list-controls] :is(${SLOT_FOCUSABLE})`,
     ),
   ).filter(
     (el) => isEnabled(el) && (el.hasAttribute('data-list-nav') || el.tabIndex >= 0),
@@ -136,8 +139,9 @@ function arrowSequence(root: HTMLElement): HTMLElement[] {
  * — the selected row, else the first (then the last focused one); **Down /
  * Right** move to the next row and **Up / Left** to the previous one,
  * wrapping at the ends (Left / Right mirrored in RTL), Home / End jump to
- * the ends. Controls in the rows' trailing slots stay Tab stops and are part
- * of the arrow sequence.
+ * the ends. Controls in the rows' trailing slots — and in the leading slot
+ * of a static row (e.g. a leading Checkbox) — stay Tab stops and are part of
+ * the arrow sequence.
  *
  * Selection (B17): set `selectionMode="single" | "multiple"` and give each
  * `ListItem` a `value`; the list owns the state via `value` / `defaultValue` /
@@ -510,7 +514,7 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
       <span className={styles.trailingText}>{trailingSupportingText}</span>
     )
     const trailingNode = trailing != null && (
-      <span className={styles.trailing} data-list-trailing="">
+      <span className={styles.trailing} data-list-controls="">
         {trailing}
       </span>
     )
@@ -641,7 +645,13 @@ export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
         onKeyDown={onKeyDown}
         className={clsx(styles.item, className)}
       >
-        {leadingNode}
+        {leading != null && (
+          // A static row's leading control (e.g. a Checkbox) is its own
+          // action, so it joins the list's arrow sequence (#357).
+          <span className={styles.leading} data-list-controls="">
+            {leading}
+          </span>
+        )}
         {bodyNode}
         {trailingTextNode}
         {trailingNode}
