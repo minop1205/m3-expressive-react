@@ -104,13 +104,20 @@
   --_content-color: var(--md-sys-color-on-surface);
 }
 
-.item:hover:not(:disabled)::after {
+/* Hover 0.08 / keyboard-focus 0.10 state layer. Focus is declared after hover
+   so hover + focus shows one layer at 0.10, never a sum (same ruling as the
+   shared Ripple, #194). */
+.item:not(:disabled):is(:hover, :focus-visible)::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   background-color: var(--_content-color);
   opacity: var(--md-sys-state-hover-state-layer-opacity);
+}
+
+.item:not(:disabled):focus-visible::after {
+  opacity: var(--md-sys-state-focus-state-layer-opacity);
 }
 
 .item:disabled {
