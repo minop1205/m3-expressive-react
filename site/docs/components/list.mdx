@@ -1,0 +1,299 @@
+---
+title: List
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { List, ListItem, Switch, Checkbox, IconButton } from 'm3-expressive-react'
+
+# List
+
+MD3 (Expressive) list: a vertical `<ul>` of one-, two- and three-line items
+with leading and trailing slots, clickable rows with separately focusable
+trailing controls, single / multiple selection, and a segmented variant.
+
+export const Icon = ({ d }) => (
+  <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
+    <path d={d} />
+  </svg>
+)
+export const STAR = 'M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z'
+export const CHEVRON = 'M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z'
+export const WIFI = 'M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8 3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4 2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z'
+export const MORE = 'M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z'
+export const CHECK = 'M9 16.17 4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z'
+export const RADIO_ON = 'M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0-5C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z'
+export const RADIO_OFF = 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z'
+
+export const Thumb = ({ hue }) => (
+  <span
+    aria-hidden="true"
+    style={{
+      display: 'block',
+      width: 56,
+      height: 56,
+      borderRadius: 8,
+      background: `linear-gradient(135deg, hsl(${hue} 60% 70%), hsl(${hue} 55% 35%))`,
+    }}
+  />
+)
+
+## Lines
+
+Items size themselves to one line (56dp), two lines (72dp) or three lines
+(88dp) from the presence of `overline` / `supportingText`; supporting text
+that wraps also makes the item three-line.
+
+<Demo>
+  <List style={{ width: 360 }}>
+    <ListItem headline="One-line item" />
+    <ListItem headline="Two-line item" supportingText="Supporting text" />
+    <ListItem
+      overline="Overline"
+      headline="Three-line item"
+      supportingText="Supporting text that is long enough to wrap onto a second line"
+    />
+  </List>
+</Demo>
+
+```tsx
+<List>
+  <ListItem headline="One-line item" />
+  <ListItem headline="Two-line item" supportingText="Supporting text" />
+  <ListItem overline="Overline" headline="Three-line item" supportingText="…" />
+</List>
+```
+
+## Leading and trailing content
+
+`leading` takes an icon, avatar, image or video; `trailing` an icon or
+control; `trailingSupportingText` a right-aligned label. Give decorative
+icons `aria-hidden` and images an `alt`.
+
+<Demo>
+  <List style={{ width: 360 }}>
+    <ListItem
+      leading={<Icon d={STAR} />}
+      headline="Starred"
+      supportingText="Leading icon, trailing icon"
+      trailing={<Icon d={CHEVRON} />}
+    />
+    <ListItem
+      leading={<Thumb hue={200} />}
+      headline="Lakeside"
+      supportingText="Leading image"
+      trailingSupportingText="100+"
+    />
+    <ListItem
+      leading={<Thumb hue={30} />}
+      headline="Desert"
+      supportingText="Leading image"
+      trailingSupportingText="12"
+    />
+  </List>
+</Demo>
+
+```tsx
+<ListItem
+  leading={<StarIcon aria-hidden />}
+  headline="Starred"
+  supportingText="Leading icon, trailing icon"
+  trailing={<ChevronRightIcon aria-hidden />}
+/>
+```
+
+## Clickable rows
+
+`onClick` makes a row actionable: its leading slot and text become one
+native `<button>` covering the row (ripple, focus ring). `href` renders an
+`<a>` instead. `selected` applies the secondary-container fill and
+`disabled` dims the row to 38%.
+
+<Demo>
+  <List style={{ width: 360 }} aria-label="Folders">
+    <ListItem headline="Inbox" supportingText="Clickable" onClick={() => {}} />
+    <ListItem headline="Drafts" supportingText="Selected" selected onClick={() => {}} />
+    <ListItem headline="Documentation" supportingText="Link" href="#clickable-rows" />
+    <ListItem headline="Archive" supportingText="Disabled" disabled onClick={() => {}} />
+  </List>
+</Demo>
+
+```tsx
+<ListItem headline="Inbox" onClick={() => openFolder('inbox')} />
+<ListItem headline="Documentation" href="/docs" />
+```
+
+## Rows with trailing controls
+
+On a clickable row, `trailing` is rendered **beside** the primary action,
+not inside it, so a Switch or icon button there stays its own control. A
+static row can hold a control in its leading slot, such as a Checkbox.
+
+<Demo>
+  <List style={{ width: 360 }} aria-label="Connections">
+    <ListItem
+      leading={<Icon d={WIFI} />}
+      headline="Wi-Fi"
+      supportingText="Opens network settings"
+      onClick={() => {}}
+      trailing={<Switch aria-label="Wi-Fi" defaultSelected />}
+    />
+    <ListItem
+      leading={<Icon d={STAR} />}
+      headline="Favorites"
+      supportingText="Row and menu are separate actions"
+      onClick={() => {}}
+      trailing={<IconButton variant="standard" icon={<Icon d={MORE} />} aria-label="More options" />}
+    />
+    <ListItem
+      leading={<Checkbox aria-label="Share usage data" />}
+      headline="Share usage data"
+      supportingText="Static row with a leading checkbox"
+    />
+  </List>
+</Demo>
+
+```tsx
+<ListItem
+  headline="Wi-Fi"
+  onClick={openWifiSettings}
+  trailing={<Switch aria-label="Wi-Fi" selected={wifi} onChange={(e, v) => setWifi(v)} />}
+/>
+```
+
+## Selection
+
+Set `selectionMode="single"` or `"multiple"` and give each `ListItem` a
+`value`; the list owns the state through `value` / `defaultValue` /
+`onChange(event, value)`. Selection should not rely on color alone — add a
+check or radio indicator.
+
+export function SingleSelectDemo() {
+  const [value, setValue] = useState('wifi')
+  return (
+    <List
+      selectionMode="single"
+      value={value}
+      onChange={(event, next) => setValue(next)}
+      aria-label="Preferred network"
+      style={{ width: 300 }}
+    >
+      {[
+        ['wifi', 'Wi-Fi'],
+        ['ethernet', 'Ethernet'],
+        ['cellular', 'Cellular'],
+      ].map(([v, label]) => (
+        <ListItem
+          key={v}
+          value={v}
+          headline={label}
+          leading={<Icon d={value === v ? RADIO_ON : RADIO_OFF} />}
+        />
+      ))}
+    </List>
+  )
+}
+
+export function MultiSelectDemo() {
+  const [value, setValue] = useState(['bt'])
+  return (
+    <List
+      selectionMode="multiple"
+      value={value}
+      onChange={(event, next) => setValue(next)}
+      aria-label="Enabled radios"
+      style={{ width: 300 }}
+    >
+      {[
+        ['bt', 'Bluetooth'],
+        ['nfc', 'NFC'],
+        ['gps', 'Location'],
+      ].map(([v, label]) => (
+        <ListItem
+          key={v}
+          value={v}
+          headline={label}
+          trailing={value.includes(v) ? <Icon d={CHECK} /> : null}
+        />
+      ))}
+      <ListItem value="uwb" headline="Ultra-wideband" supportingText="Unavailable" disabled />
+    </List>
+  )
+}
+
+<Demo>
+  <SingleSelectDemo />
+  <MultiSelectDemo />
+</Demo>
+
+```tsx
+const [value, setValue] = useState<string | null>('wifi')
+
+<List
+  selectionMode="single"
+  value={value}
+  onChange={(event, next) => setValue(next)}
+  aria-label="Preferred network"
+>
+  <ListItem value="wifi" headline="Wi-Fi" />
+  <ListItem value="ethernet" headline="Ethernet" />
+</List>
+```
+
+## Segmented
+
+`variant="segmented"` renders each item as its own surface-colored segment,
+2dp apart, with 16dp outer corners on the first and last item. It works
+with clickable rows and selection lists alike.
+
+<Demo>
+  <List variant="segmented" aria-label="Segmented actions" style={{ width: 300 }}>
+    <ListItem leading={<Icon d={STAR} />} headline="First" onClick={() => {}} />
+    <ListItem leading={<Icon d={STAR} />} headline="Second" supportingText="Supporting text" onClick={() => {}} />
+    <ListItem leading={<Icon d={STAR} />} headline="Third" onClick={() => {}} />
+  </List>
+  <List
+    variant="segmented"
+    selectionMode="single"
+    defaultValue="b"
+    aria-label="Segmented options"
+    style={{ width: 300 }}
+  >
+    <ListItem value="a" headline="Option A" />
+    <ListItem value="b" headline="Option B" />
+    <ListItem value="c" headline="Option C" />
+  </List>
+</Demo>
+
+```tsx
+<List variant="segmented">
+  <ListItem headline="First" onClick={…} />
+  <ListItem headline="Second" onClick={…} />
+</List>
+```
+
+## Accessibility
+
+- The focusable rows share **one Tab stop** (the selected row, else the
+  first, then the last focused one). **Down / Right** and **Up / Left** move
+  between rows, wrapping at the ends (mirrored in RTL); **Home / End** jump
+  to the ends.
+- Controls in a row's trailing slot — and in the leading slot of a static
+  row — stay Tab stops and are part of the arrow sequence; controls that use
+  arrow keys themselves (text inputs, sliders, radios) keep them.
+- A clickable row's primary action is a native `<button>` / `<a>`: `role`,
+  `tabIndex`, `onKeyDown` and `aria-*` props land on that element.
+- With a `selectionMode`, the list is a `listbox` (label it with
+  `aria-label`) and its items are `option`s with `aria-selected`; Enter /
+  Space or a click selects. Options cannot hold interactive controls.
+
+## Props
+
+### List
+
+<PropsTable component="List" />
+
+### ListItem
+
+<PropsTable component="ListItem" />

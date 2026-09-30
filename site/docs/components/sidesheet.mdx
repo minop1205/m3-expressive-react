@@ -1,0 +1,123 @@
+---
+title: SideSheet
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { SideSheet, Button, List, ListItem } from 'm3-expressive-react'
+
+# SideSheet
+
+MD3 side sheet: a panel up to 400dp wide anchored to the trailing (or
+leading) edge, with a headline, optional back / close buttons, and a bottom
+action bar. `standard` sheets sit beside the content; `modal` sheets
+overlay it with a scrim.
+
+export function SideSheetDemo({ variant, anchor, label, headline, showBackButton, showDivider }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button variant={variant === 'modal' ? 'filled' : 'tonal'} onClick={() => setOpen((o) => !o)}>
+        {label}
+      </Button>
+      {/* Raised above the docs navbar; the sheet itself is position: fixed. */}
+      <div style={{ position: 'relative', zIndex: 'var(--ifm-z-index-overlay)' }}>
+        <SideSheet
+          variant={variant}
+          anchor={anchor}
+          open={open}
+          onClose={() => setOpen(false)}
+          headline={headline}
+          showBackButton={showBackButton}
+          onBack={() => setOpen(false)}
+          showDivider={showDivider}
+          actions={
+            <>
+              <Button variant="filled" onClick={() => setOpen(false)}>
+                Save
+              </Button>
+              <Button variant="text" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+            </>
+          }
+        >
+          <List>
+            <ListItem headline="Overview" />
+            <ListItem headline="Activity" />
+            <ListItem headline="Settings" />
+          </List>
+        </SideSheet>
+      </div>
+    </>
+  )
+}
+
+## Standard
+
+A standard sheet is a non-modal `complementary` panel: the rest of the page
+stays interactive. `open` defaults to `true`; toggle it to show and hide
+the sheet.
+
+<Demo>
+  <SideSheetDemo variant="standard" label="Toggle standard sheet" headline="Details" />
+</Demo>
+
+```tsx
+<SideSheet
+  open={open}
+  onClose={() => setOpen(false)}
+  headline="Details"
+  actions={<Button variant="filled">Save</Button>}
+>
+  …
+</SideSheet>
+```
+
+## Modal
+
+A modal sheet overlays the page with a 0.32 scrim; scrim click,
+<kbd>Escape</kbd> and the close button dismiss it. `anchor="left"` opens it
+from the leading edge, and `showBackButton` adds a leading back button
+(`onBack`).
+
+<Demo>
+  <SideSheetDemo variant="modal" label="Open modal sheet" headline="Filters" showDivider />
+  <SideSheetDemo
+    variant="modal"
+    anchor="left"
+    label="Open from left"
+    headline="Navigation"
+    showBackButton
+  />
+</Demo>
+
+```tsx
+<SideSheet
+  variant="modal"
+  anchor="left"
+  open={open}
+  onClose={() => setOpen(false)}
+  headline="Navigation"
+  showBackButton
+  onBack={goBack}
+>
+  …
+</SideSheet>
+```
+
+## Accessibility
+
+- A modal sheet is a `role="dialog"` with `aria-modal`, named by its
+  `headline` (or your `aria-label` / `aria-labelledby`). Focus is trapped
+  inside, the rest of the page is `inert`, body scroll is locked, and focus
+  returns to the opener on close.
+- A standard sheet is a `complementary` landmark named by its headline; it
+  does not trap focus.
+- The close and back buttons are icon buttons labelled "Close" and "Back";
+  localize them with `closeLabel` / `backLabel`.
+
+## Props
+
+<PropsTable component="SideSheet" />

@@ -1,0 +1,151 @@
+---
+title: Card
+---
+
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Card, CardActionArea, CardActions, Button } from 'm3-expressive-react'
+
+# Card
+
+MD3 card: a 12dp-rounded container in filled, elevated, and outlined styles.
+A card is static by default; make it one button (`onClick`), one link
+(`href`), or give it a primary action plus separate buttons with
+`CardActionArea` and `CardActions`.
+
+## Variants
+
+<Demo>
+  <Card variant="filled" style={{ width: 200, padding: 16 }}>
+    <strong>Filled</strong>
+    <p style={{ margin: '8px 0 0' }}>Surface container highest.</p>
+  </Card>
+  <Card variant="elevated" style={{ width: 200, padding: 16 }}>
+    <strong>Elevated</strong>
+    <p style={{ margin: '8px 0 0' }}>Surface container low, level 1.</p>
+  </Card>
+  <Card variant="outlined" style={{ width: 200, padding: 16 }}>
+    <strong>Outlined</strong>
+    <p style={{ margin: '8px 0 0' }}>Surface with an outline-variant border.</p>
+  </Card>
+</Demo>
+
+```tsx
+<Card variant="outlined" style={{ padding: 16 }}>
+  <strong>Outlined</strong>
+  <p>Supporting text for the card body.</p>
+</Card>
+```
+
+## Clickable and link cards
+
+`onClick` turns the whole card into one button (`role="button"`, Enter /
+Space, ripple, focus ring, hover elevation). `href` renders it as an `<a>`,
+so middle-click, open-in-new-tab and the status-bar URL work natively.
+
+<Demo>
+  <Card variant="elevated" onClick={() => {}} style={{ width: 240, padding: 16 }}>
+    <strong>Clickable card</strong>
+    <p style={{ margin: '8px 0 0' }}>The whole surface is one button.</p>
+  </Card>
+  <Card variant="outlined" href="#clickable-and-link-cards" style={{ width: 240, padding: 16 }}>
+    <strong>Link card</strong>
+    <p style={{ margin: '8px 0 0' }}>The whole surface is one link.</p>
+  </Card>
+</Demo>
+
+```tsx
+<Card variant="elevated" onClick={openDetails}>…</Card>
+<Card variant="outlined" href="/articles/42">…</Card>
+```
+
+A clickable or link card must not contain other interactive elements — a
+development warning points you to the pattern below.
+
+## Primary action with buttons
+
+For a card with a main action and extra buttons, keep the `Card` static:
+`CardActionArea` wraps the content in one button (`onClick`) or link
+(`href`), and `CardActions` holds the other actions as its sibling —
+end-aligned, 8dp apart.
+
+<Demo>
+  {['filled', 'elevated', 'outlined'].map((variant) => (
+    <Card key={variant} variant={variant} style={{ width: 240 }}>
+      <CardActionArea onClick={() => {}} style={{ padding: 16 }}>
+        <strong style={{ textTransform: 'capitalize' }}>{variant}</strong>
+        <p style={{ margin: '8px 0 0' }}>The content is the primary action.</p>
+      </CardActionArea>
+      <CardActions>
+        <Button variant="text">Share</Button>
+        <Button variant="filled">Open</Button>
+      </CardActions>
+    </Card>
+  ))}
+</Demo>
+
+```tsx
+<Card variant="elevated">
+  <CardActionArea href="/articles/42" style={{ padding: 16 }}>
+    <h3>Article title</h3>
+    <p>Summary of the article.</p>
+  </CardActionArea>
+  <CardActions>
+    <Button variant="text">Share</Button>
+    <Button variant="filled">Read</Button>
+  </CardActions>
+</Card>
+```
+
+## Disabled and dragged
+
+`disabled` dims the container and content to 38%; a clickable or link card
+also stops responding and leaves the Tab order. `dragged` applies the MD3
+drag appearance (raised elevation and a 0.16 state layer) for
+drag-and-drop.
+
+<Demo>
+  <Card variant="elevated" onClick={() => {}} disabled style={{ width: 200, padding: 16 }}>
+    <strong>Disabled</strong>
+    <p style={{ margin: '8px 0 0' }}>Container and content at 38%.</p>
+  </Card>
+  <Card variant="filled" dragged style={{ width: 200, padding: 16 }}>
+    <strong>Dragged</strong>
+    <p style={{ margin: '8px 0 0' }}>Raised while being dragged.</p>
+  </Card>
+</Demo>
+
+```tsx
+<Card onClick={open} disabled>…</Card>
+<Card dragged={isDragging}>…</Card>
+```
+
+## Accessibility
+
+- A static card is a plain `<div>` with no role; interactivity lives in
+  its own controls.
+- A clickable card is `role="button"` (Enter / Space); a link card and a
+  link `CardActionArea` are native `<a>` elements (Enter only). Their
+  accessible name comes from the content — keep it short, or set
+  `aria-label`.
+- Keys and clicks from controls inside a card belong to those controls: the
+  container never intercepts them. Still, nesting controls inside a
+  clickable card is invalid (axe `nested-interactive`) — use
+  `CardActionArea` + `CardActions` instead.
+- A disabled clickable card sets `aria-disabled` and is removed from the
+  Tab order; a disabled link loses its `href`.
+
+## Props
+
+### Card
+
+<PropsTable component="Card" />
+
+### CardActionArea
+
+<PropsTable component="CardActionArea" />
+
+### CardActions
+
+`CardActions` has no props of its own: it takes `children` and the standard
+`<div>` attributes (`className`, `style`, …).
