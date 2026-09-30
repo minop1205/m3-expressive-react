@@ -2,6 +2,7 @@ export {
   List,
   ListItem,
   type ListProps,
+  type ListVariant,
   type ListNoSelectionProps,
   type ListSingleSelectionProps,
   type ListMultipleSelectionProps,

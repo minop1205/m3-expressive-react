@@ -443,6 +443,23 @@ describe('List / ListItem', () => {
     })
   })
 
+  it('exposes the variant as data-variant (B18, #224)', async () => {
+    const { rerender, container } = render(
+      <List aria-label="L">
+        <ListItem headline="A" />
+      </List>,
+    )
+    expect(screen.getByRole('list')).toHaveAttribute('data-variant', 'standard')
+    rerender(
+      <List aria-label="L" variant="segmented">
+        <ListItem headline="A" onClick={() => {}} />
+        <ListItem headline="B" />
+      </List>,
+    )
+    expect(screen.getByRole('list')).toHaveAttribute('data-variant', 'segmented')
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   it('has no axe violations', async () => {
     const { container } = render(
       <List aria-label="Accessible">

@@ -8,6 +8,8 @@
  * ListItem). Content 60dp or taller (three-line, wrapped supporting text)
  * aligns top (ListItemDefaults.verticalAlignment). Selected =
  * SecondaryContainer; selected + disabled = on-surface @0.38.
+ * Expressive shapes 4 / 12 / 16dp (ListItemDefaults.shapes) morph with the
+ * FastSpatial spring (--md-sys-motion-spring-fast-spatial-*, B2).
  */
 
 .list {
@@ -15,6 +17,29 @@
   margin: 0;
   padding-block: 8px;
   padding-inline: 0;
+  /* Standard: transparent item containers, no segment corners (reset for
+     lists nested in a segmented list). */
+  --_list-container-color: transparent;
+  --_segment-start-shape: 0px;
+  --_segment-end-shape: 0px;
+}
+
+/* Segmented (Compose SegmentedListItem / ListItemDefaults.segmentedShapes):
+   surface segments 2dp apart (SegmentedGap), 16dp outer corners on the
+   first / last item (List container shape). */
+.list[data-variant='segmented'] {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  --_list-container-color: var(--md-sys-color-surface);
+}
+
+.list[data-variant='segmented'] > :first-child {
+  --_segment-start-shape: var(--md-sys-shape-corner-large);
+}
+
+.list[data-variant='segmented'] > :last-child {
+  --_segment-end-shape: var(--md-sys-shape-corner-large);
 }
 
 /* --------------------------------------------------------------------------- */
@@ -37,9 +62,19 @@
   min-height: var(--_min-height);
   padding-block: var(--_padding-block);
   padding-inline: 16px;
-  background-color: var(--_container-color, transparent);
+  background-color: var(--_container-color, var(--_list-container-color, transparent));
   color: var(--_headline-color);
+  /* Expressive shapes (ListItemDefaults.shapes): the state shape, never
+     below the segmented outer corners. */
+  border-start-start-radius: max(var(--_container-shape), var(--_segment-start-shape, 0px));
+  border-start-end-radius: max(var(--_container-shape), var(--_segment-start-shape, 0px));
+  border-end-start-radius: max(var(--_container-shape), var(--_segment-end-shape, 0px));
+  border-end-end-radius: max(var(--_container-shape), var(--_segment-end-shape, 0px));
+  transition-property: border-radius;
+  transition-duration: var(--md-sys-motion-spring-fast-spatial-duration);
+  transition-timing-function: var(--md-sys-motion-spring-fast-spatial-easing);
 
+  --_container-shape: var(--md-sys-shape-corner-extra-small);
   --_min-height: 56px;
   --_padding-block: 10px;
   --_headline-color: var(--md-sys-color-on-surface);
@@ -115,6 +150,19 @@
   pointer-events: auto;
 }
 
+/* Shape morph: hovered 12dp; focused / pressed / selected 16dp (a press on a
+   trailing control is that control's). Declared in that order so the
+   16dp states win over hover. */
+.item[data-interactive]:hover {
+  --_container-shape: var(--md-sys-shape-corner-medium);
+}
+
+.item[data-interactive]:is(:focus-visible, :has(> .action:focus-visible)),
+.item[data-interactive]:active:not(:has(> .trailing :active)),
+.item[data-selected] {
+  --_container-shape: var(--md-sys-shape-corner-large);
+}
+
 .item[data-selected] {
   --_container-color: var(--md-sys-color-secondary-container);
   --_headline-color: var(--md-sys-color-on-secondary-container);
@@ -135,6 +183,13 @@
    ItemSelectedDisabledContainerColor / Opacity). */
 .item[data-selected][data-disabled] {
   --_container-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+/* B3: state transitions are immediate under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .item {
+    transition: none;
+  }
 }
 
 /* --------------------------------------------------------------------------- */
