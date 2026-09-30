@@ -1,0 +1,199 @@
+---
+title: Chip
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Chip, ChipSet } from 'm3-expressive-react'
+import { EventIcon, StarIcon, AvatarImage } from '@site/src/components/icons/ActionIcons'
+
+# Chip
+
+MD3 chips in the four variants — assist, filter, input and suggestion — plus
+`ChipSet`, which lays chips out in a wrapping row and makes the whole set a
+single Tab stop.
+
+## Variants
+
+<Demo>
+  <Chip variant="assist" label="Add to calendar" icon={<EventIcon />} />
+  <Chip variant="filter" label="Filter" />
+  <Chip variant="input" label="Input" removable />
+  <Chip variant="suggestion" label="Suggestion" />
+</Demo>
+
+```tsx
+<Chip variant="assist" label="Add to calendar" icon={<EventIcon />} onClick={add} />
+```
+
+## Elevated
+
+`elevated` swaps the outline for a shadow. MD3 defines elevated assist,
+filter and suggestion chips only.
+
+<Demo>
+  <Chip variant="assist" elevated label="Assist" icon={<StarIcon />} />
+  <Chip variant="filter" elevated label="Filter" />
+  <Chip variant="filter" elevated label="Selected" defaultSelected />
+  <Chip variant="suggestion" elevated label="Suggestion" />
+</Demo>
+
+## Filter chips
+
+Filter chips toggle selection: `selected` / `onChange(event, selected)`
+(controlled) or `defaultSelected` (uncontrolled). A selected filter chip
+shows a leading check unless `showSelectedIcon={false}`.
+
+export function FilterDemo() {
+  const options = ['Vegetarian', 'Vegan', 'Gluten-free', 'Dairy-free']
+  const [selected, setSelected] = useState(['Vegan'])
+  return (
+    <ChipSet aria-label="Dietary filters">
+      {options.map((label) => (
+        <Chip
+          key={label}
+          variant="filter"
+          label={label}
+          selected={selected.includes(label)}
+          onChange={(event, next) =>
+            setSelected((prev) => (next ? [...prev, label] : prev.filter((l) => l !== label)))
+          }
+        />
+      ))}
+    </ChipSet>
+  )
+}
+
+<Demo>
+  <FilterDemo />
+</Demo>
+
+```tsx
+<Chip
+  variant="filter"
+  label="Vegan"
+  selected={selected}
+  onChange={(event, next) => setSelected(next)}
+/>
+```
+
+## Input chips
+
+Input chips represent user-entered items. `removable` adds a trailing
+remove button; `onRemove(event)` fires on its click **and** on
+<kbd>Backspace</kbd> / <kbd>Delete</kbd> while the chip has focus. When you
+unmount the removed chip, focus moves to its neighbour. `avatar` renders a
+24dp circular leading avatar (it takes precedence over `icon`).
+
+export function InputDemo() {
+  const [people, setPeople] = useState(['Ada', 'Grace', 'Linus', 'Margaret'])
+  return (
+    <ChipSet aria-label="Recipients">
+      {people.map((name, index) => (
+        <Chip
+          key={name}
+          variant="input"
+          label={name}
+          avatar={<AvatarImage hue={(index * 80) % 360} />}
+          removable
+          onRemove={() => setPeople((prev) => prev.filter((p) => p !== name))}
+        />
+      ))}
+    </ChipSet>
+  )
+}
+
+<Demo>
+  <InputDemo />
+</Demo>
+
+```tsx
+<ChipSet aria-label="Recipients">
+  {people.map((person) => (
+    <Chip
+      key={person.id}
+      variant="input"
+      label={person.name}
+      avatar={<img src={person.photo} alt="" />}
+      removable
+      onRemove={() => remove(person.id)}
+    />
+  ))}
+</ChipSet>
+```
+
+### Selectable input chips
+
+Input chips opt into the filter-chip selection API — they become selectable
+(`aria-pressed`) when you pass `selected`, `defaultSelected` or `onChange`.
+
+<Demo>
+  <Chip variant="input" label="Unselected" defaultSelected={false} />
+  <Chip variant="input" label="Selected" defaultSelected />
+  <Chip variant="input" label="With avatar" avatar={<AvatarImage hue={20} />} defaultSelected removable />
+</Demo>
+
+```tsx
+<Chip variant="input" label="Ada" selected={selected} onChange={(e, next) => setSelected(next)} />
+```
+
+## ChipSet
+
+Wrap related chips in a `ChipSet` to lay them out 8dp apart and make the
+set one Tab stop: arrow keys move between chips (and between a chip's
+primary and remove actions). Chips may be wrapped in other elements, such as
+a Tooltip.
+
+<Demo>
+  <ChipSet aria-label="Suggestions">
+    <Chip variant="suggestion" label="Sounds good" />
+    <Chip variant="suggestion" label="See you then" />
+    <Chip variant="suggestion" label="On my way" />
+    <Chip variant="suggestion" label="Can't make it" disabled />
+  </ChipSet>
+</Demo>
+
+```tsx
+<ChipSet aria-label="Suggestions">
+  <Chip variant="suggestion" label="Sounds good" />
+  <Chip variant="suggestion" label="See you then" />
+</ChipSet>
+```
+
+## Disabled
+
+<Demo>
+  <Chip variant="assist" label="Assist" disabled />
+  <Chip variant="filter" label="Filter" disabled defaultSelected />
+  <Chip variant="input" label="Input" disabled removable />
+  <Chip variant="suggestion" label="Suggestion" disabled />
+</Demo>
+
+## Accessibility
+
+- The primary action is a native `<button>`; selectable chips (filter, and
+  input chips that opt in) expose their state with `aria-pressed`. The
+  forwarded `ref` points at the root `<span>`; other props land on the
+  primary button.
+- The remove button is named `Remove {label}` by default — override it (for
+  example to translate it) with `getRemoveLabel(label)`. It is not in the
+  Tab order; reach it with the arrow keys.
+- Inside a chip, <kbd>←</kbd> / <kbd>→</kbd> step between the primary and
+  remove actions; <kbd>Backspace</kbd> / <kbd>Delete</kbd> on a removable
+  chip call `onRemove`.
+- `ChipSet` renders `role="toolbar"` with a roving tab index: <kbd>Tab</kbd>
+  enters the set on the last-focused chip, <kbd>←</kbd> / <kbd>→</kbd>
+  (mirrored in RTL) move between chips, <kbd>Home</kbd> / <kbd>End</kbd>
+  jump to the ends, and disabled chips are skipped. Give it an accessible
+  name with `aria-label` / `aria-labelledby`.
+- Long labels truncate with an ellipsis; the full label remains the
+  accessible name.
+
+## Props
+
+<PropsTable component="Chip" />
+
+### ChipSet
+
+<PropsTable component="ChipSet" />

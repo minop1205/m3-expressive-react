@@ -1,0 +1,119 @@
+---
+title: Fab
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Fab, Button } from 'm3-expressive-react'
+import { EditIcon, AddIcon } from '@site/src/components/icons/ActionIcons'
+
+# Fab
+
+MD3 Expressive floating action button for a screen's primary action: four
+sizes, three color sets (tonal or high-emphasis), and an Extended FAB with a
+label that can morph between icon-only and icon + label.
+
+## Sizes
+
+`small` 40dp (no longer recommended — it keeps a 48dp touch target),
+`regular` 56dp (default), `medium` 80dp (the size MD3 recommends most) and
+`large` 96dp.
+
+<Demo>
+  <Fab size="small" icon={<EditIcon />} aria-label="Compose" />
+  <Fab size="regular" icon={<EditIcon />} aria-label="Compose" />
+  <Fab size="medium" icon={<EditIcon />} aria-label="Compose" />
+  <Fab size="large" icon={<EditIcon />} aria-label="Compose" />
+</Demo>
+
+```tsx
+<Fab size="medium" icon={<EditIcon />} aria-label="Compose" onClick={compose} />
+```
+
+## Colors
+
+`color` picks the `primary` / `secondary` / `tertiary` set. By default the
+FAB uses the tonal `*-container` roles; `tonal={false}` uses the
+high-emphasis base roles (e.g. `primary` / `on-primary`).
+
+<Demo>
+  <Fab color="primary" icon={<EditIcon />} aria-label="Compose" />
+  <Fab color="secondary" icon={<EditIcon />} aria-label="Compose" />
+  <Fab color="tertiary" icon={<EditIcon />} aria-label="Compose" />
+  <Fab color="primary" tonal={false} icon={<EditIcon />} aria-label="Compose" />
+  <Fab color="secondary" tonal={false} icon={<EditIcon />} aria-label="Compose" />
+  <Fab color="tertiary" tonal={false} icon={<EditIcon />} aria-label="Compose" />
+</Demo>
+
+```tsx
+<Fab color="tertiary" tonal={false} icon={<EditIcon />} aria-label="Compose" />
+```
+
+## Extended
+
+A `label` turns the FAB into an Extended FAB, sized per the Expressive
+spec: `regular` → 56dp, `medium` → 80dp, `large` → 96dp. Pass `icon={null}`
+for a label-only FAB.
+
+<Demo>
+  <Fab icon={<EditIcon />} label="Compose" />
+  <Fab size="medium" icon={<EditIcon />} label="Compose" />
+  <Fab size="large" icon={<EditIcon />} label="Compose" />
+  <Fab icon={null} label="Compose" />
+</Demo>
+
+```tsx
+<Fab size="medium" icon={<EditIcon />} label="Compose" />
+```
+
+## Expand and collapse
+
+With `expanded`, the Extended FAB morphs between icon + label (`true`) and
+the plain icon-only FAB (`false`) on the Expressive spring — typically
+collapsed while the content scrolls.
+
+export function ExpandDemo() {
+  const [expanded, setExpanded] = useState(true)
+  return (
+    <>
+      <Fab icon={<AddIcon />} label="New item" expanded={expanded} />
+      <Button variant="text" onClick={() => setExpanded((e) => !e)}>
+        {expanded ? 'Collapse' : 'Expand'}
+      </Button>
+    </>
+  )
+}
+
+<Demo>
+  <ExpandDemo />
+</Demo>
+
+```tsx
+<Fab icon={<AddIcon />} label="New item" expanded={!scrolled} />
+```
+
+## Elevation
+
+`disableElevation` removes the shadow — e.g. for a FAB inside a navigation
+rail or drawer. MD3 advises against disabling a FAB: hide it when its action
+is unavailable (the native `disabled` attribute is still honored).
+
+<Demo>
+  <Fab icon={<EditIcon />} aria-label="Compose" />
+  <Fab icon={<EditIcon />} aria-label="Compose" disableElevation />
+</Demo>
+
+## Accessibility
+
+- A native `<button>`: <kbd>Tab</kbd> focuses it, <kbd>Enter</kbd> /
+  <kbd>Space</kbd> activate it.
+- The icon is decorative. An icon-only FAB **needs an `aria-label`**
+  describing the action; an Extended FAB is named by its visible `label`
+  (keep the label visible text and the name the same word).
+- A collapsed Extended FAB (`expanded={false}`) keeps the label as its
+  accessible name.
+
+## Props
+
+<PropsTable component="Fab" />
