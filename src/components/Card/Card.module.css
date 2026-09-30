@@ -154,6 +154,20 @@
   cursor: default;
 }
 
+/* Round only where the action area meets the card's edge (#358): with a
+   sibling after it (e.g. CardActions) its bottom corners are square, with one
+   before it its top corners are, so the ripple / state layer / focus ring do
+   not show rounded corners mid-card. */
+.card > .actionArea:not(:last-child) {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+
+.card > .actionArea:not(:first-child) {
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+}
+
 /* Actions beside the action area: end-aligned, 8dp apart, 16dp padding. */
 .actions {
   display: flex;
