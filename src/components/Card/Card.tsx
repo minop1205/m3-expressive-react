@@ -2,11 +2,16 @@ import {
   forwardRef,
   type HTMLAttributes,
   type KeyboardEvent,
+  type MouseEvent,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import {
+  isContainerKeyActivation,
+  isFromNestedInteractive,
+} from '../../internal/isFromNestedInteractive'
 import styles from './Card.module.css'
 
 export type CardVariant = 'filled' | 'elevated' | 'outlined'
@@ -48,15 +53,18 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     onKeyDown?.(event)
-    if (
-      interactive &&
-      !disabled &&
-      !event.defaultPrevented &&
-      (event.key === 'Enter' || event.key === ' ')
-    ) {
+    // Only when the card itself is focused — keys from nested controls
+    // (buttons, inputs) belong to those controls (docs/audits/card.md CD1).
+    if (interactive && !disabled && isContainerKeyActivation(event)) {
       event.preventDefault()
       event.currentTarget.click()
     }
+  }
+
+  // Clicks on nested interactive elements activate only that element.
+  const handleClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (isFromNestedInteractive(event)) return
+    onClick?.(event)
   }
 
   return (
@@ -70,7 +78,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
       role={interactive ? role ?? 'button' : role}
       tabIndex={interactive && !disabled ? tabIndex ?? 0 : tabIndex}
       aria-disabled={interactive && disabled ? true : undefined}
-      onClick={disabled ? undefined : onClick}
+      onClick={interactive && !disabled ? handleClick : undefined}
       onKeyDown={handleKeyDown}
       className={clsx(styles.card, className)}
     >
