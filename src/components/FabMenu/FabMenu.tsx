@@ -2,6 +2,7 @@ import {
   Children,
   createContext,
   forwardRef,
+  Fragment,
   isValidElement,
   useContext,
   useEffect,
@@ -12,21 +13,75 @@ import {
   type CSSProperties,
   type HTMLAttributes,
   type KeyboardEvent,
+  type ReactElement,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { moveMenuFocus } from '../../internal/menuNavigation'
+import { effectsSprings } from '../../tokens/motion'
 import styles from './FabMenu.module.css'
 
 export type FabMenuColor = 'primary' | 'secondary' | 'tertiary'
 
+/** Size of the closed FAB (Fab vocabulary). @default 'regular' */
+export type FabMenuSize = 'regular' | 'medium' | 'large'
+
 const CloseIcon = (
-  <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
+  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
     <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
   </svg>
 )
+
+/** Children as a flat list of elements — Fragments are unwrapped (#205). */
+function flattenChildren(children: ReactNode, prefix = ''): ReactElement[] {
+  const out: ReactElement[] = []
+  Children.toArray(children).forEach((child, index) => {
+    if (!isValidElement(child)) return
+    const key = `${prefix}${child.key ?? index}`
+    if (child.type === Fragment) {
+      out.push(...flattenChildren((child.props as { children?: ReactNode }).children, `${key}/`))
+    } else {
+      out.push(<Fragment key={key}>{child}</Fragment>)
+    }
+  })
+  return out
+}
+
+/**
+ * Stagger delays per Compose `FloatingActionButtonMenu`: an integer count of
+ * visible items animates on the SlowEffects spring (critically damped, with a
+ * visibility threshold of 1 item) — opening reveals the bottom item first,
+ * closing hides the top item first. Returns, per item (top = index 0), the
+ * time at which the count reaches it.
+ */
+function staggerDelays(count: number): { enter: number[]; exit: number[] } {
+  const w = Math.sqrt(effectsSprings.slow.stiffness)
+  // Critically damped step response: p(t) = 1 - (1 + wt)e^(-wt).
+  const timeAt = (p: number) => {
+    if (p <= 0) return 0
+    let lo = 0
+    let hi = 2
+    for (let i = 0; i < 40; i++) {
+      const t = (lo + hi) / 2
+      if (1 - (1 + w * t) * Math.exp(-w * t) < p) lo = t
+      else hi = t
+    }
+    return Math.round(hi * 1000)
+  }
+  const enter: number[] = []
+  const exit: number[] = []
+  for (let index = 0; index < count; index++) {
+    const fromBottom = count - index
+    // The spring settles (snaps to the target) once within one item of it.
+    enter.push(timeAt(Math.min(fromBottom, count - 1) / count))
+    exit.push(timeAt(index / count))
+  }
+  return { enter, exit }
+}
+
+let warnedCloseAriaLabel = false
 
 interface FabMenuContextValue {
   close: () => void
@@ -37,17 +92,40 @@ export interface FabMenuProps
   extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange'> {
   /** FAB icon shown while the menu is closed. */
   icon: ReactNode
-  /** Color set. @default 'primary' */
+  /**
+   * Color set. Items use its `*-container` roles; the open close button its
+   * base roles (e.g. `primary` / `on-primary`). @default 'primary'
+   */
   color?: FabMenuColor
+  /**
+   * Closed FAB colors: `true` (the default) uses the tonal `*-container`
+   * roles, `false` the high-emphasis base roles (same as the open close
+   * button) — the Fab `tonal` prop. @default true
+   */
+  tonal?: boolean
+  /**
+   * Size of the closed FAB — the menu can open from any FAB size (Fab
+   * vocabulary). The close button is always 56dp, pinned to the top-trailing
+   * corner of the FAB's footprint. @default 'regular'
+   */
+  size?: FabMenuSize
   /** Controlled open state. */
   open?: boolean
   /** Uncontrolled initial open state. @default false */
   defaultOpen?: boolean
   /** Notified when the open state changes. */
   onOpenChange?: (open: boolean) => void
-  /** Accessible label for the FAB (closed state). */
+  /**
+   * Accessible label for the toggle — describes the menu it opens. It stays
+   * the same while open; the state is exposed through `aria-expanded`. Also
+   * names the menu.
+   */
   ariaLabel: string
-  /** Accessible label for the close button (open state). @default 'Close menu' */
+  /**
+   * @deprecated Ignored — the toggle keeps `ariaLabel` in both states and
+   * exposes open / closed through `aria-expanded` (m3 / APG). Will be removed
+   * in v2.
+   */
   closeAriaLabel?: string
   /** `FabMenuItem`s (up to six). */
   children?: ReactNode
@@ -56,12 +134,15 @@ export interface FabMenuProps
 /**
  * Material Design 3 (Expressive) FAB menu.
  *
- * A FAB that opens into a vertical stack of labelled action items anchored to
- * its top-trailing edge. The FAB morphs into a 56dp close button (container
- * primaryContainer → primary, icon onPrimaryContainer → onPrimary) and the items
- * stagger in — per m3.material.io / Compose FloatingActionButtonMenu. Items use
- * the container/on-container roles of the chosen color set (primary / secondary
- * / tertiary). Closes on outside click, Escape, or item selection.
+ * A FAB (regular / medium / large) that opens into a vertical stack of
+ * labelled action items anchored to its top-trailing edge. The FAB morphs into
+ * a 56dp close button pinned to the top-trailing corner of its footprint
+ * (container primaryContainer → primary, icon onPrimaryContainer → onPrimary)
+ * and the items reveal from the trailing edge, bottom item first — per
+ * m3.material.io / Compose FloatingActionButtonMenu. Items use the
+ * container/on-container roles of the chosen color set (primary / secondary /
+ * tertiary). Closes on outside click, Escape, or item selection. Items may be
+ * passed directly or inside Fragments.
  *
  * Keyboard / focus (m3.material.io a11y + Compose FloatingActionButtonMenu +
  * WAI-ARIA APG menu): opening keeps focus on the toggle; Tab / ArrowDown from
@@ -76,11 +157,13 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
   {
     icon,
     color = 'primary',
+    tonal = true,
+    size = 'regular',
     open: controlledOpen,
     defaultOpen = false,
     onOpenChange,
     ariaLabel,
-    closeAriaLabel = 'Close menu',
+    closeAriaLabel,
     className,
     children,
     ...rest
@@ -93,6 +176,15 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
   const rootRef = useRef<HTMLDivElement | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const toggleRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (closeAriaLabel === undefined || warnedCloseAriaLabel) return
+    warnedCloseAriaLabel = true
+    console.warn(
+      'FabMenu: `closeAriaLabel` is deprecated and ignored — the toggle keeps `ariaLabel` ' +
+        'and exposes the open state through aria-expanded. It will be removed in v2.',
+    )
+  }, [closeAriaLabel])
 
   const setOpen = (value: boolean) => {
     if (!isControlled) setUncontrolled(value)
@@ -168,8 +260,9 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
     }
   }
 
-  const items = Children.toArray(children).filter(isValidElement)
+  const items = flattenChildren(children)
   const count = items.length
+  const delays = staggerDelays(count)
 
   return (
     <div
@@ -180,25 +273,31 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
       }}
       {...rest}
       data-color={color}
+      data-tonal={tonal || undefined}
+      data-size={size}
       data-open={open || undefined}
       className={clsx(styles.root, className)}
     >
-      <button
-        ref={toggleRef}
-        type="button"
-        className={styles.fab}
-        aria-label={open ? closeAriaLabel : ariaLabel}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        onClick={() => setOpen(!open)}
-        onKeyDown={handleToggleKeyDown}
-      >
-        <span className={styles.fabIcon} aria-hidden="true">
-          {open ? CloseIcon : icon}
-        </span>
-        <Ripple />
-        <FocusRing />
-      </button>
+      {/* The closed FAB's footprint; the close button shrinks into its
+          top-trailing corner (Compose ToggleFloatingActionButton). */}
+      <span className={styles.fabSlot}>
+        <button
+          ref={toggleRef}
+          type="button"
+          className={styles.fab}
+          aria-label={ariaLabel}
+          aria-expanded={open}
+          aria-haspopup="menu"
+          onClick={() => setOpen(!open)}
+          onKeyDown={handleToggleKeyDown}
+        >
+          <span className={styles.fabIcon} aria-hidden="true">
+            {open ? CloseIcon : icon}
+          </span>
+          <Ripple />
+          <FocusRing />
+        </button>
+      </span>
 
       {/* After the toggle in DOM order (focus order toggle → top item → …);
           positioned above it visually. */}
@@ -214,10 +313,16 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
         <FabMenuContext.Provider value={{ close: closeMenu }}>
           {items.map((item, index) => (
             <div
-              key={index}
+              key={item.key}
               className={styles.itemSlot}
-              // Items nearest the FAB (last) appear first when opening.
-              style={{ '--_stagger': `${(count - 1 - index) * 30}ms` } as CSSProperties}
+              // Opening reveals the bottom item first, closing hides the top
+              // item first (Compose's SlowEffects item-count spring).
+              style={
+                {
+                  '--_enter-delay': `${delays.enter[index]}ms`,
+                  '--_exit-delay': `${delays.exit[index]}ms`,
+                } as CSSProperties
+              }
             >
               {item}
             </div>
