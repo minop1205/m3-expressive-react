@@ -54,9 +54,10 @@ describe('DatePicker', () => {
   it('navigates months', async () => {
     const user = userEvent.setup()
     render(<DatePicker value={new Date(2024, 6, 15)} locale="en-US" />)
-    expect(screen.getByText('July 2024')).toBeInTheDocument()
+    expect(screen.getByRole('grid', { name: 'July 2024' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Next month' }))
-    expect(screen.getByText('August 2024')).toBeInTheDocument()
+    expect(screen.getByRole('grid', { name: 'August 2024' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'August 2024' })).toBeInTheDocument()
   })
 
   it('selects a start then end in range mode and highlights the span', async () => {
@@ -195,6 +196,112 @@ describe('DatePicker', () => {
   })
 })
 
+describe('DatePicker year selection', () => {
+  const menu = () => screen.getByRole('button', { name: 'July 2024' })
+
+  it('swaps the grid for a year picker from the month menu button', async () => {
+    const user = userEvent.setup()
+    render(<DatePicker value={new Date(2024, 6, 15)} />)
+    expect(menu()).toHaveAttribute('aria-expanded', 'false')
+    await user.click(menu())
+    expect(menu()).toHaveAttribute('aria-expanded', 'true')
+    const list = screen.getByRole('listbox', { name: 'Select year' })
+    expect(menu()).toHaveAttribute('aria-controls', list.id)
+    expect(screen.queryByRole('grid')).not.toBeInTheDocument()
+    // Compose hides the month arrows while the year picker is shown.
+    expect(screen.queryByRole('button', { name: 'Next month' })).not.toBeInTheDocument()
+    // Compose default year range 1900–2100; focus lands on the displayed year.
+    const options = within(list).getAllByRole('option')
+    expect(options[0]).toHaveTextContent('1900')
+    expect(options.at(-1)).toHaveTextContent('2100')
+    const current = screen.getByRole('option', { name: '2024' })
+    expect(current).toHaveAttribute('aria-selected', 'true')
+    expect(current).toHaveFocus()
+  }, 20_000) // 201 options make role queries slow in jsdom
+
+  it('picks a year, keeps the month and returns to the calendar', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <DatePicker
+        defaultValue={new Date(2024, 6, 15)}
+        min={new Date(2015, 0, 1)}
+        onChange={onChange}
+      />,
+    )
+    await user.click(menu())
+    await user.click(screen.getByRole('option', { name: '2019' }))
+    expect(screen.getByRole('grid', { name: 'July 2019' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'July 2019' })).toHaveFocus()
+    // Changing the displayed year does not change the value.
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('moves through years with the keyboard (3 columns)', async () => {
+    const user = userEvent.setup()
+    render(<DatePicker value={new Date(2024, 6, 15)} />)
+    await user.click(menu())
+    await user.keyboard('{ArrowRight}')
+    expect(document.activeElement).toHaveTextContent('2025')
+    await user.keyboard('{ArrowDown}')
+    expect(document.activeElement).toHaveTextContent('2028')
+    await user.keyboard('{ArrowUp}{ArrowUp}{ArrowLeft}')
+    expect(document.activeElement).toHaveTextContent('2021')
+    await user.keyboard('{Enter}')
+    expect(screen.getByRole('grid', { name: 'July 2021' })).toBeInTheDocument()
+  })
+
+  it('bounds years and month arrows by min / max', async () => {
+    const user = userEvent.setup()
+    render(
+      <DatePicker
+        defaultValue={new Date(2024, 6, 15)}
+        min={new Date(2023, 3, 10)}
+        max={new Date(2024, 7, 20)}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: 'Next month' }))
+    expect(screen.getByRole('button', { name: 'Next month' })).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: 'August 2024' }))
+    const years = within(screen.getByRole('listbox')).getAllByRole('option')
+    expect(years.map((y) => y.textContent)).toEqual(['2023', '2024'])
+    await user.click(screen.getByRole('option', { name: '2023' }))
+    expect(screen.getByRole('grid', { name: 'August 2023' })).toBeInTheDocument()
+    for (let i = 0; i < 4; i++) {
+      await user.click(screen.getByRole('button', { name: 'Previous month' }))
+    }
+    expect(screen.getByRole('grid', { name: 'April 2023' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Previous month' })).toBeDisabled()
+  })
+
+  it('clamps the month into range when the picked year cannot show it', async () => {
+    const user = userEvent.setup()
+    render(
+      <DatePicker
+        defaultValue={new Date(2024, 0, 15)}
+        min={new Date(2023, 5, 1)}
+      />,
+    )
+    await user.click(screen.getByRole('button', { name: 'January 2024' }))
+    await user.click(screen.getByRole('option', { name: '2023' }))
+    expect(screen.getByRole('grid', { name: 'June 2023' })).toBeInTheDocument()
+  })
+
+  it('has no axe violations with the year picker open', async () => {
+    const user = userEvent.setup()
+    // A narrowed year range keeps axe fast (the default is 201 years).
+    const { container } = render(
+      <DatePicker
+        value={new Date(2024, 6, 15)}
+        min={new Date(2020, 0, 1)}
+        max={new Date(2030, 11, 31)}
+      />,
+    )
+    await user.click(menu())
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
 describe('DatePicker keyboard grid', () => {
   const focused = () => document.activeElement as HTMLElement
 
@@ -206,6 +313,8 @@ describe('DatePicker keyboard grid', () => {
       .filter((el) => el.tabIndex === 0)
     expect(tabbable).toHaveLength(1)
     expect(tabbable[0]).toBe(day(15))
+    await user.tab() // calendar / input mode toggle
+    await user.tab() // month / year menu
     await user.tab() // previous month
     await user.tab() // next month
     await user.tab() // grid

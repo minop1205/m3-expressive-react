@@ -195,3 +195,97 @@ export const RightToLeft: Story = {
     )
   },
 }
+
+function PageContent() {
+  return (
+    <main style={{ flex: 1, padding: 24, color: 'var(--md-sys-color-on-surface)' }}>
+      <h1 style={{ margin: 0, font: 'var(--md-sys-typescale-headline-small-weight) var(--md-sys-typescale-headline-small-size) var(--md-sys-typescale-headline-small-font)' }}>
+        Inbox
+      </h1>
+      <p style={{ maxWidth: 480 }}>
+        The modal rail overlaps this content while expanded instead of pushing it
+        aside. Press Escape or click the scrim to collapse it.
+      </p>
+    </main>
+  )
+}
+
+/**
+ * Modal expanded layout: while expanded the rail overlaps the page with a
+ * scrim, traps focus and closes on Escape / scrim click; collapsed it is a
+ * regular 96dp rail. Selecting a destination also collapses it (app logic).
+ */
+export const Modal: Story = {
+  render: () => {
+    const [value, setValue] = useState('inbox')
+    const [variant, setVariant] = useState<NavigationRailVariant>('expanded')
+    const expanded = variant === 'expanded'
+    return (
+      <div style={{ height: 520, display: 'flex' }}>
+        <NavigationRail
+          aria-label="Mail"
+          modal
+          onClose={() => setVariant('collapsed')}
+          value={value}
+          onChange={(_event, v) => {
+            setValue(v)
+            setVariant('collapsed')
+          }}
+          variant={variant}
+          header={
+            <Header
+              expanded={expanded}
+              onMenuClick={() => setVariant(expanded ? 'collapsed' : 'expanded')}
+            />
+          }
+        >
+          <Items />
+        </NavigationRail>
+        <PageContent />
+      </div>
+    )
+  },
+}
+
+/**
+ * Modal + hide on collapse: the rail is not shown while collapsed and slides
+ * in expanded from the leading edge (opened here from a menu button in the
+ * page).
+ */
+export const ModalHideOnCollapse: Story = {
+  render: () => {
+    const [value, setValue] = useState('inbox')
+    const [variant, setVariant] = useState<NavigationRailVariant>('expanded')
+    const expanded = variant === 'expanded'
+    return (
+      <div style={{ height: 520, display: 'flex' }}>
+        <NavigationRail
+          aria-label="Mail"
+          modal
+          hideOnCollapse
+          onClose={() => setVariant('collapsed')}
+          value={value}
+          onChange={(_event, v) => {
+            setValue(v)
+            setVariant('collapsed')
+          }}
+          variant={variant}
+          header={<Header expanded={expanded} onMenuClick={() => setVariant('collapsed')} />}
+        >
+          <Items />
+        </NavigationRail>
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+          <div style={{ padding: '8px 4px' }}>
+            <IconButton
+              variant="standard"
+              icon={<Menu />}
+              aria-label="Open navigation"
+              onClick={() => setVariant('expanded')}
+            />
+          </div>
+          <PageContent />
+        </div>
+      </div>
+    )
+  },
+}

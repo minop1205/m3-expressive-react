@@ -76,6 +76,12 @@ const PREV_KEYS = ['ArrowLeft', 'ArrowUp']
  * Space / Enter select); multi-select is a `group` of `aria-pressed` toggle
  * buttons (each a Tab stop; arrow keys also move focus). Name the group with
  * `aria-label` / `aria-labelledby`.
+ *
+ * In Material 3 Expressive the segmented button is no longer recommended:
+ * m3.material.io says connected button groups replace it. Prefer
+ * `<ButtonGroup variant="connected" selectionMode="single" | "multiple">` with
+ * `Button` / `IconButton` children that carry a `value`. SegmentedButton stays
+ * available (Compose still ships it) and is not deprecated.
  */
 export const SegmentedButton = forwardRef<HTMLDivElement, SegmentedButtonProps>(
   function SegmentedButton(
