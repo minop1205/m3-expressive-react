@@ -52,6 +52,60 @@ describe('Card', () => {
     expect(onClick).not.toHaveBeenCalled()
   })
 
+  describe('nested interactive content (CD1)', () => {
+    it('Enter / Space on a nested button fire only the button', async () => {
+      const user = userEvent.setup()
+      const onCard = vi.fn()
+      const onButton = vi.fn()
+      render(
+        <Card onClick={onCard} aria-label="Card">
+          <button type="button" onClick={onButton}>
+            Action
+          </button>
+        </Card>,
+      )
+      screen.getByRole('button', { name: 'Action' }).focus()
+      await user.keyboard('{Enter}')
+      await user.keyboard(' ')
+      expect(onButton).toHaveBeenCalledTimes(2)
+      expect(onCard).not.toHaveBeenCalled()
+    })
+
+    it('typing into a nested input keeps spaces and does not fire the card', async () => {
+      const user = userEvent.setup()
+      const onCard = vi.fn()
+      render(
+        <Card onClick={onCard} aria-label="Card">
+          <input aria-label="Note" />
+        </Card>,
+      )
+      const input = screen.getByRole('textbox', { name: 'Note' })
+      await user.type(input, 'a b{Enter}')
+      expect(input).toHaveValue('a b')
+      expect(onCard).not.toHaveBeenCalled()
+    })
+
+    it('a click on a nested button does not also activate the card', async () => {
+      const user = userEvent.setup()
+      const onCard = vi.fn()
+      const onButton = vi.fn()
+      render(
+        <Card onClick={onCard} aria-label="Card">
+          <button type="button" onClick={onButton}>
+            <span>Action</span>
+          </button>
+          <span>Body</span>
+        </Card>,
+      )
+      await user.click(screen.getByText('Action'))
+      expect(onButton).toHaveBeenCalledTimes(1)
+      expect(onCard).not.toHaveBeenCalled()
+      // Non-interactive content still activates the card.
+      await user.click(screen.getByText('Body'))
+      expect(onCard).toHaveBeenCalledTimes(1)
+    })
+  })
+
   it('applies the dragged state', () => {
     const { container } = render(<Card dragged>x</Card>)
     expect(container.firstChild).toHaveAttribute('data-dragged', 'true')
