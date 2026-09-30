@@ -331,11 +331,19 @@ function useMeasuredLayout(hasSupporting: boolean) {
         multiline =
           lineHeight > 0 && supporting.getBoundingClientRect().height > lineHeight * 1.5
       }
-      const style = window.getComputedStyle(item)
-      const content =
-        item.getBoundingClientRect().height -
-        parseFloat(style.paddingTop) -
-        parseFloat(style.paddingBottom)
+      // Measure the slots themselves, not the item box: the box is at least
+      // the line-count min-height, so deriving content from it made the
+      // alignment depend on when the measure ran (VRT flake on the segmented
+      // story). The slots aren't stretched in either alignment.
+      let content = 0
+      item
+        .querySelectorAll<HTMLElement>(
+          `.${styles.leading}, .${styles.body}, .${styles.trailingText}, .${styles.trailing}`,
+        )
+        .forEach((slot) => {
+          if (slot.closest(`.${styles.item}`) !== item) return
+          content = Math.max(content, slot.getBoundingClientRect().height)
+        })
       const tall = content >= TOP_ALIGN_MIN_CONTENT - 0.5
       setLayout((prev) =>
         prev.multiline === multiline && prev.tall === tall ? prev : { multiline, tall },
