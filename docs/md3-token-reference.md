@@ -124,6 +124,69 @@ Expressive scheme (lower-damped spatial → overshoot/bounce):
 | Effects Default | 1.0     | 1600      |
 | Effects Slow    | 1.0     | 800       |
 
+Source: Compose `MotionScheme.kt`, `tokens/StandardMotionTokens.kt`,
+`tokens/ExpressiveMotionTokens.kt` (androidx-main, token version v0_14_0). JS
+access: `spatialSprings` / `effectsSprings` in `src/tokens/motion.ts`.
+
+### Motion-scheme spring tokens (CSS)
+
+Every spring is also exposed as CSS custom properties, so component CSS never
+hardcodes a spring approximation:
+
+```
+--md-sys-motion-spring-{fast|default|slow}-{spatial|effects}-duration   /* e.g. 360ms */
+--md-sys-motion-spring-{fast|default|slow}-{spatial|effects}-easing     /* linear(…) */
+--md-sys-motion-spring-{fast|default|slow}-{spatial|effects}-damping    /* raw, unitless */
+--md-sys-motion-spring-{fast|default|slow}-{spatial|effects}-stiffness  /* raw, unitless */
+```
+
+**Scheme switch.** `:root` carries the **expressive** values (library default,
+ruling B2). `<ThemeProvider motionScheme="standard">` renders
+`data-md-motion-scheme="standard"` on its root element, and tokens.css
+redeclares the spring tokens for `[data-md-motion-scheme='standard']` (and
+`'expressive'`, so providers nest). Effects springs are identical in both schemes.
+
+| Spring          | Expressive (ζ / k → duration) | Standard (ζ / k → duration) |
+| --------------- | ----------------------------- | --------------------------- |
+| Fast spatial    | 0.6 / 800 → 360ms, peak 1.094 | 0.9 / 1400 → 230ms, ≈ 1.000 |
+| Default spatial | 0.8 / 380 → 440ms, peak 1.015 | 0.9 / 700 → 320ms, ≈ 1.000  |
+| Slow spatial    | 0.8 / 200 → 600ms, peak 1.015 | 0.9 / 300 → 490ms, ≈ 1.000  |
+| Fast effects    | 1.0 / 3800 → 150ms            | same                        |
+| Default effects | 1.0 / 1600 → 240ms            | same                        |
+| Slow effects    | 1.0 / 800 → 330ms             | same                        |
+
+**Derivation** (`src/theme/motionScheme.ts`; regenerate with
+`node scripts/generate-motion-tokens.ts`, a unit test fails on drift):
+
+1. Analytic step response of the damped spring (unit mass, ω₀ = √k, start 0 →
+   target 1, zero initial velocity): for ζ < 1,
+   `d(t) = e^(−ζω₀t)·(cos ω_d t + ζω₀/ω_d · sin ω_d t)`, ω_d = ω₀√(1−ζ²);
+   for ζ = 1, `d(t) = (1 + ω₀t)·e^(−ω₀t)`. Progress = 1 − d(t).
+2. Duration = last time |d(t)| ≥ 0.001 (0.1 % of the travel), rounded up to
+   10ms — the CSS counterpart of Compose stopping at the visibility threshold.
+3. Progress is sampled every 1ms over the duration and simplified
+   (Ramer–Douglas–Peucker, 0.002 tolerance) into `linear()` stops. `linear()`
+   accepts values > 1, so overshoot is encoded exactly (max error < 0.005).
+   Browser support: Chrome 113, Firefox 112, Safari 17.2.
+
+**Usage** — always pair duration and easing of the same spring; pick spatial
+for size / position / shape, effects for color / opacity:
+
+```css
+.thing {
+  transition:
+    border-radius var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    opacity var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing);
+}
+```
+
+A CSS transition interrupted mid-flight restarts from the current value with
+zero velocity (a true spring keeps its momentum) — acceptable for press and
+toggle morphs; JS-driven animations that need velocity continuity should read
+the raw damping / stiffness instead.
+
 ## 6. Color System / Dynamic Color
 
 System color roles (from `_md-sys-color.scss`):
