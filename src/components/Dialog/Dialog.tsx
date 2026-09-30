@@ -27,6 +27,8 @@ export interface DialogProps
   fullScreen?: boolean
   /** Supporting content / body. */
   children?: ReactNode
+  /** Accessible label of the full-screen close button. @default 'Close' */
+  closeLabel?: string
 }
 
 
@@ -39,7 +41,7 @@ export interface DialogProps
  * role="dialog" aria-modal, and Escape-to-close.
  */
 export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
-  { open, onClose, icon, title, actions, fullScreen = false, className, children, ...rest },
+  { open, onClose, icon, title, actions, fullScreen = false, closeLabel = 'Close', className, children, ...rest },
   ref,
 ) {
   const titleId = useId()
@@ -94,7 +96,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
               <button
                 type="button"
                 className={styles.fsClose}
-                aria-label="Close"
+                aria-label={closeLabel}
                 onClick={onClose}
               >
                 <CloseIcon />
