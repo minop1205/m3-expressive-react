@@ -1,6 +1,7 @@
 import {
   forwardRef,
   useCallback,
+  useEffect,
   useLayoutEffect,
   useRef,
   type HTMLAttributes,
@@ -15,6 +16,7 @@ import {
   type NavigationRailVariant,
 } from './NavigationRailContext'
 import { useRailMorph } from './useRailMorph'
+import { useModal } from '../../internal/useModal'
 import styles from './NavigationRail.module.css'
 
 export type { NavigationRailVariant, NavigationRailArrangement } from './NavigationRailContext'
@@ -38,6 +40,25 @@ export interface NavigationRailProps
   arrangement?: NavigationRailArrangement
   /** Optional header content (e.g. a menu button and/or FAB) pinned at the top. */
   header?: ReactNode
+  /**
+   * Modal expanded layout: while `variant="expanded"` the rail overlaps the
+   * page instead of pushing it — surface-container, 16dp trailing corners,
+   * level-2 shadow, a 0.32 scrim, focus trapped inside, the rest of the page
+   * inert, Escape / scrim click call `onClose`, and focus returns to the
+   * opener on collapse. Collapsed, it is a regular in-flow 96dp rail (or
+   * nothing, with `hideOnCollapse`). @default false
+   */
+  modal?: boolean
+  /**
+   * With `modal`: hide the rail entirely while collapsed; expanding slides the
+   * expanded rail in from the leading edge. Ignored without `modal`.
+   * @default false
+   */
+  hideOnCollapse?: boolean
+  /** With `modal`: called when the scrim is clicked or Escape is pressed. */
+  onClose?: () => void
+  /** Accessible name of the open modal rail (a dialog). @default 'Navigation rail' */
+  modalLabel?: string
   children?: ReactNode
 }
 
@@ -55,11 +76,47 @@ export interface NavigationRailProps
  */
 export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
   function NavigationRail(
-    { value, defaultValue, onChange, variant = 'collapsed', arrangement = 'top', header, className, children, ...rest },
+    {
+      value,
+      defaultValue,
+      onChange,
+      variant = 'collapsed',
+      arrangement = 'top',
+      header,
+      modal = false,
+      hideOnCollapse = false,
+      onClose,
+      modalLabel = 'Navigation rail',
+      className,
+      children,
+      ...rest
+    },
     ref,
   ) {
     const innerRef = useRef<HTMLElement | null>(null)
-    useRailMorph(variant === 'expanded', innerRef)
+    const expanded = variant === 'expanded'
+    const hide = modal && hideOnCollapse
+    // Hide-on-collapse keeps the expanded layout (--_t = 1 in CSS) and springs
+    // the slide-in progress instead.
+    const morphProperty = hide ? '--_reveal' : '--_t'
+    useRailMorph(expanded, innerRef, true, morphProperty)
+    useEffect(() => {
+      innerRef.current?.style.removeProperty(hide ? '--_t' : '--_reveal')
+    }, [hide])
+
+    // Modal expanded rail: shared APG modal behavior + Escape.
+    const open = modal && expanded
+    const rootRef = useRef<HTMLDivElement>(null)
+    const surfaceRef = useRef<HTMLDivElement>(null)
+    useModal({ active: open, rootRef, surfaceRef })
+    useEffect(() => {
+      if (!open) return
+      const handle = (event: globalThis.KeyboardEvent) => {
+        if (event.key === 'Escape') onClose?.()
+      }
+      document.addEventListener('keydown', handle)
+      return () => document.removeEventListener('keydown', handle)
+    }, [open, onClose])
 
     const setRefs = useCallback(
       (node: HTMLElement | null) => {
@@ -99,18 +156,49 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
       onChange?.(event, v)
     }
 
+    const nav = (
+      <nav
+        ref={setRefs}
+        {...rest}
+        data-variant={variant}
+        data-arrangement={arrangement}
+        data-modal={modal || undefined}
+        data-open={open || undefined}
+        data-hide-on-collapse={hide || undefined}
+        className={clsx(styles.rail, className)}
+      >
+        {header != null && <div className={styles.header}>{header}</div>}
+        <div className={styles.items}>{children}</div>
+      </nav>
+    )
+
     return (
       <RailContext.Provider value={{ value: current, onChange: handleChange, reportLabelWidth }}>
-        <nav
-          ref={setRefs}
-          {...rest}
-          data-variant={variant}
-          data-arrangement={arrangement}
-          className={clsx(styles.rail, className)}
-        >
-          {header != null && <div className={styles.header}>{header}</div>}
-          <div className={styles.items}>{children}</div>
-        </nav>
+        {modal ? (
+          // The root keeps the collapsed rail's place in the page (96dp, or
+          // 0 when hidden); the rail itself is positioned over the page so
+          // expanding overlaps content instead of pushing it.
+          <div
+            ref={rootRef}
+            className={styles.modalRoot}
+            data-open={open || undefined}
+            data-hide-on-collapse={hide || undefined}
+          >
+            <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
+            <div
+              ref={surfaceRef}
+              className={styles.modalSurface}
+              tabIndex={open ? -1 : undefined}
+              role={open ? 'dialog' : undefined}
+              aria-modal={open || undefined}
+              aria-label={open ? modalLabel : undefined}
+            >
+              {nav}
+            </div>
+          </div>
+        ) : (
+          nav
+        )}
       </RailContext.Provider>
     )
   },
