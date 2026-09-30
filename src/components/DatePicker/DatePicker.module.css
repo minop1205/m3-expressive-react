@@ -20,9 +20,9 @@
 }
 
 /* Docked variant (DatePickerField popup): Date picker - Docked container
-   shape large (16dp), no headline header. */
+   shape large (16dp), no headline header — the 64dp month / year menu header
+   (.nav[data-layout='docked']) sits at the top instead. */
 .docked {
-  padding-top: 8px;
   border-radius: var(--md-sys-shape-corner-large);
 }
 
@@ -82,9 +82,44 @@
   padding-inline: 12px 12px;
 }
 
-.monthLabel {
-  padding-inline-start: 12px;
+.navButtons {
+  display: inline-flex;
+  gap: 4px;
+}
+
+/* Docked header: [‹ Month ▾ ›]  [‹ Year ▾ ›], 64dp high. */
+.nav[data-layout='docked'] {
+  height: 64px;
+  padding-inline: 4px;
+}
+
+.navGroup {
+  display: inline-flex;
+  align-items: center;
+}
+
+/*
+ * Month / year menu button — Compose YearPickerMenuButton (a round TextButton
+ * with an 18dp ArrowDropDown, 12 / 16 padding, 8 icon spacing), label-large;
+ * docked uses the site's Menu button tokens (40dp, title-small).
+ * On-surface-variant content and state layer.
+ */
+.menuButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: 40px;
+  padding: 0 16px 0 12px;
+  border: none;
+  border-radius: 20px;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
   color: var(--md-sys-color-on-surface-variant);
+  --md-ripple-color: var(--md-sys-color-on-surface-variant);
   font-family: var(--md-sys-typescale-label-large-font);
   font-size: var(--md-sys-typescale-label-large-size);
   font-weight: var(--md-sys-typescale-label-large-weight);
@@ -92,9 +127,172 @@
   letter-spacing: var(--md-sys-typescale-label-large-tracking);
 }
 
-.navButtons {
-  display: inline-flex;
+/* 48dp touch target without changing the layout size. */
+.menuButton::before {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
+}
+
+.nav[data-layout='docked'] .menuButton {
+  padding: 0 4px 0 8px;
   gap: 4px;
+  font-family: var(--md-sys-typescale-title-small-font);
+  font-size: var(--md-sys-typescale-title-small-size);
+  font-weight: var(--md-sys-typescale-title-small-weight);
+  line-height: var(--md-sys-typescale-title-small-line-height);
+  letter-spacing: var(--md-sys-typescale-title-small-tracking);
+}
+
+.menuButtonLabel {
+  white-space: nowrap;
+}
+
+.menuButtonIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  fill: currentColor;
+  transition: transform var(--md-sys-motion-duration-short4)
+    var(--md-sys-motion-easing-standard);
+}
+
+.menuButton[data-expanded] .menuButtonIcon {
+  transform: rotate(180deg);
+}
+
+/*
+ * Year grid (modal) — Compose YearPicker: 3 columns, 16dp between rows,
+ * overlaying the weekday row + 6 weeks (7 × 48dp). Cells 72×36, round,
+ * body-large; unselected on-surface-variant, selected primary / on-primary,
+ * current year 1dp primary outline + primary label.
+ */
+.yearGrid,
+.menuList {
+  /* Offset parent for centering the selected option on open. */
+  position: relative;
+  box-sizing: border-box;
+  height: 336px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  animation: md-date-selection-enter var(--md-sys-motion-duration-short4)
+    var(--md-sys-motion-easing-standard);
+}
+
+.yearGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-content: start;
+  justify-items: center;
+  row-gap: 16px;
+  padding: 8px 12px;
+}
+
+/* Compose expands the year picker vertically with a fade from 0.6. */
+@keyframes md-date-selection-enter {
+  from {
+    opacity: 0.6;
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0);
+  }
+}
+
+.year,
+.menuItem {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  border: none;
+  background-color: var(--_container-color);
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  color: var(--_label-text-color);
+  --_container-color: transparent;
+  --_label-text-color: var(--md-sys-color-on-surface-variant);
+  --_state-layer-color: var(--md-sys-color-on-surface-variant);
+  --md-ripple-color: var(--_state-layer-color);
+  font-family: var(--md-sys-typescale-body-large-font);
+  font-size: var(--md-sys-typescale-body-large-size);
+  font-weight: var(--md-sys-typescale-body-large-weight);
+  line-height: var(--md-sys-typescale-body-large-line-height);
+  letter-spacing: var(--md-sys-typescale-body-large-tracking);
+}
+
+.year {
+  justify-content: center;
+  width: 72px;
+  height: 36px;
+  padding: 0;
+  border-radius: 18px;
+}
+
+/* 48dp touch target. */
+.year::before {
+  content: '';
+  position: absolute;
+  inset: -6px 0;
+}
+
+.year[data-current]:not([data-selected]) {
+  box-shadow: inset 0 0 0 1px var(--md-sys-color-primary);
+  --_label-text-color: var(--md-sys-color-primary);
+  --_state-layer-color: var(--md-sys-color-primary);
+}
+
+.year[data-selected] {
+  --_container-color: var(--md-sys-color-primary);
+  --_label-text-color: var(--md-sys-color-on-primary);
+  --_state-layer-color: var(--md-sys-color-on-primary);
+}
+
+/* Docked month / year menus: a list replacing the calendar, with a leading
+   check on the displayed month / year. */
+.menuList {
+  display: flex;
+  flex-direction: column;
+  padding-block: 8px;
+}
+
+.menuItem {
+  flex-shrink: 0;
+  gap: 16px;
+  width: 100%;
+  height: 48px;
+  padding: 0 16px;
+  --_label-text-color: var(--md-sys-color-on-surface);
+  --_state-layer-color: var(--md-sys-color-on-surface);
+}
+
+.menuItemCheck {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+}
+
+.menuItemCheck svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.year[data-disabled],
+.menuItem[data-disabled] {
+  cursor: default;
+  --_label-text-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+.selectionLabel {
+  position: relative;
+}
+
+.year > .selectionRipple,
+.year > .selectionFocusRing {
+  border-radius: 18px;
 }
 
 .grid {
@@ -125,8 +323,21 @@
 }
 
 .empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 48px;
   height: 48px;
+}
+
+/* Docked: neighbouring-month days at on-surface 38% (site "outside month"). */
+.grid[data-layout='docked'] .empty {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  font-family: var(--md-sys-typescale-body-large-font);
+  font-size: var(--md-sys-typescale-body-large-size);
+  font-weight: var(--md-sys-typescale-body-large-weight);
+  line-height: var(--md-sys-typescale-body-large-line-height);
+  letter-spacing: var(--md-sys-typescale-body-large-tracking);
 }
 
 /*
@@ -251,4 +462,15 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yearGrid,
+  .menuList {
+    animation: none;
+  }
+
+  .menuButtonIcon {
+    transition: none;
+  }
 }
