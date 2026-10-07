@@ -121,6 +121,12 @@
   height: 100%;
 }
 
+/* Fill-based icons (e.g. Material Symbols, no own fill) take the text color,
+   like every other icon slot. */
+.icon svg {
+  fill: currentColor;
+}
+
 /* --------------------------------------------------------------------------- */
 /* Sizes (Expressive scale). round = stadium; square + pressed are morph targets */
 /* --------------------------------------------------------------------------- */

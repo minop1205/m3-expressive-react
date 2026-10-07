@@ -155,6 +155,12 @@
   height: 100%;
 }
 
+/* Fill-based icons (e.g. Material Symbols, no own fill) take the text color,
+   like every other icon slot. */
+.itemIcon svg {
+  fill: currentColor;
+}
+
 .itemLabel {
   position: relative;
   z-index: 1;
@@ -244,6 +250,12 @@
 .fabIcon img {
   width: 100%;
   height: 100%;
+}
+
+/* Fill-based icons (e.g. Material Symbols, no own fill) take the text color,
+   like every other icon slot. */
+.fabIcon svg {
+  fill: currentColor;
 }
 
 /* Reduced motion (B3): state changes are instant; items only fade. */

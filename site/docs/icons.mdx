@@ -88,10 +88,11 @@ export default defineConfig({
 })
 ```
 
-Keep `svgProps: { fill: 'currentColor' }`. The Material Symbols files have
-no `fill`, so SVG's default (black) would apply. Some icon slots, such as
-Button's `startIcon` / `endIcon`, don't set `fill` themselves. With this
-option an icon takes the color of the text around it in every slot.
+`svgProps: { fill: 'currentColor' }` is recommended. The Material Symbols
+files have no `fill`, so outside a library icon slot SVG's default (black)
+would apply. Every icon slot in the library already paints SVGs with the
+surrounding text color; this option makes the same icons correct anywhere
+else in your app too.
 
 ### 3. Add the TypeScript types
 
@@ -318,7 +319,7 @@ import { Search } from 'lucide-react'
 ```
 
 Lucide icons are **stroke-based** (`fill="none"`, `stroke="currentColor"`).
-Most icon slots set `fill: currentColor` on the `svg` so that fill-based
+Every icon slot sets `fill: currentColor` on the `svg` so that fill-based
 icons such as Material Symbols take the text color. That rule also fills
 the closed outlines of a stroke icon, which then render as solid shapes.
 Turn fill back off for that set once, in a global stylesheet:
