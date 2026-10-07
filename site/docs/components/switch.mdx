@@ -62,11 +62,14 @@ export function ControlledSwitchDemo() {
 ```tsx
 const [selected, setSelected] = useState(false)
 
-<label>
+<label style={{ display: 'inline-flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
   <Switch selected={selected} onChange={(event, next) => setSelected(next)} />
-  Airplane mode
+  Airplane mode ({selected ? 'on' : 'off'})
 </label>
 ```
+
+The switch also centers on the text line in a plain inline `<label>` (its
+root sets a matching `vertical-align`); the flex label above adds the gap.
 
 ## Icons
 

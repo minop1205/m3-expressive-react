@@ -91,6 +91,21 @@ The three "Expressive" rows (20/32/48) come from Compose `ShapeTokens.kt`, not b
 `emphasized` as a single cubic-bezier (`0.2,0,0,1`) is a lossy approximation of the true
 two-segment path; use the accelerate/decelerate pair for accurate emphasized motion.
 
+### Web-adaptation easing (not MD3 system tokens)
+
+Curves with no MD3 / Compose counterpart, adopted from material-web by an
+explicit owner ruling. They live in `src/styles/tokens.css` under the
+`--md-web-motion-*` prefix (deliberately not `--md-sys-*`), so component code
+still contains no raw `cubic-bezier(` (`src/theme/motionUsage.test.ts`).
+
+| Token | cubic-bezier | Used by | Ruling |
+| --- | --- | --- | --- |
+| `--md-web-motion-easing-back-out` | 0.175, 0.885, 0.32, 1.275 | Switch handle slide (300ms = `duration-medium2`) | #373 — match material-web `_handle.scss` |
+
+These do not follow `ThemeProvider motionScheme` and are not zeroed by the
+reduced-motion token override — the using component must turn the transition
+off under `prefers-reduced-motion: reduce` itself (Switch does).
+
 ### Duration tokens (ms)
 
 |            | 1   | 2   | 3   | 4    |
@@ -222,7 +237,7 @@ unaffected.
 | TimePicker | DefaultSpatial (hand) | DefaultEffects (dial crossfade) |
 | Checkbox | DefaultSpatial (draw, check↔dash, fill scale) | DefaultEffects in / FastEffects out |
 | RadioButton | FastSpatial (dot grow) | DefaultEffects (ring color, dot shrink†) |
-| Switch | FastSpatial (thumb offset + size, icon) | — (colors: material-web 67ms) |
+| Switch | FastSpatial (icon rotate only) — thumb offset / size follow material-web (#373, see below) | — (colors: material-web 67ms) |
 | TextField | FastSpatial (label, indicator / outline width, notch) | FastEffects (colors), SlowEffects / FastEffects (content show / hide) |
 | Badge | FastSpatial (scale-in) | DefaultEffects (scale-out†) |
 | Carousel item press shape | — (DefaultEffects, as B5) | — |
@@ -237,7 +252,11 @@ Ripple / FocusRing, Dialog and the DatePicker / TimePicker modal enter
 (platform dialog), BottomSheet / SideSheet slide (`BottomSheetAnimationSpec`
 tween 300ms FastOutSlowIn), SwipeToDismiss settle (`AnchoredDraggableDefaults`
 tween), determinate progress (`ProgressAnimationSpec`, a fixed non-bouncy
-spring), Slider (no Compose motion), Switch colors, Checkbox mark
+spring), Slider (no Compose motion), Switch colors and thumb (web adaptation #373:
+slide 300ms `--md-web-motion-easing-back-out`, press grow `duration-short2`
+linear, release / selection resize `duration-medium1` `easing-standard` —
+material-web values, superseding Compose FastSpatial + snap-while-pressed),
+Checkbox mark
 visibility gating and the any→unchecked `snap(delayMillis = 100)` hold.
 `src/theme/motionUsage.test.ts` rejects `cubic-bezier(` in component code,
 leftover `TODO(#314)`, unpaired spring easing / duration, and JS motion
