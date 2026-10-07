@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.2.3 (2026-10-07)
+
+### Fixed
+
+- **Host typography CSS no longer shifts component margins** (#394): page
+  styles for prose (e.g. Docusaurus/Infima `.markdown`, Tailwind Typography,
+  CMS stylesheets) used to override the library's margin resets on the
+  AppBar title / subtitle (title and subtitle drifted apart by 25px), the
+  Dialog title, the SideSheet headline and the List / ListItem /
+  SwipeToDismiss list elements. Those resets now use a higher-specificity
+  rule (`0,3,0`, no `!important`); elements and semantics are unchanged.
+  To set margins on `List`, `ListItem` or `SwipeToDismiss` from a
+  `className`, use a selector of at least `0,3,1` or an inline `style`.
+
 ## 1.2.2 (2026-10-07)
 
 Docs-only patch (no library code changes).
