@@ -13,6 +13,8 @@ Phase B Tier 2。3ソースを突き合わせた:
    ARIA と キーボードは一時テスト(コミットしていない)で確認
 
 前提: 実装は「docked レイアウトのみ」。full-screen レイアウト・`AppBarWithSearch`・avatar は未実装(軽微欄の機能追加候補)。
+(追記 2026-10-07: `AppBarWithSearch` 相当は #393 で `TopAppBar variant="search"` として実装 — docs/audits/appbar.md「Search app bar」節。
+SearchBar には `startIcon={false}` とホスト用カスタムプロパティ `--md-search-bar-*` を追加)
 M3 Expressive では divided(baseline)スタイルは「Not recommended. Use contained」なので、docked view は
 **contained スタイル**(= Compose `ExpandedDockedSearchBarWithGap`)を正として照合した。
 

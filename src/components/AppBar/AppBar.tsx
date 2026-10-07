@@ -23,11 +23,14 @@ export type { ScrollTarget }
  *   subtitle), HeadlineMedium title in a second row.
  * - `large` — Expressive **large flexible** bar: 120dp (152dp with a subtitle),
  *   DisplaySmall title in a second row.
+ * - `search` — Expressive **search app bar**: a 64dp row whose search field
+ *   (the `searchBar` slot) replaces the heading text, with the navigation
+ *   icon and actions outside the field.
  * - `center` — **deprecated** alias of `variant="small" titleAlignment="center"`
  *   (m3: center-aligned is merged into small as a centered-text configuration).
  *   Removed in v2.
  */
-export type TopAppBarVariant = 'small' | 'medium' | 'large' | 'center'
+export type TopAppBarVariant = 'small' | 'medium' | 'large' | 'search' | 'center'
 
 /** Horizontal alignment of the title (and subtitle). */
 export type TopAppBarTitleAlignment = 'start' | 'center'
@@ -40,24 +43,40 @@ export type TopAppBarTitleAlignment = 'start' | 'center'
  *   as it scrolls back; a half-hidden bar settles when scrolling stops.
  * - `exitUntilCollapsed` — a medium / large bar collapses to its 64dp row as
  *   the content scrolls and expands again near the top (the container color
- *   follows the collapse). On a small bar it behaves like `pinned`.
+ *   follows the collapse). On a small / search bar it behaves like `pinned`.
  */
 export type TopAppBarScrollBehavior = 'pinned' | 'enterAlways' | 'exitUntilCollapsed'
 
 export interface TopAppBarProps extends Omit<HTMLAttributes<HTMLElement>, 'title' | 'hidden'> {
-  /** The bar title (rendered as the page heading). */
+  /**
+   * The bar title (rendered as the page heading). On `variant="search"` the
+   * search field replaces the visible heading: a given `title` is rendered as
+   * a visually hidden `<h1>` (the page heading for assistive technology).
+   */
   title?: ReactNode
   /**
    * Supporting text under the title (on-surface-variant; LabelMedium on
-   * `small`, LabelLarge on `medium`, TitleMedium on `large`).
+   * `small`, LabelLarge on `medium`, TitleMedium on `large`). Not rendered on
+   * `variant="search"`.
    */
   subtitle?: ReactNode
+  /**
+   * `variant="search"`: the search field — typically a `<SearchBar>`. It
+   * replaces the heading text and fills the space between the navigation
+   * icon and the actions (100% of it up to 312dp, then 50% — m3 search app
+   * bar; max 720dp), on a surface-container field that turns
+   * surface-container-highest when `scrolled`. Icons inside the field use
+   * SearchBar's `startIcon` / `endIcon` (`startIcon={false}` for none);
+   * opening the search view is SearchBar's `open` / `onOpenChange`.
+   */
+  searchBar?: ReactNode
   /** Leading navigation control (e.g. a back or menu IconButton). */
   navigationIcon?: ReactNode
   /** Trailing action controls. */
   actions?: ReactNode
   /**
-   * Size / layout. `medium` / `large` are the M3 Expressive flexible bars.
+   * Size / layout. `medium` / `large` are the M3 Expressive flexible bars,
+   * `search` the search app bar (needs `searchBar`).
    * `'center'` is deprecated — use `titleAlignment="center"`.
    * @default 'small'
    */
@@ -65,7 +84,8 @@ export interface TopAppBarProps extends Omit<HTMLAttributes<HTMLElement>, 'title
   /**
    * Title alignment, available on every size. A centered title is centered
    * across the full bar width and only pushed inward when it would collide
-   * with the navigation icon or the actions.
+   * with the navigation icon or the actions. On `variant="search"` it
+   * centers the search field's text and placeholder.
    * @default 'start' ('center' for the deprecated `variant="center"`)
    */
   titleAlignment?: TopAppBarTitleAlignment
@@ -125,6 +145,12 @@ const clamp01 = (v: number) => Math.min(1, Math.max(0, v))
  * `LargeFlexibleTopAppBar`). Standard `IconButton`s in the slots pick up the
  * slot color.
  *
+ * `search` is the Expressive search app bar (m3 / Compose `AppBarWithSearch`):
+ * a 64dp row — 4dp padding, nav icon, 8dp, the `searchBar` field (56dp,
+ * surface-container), 8dp, actions, 4dp — with on-surface-variant icons.
+ * Scrolled: the bar turns surface-container and the field
+ * surface-container-highest.
+ *
  * Scrolling (docs/decisions/phase-b-api.md B25): the state props (`scrolled`,
  * `collapsedFraction`, `hidden`) render any state; `scrollBehavior` +
  * `scrollTarget` derive them from a scroll container like Compose's pinned /
@@ -136,6 +162,7 @@ export const TopAppBar = forwardRef<HTMLElement, TopAppBarProps>(
     {
       title,
       subtitle,
+      searchBar,
       navigationIcon,
       actions,
       variant: variantProp = 'small',
@@ -156,7 +183,8 @@ export const TopAppBar = forwardRef<HTMLElement, TopAppBarProps>(
     const titleAlignment =
       titleAlignmentProp ?? (variantProp === 'center' ? 'center' : 'start')
     const twoRow = variant === 'medium' || variant === 'large'
-    const hasSubtitle = subtitle != null
+    const search = variant === 'search'
+    const hasSubtitle = !search && subtitle != null
 
     const barRef = useRef<HTMLElement | null>(null)
     const expandedRowRef = useRef<HTMLDivElement | null>(null)
@@ -245,8 +273,14 @@ export const TopAppBar = forwardRef<HTMLElement, TopAppBarProps>(
         ? 1
         : 0
 
-    const titleBox =
-      title != null || hasSubtitle ? (
+    const titleBox = search ? (
+      // The search field replaces the heading text (m3); the title stays
+      // available to assistive technology as the page heading.
+      <>
+        {title != null && <h1 className={styles.visuallyHidden}>{title}</h1>}
+        <div className={styles.searchSlot}>{searchBar}</div>
+      </>
+    ) : title != null || hasSubtitle ? (
         <div className={styles.titleBox}>
           {title != null && <h1 className={styles.title}>{title}</h1>}
           {hasSubtitle && <p className={styles.subtitle}>{subtitle}</p>}
@@ -278,12 +312,14 @@ export const TopAppBar = forwardRef<HTMLElement, TopAppBarProps>(
         {...rest}
         style={{ ...vars, ...style }}
         data-variant={variant}
-        data-title-alignment={titleAlignment}
+        data-title-alignment={search ? undefined : titleAlignment}
+        data-text-alignment={search ? titleAlignment : undefined}
         data-subtitle={hasSubtitle || undefined}
         data-scroll-behavior={scrollBehavior}
         data-scrolled={scrolled || undefined}
         data-collapsing={(twoRow && collapsedFraction > 0) || undefined}
         data-hidden={hiddenProp == null ? undefined : String(hiddenProp)}
+        data-hide-offset={hideOffset > 0 || undefined}
         data-settling={settling || undefined}
         className={clsx(styles.topBar, className)}
       >
