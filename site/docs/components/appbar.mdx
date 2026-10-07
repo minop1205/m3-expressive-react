@@ -2,20 +2,22 @@
 title: AppBar
 ---
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import Demo from '@site/src/components/Demo'
 import PropsTable from '@site/src/components/PropsTable'
-import { TopAppBar, BottomAppBar, IconButton, Fab } from 'm3-expressive-react'
+import { TopAppBar, BottomAppBar, IconButton, Fab, SearchBar, List, ListItem } from 'm3-expressive-react'
 import MenuIcon from '@material-symbols/svg-400/outlined/menu.svg'
 import SearchIcon from '@material-symbols/svg-400/outlined/search.svg'
 import MoreVertIcon from '@material-symbols/svg-400/outlined/more_vert.svg'
 import AddIcon from '@material-symbols/svg-400/outlined/add.svg'
+import MicIcon from '@material-symbols/svg-400/outlined/mic.svg'
+import AccountIcon from '@material-symbols/svg-400/outlined/account_circle.svg'
 
 # AppBar
 
-MD3 app bars: `TopAppBar` (small, plus the Expressive **medium** and
-**large flexible** bars) with built-in scroll behaviors, and `BottomAppBar`
-for actions at the bottom of the screen.
+MD3 app bars: `TopAppBar` (small, the Expressive **medium** and **large
+flexible** bars, and the **search app bar**) with built-in scroll behaviors,
+and `BottomAppBar` for actions at the bottom of the screen.
 
 export const nav = <IconButton variant="standard" icon={<MenuIcon />} aria-label="Menu" />
 export const actions = (
@@ -101,6 +103,103 @@ the icons.
 `variant="small" titleAlignment="center"` instead.
 
 :::
+
+## Search app bar
+
+`variant="search"` puts a search field where the heading text would be —
+use it on home pages where search is the key entry point. Pass a
+[`SearchBar`](/components/searchbar) as `searchBar`: the navigation icon and
+`actions` (e.g. an avatar) sit **outside** the field, and SearchBar's own
+`startIcon` / `endIcon` go **inside** it (`startIcon={false}` removes the
+default search glyph). The field is surface-container, fills the space
+between the icons up to 312dp and then 50% of it (max 720dp).
+`titleAlignment="center"` centers its text. Selecting the field opens the
+search view — SearchBar's `open` / `onOpenChange`. Click the field below.
+
+export const PRODUCTS = ['Headphones', 'Keyboards', 'Monitors', 'Mice', 'Speakers', 'Webcams']
+export const account = <IconButton variant="standard" icon={<AccountIcon />} aria-label="Account" />
+
+export function SearchAppBarDemo(props) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const matches = PRODUCTS.filter((p) => p.toLowerCase().includes(query.toLowerCase()))
+  return (
+    <TopAppBar
+      variant="search"
+      titleAlignment={props.titleAlignment}
+      navigationIcon={nav}
+      actions={account}
+      searchBar={
+        <SearchBar
+          aria-label="Search products"
+          placeholder="Search products"
+          startIcon={false}
+          endIcon={<IconButton variant="standard" icon={<MicIcon />} aria-label="Voice search" />}
+          value={query}
+          onChange={(event, next) => setQuery(next)}
+          open={open}
+          onOpenChange={setOpen}
+        >
+          <List>
+            {matches.map((product) => (
+              <ListItem
+                key={product}
+                headline={product}
+                onClick={() => {
+                  setQuery(product)
+                  setOpen(false)
+                }}
+              />
+            ))}
+          </List>
+        </SearchBar>
+      }
+    />
+  )
+}
+
+<Demo>
+  <Frame>
+    <SearchAppBarDemo />
+    <SearchAppBarDemo titleAlignment="center" />
+    <TopAppBar
+      variant="search"
+      scrolled
+      navigationIcon={nav}
+      actions={account}
+      searchBar={<SearchBar aria-label="Search (scrolled)" placeholder="Scrolled" startIcon={false} />}
+    />
+  </Frame>
+</Demo>
+
+```tsx
+const [open, setOpen] = useState(false)
+
+<TopAppBar
+  variant="search"
+  title="Products" // visually hidden page heading
+  titleAlignment="center"
+  navigationIcon={<IconButton variant="standard" icon={<MenuIcon />} aria-label="Menu" />}
+  actions={<IconButton variant="standard" icon={<AccountIcon />} aria-label="Account" />}
+  searchBar={
+    <SearchBar
+      aria-label="Search products"
+      placeholder="Search products"
+      startIcon={false}
+      endIcon={<IconButton variant="standard" icon={<MicIcon />} aria-label="Voice search" />}
+      open={open}
+      onOpenChange={setOpen}
+    >
+      {results}
+    </SearchBar>
+  }
+/>
+```
+
+On scroll (`scrolled`, or any `scrollBehavior`) the bar turns
+surface-container and the field surface-container-highest. The search field
+replaces the visible heading, so a `title` is rendered as a visually hidden
+`<h1>` — the page heading for screen readers.
 
 ## Scroll behavior
 
@@ -228,7 +327,9 @@ deprecated and stays available.
 ## Accessibility
 
 - `TopAppBar` renders a `<header>` landmark and its `title` as an `<h1>` —
-  use it once per page, as the page heading.
+  use it once per page, as the page heading. On `variant="search"` the
+  `<h1>` is visually hidden, and the field keeps SearchBar's `search`
+  landmark and combobox semantics.
 - Every icon-only action needs an `aria-label`.
 - `hidden` (and a bar hidden by `enterAlways`) is `inert`, so hidden controls
   leave the focus order. Leave `scrollBehavior` unset when every control

@@ -54,6 +54,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B27 | 横断(AB / TL 軽微欄) | BottomAppBar の扱い | **JSDoc で `Toolbar variant="docked"` を案内、deprecated 化は v2 で再判断** | なし | 決定(2026-09-30・推奨どおり) |
 | B28 | #265 | Badge のラベルと非表示時の扱い | **visually-hidden の既定英語ラベル + `label` で上書き、`role="status"` 廃止、非表示時は AT からも隠す** | a11y のみ | 決定(2026-09-30・推奨どおり) |
 | B29 | #267 | Divider を既定で装飾扱いに | **既定 decorative(AT から隠す)+ `decorative={false}` で意味付き区切り** | a11y のみ | 決定(2026-09-30・推奨どおり) |
+| B30 | #393 | Search app bar | **`TopAppBar variant="search"` + `searchBar` スロット(SearchBar を合成)、`titleAlignment` で中央揃え、`title` は visually hidden の h1** | なし(追加) | 決定(2026-10-07・#393 の API 案どおり) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -895,6 +896,49 @@ subtitle / centered ストーリー追加(`update-vrt-baselines`)。対象: TopA
 **推奨**: **(a)**。理由: B14 と同じ考え方で、存在は Compose に従い、推奨先は m3 に従って利用者に伝えるため。
 
 **影響**: なし(ドキュメントのみ)。対象: BottomAppBar。
+
+### B30: Search app bar(`TopAppBar variant="search"`)
+
+- **Issue**: #393
+- **状態**: 決定(2026-10-07・#393 の API 案どおり。実装時に補足事項を確定)
+- **背景**: m3 の app bar 4 種のうち Search app bar だけがない。m3「search field instead of heading text」「icons inside and
+  outside」「centered text」「opens the search view」。Compose は `AppBarWithSearch(state, inputField, navigationIcon,
+  actions, colors, scrollBehavior)`(SearchBar.kt)で、入力欄は `SearchBarDefaults.InputField`、展開は別の
+  `ExpandedDockedSearchBarWithGap` / `ExpandedFullScreenContainedSearchBar` に同じ `SearchBarState` を渡す。
+
+**選択肢**
+
+- **(a) `variant="search"` + `searchBar` スロット**(issue 案)
+  ```tsx
+  <TopAppBar
+    variant="search"
+    navigationIcon={<IconButton … />}
+    actions={<Avatar />}
+    searchBar={<SearchBar placeholder="Search product" startIcon={false} open={open} onOpenChange={setOpen}>{results}</SearchBar>}
+  />
+  ```
+  - 利点: 単一コンポーネント + variant(API 方針どおり)、外側アイコンは既存 `navigationIcon` / `actions`、内側アイコン・
+    開閉・値は SearchBar の既存 API をそのまま使う(状態モデルを増やさない)。Compose の `inputField` スロットと同じ構造
+  - 欠点: SearchBar を合成する分コードが 1 段深い
+- **(b) TopAppBar に検索専用 prop**(`searchValue` / `onSearch` / `searchPlaceholder` / `searchResults` …)
+  - 利点: 1 要素で書ける。欠点: SearchBar の prop を二重に持つことになり、追加のたびに同期が必要
+- **(c) 別コンポーネント `SearchAppBar`** — Compose 流だが「variant で選ぶ」方針に反する
+
+**決定**: **(a)**。補足:
+
+- `titleAlignment="center"` → 検索欄のテキスト / placeholder を中央揃え(m3 Expressive の centered text)。center 用の
+  タイトル grid は使わない
+- `title` は**視覚的に隠した `<h1>`**(ページ見出しを支援技術に残す。省略時は見出しなし)、`subtitle` は描かない。
+  m3 は見出しテキストの代わりに検索欄を置くとするため、見える見出しは出さない
+- SearchBar 側に**非破壊の小さな追加**: `startIcon={false}` で内側の leading icon を消す(MUI `Alert icon={false}` と同じ慣習。
+  テキストは 24dp から — m3 寸法図)、およびホスト用カスタムプロパティ `--md-search-bar-container-color` /
+  `--md-search-bar-width` / `--md-search-bar-min-width` / `--md-search-bar-input-text-align`(IconButton の
+  `--md-icon-button-*` と同じ契約方式)
+- `scrollBehavior` / `scrolled` / `hidden` は他の variant と共通(単一行なので `exitUntilCollapsed` は `pinned` 相当)。
+  検索ビューは SearchBar の docked contained view(full-screen レイアウトは未実装 — searchbar 監査の機能候補のまま)
+
+**影響**: 非破壊(新しい variant 値・新しい prop・SearchBar の追加のみ)。VRT: Search 系ストーリー追加。対象: TopAppBar,
+SearchBar。数値と裁定は docs/audits/appbar.md「Search app bar」節。
 
 ---
 

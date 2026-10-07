@@ -36,7 +36,9 @@ export interface SearchBarProps
    * Leading content (defaults to a decorative search glyph). Rendered in a
    * 48dp slot, so it may be a navigation `IconButton` (back / menu) — it
    * stays in the tab order and the accessibility tree. A purely decorative
-   * custom icon should carry `aria-hidden` itself.
+   * custom icon should carry `aria-hidden` itself. Pass `false` for no
+   * leading icon at all (the text then starts 24dp in — e.g. in a search
+   * app bar whose navigation icon sits outside the field).
    */
   startIcon?: ReactNode
   /** Trailing icon / control (48dp slot, e.g. a mic or clear `IconButton`). */
@@ -336,6 +338,7 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
         <div
           ref={barRef}
           className={styles.bar}
+          data-has-start={startIcon !== false || undefined}
           data-has-end={endIcon != null || undefined}
           data-focus-visible={focusVisible || undefined}
           onClick={(event) => {
@@ -348,13 +351,15 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
             input.focus()
           }}
         >
-          <span className={clsx(styles.slot, styles.leading)}>
-            {startIcon ?? (
-              <span className={styles.glyph} aria-hidden="true">
-                <SearchIcon />
-              </span>
-            )}
-          </span>
+          {startIcon !== false && (
+            <span className={clsx(styles.slot, styles.leading)}>
+              {startIcon ?? (
+                <span className={styles.glyph} aria-hidden="true">
+                  <SearchIcon />
+                </span>
+              )}
+            </span>
+          )}
           {/* `inputProps` (the escape hatch) is spread FIRST; the component's
               own wiring wins. Optional dedicated props are spread only when
               defined so they don't clobber an `inputProps` key the component

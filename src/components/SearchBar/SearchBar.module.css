@@ -13,15 +13,25 @@
  * over a 32% scrim. The view's position and width (the bar's) are written
  * inline by the shared popup helper (src/internal/usePopupPosition); it is a
  * `popover="manual"` element drawn in the top layer.
+ *
+ * Host contract (custom properties a hosting component may set on an
+ * ancestor, e.g. TopAppBar variant="search"):
+ *   --md-search-bar-container-color   bar container color
+ *   --md-search-bar-width             root width (default 100%)
+ *   --md-search-bar-min-width         root min width (default 360px)
+ *   --md-search-bar-input-text-align  input / placeholder alignment (start)
  */
 
 .wrapper {
   position: relative;
-  width: 100%;
-  min-width: 360px;
+  width: var(--md-search-bar-width, 100%);
+  min-width: var(--md-search-bar-min-width, 360px);
   max-width: 720px;
 
-  --_container-color: var(--md-sys-color-surface-container-high);
+  --_container-color: var(
+    --md-search-bar-container-color,
+    var(--md-sys-color-surface-container-high)
+  );
   --_container-shape: var(--md-sys-shape-corner-full);
   --_input-text-color: var(--md-sys-color-on-surface);
   --_caret-color: var(--md-sys-color-primary);
@@ -78,6 +88,12 @@
 
 .bar[data-has-end] {
   padding-inline-end: 4px;
+}
+
+/* No leading icon (`startIcon={false}`): the text starts 24dp in
+   (m3 search app bar measurements). */
+.bar:not([data-has-start]) {
+  padding-inline-start: 24px;
 }
 
 /* Hovering / pressing an interactive slot child (e.g. a navigation
@@ -139,6 +155,7 @@
   outline: none;
   color: var(--_input-text-color);
   caret-color: var(--_caret-color);
+  text-align: var(--md-search-bar-input-text-align, start);
   font-family: var(--md-sys-typescale-body-large-font);
   font-size: var(--md-sys-typescale-body-large-size);
   font-weight: var(--md-sys-typescale-body-large-weight);

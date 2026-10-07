@@ -174,6 +174,14 @@ describe('SearchBar', () => {
       expect(glyph.closest('[aria-hidden="true"]')).not.toBeNull()
     })
 
+    it('renders no leading slot with startIcon={false}', () => {
+      const { container } = render(<SearchBar aria-label="Search" startIcon={false} />)
+      expect(container.querySelector('svg')).toBeNull()
+      const bar = screen.getByRole('searchbox').parentElement!
+      expect(bar).not.toHaveAttribute('data-has-start')
+      expect(bar.firstElementChild).toBe(screen.getByRole('searchbox'))
+    })
+
     it('keeps an interactive startIcon reachable and named', async () => {
       const user = userEvent.setup()
       const onBack = vi.fn()
