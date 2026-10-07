@@ -1,5 +1,32 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Per-component subpath imports** (#378): every component folder is an
+  entry point with a default export, e.g.
+  `import Button from 'm3-expressive-react/Button'` (named imports such as
+  `import { RadioGroup } from 'm3-expressive-react/Radio'` work too). The
+  default is the folder's namesake component; `AppBar` → `TopAppBar`,
+  `ProgressIndicator` → `LinearProgressIndicator`. ESM, CJS and types
+  (`bundler` / `node16` / `nodenext` / legacy `node` resolution) for all 36
+  subpaths.
+- **Per-component CSS**: a subpath import loads only that component's CSS
+  (plus the shared Ripple / FocusRing styles). New
+  `m3-expressive-react/tokens.css` entry (design tokens + typescale) to
+  import once alongside subpath imports. `require()` and the `node` export
+  condition resolve to CSS-free modules (Jest, SSR with externalized deps).
+
+### Changed
+
+- The library build emits one file per source module (`preserveModules`)
+  with per-file `.d.ts` / `.d.cts` declarations instead of a single bundle.
+  The root entry (`m3-expressive-react`) exports exactly the same names and
+  stays tree-shakeable; `styles.css` keeps every rule in the same order (the
+  FocusRing rules that were repeated for each `composes:` user now appear
+  once).
+
 ## 1.1.0 (2026-10-01)
 
 Spec-conformance release. Every component was re-audited against

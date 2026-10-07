@@ -5,7 +5,8 @@
   "type": "module",
   "license": "MIT",
   "sideEffects": [
-    "**/*.css"
+    "**/*.css",
+    "./dist/*/index.js"
   ],
   "files": [
     "dist",
@@ -20,7 +21,516 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./styles.css": "./dist/styles.css"
+    "./styles.css": "./dist/styles.css",
+    "./tokens.css": "./dist/tokens.css",
+    "./AppBar": {
+      "import": {
+        "types": "./dist/components/AppBar/index.d.ts",
+        "node": "./dist/components/AppBar/index.js",
+        "default": "./dist/AppBar/index.js"
+      },
+      "require": {
+        "types": "./dist/components/AppBar/index.d.cts",
+        "default": "./dist/components/AppBar/index.cjs"
+      }
+    },
+    "./Badge": {
+      "import": {
+        "types": "./dist/components/Badge/index.d.ts",
+        "node": "./dist/components/Badge/index.js",
+        "default": "./dist/Badge/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Badge/index.d.cts",
+        "default": "./dist/components/Badge/index.cjs"
+      }
+    },
+    "./BottomSheet": {
+      "import": {
+        "types": "./dist/components/BottomSheet/index.d.ts",
+        "node": "./dist/components/BottomSheet/index.js",
+        "default": "./dist/BottomSheet/index.js"
+      },
+      "require": {
+        "types": "./dist/components/BottomSheet/index.d.cts",
+        "default": "./dist/components/BottomSheet/index.cjs"
+      }
+    },
+    "./Button": {
+      "import": {
+        "types": "./dist/components/Button/index.d.ts",
+        "node": "./dist/components/Button/index.js",
+        "default": "./dist/Button/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Button/index.d.cts",
+        "default": "./dist/components/Button/index.cjs"
+      }
+    },
+    "./ButtonGroup": {
+      "import": {
+        "types": "./dist/components/ButtonGroup/index.d.ts",
+        "node": "./dist/components/ButtonGroup/index.js",
+        "default": "./dist/ButtonGroup/index.js"
+      },
+      "require": {
+        "types": "./dist/components/ButtonGroup/index.d.cts",
+        "default": "./dist/components/ButtonGroup/index.cjs"
+      }
+    },
+    "./Card": {
+      "import": {
+        "types": "./dist/components/Card/index.d.ts",
+        "node": "./dist/components/Card/index.js",
+        "default": "./dist/Card/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Card/index.d.cts",
+        "default": "./dist/components/Card/index.cjs"
+      }
+    },
+    "./Carousel": {
+      "import": {
+        "types": "./dist/components/Carousel/index.d.ts",
+        "node": "./dist/components/Carousel/index.js",
+        "default": "./dist/Carousel/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Carousel/index.d.cts",
+        "default": "./dist/components/Carousel/index.cjs"
+      }
+    },
+    "./Checkbox": {
+      "import": {
+        "types": "./dist/components/Checkbox/index.d.ts",
+        "node": "./dist/components/Checkbox/index.js",
+        "default": "./dist/Checkbox/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Checkbox/index.d.cts",
+        "default": "./dist/components/Checkbox/index.cjs"
+      }
+    },
+    "./Chip": {
+      "import": {
+        "types": "./dist/components/Chip/index.d.ts",
+        "node": "./dist/components/Chip/index.js",
+        "default": "./dist/Chip/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Chip/index.d.cts",
+        "default": "./dist/components/Chip/index.cjs"
+      }
+    },
+    "./DatePicker": {
+      "import": {
+        "types": "./dist/components/DatePicker/index.d.ts",
+        "node": "./dist/components/DatePicker/index.js",
+        "default": "./dist/DatePicker/index.js"
+      },
+      "require": {
+        "types": "./dist/components/DatePicker/index.d.cts",
+        "default": "./dist/components/DatePicker/index.cjs"
+      }
+    },
+    "./Dialog": {
+      "import": {
+        "types": "./dist/components/Dialog/index.d.ts",
+        "node": "./dist/components/Dialog/index.js",
+        "default": "./dist/Dialog/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Dialog/index.d.cts",
+        "default": "./dist/components/Dialog/index.cjs"
+      }
+    },
+    "./Divider": {
+      "import": {
+        "types": "./dist/components/Divider/index.d.ts",
+        "node": "./dist/components/Divider/index.js",
+        "default": "./dist/Divider/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Divider/index.d.cts",
+        "default": "./dist/components/Divider/index.cjs"
+      }
+    },
+    "./Fab": {
+      "import": {
+        "types": "./dist/components/Fab/index.d.ts",
+        "node": "./dist/components/Fab/index.js",
+        "default": "./dist/Fab/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Fab/index.d.cts",
+        "default": "./dist/components/Fab/index.cjs"
+      }
+    },
+    "./FabMenu": {
+      "import": {
+        "types": "./dist/components/FabMenu/index.d.ts",
+        "node": "./dist/components/FabMenu/index.js",
+        "default": "./dist/FabMenu/index.js"
+      },
+      "require": {
+        "types": "./dist/components/FabMenu/index.d.cts",
+        "default": "./dist/components/FabMenu/index.cjs"
+      }
+    },
+    "./IconButton": {
+      "import": {
+        "types": "./dist/components/IconButton/index.d.ts",
+        "node": "./dist/components/IconButton/index.js",
+        "default": "./dist/IconButton/index.js"
+      },
+      "require": {
+        "types": "./dist/components/IconButton/index.d.cts",
+        "default": "./dist/components/IconButton/index.cjs"
+      }
+    },
+    "./List": {
+      "import": {
+        "types": "./dist/components/List/index.d.ts",
+        "node": "./dist/components/List/index.js",
+        "default": "./dist/List/index.js"
+      },
+      "require": {
+        "types": "./dist/components/List/index.d.cts",
+        "default": "./dist/components/List/index.cjs"
+      }
+    },
+    "./LoadingIndicator": {
+      "import": {
+        "types": "./dist/components/LoadingIndicator/index.d.ts",
+        "node": "./dist/components/LoadingIndicator/index.js",
+        "default": "./dist/LoadingIndicator/index.js"
+      },
+      "require": {
+        "types": "./dist/components/LoadingIndicator/index.d.cts",
+        "default": "./dist/components/LoadingIndicator/index.cjs"
+      }
+    },
+    "./Menu": {
+      "import": {
+        "types": "./dist/components/Menu/index.d.ts",
+        "node": "./dist/components/Menu/index.js",
+        "default": "./dist/Menu/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Menu/index.d.cts",
+        "default": "./dist/components/Menu/index.cjs"
+      }
+    },
+    "./NavigationBar": {
+      "import": {
+        "types": "./dist/components/NavigationBar/index.d.ts",
+        "node": "./dist/components/NavigationBar/index.js",
+        "default": "./dist/NavigationBar/index.js"
+      },
+      "require": {
+        "types": "./dist/components/NavigationBar/index.d.cts",
+        "default": "./dist/components/NavigationBar/index.cjs"
+      }
+    },
+    "./NavigationDrawer": {
+      "import": {
+        "types": "./dist/components/NavigationDrawer/index.d.ts",
+        "node": "./dist/components/NavigationDrawer/index.js",
+        "default": "./dist/NavigationDrawer/index.js"
+      },
+      "require": {
+        "types": "./dist/components/NavigationDrawer/index.d.cts",
+        "default": "./dist/components/NavigationDrawer/index.cjs"
+      }
+    },
+    "./NavigationRail": {
+      "import": {
+        "types": "./dist/components/NavigationRail/index.d.ts",
+        "node": "./dist/components/NavigationRail/index.js",
+        "default": "./dist/NavigationRail/index.js"
+      },
+      "require": {
+        "types": "./dist/components/NavigationRail/index.d.cts",
+        "default": "./dist/components/NavigationRail/index.cjs"
+      }
+    },
+    "./ProgressIndicator": {
+      "import": {
+        "types": "./dist/components/ProgressIndicator/index.d.ts",
+        "node": "./dist/components/ProgressIndicator/index.js",
+        "default": "./dist/ProgressIndicator/index.js"
+      },
+      "require": {
+        "types": "./dist/components/ProgressIndicator/index.d.cts",
+        "default": "./dist/components/ProgressIndicator/index.cjs"
+      }
+    },
+    "./Radio": {
+      "import": {
+        "types": "./dist/components/Radio/index.d.ts",
+        "node": "./dist/components/Radio/index.js",
+        "default": "./dist/Radio/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Radio/index.d.cts",
+        "default": "./dist/components/Radio/index.cjs"
+      }
+    },
+    "./SearchBar": {
+      "import": {
+        "types": "./dist/components/SearchBar/index.d.ts",
+        "node": "./dist/components/SearchBar/index.js",
+        "default": "./dist/SearchBar/index.js"
+      },
+      "require": {
+        "types": "./dist/components/SearchBar/index.d.cts",
+        "default": "./dist/components/SearchBar/index.cjs"
+      }
+    },
+    "./SegmentedButton": {
+      "import": {
+        "types": "./dist/components/SegmentedButton/index.d.ts",
+        "node": "./dist/components/SegmentedButton/index.js",
+        "default": "./dist/SegmentedButton/index.js"
+      },
+      "require": {
+        "types": "./dist/components/SegmentedButton/index.d.cts",
+        "default": "./dist/components/SegmentedButton/index.cjs"
+      }
+    },
+    "./SideSheet": {
+      "import": {
+        "types": "./dist/components/SideSheet/index.d.ts",
+        "node": "./dist/components/SideSheet/index.js",
+        "default": "./dist/SideSheet/index.js"
+      },
+      "require": {
+        "types": "./dist/components/SideSheet/index.d.cts",
+        "default": "./dist/components/SideSheet/index.cjs"
+      }
+    },
+    "./Slider": {
+      "import": {
+        "types": "./dist/components/Slider/index.d.ts",
+        "node": "./dist/components/Slider/index.js",
+        "default": "./dist/Slider/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Slider/index.d.cts",
+        "default": "./dist/components/Slider/index.cjs"
+      }
+    },
+    "./Snackbar": {
+      "import": {
+        "types": "./dist/components/Snackbar/index.d.ts",
+        "node": "./dist/components/Snackbar/index.js",
+        "default": "./dist/Snackbar/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Snackbar/index.d.cts",
+        "default": "./dist/components/Snackbar/index.cjs"
+      }
+    },
+    "./SplitButton": {
+      "import": {
+        "types": "./dist/components/SplitButton/index.d.ts",
+        "node": "./dist/components/SplitButton/index.js",
+        "default": "./dist/SplitButton/index.js"
+      },
+      "require": {
+        "types": "./dist/components/SplitButton/index.d.cts",
+        "default": "./dist/components/SplitButton/index.cjs"
+      }
+    },
+    "./SwipeToDismiss": {
+      "import": {
+        "types": "./dist/components/SwipeToDismiss/index.d.ts",
+        "node": "./dist/components/SwipeToDismiss/index.js",
+        "default": "./dist/SwipeToDismiss/index.js"
+      },
+      "require": {
+        "types": "./dist/components/SwipeToDismiss/index.d.cts",
+        "default": "./dist/components/SwipeToDismiss/index.cjs"
+      }
+    },
+    "./Switch": {
+      "import": {
+        "types": "./dist/components/Switch/index.d.ts",
+        "node": "./dist/components/Switch/index.js",
+        "default": "./dist/Switch/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Switch/index.d.cts",
+        "default": "./dist/components/Switch/index.cjs"
+      }
+    },
+    "./Tabs": {
+      "import": {
+        "types": "./dist/components/Tabs/index.d.ts",
+        "node": "./dist/components/Tabs/index.js",
+        "default": "./dist/Tabs/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Tabs/index.d.cts",
+        "default": "./dist/components/Tabs/index.cjs"
+      }
+    },
+    "./TextField": {
+      "import": {
+        "types": "./dist/components/TextField/index.d.ts",
+        "node": "./dist/components/TextField/index.js",
+        "default": "./dist/TextField/index.js"
+      },
+      "require": {
+        "types": "./dist/components/TextField/index.d.cts",
+        "default": "./dist/components/TextField/index.cjs"
+      }
+    },
+    "./TimePicker": {
+      "import": {
+        "types": "./dist/components/TimePicker/index.d.ts",
+        "node": "./dist/components/TimePicker/index.js",
+        "default": "./dist/TimePicker/index.js"
+      },
+      "require": {
+        "types": "./dist/components/TimePicker/index.d.cts",
+        "default": "./dist/components/TimePicker/index.cjs"
+      }
+    },
+    "./Toolbar": {
+      "import": {
+        "types": "./dist/components/Toolbar/index.d.ts",
+        "node": "./dist/components/Toolbar/index.js",
+        "default": "./dist/Toolbar/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Toolbar/index.d.cts",
+        "default": "./dist/components/Toolbar/index.cjs"
+      }
+    },
+    "./Tooltip": {
+      "import": {
+        "types": "./dist/components/Tooltip/index.d.ts",
+        "node": "./dist/components/Tooltip/index.js",
+        "default": "./dist/Tooltip/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Tooltip/index.d.cts",
+        "default": "./dist/components/Tooltip/index.cjs"
+      }
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "AppBar": [
+        "./dist/components/AppBar/index.d.ts"
+      ],
+      "Badge": [
+        "./dist/components/Badge/index.d.ts"
+      ],
+      "BottomSheet": [
+        "./dist/components/BottomSheet/index.d.ts"
+      ],
+      "Button": [
+        "./dist/components/Button/index.d.ts"
+      ],
+      "ButtonGroup": [
+        "./dist/components/ButtonGroup/index.d.ts"
+      ],
+      "Card": [
+        "./dist/components/Card/index.d.ts"
+      ],
+      "Carousel": [
+        "./dist/components/Carousel/index.d.ts"
+      ],
+      "Checkbox": [
+        "./dist/components/Checkbox/index.d.ts"
+      ],
+      "Chip": [
+        "./dist/components/Chip/index.d.ts"
+      ],
+      "DatePicker": [
+        "./dist/components/DatePicker/index.d.ts"
+      ],
+      "Dialog": [
+        "./dist/components/Dialog/index.d.ts"
+      ],
+      "Divider": [
+        "./dist/components/Divider/index.d.ts"
+      ],
+      "Fab": [
+        "./dist/components/Fab/index.d.ts"
+      ],
+      "FabMenu": [
+        "./dist/components/FabMenu/index.d.ts"
+      ],
+      "IconButton": [
+        "./dist/components/IconButton/index.d.ts"
+      ],
+      "List": [
+        "./dist/components/List/index.d.ts"
+      ],
+      "LoadingIndicator": [
+        "./dist/components/LoadingIndicator/index.d.ts"
+      ],
+      "Menu": [
+        "./dist/components/Menu/index.d.ts"
+      ],
+      "NavigationBar": [
+        "./dist/components/NavigationBar/index.d.ts"
+      ],
+      "NavigationDrawer": [
+        "./dist/components/NavigationDrawer/index.d.ts"
+      ],
+      "NavigationRail": [
+        "./dist/components/NavigationRail/index.d.ts"
+      ],
+      "ProgressIndicator": [
+        "./dist/components/ProgressIndicator/index.d.ts"
+      ],
+      "Radio": [
+        "./dist/components/Radio/index.d.ts"
+      ],
+      "SearchBar": [
+        "./dist/components/SearchBar/index.d.ts"
+      ],
+      "SegmentedButton": [
+        "./dist/components/SegmentedButton/index.d.ts"
+      ],
+      "SideSheet": [
+        "./dist/components/SideSheet/index.d.ts"
+      ],
+      "Slider": [
+        "./dist/components/Slider/index.d.ts"
+      ],
+      "Snackbar": [
+        "./dist/components/Snackbar/index.d.ts"
+      ],
+      "SplitButton": [
+        "./dist/components/SplitButton/index.d.ts"
+      ],
+      "SwipeToDismiss": [
+        "./dist/components/SwipeToDismiss/index.d.ts"
+      ],
+      "Switch": [
+        "./dist/components/Switch/index.d.ts"
+      ],
+      "Tabs": [
+        "./dist/components/Tabs/index.d.ts"
+      ],
+      "TextField": [
+        "./dist/components/TextField/index.d.ts"
+      ],
+      "TimePicker": [
+        "./dist/components/TimePicker/index.d.ts"
+      ],
+      "Toolbar": [
+        "./dist/components/Toolbar/index.d.ts"
+      ],
+      "Tooltip": [
+        "./dist/components/Tooltip/index.d.ts"
+      ]
+    }
   },
   "scripts": {
     "dev": "storybook dev -p 6006",
@@ -47,7 +557,6 @@
     "@commitlint/config-conventional": "^21.0.2",
     "@fontsource/roboto": "^5.2.10",
     "@material-symbols/svg-400": "^0.45.5",
-    "@microsoft/api-extractor": "^7.59.2",
     "@playwright/test": "^1.63.0",
     "@storybook/addon-a11y": "^10.6.0",
     "@storybook/react-vite": "^10.6.0",

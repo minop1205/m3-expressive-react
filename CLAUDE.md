@@ -137,6 +137,12 @@ Reference tokens → System tokens (--md-sys-*) → Component tokens (--_*)
   oversizing the invisible native input on selection controls
 - Storybook `title` is flat — `Components/<Name>` (no per-variant hierarchy; each
   component's variants/sizes/states are exercised within its own stories)
+- Each `src/components/<Name>/index.ts` is a public subpath entry
+  (`m3-expressive-react/<Name>`): keep a default export (the namesake / primary
+  component) and add a new folder to `package.json` `exports` +
+  `typesVersions` (`src/test/packageExports.test.ts` enforces both). The
+  library build (`scripts/vite-plugin-subpath-entries.ts`) emits per-module
+  files, the CSS-importing ESM wrappers, `styles.css` and `tokens.css`
 
 ## Testing
 
