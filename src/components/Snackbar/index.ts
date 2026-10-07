@@ -13,3 +13,6 @@ export {
   type SnackbarDuration,
   type UseSnackbarResult,
 } from './SnackbarProvider'
+
+// Default export for the `m3-expressive-react/Snackbar` subpath import.
+export { Snackbar as default } from './Snackbar'

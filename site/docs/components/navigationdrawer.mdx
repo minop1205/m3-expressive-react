@@ -1,0 +1,153 @@
+---
+title: NavigationDrawer
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { NavigationDrawer, NavigationDrawerItem, Button } from 'm3-expressive-react'
+import InboxIcon from '@material-symbols/svg-400/outlined/inbox.svg'
+import OutboxIcon from '@material-symbols/svg-400/outlined/outbox.svg'
+import StarIcon from '@material-symbols/svg-400/outlined/star.svg'
+import DeleteIcon from '@material-symbols/svg-400/outlined/delete.svg'
+
+# NavigationDrawer
+
+MD3 navigation drawer: a 360dp panel of full-pill destinations, either
+**standard** (in the layout, beside the content) or **modal** (an overlay
+with a scrim).
+
+export const items = (
+  <>
+    <NavigationDrawerItem value="inbox" icon={<InboxIcon />} label="Inbox" badge="24" />
+    <NavigationDrawerItem value="outbox" icon={<OutboxIcon />} label="Outbox" />
+    <NavigationDrawerItem value="starred" icon={<StarIcon />} label="Starred" />
+    <NavigationDrawerItem value="trash" icon={<DeleteIcon />} label="Trash" disabled />
+  </>
+)
+
+export function Frame({ children }) {
+  // `transform` makes this box the containing block of the modal drawer's
+  // fixed overlay, so the demo stays inside the frame.
+  return (
+    <div
+      style={{
+        display: 'flex',
+        width: '100%',
+        height: 360,
+        overflow: 'hidden',
+        transform: 'translateZ(0)',
+        borderRadius: 8,
+        border: '1px solid var(--md-sys-color-outline-variant)',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+export function StandardDemo() {
+  const [value, setValue] = useState('inbox')
+  return (
+    <Frame>
+      <NavigationDrawer aria-label="Mail" value={value} onChange={(_event, v) => setValue(v)}>
+        {items}
+      </NavigationDrawer>
+      <div style={{ flex: 1, padding: 24, minWidth: 0 }}>Selected: {value}</div>
+    </Frame>
+  )
+}
+
+export function ModalDemo() {
+  const [open, setOpen] = useState(false)
+  const [value, setValue] = useState('inbox')
+  return (
+    <Frame>
+      <div style={{ padding: 24 }}>
+        <Button variant="filled" onClick={() => setOpen(true)}>
+          Open drawer
+        </Button>
+      </div>
+      <NavigationDrawer
+        variant="modal"
+        aria-label="Mail"
+        open={open}
+        onClose={() => setOpen(false)}
+        value={value}
+        onChange={(_event, v) => {
+          setValue(v)
+          setOpen(false)
+        }}
+      >
+        {items}
+      </NavigationDrawer>
+    </Frame>
+  )
+}
+
+## Standard
+
+Sits beside the content (Surface color, 16dp trailing corners). Selection is
+passed down via `value` / `onChange`; the active item gets the
+secondary-container pill.
+
+<Demo>
+  <StandardDemo />
+</Demo>
+
+```tsx
+const [value, setValue] = useState('inbox')
+
+<NavigationDrawer aria-label="Mail" value={value} onChange={(event, next) => setValue(next)}>
+  <NavigationDrawerItem value="inbox" icon={<InboxIcon />} label="Inbox" badge="24" />
+  <NavigationDrawerItem value="starred" icon={<StarIcon />} label="Starred" />
+</NavigationDrawer>
+```
+
+`badge` renders trailing text on the item (e.g. an unread count).
+
+## Modal
+
+`variant="modal"` overlays the page with a 0.32 scrim while `open`. The scrim
+and <kbd>Escape</kbd> call `onClose`; closing on selection is up to you.
+
+<Demo>
+  <ModalDemo />
+</Demo>
+
+```tsx
+const [open, setOpen] = useState(false)
+
+<Button onClick={() => setOpen(true)}>Open drawer</Button>
+<NavigationDrawer
+  variant="modal"
+  open={open}
+  onClose={() => setOpen(false)}
+  value={value}
+  onChange={(event, next) => {
+    setValue(next)
+    setOpen(false)
+  }}
+>
+  …
+</NavigationDrawer>
+```
+
+## Accessibility
+
+- Renders an `<aside>` (complementary landmark) labelled "Navigation" by
+  default — pass your own `aria-label` / `aria-labelledby`. Items are native
+  `<button>`s; the active one carries `aria-current="page"`.
+- The open modal drawer is a `dialog` with `aria-modal`: focus moves inside
+  and is trapped, the rest of the page is inert, <kbd>Escape</kbd> closes
+  it, and focus returns to the opener on close.
+
+## Props
+
+### NavigationDrawer
+
+<PropsTable component="NavigationDrawer" />
+
+### NavigationDrawerItem
+
+<PropsTable component="NavigationDrawerItem" />

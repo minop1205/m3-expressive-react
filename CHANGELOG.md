@@ -1,5 +1,65 @@
 # Changelog
 
+## 1.2.0 (2026-10-07)
+
+Packaging, interaction polish and documentation. Backward compatible: the root
+entry exports exactly the same names, and `styles.css` keeps working as before.
+
+### Added
+
+- **Per-component subpath imports** (#378): every component folder is an
+  entry point with a default export, e.g.
+  `import Button from 'm3-expressive-react/Button'` (named imports such as
+  `import { RadioGroup } from 'm3-expressive-react/Radio'` work too). The
+  default is the folder's namesake component; `AppBar` → `TopAppBar`,
+  `ProgressIndicator` → `LinearProgressIndicator`. ESM, CJS and types
+  (`bundler` / `node16` / `nodenext` / legacy `node` resolution) for all 36
+  subpaths.
+- **Per-component CSS**: a subpath import loads only that component's CSS
+  (plus the shared Ripple / FocusRing styles). New
+  `m3-expressive-react/tokens.css` entry (design tokens + typescale) to
+  import once alongside subpath imports. `require()` and the `node` export
+  condition resolve to CSS-free modules (Jest, SSR with externalized deps).
+- **Carousel: mouse drag** (#374): drag to scroll with fling and snap
+  (`uncontained` coasts without snapping), an 8px slop, no item activation
+  after a drag, `grab` / `grabbing` cursors. The vertical wheel is not
+  captured (use Shift+wheel or a trackpad); a "Show all" example shows the
+  m3-recommended alternative.
+- **Token** `--md-web-motion-easing-back-out` — a web-adaptation easing used
+  by Switch (not an MD3 token).
+
+### Changed
+
+- **Switch motion** (#373, web adaptation to match material-web): the handle
+  grows over 100ms on press and shrinks over 250ms on release, and the on/off
+  slide uses material-web's 300ms back-out overshoot. The switch no longer
+  follows `ThemeProvider motionScheme`; disabled and reduced motion stay
+  instant.
+- The library build emits one file per source module (`preserveModules`)
+  with per-file `.d.ts` / `.d.cts` declarations instead of a single bundle.
+  The root entry exports exactly the same names and stays tree-shakeable;
+  `styles.css` keeps every rule in the same order (the FocusRing rules that
+  were repeated for each `composes:` user now appear once).
+
+### Fixed
+
+- **Carousel jitter** (#375): multi-browse and hero items no longer jitter
+  while scrolling — the keyline mask is transform-only and runs as
+  scroll-driven animations on the compositor where supported (rAF fallback
+  elsewhere). Items now sit inside two clip wrappers.
+- **Radio / Checkbox / Switch** (#376): the control is vertically centered on
+  the text when placed inline in a label.
+- **CSS minifiers** (#372): NavigationRail's hide-on-collapse transform no
+  longer trips cssnano (postcss-calc); the README warns that clean-css breaks
+  `@starting-style` and should be replaced by cssnano or Lightning CSS.
+
+### Docs
+
+- Pages for all 36 components with live demos, accessibility notes and
+  generated prop tables (#367–#372), plus demos for notable props (#377).
+- The docs site is now published from `main`, so it always documents the
+  released version; pull requests build-check the site (#379).
+
 ## 1.1.0 (2026-10-01)
 
 Spec-conformance release. Every component was re-audited against

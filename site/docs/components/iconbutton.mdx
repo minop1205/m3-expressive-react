@@ -1,0 +1,138 @@
+---
+title: IconButton
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { IconButton } from 'm3-expressive-react'
+import {
+  EditIcon,
+  FavoriteIcon,
+  FavoriteBorderIcon,
+  SearchIcon,
+} from '@site/src/components/icons/ActionIcons'
+
+# IconButton
+
+MD3 Expressive icon button: four variants, the five-step size scale with
+narrow / default / wide footprints, round or square shapes, and an optional
+toggle mode with a selected icon.
+
+## Variants
+
+The default variant is `filled`.
+
+<Demo>
+  <IconButton variant="standard" icon={<SearchIcon />} aria-label="Search" />
+  <IconButton variant="filled" icon={<SearchIcon />} aria-label="Search" />
+  <IconButton variant="tonal" icon={<SearchIcon />} aria-label="Search" />
+  <IconButton variant="outlined" icon={<SearchIcon />} aria-label="Search" />
+</Demo>
+
+```tsx
+<IconButton variant="tonal" icon={<SearchIcon />} aria-label="Search" />
+```
+
+## Sizes and widths
+
+`size` sets the container height (32 / 40 / 56 / 96 / 136dp for
+`xs`–`xl`, default `sm`); `width` makes the container `narrow` or `wide`.
+
+<Demo>
+  <IconButton size="xs" icon={<EditIcon />} aria-label="Edit" />
+  <IconButton size="sm" icon={<EditIcon />} aria-label="Edit" />
+  <IconButton size="md" icon={<EditIcon />} aria-label="Edit" />
+  <IconButton size="lg" icon={<EditIcon />} aria-label="Edit" />
+  <IconButton size="xl" icon={<EditIcon />} aria-label="Edit" />
+</Demo>
+
+<Demo>
+  <IconButton size="md" width="narrow" icon={<EditIcon />} aria-label="Edit" />
+  <IconButton size="md" width="default" icon={<EditIcon />} aria-label="Edit" />
+  <IconButton size="md" width="wide" icon={<EditIcon />} aria-label="Edit" />
+</Demo>
+
+```tsx
+<IconButton size="md" width="wide" icon={<EditIcon />} aria-label="Edit" />
+```
+
+## Shapes
+
+`round` (default) or `square`. The corner tightens while pressed, and a
+selected toggle swaps round ⇄ square.
+
+<Demo>
+  <IconButton size="md" shape="round" icon={<EditIcon />} aria-label="Edit" />
+  <IconButton size="md" shape="square" icon={<EditIcon />} aria-label="Edit" />
+</Demo>
+
+## Toggle
+
+With `toggle`, the button becomes a toggle button (`aria-pressed`).
+`selectedIcon` replaces the icon while selected; use `selected` /
+`onChange(event, selected)` for a controlled toggle or `defaultSelected` for
+an uncontrolled one.
+
+export function ToggleDemo() {
+  const [selected, setSelected] = useState(false)
+  return (
+    <>
+      {['standard', 'filled', 'tonal', 'outlined'].map((variant) => (
+        <IconButton
+          key={variant}
+          variant={variant}
+          toggle
+          selected={selected}
+          onChange={(event, next) => setSelected(next)}
+          icon={<FavoriteBorderIcon />}
+          selectedIcon={<FavoriteIcon />}
+          aria-label="Favorite"
+        />
+      ))}
+    </>
+  )
+}
+
+<Demo>
+  <ToggleDemo />
+</Demo>
+
+```tsx
+const [selected, setSelected] = useState(false)
+
+<IconButton
+  toggle
+  selected={selected}
+  onChange={(event, next) => setSelected(next)}
+  icon={<FavoriteBorderIcon />}
+  selectedIcon={<FavoriteIcon />}
+  aria-label="Favorite"
+/>
+```
+
+## Disabled
+
+A disabled toggle always uses the disabled colors, whether or not it is selected.
+
+<Demo>
+  <IconButton variant="filled" disabled icon={<EditIcon />} aria-label="Edit" />
+  <IconButton variant="outlined" disabled icon={<EditIcon />} aria-label="Edit" />
+  <IconButton toggle defaultSelected disabled icon={<FavoriteIcon />} aria-label="Favorite" />
+</Demo>
+
+## Accessibility
+
+- Renders a native `<button>`: <kbd>Tab</kbd> focuses it, and
+  <kbd>Enter</kbd> / <kbd>Space</kbd> activate it (or toggle it).
+- The icon is decorative (`aria-hidden`), so **always give the button an
+  accessible name** with `aria-label` (or `aria-labelledby`) that describes
+  the action.
+- A toggle exposes its state with `aria-pressed`. Keep one label for both
+  states; use `selectedAriaLabel` only when the action itself changes (for
+  example "Mute" / "Unmute").
+- The touch target is at least 48 × 48dp, even for the smaller sizes.
+
+## Props
+
+<PropsTable component="IconButton" />

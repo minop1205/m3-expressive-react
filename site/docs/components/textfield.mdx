@@ -5,6 +5,9 @@ title: TextField
 import Demo from '@site/src/components/Demo'
 import PropsTable from '@site/src/components/PropsTable'
 import { TextField } from 'm3-expressive-react'
+import { SearchIcon, MailIcon } from '@site/src/components/icons/ActionIcons'
+import ErrorIcon from '@material-symbols/svg-400/outlined/error.svg'
+import VisibilityIcon from '@material-symbols/svg-400/outlined/visibility.svg'
 
 # TextField
 
@@ -33,6 +36,110 @@ supporting text, character counter, and multiline mode.
   <TextField label="Username" supportingText="Visible to everyone" />
   <TextField label="Password" error supportingText="Too short" />
 </Demo>
+
+`error` switches the field to the error colors and sets `aria-invalid`;
+`errorText` replaces `supportingText` while in error and is announced
+(`role="alert"`).
+
+<Demo>
+  <TextField
+    label="Email"
+    defaultValue="ada@example"
+    error
+    errorText="Enter a valid email address"
+    supportingText="We never share your email"
+    endIcon={<ErrorIcon />}
+  />
+</Demo>
+
+```tsx
+<TextField
+  label="Email"
+  value={email}
+  onChange={(event) => setEmail(event.target.value)}
+  error={!isValid}
+  errorText="Enter a valid email address"
+  supportingText="We never share your email"
+/>
+```
+
+## Icons
+
+`startIcon` / `endIcon` place a decorative icon at either end of the field.
+
+<Demo>
+  <TextField label="Search" startIcon={<SearchIcon />} />
+  <TextField variant="outlined" label="Email" startIcon={<MailIcon />} />
+  <TextField variant="outlined" label="Password" type="password" endIcon={<VisibilityIcon />} />
+</Demo>
+
+```tsx
+<TextField label="Search" startIcon={<SearchIcon />} />
+<TextField variant="outlined" label="Password" type="password" endIcon={<VisibilityIcon />} />
+```
+
+## Prefix & suffix text
+
+`prefixText` / `suffixText` show static text around the value, such as a
+currency symbol or a unit.
+
+<Demo>
+  <TextField label="Price" prefixText="$" defaultValue="24.99" />
+  <TextField variant="outlined" label="Weight" suffixText="kg" defaultValue="72" />
+</Demo>
+
+```tsx
+<TextField label="Price" prefixText="$" />
+<TextField variant="outlined" label="Weight" suffixText="kg" />
+```
+
+## Character counter
+
+`maxLength` limits the input natively and shows a `length / maxLength`
+counter at the end of the supporting line.
+
+<Demo>
+  <TextField label="Display name" maxLength={20} supportingText="Shown on your profile" />
+</Demo>
+
+```tsx
+<TextField label="Display name" maxLength={20} supportingText="Shown on your profile" />
+```
+
+## Multiline
+
+`multiline` renders a `<textarea>` that grows with its content; `rows` sets
+the initial number of visible rows (2 by default).
+
+<Demo>
+  <TextField multiline label="Message" />
+  <TextField variant="outlined" multiline rows={4} label="Description" maxLength={200} />
+</Demo>
+
+```tsx
+<TextField multiline label="Message" />
+<TextField variant="outlined" multiline rows={4} label="Description" maxLength={200} />
+```
+
+## States
+
+`required` appends `*` to the label and marks the input required;
+`disabled`, `readOnly` and `placeholder` are the native input attributes,
+styled per MD3. The placeholder shows once the field is focused.
+
+<Demo>
+  <TextField label="Full name" required />
+  <TextField label="Account ID" readOnly defaultValue="ACC-20931" />
+  <TextField label="Disabled" disabled defaultValue="Not editable" />
+  <TextField variant="outlined" label="City" placeholder="e.g. Tokyo" />
+</Demo>
+
+```tsx
+<TextField label="Full name" required />
+<TextField label="Account ID" readOnly value={accountId} />
+<TextField label="Disabled" disabled value="Not editable" />
+<TextField variant="outlined" label="City" placeholder="e.g. Tokyo" />
+```
 
 ## The native input
 

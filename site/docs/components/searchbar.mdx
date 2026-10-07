@@ -1,0 +1,174 @@
+---
+title: SearchBar
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { SearchBar, IconButton, List, ListItem } from 'm3-expressive-react'
+
+# SearchBar
+
+MD3 search bar: a 56dp docked field that, given results as `children`,
+opens a docked search view with suggestions under the bar.
+
+export const ArrowBackIcon = () => (
+  <svg viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true">
+    <path d="m313-440 224 224-57 56-320-320 320-320 57 56-224 224h487v80H313Z" />
+  </svg>
+)
+
+export const CloseIcon = () => (
+  <svg viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true">
+    <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+  </svg>
+)
+
+## Basic
+
+Without `children` the component is a plain search field. `onSearch` fires
+on Enter (not while an IME composition is being committed).
+
+<Demo>
+  <SearchBar aria-label="Search" placeholder="Search messages" onSearch={(q) => console.log(q)} />
+</Demo>
+
+```tsx
+<SearchBar aria-label="Search" placeholder="Search messages" onSearch={(query) => runSearch(query)} />
+```
+
+## Search view with results
+
+Pass results as `children` — typically a `List` of clickable `ListItem`s.
+The view opens on focus (or ArrowDown) and closes on Escape, an outside
+click, or a scrim click. It renders in the top layer, pinned under the bar,
+so ancestors' `overflow` can't clip it.
+
+export const FRUITS = ['Apple', 'Apricot', 'Banana', 'Blueberry', 'Cherry', 'Grape', 'Mango', 'Orange']
+
+export function SearchViewDemo() {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const matches = FRUITS.filter((f) => f.toLowerCase().includes(query.toLowerCase()))
+  return (
+    <div style={{ width: '100%', maxWidth: 480 }}>
+      <SearchBar
+        aria-label="Search fruit"
+        placeholder="Search fruit"
+        value={query}
+        onChange={(event, next) => setQuery(next)}
+        open={open}
+        onOpenChange={setOpen}
+        suggestionsLabel="Suggestions below"
+        endIcon={
+          query ? (
+            <IconButton
+              variant="standard"
+              aria-label="Clear search"
+              icon={<CloseIcon />}
+              onClick={() => setQuery('')}
+            />
+          ) : undefined
+        }
+      >
+        <List>
+          {matches.map((fruit) => (
+            <ListItem
+              key={fruit}
+              headline={fruit}
+              onClick={() => {
+                setQuery(fruit)
+                setOpen(false)
+              }}
+            />
+          ))}
+        </List>
+      </SearchBar>
+    </div>
+  )
+}
+
+<Demo>
+  <SearchViewDemo />
+</Demo>
+
+```tsx
+const [query, setQuery] = useState('')
+const [open, setOpen] = useState(false)
+
+<SearchBar
+  aria-label="Search fruit"
+  value={query}
+  onChange={(event, next) => setQuery(next)}
+  open={open}
+  onOpenChange={setOpen}
+>
+  <List>
+    {matches.map((fruit) => (
+      <ListItem key={fruit} headline={fruit} onClick={() => { setQuery(fruit); setOpen(false) }} />
+    ))}
+  </List>
+</SearchBar>
+```
+
+The open state follows the usual pattern: `open` + `onOpenChange` for
+controlled, `defaultOpen` for uncontrolled. Likewise the query: `value` +
+`onChange(event, value)`, or `defaultValue`.
+
+## Leading and trailing slots
+
+`startIcon` replaces the default search glyph and `endIcon` adds a trailing
+control. Both are 48dp slots, so an `IconButton` (back, menu, voice search,
+clear…) fits and stays in the tab order. Mark a purely decorative custom
+icon `aria-hidden` yourself.
+
+<Demo>
+  <SearchBar
+    aria-label="Search"
+    startIcon={<IconButton variant="standard" aria-label="Back" icon={<ArrowBackIcon />} />}
+    endIcon={<IconButton variant="standard" aria-label="Clear" icon={<CloseIcon />} />}
+  />
+</Demo>
+
+```tsx
+<SearchBar
+  aria-label="Search"
+  startIcon={<IconButton variant="standard" aria-label="Back" icon={<ArrowBack />} />}
+  endIcon={<IconButton variant="standard" aria-label="Voice search" icon={<Mic />} />}
+/>
+```
+
+## Disabled
+
+<Demo>
+  <SearchBar aria-label="Search" disabled />
+</Demo>
+
+## The native input
+
+`ref` and extra props land on the root (`role="search"` landmark). Use
+`inputRef` for the native `<input>`, and `inputProps` for attributes without
+a dedicated prop — the component's own wiring wins on conflicts.
+
+```tsx
+<SearchBar inputRef={inputRef} inputProps={{ 'aria-label': 'Search docs', maxLength: 80 }} />
+```
+
+## Accessibility
+
+- The root is a `role="search"` landmark. With results the input becomes an
+  APG `combobox` (`aria-expanded`, `aria-controls`,
+  `aria-autocomplete="list"`); otherwise it is a native search input.
+- Keyboard: ArrowDown opens the view and moves into the results;
+  ArrowUp / ArrowDown / Home / End move between result items (ArrowUp from
+  the first returns to the input); Escape closes the view and returns focus
+  to the input; Enter calls `onSearch`. Moving focus out closes the view.
+- Opening the view is announced through a polite live region with
+  `suggestionsLabel` (default `'Suggestions below'`) — localize it with the
+  rest of your strings.
+- A consumer `onKeyDown` that calls `preventDefault()` opts out of the
+  built-in handling for that key.
+
+## Props
+
+<PropsTable component="SearchBar" />

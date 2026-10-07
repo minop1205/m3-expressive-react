@@ -1,25 +1,36 @@
-# Builds the Docusaurus docs site (site/) and deploys it to GitHub Pages.
-# Requires: repo Settings → Pages → Source = "GitHub Actions" (one-time).
+# Docs site (site/) — the published site tracks the RELEASED library (#379).
+#
+# - push to main (= a release) and manual runs on main: build + deploy to
+#   GitHub Pages, so the live docs always match npm `latest`.
+# - pull requests to develop / main: build only (no deploy), so MDX / broken
+#   link / SSR errors fail the PR instead of surfacing after a release.
+#
+# Requires: repo Settings → Pages → Source = "GitHub Actions" (one-time), and
+# the `github-pages` environment's deployment branch policy allowing `main`.
 name: Docs
 
 on:
   push:
-    branches: [develop]
+    branches: [main]
+  pull_request:
+    branches: [develop, main]
     paths:
       - 'site/**'
       - 'src/**'
-      - 'docs/migration-v1.md'
+      - 'docs/**'
+      - 'README.md'
+      - 'package.json'
+      - 'vite.config.ts'
       - '.github/workflows/docs.yml'
   workflow_dispatch: {}
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: docs-deploy
-  cancel-in-progress: true
+  # PR builds cancel superseded runs; deploys queue behind each other.
+  group: docs-${{ github.event_name == 'pull_request' && github.ref || 'deploy' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -37,13 +48,18 @@ jobs:
         working-directory: site
       - run: npm run build
         working-directory: site
-      - uses: actions/upload-pages-artifact@v3
+      - if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
         with:
           path: site/build
 
   deploy:
     needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

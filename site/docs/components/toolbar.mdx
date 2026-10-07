@@ -1,0 +1,269 @@
+---
+title: Toolbar
+---
+
+import { useRef, useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Toolbar, IconButton, Button, Fab } from 'm3-expressive-react'
+import BoldIcon from '@material-symbols/svg-400/outlined/format_bold.svg'
+import ItalicIcon from '@material-symbols/svg-400/outlined/format_italic.svg'
+import UnderlineIcon from '@material-symbols/svg-400/outlined/format_underlined.svg'
+import LinkIcon from '@material-symbols/svg-400/outlined/link.svg'
+import ZoomInIcon from '@material-symbols/svg-400/outlined/zoom_in.svg'
+import ZoomOutIcon from '@material-symbols/svg-400/outlined/zoom_out.svg'
+import EditIcon from '@material-symbols/svg-400/outlined/edit.svg'
+
+# Toolbar
+
+MD3 Expressive toolbar: a container of actions, either **docked** (a
+full-width bar — the recommended replacement for the bottom app bar) or
+**floating** (an elevated pill, horizontal or vertical), in a standard or
+vibrant color scheme.
+
+export const item = (label, Icon) => (
+  <IconButton key={label} variant="standard" icon={<Icon />} aria-label={label} />
+)
+export const formatting = [
+  item('Bold', BoldIcon),
+  item('Italic', ItalicIcon),
+  item('Underline', UnderlineIcon),
+  item('Link', LinkIcon),
+]
+
+## Docked
+
+A 64dp full-width bar with items centered. Place it at the bottom of the
+screen.
+
+<Demo>
+  <div style={{ width: '100%' }}>
+    <Toolbar variant="docked" aria-label="Formatting">{formatting}</Toolbar>
+  </div>
+</Demo>
+
+```tsx
+<Toolbar variant="docked" aria-label="Formatting">
+  <IconButton variant="standard" icon={<BoldIcon />} aria-label="Bold" />
+  <IconButton variant="standard" icon={<ItalicIcon />} aria-label="Italic" />
+</Toolbar>
+```
+
+## Floating
+
+A rounded, elevated pill. `orientation="vertical"` stacks the items (floating
+only).
+
+<Demo>
+  <Toolbar variant="floating" aria-label="Formatting">{formatting}</Toolbar>
+  <Toolbar variant="floating" orientation="vertical" aria-label="Zoom">
+    {item('Zoom in', ZoomInIcon)}
+    {item('Zoom out', ZoomOutIcon)}
+  </Toolbar>
+</Demo>
+
+```tsx
+<Toolbar variant="floating" orientation="vertical" aria-label="Zoom">
+  …
+</Toolbar>
+```
+
+## Color
+
+`color="vibrant"` switches to the primary-container scheme for higher
+emphasis. Standard `IconButton`s follow the scheme's content and selected
+colors automatically.
+
+<Demo>
+  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+    <Toolbar variant="docked" color="vibrant" aria-label="Vibrant docked">
+      <IconButton variant="standard" toggle defaultSelected icon={<BoldIcon />} aria-label="Bold" />
+      {item('Italic', ItalicIcon)}
+      {item('Underline', UnderlineIcon)}
+    </Toolbar>
+    <Toolbar variant="floating" color="vibrant" aria-label="Vibrant floating">
+      <IconButton variant="standard" toggle defaultSelected icon={<BoldIcon />} aria-label="Bold" />
+      {item('Italic', ItalicIcon)}
+      {item('Underline', UnderlineIcon)}
+    </Toolbar>
+  </div>
+</Demo>
+
+```tsx
+<Toolbar variant="floating" color="vibrant" aria-label="Formatting">…</Toolbar>
+```
+
+## Expanded / collapsed
+
+On a floating toolbar, `startContent` / `endContent` are shown only while
+`expanded`; `children` always stay. Control it with `expanded` +
+`onExpandedChange`, or start collapsed with `defaultExpanded={false}`.
+Collapsed content is `inert`.
+
+export function ExpandDemo() {
+  const [expanded, setExpanded] = useState(true)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: '100%' }}>
+      <Button variant="text" onClick={() => setExpanded((e) => !e)}>
+        {expanded ? 'Collapse' : 'Expand'}
+      </Button>
+      <Toolbar
+        variant="floating"
+        aria-label="Edit actions"
+        expanded={expanded}
+        onExpandedChange={setExpanded}
+        startContent={[item('Bold', BoldIcon), item('Italic', ItalicIcon)]}
+        endContent={[item('Underline', UnderlineIcon), item('Link', LinkIcon)]}
+      >
+        <IconButton variant="filled" icon={<EditIcon />} aria-label="Edit" />
+      </Toolbar>
+    </div>
+  )
+}
+
+<Demo>
+  <ExpandDemo />
+</Demo>
+
+```tsx
+const [expanded, setExpanded] = useState(true)
+
+<Toolbar
+  variant="floating"
+  aria-label="Edit actions"
+  expanded={expanded}
+  onExpandedChange={setExpanded}
+  startContent={<IconButton variant="standard" icon={<BoldIcon />} aria-label="Bold" />}
+  endContent={<IconButton variant="standard" icon={<LinkIcon />} aria-label="Link" />}
+>
+  <IconButton variant="filled" icon={<EditIcon />} aria-label="Edit" />
+</Toolbar>
+```
+
+## Scroll behavior
+
+`scrollBehavior` observes `scrollTarget` (default `window`):
+
+- `exitAlways` — slides the toolbar off the screen edge while scrolling
+  forward and brings it back on scroll back. A docked toolbar becomes
+  `position: sticky; bottom: 0`.
+- `collapse` — a floating toolbar collapses to its `children` after 40px of
+  forward scrolling and expands after 40px back, driving `expanded` /
+  `onExpandedChange`.
+
+Position a floating toolbar yourself (e.g. absolutely, 16dp from the edge).
+Scroll inside the frames below.
+
+export const paragraphs = Array.from({ length: 20 }, (_, n) => (
+  <p key={n} style={{ margin: '0 0 16px' }}>
+    Paragraph {n + 1}. Content scrolls behind the toolbar.
+  </p>
+))
+
+export const frameStyle = {
+  flex: '1 1 280px',
+  height: 320,
+  overflowY: 'auto',
+  borderRadius: 8,
+  border: '1px solid var(--md-sys-color-outline-variant)',
+}
+
+export function ExitAlwaysDemo() {
+  const scrollRef = useRef(null)
+  return (
+    <div ref={scrollRef} tabIndex={0} role="region" aria-label="exitAlways scroll demo" style={frameStyle}>
+      <div style={{ padding: 16 }}>{paragraphs}</div>
+      <Toolbar variant="docked" aria-label="Formatting" scrollBehavior="exitAlways" scrollTarget={scrollRef}>
+        {formatting}
+      </Toolbar>
+    </div>
+  )
+}
+
+export function CollapseDemo() {
+  const scrollRef = useRef(null)
+  const [expanded, setExpanded] = useState(true)
+  return (
+    <div style={{ position: 'relative', flex: '1 1 280px', height: 320 }}>
+      <div
+        ref={scrollRef}
+        tabIndex={0}
+        role="region"
+        aria-label="collapse scroll demo"
+        style={{ ...frameStyle, height: '100%', padding: 16, boxSizing: 'border-box' }}
+      >
+        {paragraphs}
+      </div>
+      <div
+        style={{
+          position: 'absolute',
+          insetInline: 0,
+          bottom: 16,
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 8,
+        }}
+      >
+        <Toolbar
+          variant="floating"
+          aria-label="Edit actions"
+          scrollBehavior="collapse"
+          scrollTarget={scrollRef}
+          expanded={expanded}
+          onExpandedChange={setExpanded}
+          startContent={[item('Bold', BoldIcon), item('Italic', ItalicIcon), item('Underline', UnderlineIcon)]}
+        />
+        <Fab
+          color="secondary"
+          size={expanded ? 'regular' : 'medium'}
+          icon={<EditIcon />}
+          aria-label="Compose"
+        />
+      </div>
+    </div>
+  )
+}
+
+<Demo>
+  <ExitAlwaysDemo />
+  <CollapseDemo />
+</Demo>
+
+```tsx
+const scrollRef = useRef<HTMLDivElement>(null)
+
+<div ref={scrollRef} style={{ height: 480, overflowY: 'auto' }}>
+  {content}
+  <Toolbar
+    variant="docked"
+    aria-label="Formatting"
+    scrollBehavior="exitAlways"
+    scrollTarget={scrollRef}
+  >
+    …
+  </Toolbar>
+</div>
+```
+
+The second frame shows the m3 "floating toolbar with FAB" pattern: a floating
+toolbar with no `children` collapses away entirely, and the FAB grows to
+`size="medium"` while it is collapsed. `hidden` renders the exit state
+directly (off-screen and `inert`).
+
+## Accessibility
+
+- Renders `role="toolbar"` with `aria-orientation`. Give each toolbar an
+  `aria-label`, especially when a page has several.
+- Keyboard: every item stays in the Tab order, and the arrow keys also move
+  between items — <kbd>←</kbd> / <kbd>→</kbd> (mirrored in RTL) for a
+  horizontal toolbar, <kbd>↑</kbd> / <kbd>↓</kbd> for a vertical one,
+  <kbd>Home</kbd> / <kbd>End</kbd> to the ends. Disabled items are skipped
+  and text fields keep their own arrow keys.
+- Hidden or collapsed content is `inert`. Leave `scrollBehavior` unset when
+  every control must stay on screen; motion is instant under
+  `prefers-reduced-motion: reduce`.
+
+## Props
+
+<PropsTable component="Toolbar" />

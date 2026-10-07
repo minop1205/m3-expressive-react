@@ -53,6 +53,56 @@ the full MD3 color-role map (light and dark) from your `seedColor` at
 runtime via Dynamic Color.
 :::
 
+### Per-component imports
+
+Every component folder is also its own entry point with a **default
+export**, MUI-style. A subpath import loads only that component's CSS, so
+import the design tokens (`tokens.css`) once instead of `styles.css`:
+
+```tsx
+import 'm3-expressive-react/tokens.css' // once, at the app root
+import { ThemeProvider } from 'm3-expressive-react'
+import Button from 'm3-expressive-react/Button'
+import Radio, { RadioGroup } from 'm3-expressive-react/Radio'
+import type { ButtonProps } from 'm3-expressive-react/Button'
+```
+
+- The **default export** is the component the folder is named after
+  (`Button`, `Radio`, `Chip`, `Card`, `Menu`, `Snackbar`, …). Two folders
+  have no namesake: `AppBar` → `TopAppBar` and `ProgressIndicator` →
+  `LinearProgressIndicator`. Every named export and type of the folder —
+  `RadioGroup`, `ChipSet`, `MenuItem`, `SnackbarProvider`, `BottomAppBar`,
+  `CircularProgressIndicator`, … — comes from the same subpath.
+- **Named imports work too**: `import { Button } from 'm3-expressive-react/Button'`.
+- Root and subpath imports **can be mixed**: both resolve to the same
+  modules (one `RadioGroup` context, one `ThemeProvider`). The root entry is
+  unchanged and its JavaScript is tree-shaken either way.
+
+### CSS options
+
+| You import components from…       | Import this CSS once                                  |
+| --------------------------------- | ----------------------------------------------------- |
+| `m3-expressive-react` (root)      | `m3-expressive-react/styles.css` — every component    |
+| `m3-expressive-react/<Component>` | `m3-expressive-react/tokens.css` — tokens + typescale |
+
+With subpath imports each component module imports its own CSS (plus the
+shared Ripple / FocusRing styles); Vite, webpack 5 (with `css-loader`) and
+Next.js (app and pages router) bundle it automatically.
+
+:::caution Pick one setup
+Don't combine `styles.css` with subpath imports — the components' CSS would
+be loaded a second time, which bloats the stylesheet and can reorder the
+cascade.
+:::
+
+:::note Environments without CSS imports
+`require()` (CommonJS, Jest) and server-side Node `import` (the `node`
+export condition, e.g. SSR with externalized dependencies) resolve to
+CSS-free modules, so tests and server rendering never load a `.css` file;
+the client bundle carries the styles. If your bundler cannot import CSS at
+all, use the root entry with `styles.css`.
+:::
+
 ## Next steps
 
 - Browse the [component gallery](/components)

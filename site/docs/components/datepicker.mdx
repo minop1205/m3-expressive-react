@@ -1,0 +1,206 @@
+---
+title: DatePicker
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { DatePicker, DatePickerField, Button } from 'm3-expressive-react'
+
+# DatePicker
+
+MD3 date picker: a calendar with a year picker and a text-input mode, shown
+inline or as a modal dialog. For the docked variant (a text field with a
+calendar dropdown) use `DatePickerField`.
+
+## Inline calendar
+
+Pickers report values value-first: `onChange(value)` receives a `Date` (or
+a `[start, end]` pair in range mode). Use `value` for a controlled picker or
+`defaultValue` for an uncontrolled one.
+
+export function InlineDatePickerDemo() {
+  const [date, setDate] = useState(() => new Date(2026, 5, 10))
+  return (
+    <div>
+      <DatePicker value={date} onChange={setDate} />
+      <p style={{ margin: '12px 0 0' }}>Selected: {date ? date.toDateString() : '—'}</p>
+    </div>
+  )
+}
+
+<Demo>
+  <InlineDatePickerDemo />
+</Demo>
+
+```tsx
+const [date, setDate] = useState<Date | null>(null)
+
+<DatePicker value={date} onChange={(d) => setDate(d as Date)} />
+```
+
+Click the month label to switch to the year picker. `min` / `max` limit the
+selectable dates, and `locale` sets month / weekday names, the first day of
+the week, and the input format (default `'en-US'`).
+
+## Modal dialog
+
+Pass `open` to show the picker as a modal dialog (scrim, focus trap,
+Escape) — the equivalent of Compose's `DatePickerDialog`. It adds the
+Cancel / OK row with draft / commit semantics: `onChange` reports each pick
+(the draft), OK or Enter calls `onAccept`, and Cancel, Escape, or a scrim
+click reverts the value and calls `onCancel`. `onClose(reason)` asks you to
+close, with `'accept' | 'cancel' | 'escapeKeyDown' | 'backdropClick'`.
+
+export function ModalDatePickerDemo() {
+  const [open, setOpen] = useState(false)
+  const [draft, setDraft] = useState(null)
+  const [saved, setSaved] = useState(null)
+  return (
+    <>
+      <Button variant="filled" onClick={() => setOpen(true)}>
+        Pick a date
+      </Button>
+      <span>Saved: {saved ? saved.toDateString() : '—'}</span>
+      <DatePicker
+        open={open}
+        onClose={() => setOpen(false)}
+        value={draft}
+        onChange={setDraft}
+        onAccept={setSaved}
+      />
+    </>
+  )
+}
+
+<Demo>
+  <ModalDatePickerDemo />
+</Demo>
+
+```tsx
+const [open, setOpen] = useState(false)
+const [draft, setDraft] = useState<Date | null>(null)
+
+<Button onClick={() => setOpen(true)}>Pick a date</Button>
+<DatePicker
+  open={open}
+  onClose={(reason) => setOpen(false)}
+  value={draft}
+  onChange={(d) => setDraft(d as Date)}
+  onAccept={(d) => save(d as Date)}
+/>
+```
+
+Passing `onAccept` or `onCancel` without `open` renders the same action row
+on an inline picker.
+
+## Range
+
+`range` selects a start and end date; the value is a `[start, end]` tuple
+(`DateRange`, either end may be `null` while picking).
+
+export function RangeDatePickerDemo() {
+  const [range, setRange] = useState(() => [new Date(2026, 5, 5), new Date(2026, 5, 12)])
+  return (
+    <div>
+      <DatePicker range value={range} onChange={setRange} />
+      <p style={{ margin: '12px 0 0' }}>
+        {range[0]?.toDateString() ?? 'start'} → {range[1]?.toDateString() ?? 'end'}
+      </p>
+    </div>
+  )
+}
+
+<Demo>
+  <RangeDatePickerDemo />
+</Demo>
+
+```tsx
+const [range, setRange] = useState<DateRange>([null, null])
+
+<DatePicker range value={range} onChange={(v) => setRange(v as DateRange)} />
+```
+
+## Input mode
+
+The header's edit icon switches between the calendar and text input. Start
+in input mode with `defaultMode="input"`, control it with `mode` +
+`onModeChange`, or hide the toggle with `showModeToggle={false}`. Typed text
+is parsed in the `locale`'s field order and invalid text shows an error.
+
+<Demo>
+  <DatePicker defaultMode="input" defaultValue={new Date(2026, 5, 10)} />
+</Demo>
+
+```tsx
+<DatePicker defaultMode="input" defaultValue={new Date(2026, 5, 10)} />
+```
+
+## Docked: DatePickerField
+
+`DatePickerField` is an outlined text field with a trailing calendar button
+that opens the calendar in a dropdown. Typed dates commit on Enter or blur;
+picking a day commits immediately (no action row). `onChange(date)` receives
+the date, or `null` when the field is cleared. The helper text defaults to
+the locale's format (e.g. `MM/DD/YYYY`).
+
+export function DatePickerFieldDemo() {
+  const [date, setDate] = useState(null)
+  return <DatePickerField label="Event date" value={date} onChange={setDate} />
+}
+
+<Demo>
+  <DatePickerFieldDemo />
+</Demo>
+
+```tsx
+const [date, setDate] = useState<Date | null>(null)
+
+<DatePickerField label="Event date" value={date} onChange={setDate} />
+```
+
+## Localization
+
+`locale` localizes dates, and every built-in string is a `*Label` prop with
+an English default (`titleLabel`, `okLabel`, `cancelLabel`,
+`previousMonthLabel`, `switchToInputLabel`, `getErrorLabel`, …).
+
+<Demo>
+  <DatePicker
+    locale="ja-JP"
+    defaultValue={new Date(2026, 5, 10)}
+    titleLabel="日付を選択"
+    previousMonthLabel="前の月"
+    nextMonthLabel="次の月"
+    switchToInputLabel="テキスト入力に切り替え"
+    switchToCalendarLabel="カレンダーに切り替え"
+  />
+</Demo>
+
+```tsx
+<DatePicker locale="ja-JP" titleLabel="日付を選択" okLabel="OK" cancelLabel="キャンセル" />
+```
+
+## Accessibility
+
+- The day grid is an APG grid with a single Tab stop: arrow keys move by
+  day / week, PageUp / PageDown by month, Shift+PageUp / PageDown by year,
+  Home / End to the first / last day of the month, and Enter / Space select.
+  Today and range positions are announced via `todayLabel`,
+  `startDateLabel`, `endDateLabel`, and `inRangeLabel`.
+- The month label is a menu button that opens the year picker.
+- The modal picker traps focus, closes on Escape, and returns focus to the
+  opener.
+- `DatePickerField`'s popup is a non-modal `role="dialog"` (named by
+  `dialogLabel`): opening moves focus to the selected day (else today);
+  Escape or a pick closes it and returns focus to the toggle.
+
+## Props
+
+### DatePicker
+
+<PropsTable component="DatePicker" />
+
+### DatePickerField
+
+<PropsTable component="DatePickerField" />

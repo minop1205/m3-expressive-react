@@ -6,3 +6,6 @@ export {
   SegmentedButtons,
   type SegmentedButtonsProps,
 } from './SegmentedButton'
+
+// Default export for the `m3-expressive-react/SegmentedButton` subpath import.
+export { SegmentedButton as default } from './SegmentedButton'

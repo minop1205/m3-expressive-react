@@ -46,6 +46,60 @@ export function App() {
 > `ThemeProvider`, which generates the full MD3 color-role map (light/dark)
 > from your seed color.
 
+> **CSS minifiers**: the styles use modern CSS such as `@starting-style`
+> (popup entry transitions). cssnano and Lightning CSS handle it; **clean-css
+> does not** — it drops the rules inside `@starting-style` and corrupts the
+> rules that follow. If your build minifies CSS with clean-css (e.g.
+> Docusaurus' default minimizer — set `USE_SIMPLE_CSS_MINIFIER=true`),
+> switch to cssnano or Lightning CSS.
+
+## Per-component imports
+
+Every component folder is also its own entry point with a **default
+export**, so you can import MUI-style and load only the CSS you use:
+
+```tsx
+import 'm3-expressive-react/tokens.css' // once, at the app root
+import { ThemeProvider } from 'm3-expressive-react'
+import Button from 'm3-expressive-react/Button'
+import Radio, { RadioGroup } from 'm3-expressive-react/Radio'
+import type { ButtonProps } from 'm3-expressive-react/Button'
+```
+
+- **Default export** = the component the folder is named after
+  (`Button`, `Radio`, `Chip`, `Card`, `Menu`, `Snackbar`, …). Two folders
+  have no namesake: `AppBar` → `TopAppBar`, `ProgressIndicator` →
+  `LinearProgressIndicator`. Every named export and type of the folder
+  (`RadioGroup`, `ChipSet`, `MenuItem`, `SnackbarProvider`,
+  `BottomAppBar`, `CircularProgressIndicator`, …) is available from the same
+  subpath.
+- **CSS loads automatically**: a subpath module imports its own CSS (plus
+  the shared Ripple / FocusRing styles), so your bundler — Vite, webpack 5
+  with `css-loader`, Next.js app and pages router — ships only the styles of
+  the components you import. The design tokens stay global: import
+  `tokens.css` once instead of `styles.css`.
+- **Root and subpath imports can be mixed** — they share the same modules
+  (one `RadioGroup` context, one `ThemeProvider`). The root entry is
+  unchanged and still tree-shaken.
+
+| You import components from…           | Import this CSS once                                  |
+| ------------------------------------- | ----------------------------------------------------- |
+| `m3-expressive-react` (root)          | `m3-expressive-react/styles.css` (every component)    |
+| `m3-expressive-react/<Component>`     | `m3-expressive-react/tokens.css` (tokens + typescale) |
+
+Notes:
+
+- Don't combine `styles.css` with subpath imports: the subpath CSS would be
+  loaded a second time (bigger CSS, and the repeated rules can reorder the
+  cascade). Pick one setup.
+- Environments without CSS imports get CSS-free modules: `require()` (CJS,
+  Jest) and server-side Node `import` (the `node` export condition — e.g. SSR
+  with externalized dependencies) never touch a `.css` file; the client
+  bundle carries the styles. If your bundler cannot import CSS at all, use
+  the root entry with `styles.css`.
+- Types resolve with TypeScript `moduleResolution` `bundler`, `node16`,
+  `nodenext` and legacy `node`.
+
 ## Components
 
 Buttons & actions — `Button`, `IconButton`, `ButtonGroup`, `SplitButton`,

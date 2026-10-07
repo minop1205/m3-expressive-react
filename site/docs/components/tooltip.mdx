@@ -1,0 +1,178 @@
+---
+title: Tooltip
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Tooltip, Button, IconButton } from 'm3-expressive-react'
+
+export const InfoIcon = () => (
+  <svg viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true">
+    <path d="M453-280h60v-240h-60v240Zm50.5-323.2q9.5-9.2 9.5-22.8 0-14.45-9.48-24.22-9.48-9.78-23.5-9.78t-23.52 9.78Q447-640.45 447-626q0 13.6 9.48 22.8 9.48 9.2 23.5 9.2t23.52-9.2ZM480.27-80q-82.74 0-155.5-31.5Q252-143 197.5-197.5t-86-127.34Q80-397.68 80-480.5t31.5-155.66Q143-709 197.5-763t127.34-85.5Q397.68-880 480.5-880t155.66 31.5Q709-817 763-763t85.5 127Q880-563 880-480.27q0 82.74-31.5 155.5Q817-252 763-197.68q-54 54.31-127 86Q563-80 480.27-80Zm.23-60Q622-140 721-239.5t99-241Q820-622 721.19-721T480-820q-141 0-240.5 98.81T140-480q0 141 99.5 240.5t241 99.5Zm-.5-340Z" />
+  </svg>
+)
+
+# Tooltip
+
+MD3 tooltip: a short label (plain) or a richer card with a subhead and
+actions (rich), attached to a single trigger element. The popup renders in the
+top layer and flips / clamps to stay inside the viewport.
+
+## Plain
+
+Hover the trigger, focus it with the keyboard, or long-press it on touch.
+Plain tooltips briefly describe icon buttons and other compact controls.
+
+<Demo>
+  <Tooltip text="More information">
+    <IconButton icon={<InfoIcon />} aria-label="Info" variant="standard" />
+  </Tooltip>
+  <Tooltip text="Saves a copy to your drive">
+    <Button variant="outlined">Save copy</Button>
+  </Tooltip>
+</Demo>
+
+```tsx
+<Tooltip text="More information">
+  <IconButton icon={<Info />} aria-label="Info" variant="standard" />
+</Tooltip>
+```
+
+## Rich
+
+A rich tooltip adds a `subhead` and up to two text-button `action`s, laid
+out side by side.
+
+<Demo>
+  <Tooltip
+    variant="rich"
+    subhead="Rich tooltip"
+    text="Rich tooltips support a subhead, longer body text, and an action."
+    action={<Button variant="text" size="xs">Learn more</Button>}
+  >
+    <Button variant="outlined">Hover or focus me</Button>
+  </Tooltip>
+</Demo>
+
+```tsx
+<Tooltip
+  variant="rich"
+  subhead="Rich tooltip"
+  text="Rich tooltips support a subhead, longer body text, and an action."
+  action={<Button variant="text" size="xs">Learn more</Button>}
+>
+  <Button variant="outlined">Hover or focus me</Button>
+</Tooltip>
+```
+
+## Persistent
+
+`persistent` rich tooltips open and close on click / tap of the trigger
+(hover, focus and long-press don't open them) and stay open until the user
+presses elsewhere, presses <kbd>Escape</kbd>, or moves focus away.
+Recommended when the tooltip has an `action`; avoid it on icon buttons.
+
+<Demo>
+  <Tooltip
+    variant="rich"
+    persistent
+    subhead="New: shared albums"
+    text="Invite people to add their photos to an album you share with them."
+    action={
+      <>
+        <Button variant="text" size="xs">Learn more</Button>
+        <Button variant="text" size="xs">Dismiss</Button>
+      </>
+    }
+  >
+    <Button variant="filled">Share album</Button>
+  </Tooltip>
+</Demo>
+
+```tsx
+<Tooltip
+  variant="rich"
+  persistent
+  subhead="New: shared albums"
+  text="Invite people to add their photos to an album you share with them."
+  action={<Button variant="text" size="xs">Learn more</Button>}
+>
+  <Button variant="filled">Share album</Button>
+</Tooltip>
+```
+
+## Placement
+
+`placement` is the preferred side — `'top'` by default for plain tooltips,
+`'bottom'` for rich ones. The tooltip flips to the other side when there is
+no room and is always kept inside the viewport. Inside a top app bar, use
+`'bottom'`.
+
+<Demo>
+  <Tooltip text="Shown above" placement="top">
+    <Button variant="tonal">Top</Button>
+  </Tooltip>
+  <Tooltip text="Shown below" placement="bottom">
+    <Button variant="tonal">Bottom</Button>
+  </Tooltip>
+</Demo>
+
+```tsx
+<Tooltip text="Shown below" placement="bottom">
+  <Button variant="tonal">Bottom</Button>
+</Tooltip>
+```
+
+## Controlled
+
+Visibility is uncontrolled by default (`defaultOpen`); pass `open` together
+with `onOpenChange` to control it. Here the "Show tooltip" button opens it
+programmatically; hover, focus, <kbd>Escape</kbd> and outside presses still
+report through `onOpenChange`.
+
+export function ControlledDemo() {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button variant="tonal" onClick={() => setOpen(true)}>
+        Show tooltip
+      </Button>
+      <Tooltip text="Copy link" open={open} onOpenChange={setOpen}>
+        <Button variant="outlined">Share</Button>
+      </Tooltip>
+      <span>Tooltip is {open ? 'open' : 'closed'}</span>
+    </>
+  )
+}
+
+<Demo>
+  <ControlledDemo />
+</Demo>
+
+```tsx
+const [open, setOpen] = useState(false)
+
+<Tooltip text="Copy link" open={open} onOpenChange={setOpen}>
+  <Button>Share</Button>
+</Tooltip>
+```
+
+## Accessibility
+
+- Opens on hover, keyboard focus, or touch long-press, and stays open while
+  the pointer or focus is on the trigger or on the tooltip itself. It closes
+  1.5 s after they leave, on <kbd>Escape</kbd> (wherever focus is), or on a
+  press elsewhere — hoverable, dismissible and persistent per WCAG 1.4.13.
+  Only one tooltip is open at a time.
+- While open, the trigger gets `aria-describedby` pointing at the popup,
+  which has `role="tooltip"`.
+- A rich tooltip with an `action` becomes a non-modal `role="dialog"`
+  labelled by its subhead, and its actions are reachable with <kbd>Tab</kbd>
+  from the trigger.
+- The tooltip *describes* its trigger; it does not name it. Icon-only
+  triggers still need their own `aria-label`.
+
+## Props
+
+<PropsTable component="Tooltip" />

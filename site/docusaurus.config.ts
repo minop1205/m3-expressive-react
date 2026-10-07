@@ -2,6 +2,13 @@ import { themes as prismThemes } from 'prism-react-renderer'
 import type { Config } from '@docusaurus/types'
 import type * as Preset from '@docusaurus/preset-classic'
 
+// Docusaurus' default CSS minimizer chains clean-css after cssnano; clean-css
+// does not understand `@starting-style` (used by Menu, Tooltip, SearchBar) and
+// corrupts it plus the rules after it (e.g. Snackbar lost its colors). Use the
+// cssnano-only minimizer. NB: stale output survives in the webpack cache —
+// run `docusaurus clear` when changing this.
+process.env.USE_SIMPLE_CSS_MINIFIER ??= 'true'
+
 const config: Config = {
   title: 'm3-expressive-react',
   tagline: 'Material Design 3 (Expressive) components for React',

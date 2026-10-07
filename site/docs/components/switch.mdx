@@ -1,0 +1,105 @@
+---
+title: Switch
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Switch } from 'm3-expressive-react'
+
+# Switch
+
+MD3 switch for turning a single setting on or off. Built on a native
+`<input type="checkbox" role="switch">`, so labels, keyboard, and form
+submission behave natively.
+
+export const CheckIcon = () => (
+  <svg viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true">
+    <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z" />
+  </svg>
+)
+
+export const CloseIcon = () => (
+  <svg viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true">
+    <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z" />
+  </svg>
+)
+
+## States
+
+<Demo>
+  <Switch aria-label="Unselected" />
+  <Switch defaultSelected aria-label="Selected" />
+  <Switch disabled aria-label="Disabled unselected" />
+  <Switch disabled defaultSelected aria-label="Disabled selected" />
+</Demo>
+
+```tsx
+<Switch aria-label="Wi-Fi" />
+<Switch defaultSelected aria-label="Bluetooth" />
+```
+
+## Controlled
+
+`selected` + `onChange` make the switch controlled; `onChange` receives the
+native event and the next selected state. Use `defaultSelected` for an
+uncontrolled switch.
+
+export function ControlledSwitchDemo() {
+  const [selected, setSelected] = useState(false)
+  return (
+    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+      <Switch selected={selected} onChange={(event, next) => setSelected(next)} />
+      Airplane mode ({selected ? 'on' : 'off'})
+    </label>
+  )
+}
+
+<Demo>
+  <ControlledSwitchDemo />
+</Demo>
+
+```tsx
+const [selected, setSelected] = useState(false)
+
+<label style={{ display: 'inline-flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+  <Switch selected={selected} onChange={(event, next) => setSelected(next)} />
+  Airplane mode ({selected ? 'on' : 'off'})
+</label>
+```
+
+The switch also centers on the text line in a plain inline `<label>` (its
+root sets a matching `vertical-align`); the flex label above adds the gap.
+
+## Icons
+
+`selectedIcon` is shown in the handle while the switch is on. Set `icons` to
+show an icon in both states, with `unselectedIcon` for the off state. Icons
+are any `ReactNode` — see [Icons](../icons.mdx).
+
+<Demo>
+  <Switch defaultSelected selectedIcon={<CheckIcon />} aria-label="Selected icon" />
+  <Switch
+    icons
+    selectedIcon={<CheckIcon />}
+    unselectedIcon={<CloseIcon />}
+    aria-label="Icons in both states"
+  />
+</Demo>
+
+```tsx
+<Switch icons selectedIcon={<Check />} unselectedIcon={<Close />} aria-label="Notifications" />
+```
+
+## Accessibility
+
+- The native input carries `role="switch"`: Tab focuses it and Space
+  toggles it; the on state is exposed as checked.
+- Provide an accessible name: wrap the switch in a `<label>` with visible
+  text, or pass `aria-label`.
+- The touch target is 48dp. `ref` points at the root element; `inputRef`
+  reaches the native input.
+
+## Props
+
+<PropsTable component="Switch" />

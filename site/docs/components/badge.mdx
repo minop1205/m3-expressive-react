@@ -1,0 +1,154 @@
+---
+title: Badge
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Badge, Button } from 'm3-expressive-react'
+
+export const MailIcon = () => (
+  <svg viewBox="0 -960 960 960" width={24} height={24} fill="currentColor" aria-hidden="true">
+    <path d="M140-160q-24 0-42-18t-18-42v-520q0-24 18-42t42-18h680q24 0 42 18t18 42v520q0 24-18 42t-42 18H140Zm340-302L140-685v465h680v-465L480-462Zm0-60 336-218H145l335 218ZM140-685v-55 520-465Z" />
+  </svg>
+)
+
+export const NotificationsIcon = () => (
+  <svg viewBox="0 -960 960 960" width={24} height={24} fill="currentColor" aria-hidden="true">
+    <path d="M160-200v-60h80v-304q0-84 49.5-150.5T420-798v-22q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820v22q81 17 130.5 83.5T720-564v304h80v60H160Zm320-302Zm0 422q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM300-260h360v-304q0-75-52.5-127.5T480-744q-75 0-127.5 52.5T300-564v304Z" />
+  </svg>
+)
+
+# Badge
+
+MD3 badge: a small dot or a short count attached to the corner of its
+anchor content (usually an icon), announcing new or unread items.
+
+## Small (dot)
+
+`size="small"` renders a 6dp dot with no number — "something new".
+
+<Demo>
+  <Badge size="small">
+    <MailIcon />
+  </Badge>
+</Demo>
+
+```tsx
+<Badge size="small">
+  <MailIcon />
+</Badge>
+```
+
+## Large (count)
+
+The default `size="large"` shows `value`. Without a `value` no badge is
+drawn; `0` is shown as a number.
+
+<Demo>
+  <Badge value={3}>
+    <MailIcon />
+  </Badge>
+  <Badge value={42}>
+    <NotificationsIcon />
+  </Badge>
+  <Badge value={0}>
+    <MailIcon />
+  </Badge>
+  <Badge>
+    <MailIcon />
+  </Badge>
+</Demo>
+
+```tsx
+<Badge value={3}>
+  <MailIcon />
+</Badge>
+```
+
+## Max
+
+Values above `max` (default `999`) render as `{max}+`. Keep `max` at 999 or
+below — MD3 limits a badge to four characters including the `+`.
+
+<Demo>
+  <Badge value={1200}>
+    <NotificationsIcon />
+  </Badge>
+  <Badge value={100} max={99}>
+    <MailIcon />
+  </Badge>
+</Demo>
+
+```tsx
+<Badge value={100} max={99}>
+  <MailIcon />
+</Badge>
+```
+
+## Label
+
+The badge is announced through visually hidden text: `"New notification"` for
+a dot, `"{n} new notifications"` for a count. Pass `label` to describe it
+differently or to localize.
+
+<Demo>
+  <Badge value={5} label="5 unread messages">
+    <MailIcon />
+  </Badge>
+  <Badge size="small" label="New alert">
+    <NotificationsIcon />
+  </Badge>
+</Demo>
+
+```tsx
+<Badge value={count} label={`${count} unread messages`}>
+  <MailIcon />
+</Badge>
+```
+
+## Visibility
+
+`visible={false}` scales the badge out — typically once the user has seen
+what it points to — and removes it from the accessibility tree too.
+
+export function VisibilityDemo() {
+  const [visible, setVisible] = useState(true)
+  return (
+    <>
+      <Badge value={5} visible={visible}>
+        <NotificationsIcon />
+      </Badge>
+      <Button variant="text" onClick={() => setVisible((v) => !v)}>
+        {visible ? 'Mark as read' : 'Show badge'}
+      </Button>
+    </>
+  )
+}
+
+<Demo>
+  <VisibilityDemo />
+</Demo>
+
+```tsx
+<Badge value={5} visible={!read}>
+  <NotificationsIcon />
+</Badge>
+```
+
+## Accessibility
+
+- The badge is not a live region: updating it does not interrupt the screen
+  reader. Its description is read as part of the anchor's content (the
+  visible digits themselves are hidden from assistive technology).
+- The default English description is `"New notification"` (dot) or
+  `"{n} new notifications"` (count, using the displayed value such as
+  `999+`). Override it with `label`.
+- The hidden text sits right after the anchor content in reading order.
+  When the anchor is an interactive element (an icon button, a navigation
+  item), that element still needs its own accessible name.
+- A hidden badge (`visible={false}`) is not announced.
+
+## Props
+
+<PropsTable component="Badge" />

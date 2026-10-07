@@ -10,3 +10,6 @@ export {
   type DatePickerFieldProps,
   type DateInputError,
 } from './DatePickerField'
+
+// Default export for the `m3-expressive-react/DatePicker` subpath import.
+export { DatePicker as default } from './DatePicker'

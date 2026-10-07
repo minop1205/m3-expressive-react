@@ -1,0 +1,323 @@
+---
+title: Carousel
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Button, Carousel, CarouselItem } from 'm3-expressive-react'
+
+# Carousel
+
+MD3 (Expressive) carousel: a horizontally scrolling row of 28dp-rounded
+items. `multi-browse` and `hero` use Compose's keyline layout — items are
+masked (never scaled) as they move between large, medium and small sizes.
+
+export const Slide = ({ i, children }) => (
+  <div
+    style={{
+      height: '100%',
+      display: 'flex',
+      alignItems: 'flex-end',
+      padding: 16,
+      boxSizing: 'border-box',
+      color: '#fff',
+      fontWeight: 600,
+      textShadow: '0 1px 2px rgb(0 0 0 / 0.4)',
+      background: `linear-gradient(160deg, hsl(${(i * 47) % 360} 60% 62%), hsl(${(i * 47) % 360} 55% 30%))`,
+    }}
+  >
+    {children ?? `Item ${i + 1}`}
+  </div>
+)
+
+export const Frame = ({ children }) => (
+  <div style={{ width: '100%', maxWidth: 640 }}>{children}</div>
+)
+
+## Multi-browse
+
+The default layout: one or more large items followed by medium and small
+(40–56dp) items, snapping to the start. `itemWidth` is the preferred large
+width; the actual size is fitted to the container.
+
+<Demo>
+  <Frame>
+    <Carousel aria-label="Photos">
+      {Array.from({ length: 8 }, (_, i) => (
+        <CarouselItem key={i}>
+          <Slide i={i} />
+        </CarouselItem>
+      ))}
+    </Carousel>
+  </Frame>
+</Demo>
+
+```tsx
+<Carousel aria-label="Photos" itemWidth={260} itemHeight={200}>
+  {photos.map((photo) => (
+    <CarouselItem key={photo.id}>
+      <img src={photo.src} alt={photo.alt} />
+    </CarouselItem>
+  ))}
+</Carousel>
+```
+
+Images keep their size and are clipped by the item's mask.
+
+## Uncontained
+
+Single-size items that flow past the edge of the container and scroll
+freely, without snapping.
+
+<Demo>
+  <Frame>
+    <Carousel aria-label="Photos" variant="uncontained" itemWidth={200}>
+      {Array.from({ length: 8 }, (_, i) => (
+        <CarouselItem key={i}>
+          <Slide i={i} />
+        </CarouselItem>
+      ))}
+    </Carousel>
+  </Frame>
+</Demo>
+
+```tsx
+<Carousel aria-label="Photos" variant="uncontained" itemWidth={200}>
+  …
+</Carousel>
+```
+
+## Hero
+
+A large, centered item with a small item on each side, snapping to the
+center (the first and last items align to the start and end).
+
+<Demo>
+  <Frame>
+    <Carousel aria-label="Featured" variant="hero" itemHeight={240}>
+      {Array.from({ length: 6 }, (_, i) => (
+        <CarouselItem key={i}>
+          <Slide i={i + 2} />
+        </CarouselItem>
+      ))}
+    </Carousel>
+  </Frame>
+</Demo>
+
+```tsx
+<Carousel aria-label="Featured" variant="hero" itemHeight={240}>
+  …
+</Carousel>
+```
+
+## Interactive items
+
+`onClick` renders an item as a `<button>` and `href` as an `<a>`, with the
+state layer, ripple and focus ring. Tab and Left / Right move between
+items, and a focused item scrolls into the large position. `disabled` dims
+an interactive item and removes it from the Tab order.
+
+<Demo>
+  <Frame>
+    <Carousel aria-label="Albums">
+      {Array.from({ length: 7 }, (_, i) => (
+        <CarouselItem key={i} aria-label={`Album ${i + 1}`} onClick={() => {}} disabled={i === 3}>
+          <Slide i={i}>{`Album ${i + 1}`}</Slide>
+        </CarouselItem>
+      ))}
+    </Carousel>
+  </Frame>
+</Demo>
+
+```tsx
+<Carousel aria-label="Albums">
+  {albums.map((album) => (
+    <CarouselItem key={album.id} aria-label={album.title} onClick={() => play(album)}>
+      <img src={album.cover} alt="" />
+    </CarouselItem>
+  ))}
+</Carousel>
+```
+
+Link items: `href` renders each item as an `<a>`, so it opens in a new tab
+with a middle click or <kbd>Ctrl</kbd>/<kbd>⌘</kbd>-click like any link.
+
+export const guides = [
+  ['Overview', 'https://m3.material.io/components/carousel/overview'],
+  ['Specs', 'https://m3.material.io/components/carousel/specs'],
+  ['Guidelines', 'https://m3.material.io/components/carousel/guidelines'],
+  ['Accessibility', 'https://m3.material.io/components/carousel/accessibility'],
+  ['Buttons', 'https://m3.material.io/components/buttons/overview'],
+  ['Chips', 'https://m3.material.io/components/chips/overview'],
+]
+
+<Demo>
+  <Frame>
+    <Carousel aria-label="Material 3 guides" itemHeight={160}>
+      {guides.map(([title, url], i) => (
+        <CarouselItem key={title} href={url} aria-label={title}>
+          <Slide i={i + 1}>{title}</Slide>
+        </CarouselItem>
+      ))}
+    </Carousel>
+  </Frame>
+</Demo>
+
+```tsx
+<Carousel aria-label="Articles">
+  {articles.map((article) => (
+    <CarouselItem key={article.id} href={article.url} aria-label={article.title}>
+      <img src={article.cover} alt="" />
+    </CarouselItem>
+  ))}
+</Carousel>
+```
+
+## Spacing
+
+`spacing` is the gap between items in px (8 by default); the keyline
+layout is fitted to the remaining width.
+
+<Demo>
+  <Frame>
+    <Carousel aria-label="Photos" spacing={24} itemHeight={160}>
+      {Array.from({ length: 8 }, (_, i) => (
+        <CarouselItem key={i}>
+          <Slide i={i + 3} />
+        </CarouselItem>
+      ))}
+    </Carousel>
+  </Frame>
+</Demo>
+
+```tsx
+<Carousel aria-label="Photos" spacing={24}>
+  …
+</Carousel>
+```
+
+## Localized labels
+
+Each item is announced with its position — "2 of 7" by default. Pass
+`getItemLabel` to localize it, and `roleDescriptionLabel` /
+`itemRoleDescriptionLabel` for the announced "carousel" / "slide" role
+descriptions.
+
+<Demo>
+  <Frame>
+    <Carousel
+      aria-label="Fotos"
+      getItemLabel={(position, count) => `${position} von ${count}`}
+      roleDescriptionLabel="Karussell"
+      itemRoleDescriptionLabel="Folie"
+      itemHeight={160}
+    >
+      {Array.from({ length: 6 }, (_, i) => (
+        <CarouselItem key={i}>
+          <Slide i={i + 4}>{`Foto ${i + 1}`}</Slide>
+        </CarouselItem>
+      ))}
+    </Carousel>
+  </Frame>
+</Demo>
+
+```tsx
+<Carousel
+  aria-label="Fotos"
+  getItemLabel={(position, count) => `${position} von ${count}`}
+  roleDescriptionLabel="Karussell"
+  itemRoleDescriptionLabel="Folie"
+>
+  …
+</Carousel>
+```
+
+## Scrolling with a mouse, wheel and keyboard
+
+The carousel is a native scroller, so touch, a trackpad's horizontal swipe
+and **Shift + mouse wheel** scroll it (with momentum and snapping). With a
+mouse, **drag** it: it follows the pointer and, on release, flings and
+snaps to an item like a touch swipe (`uncontained` coasts without
+snapping). A drag that starts on an interactive item never activates it,
+and a drag never starts on controls nested inside an item. A plain
+vertical wheel keeps scrolling the page — the carousel does not capture
+it.
+
+On vertically scrolling pages, give mouse and keyboard users a way to see
+every item without scrolling horizontally: m3 recommends a **Show all**
+control in nearby navigation rather than arrow buttons on the carousel.
+
+export function ShowAllDemo() {
+  const [all, setAll] = useState(false)
+  return (
+    <section aria-labelledby="carousel-show-all" style={{ width: '100%', maxWidth: 640 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingInlineStart: 16 }}>
+        <strong id="carousel-show-all">Recent photos</strong>
+        <Button variant="text" aria-expanded={all} onClick={() => setAll((v) => !v)}>
+          {all ? 'Show less' : 'Show all'}
+        </Button>
+      </div>
+      {all ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8, padding: '8px 16px' }}>
+          {Array.from({ length: 8 }, (_, i) => (
+            <div key={i} style={{ height: 120, borderRadius: 28, overflow: 'hidden' }}>
+              <Slide i={i} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Carousel aria-labelledby="carousel-show-all">
+          {Array.from({ length: 8 }, (_, i) => (
+            <CarouselItem key={i}>
+              <Slide i={i} />
+            </CarouselItem>
+          ))}
+        </Carousel>
+      )}
+    </section>
+  )
+}
+
+<Demo>
+  <ShowAllDemo />
+</Demo>
+
+```tsx
+<section aria-labelledby="recent">
+  <header>
+    <h2 id="recent">Recent photos</h2>
+    <Button variant="text" onClick={() => navigate('/photos')}>
+      Show all
+    </Button>
+  </header>
+  <Carousel aria-labelledby="recent">…</Carousel>
+</section>
+```
+
+## Accessibility
+
+- Always give the carousel an `aria-label`: it is a `group` announced with
+  the role description "carousel".
+- Non-interactive items are `group`s announced as slides and named by their
+  position ("2 of 7"); interactive items get their position as the
+  accessible description, so name them with their content or `aria-label`.
+- With interactive items, Tab and Left / Right (mirrored in RTL) move
+  between items. Without them, the scroll container itself is focusable
+  so keyboard users can still scroll it.
+- Under `prefers-reduced-motion: reduce`, every item keeps one size (no
+  keyline masking), and focus scrolling and the release of a mouse drag
+  are instant.
+- Mouse users can drag the carousel; offer a "Show all" control (above)
+  so nothing depends on horizontal scrolling alone.
+- Put nested interactive content only in non-interactive items.
+
+## Props
+
+### Carousel
+
+<PropsTable component="Carousel" />
+
+### CarouselItem
+
+<PropsTable component="CarouselItem" />

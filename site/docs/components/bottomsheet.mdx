@@ -1,0 +1,91 @@
+---
+title: BottomSheet
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { BottomSheet, Button, List, ListItem } from 'm3-expressive-react'
+
+# BottomSheet
+
+MD3 modal bottom sheet: slides up from the bottom edge over a scrim, with
+28dp top corners and a drag handle. Scrim click, <kbd>Escape</kbd>, the
+drag handle, or dragging the sheet down dismisses it.
+
+export function BottomSheetDemo({ label = 'Open bottom sheet', showDragHandle }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button variant={showDragHandle === false ? 'outlined' : 'filled'} onClick={() => setOpen(true)}>
+        {label}
+      </Button>
+      {/* Raised above the docs navbar; the sheet itself is position: fixed. */}
+      <div style={{ position: 'relative', zIndex: 'var(--ifm-z-index-overlay)' }}>
+        <BottomSheet
+          open={open}
+          onClose={() => setOpen(false)}
+          showDragHandle={showDragHandle}
+          aria-label="Share"
+        >
+          <List aria-label="Share options">
+            <ListItem headline="Copy link" onClick={() => setOpen(false)} />
+            <ListItem headline="Send by email" onClick={() => setOpen(false)} />
+            <ListItem headline="Share to contacts" onClick={() => setOpen(false)} />
+          </List>
+        </BottomSheet>
+      </div>
+    </>
+  )
+}
+
+<Demo>
+  <BottomSheetDemo />
+</Demo>
+
+```tsx
+const [open, setOpen] = useState(false)
+
+<Button onClick={() => setOpen(true)}>Open bottom sheet</Button>
+<BottomSheet open={open} onClose={() => setOpen(false)} aria-label="Share">
+  <List>
+    <ListItem headline="Copy link" onClick={copyLink} />
+    <ListItem headline="Send by email" onClick={sendEmail} />
+  </List>
+</BottomSheet>
+```
+
+## Dragging to dismiss
+
+Drag the sheet down with a pointer: releasing it past 56px, or flinging it
+down faster than 125px/s, dismisses it (Compose `ModalBottomSheet`
+thresholds); otherwise it settles back. Hide the drag handle with
+`showDragHandle={false}` — the sheet can still be closed by the scrim and
+<kbd>Escape</kbd>.
+
+<Demo>
+  <BottomSheetDemo label="With drag handle" />
+  <BottomSheetDemo label="Without drag handle" showDragHandle={false} />
+</Demo>
+
+```tsx
+<BottomSheet open={open} onClose={close} showDragHandle={false}>
+  …
+</BottomSheet>
+```
+
+## Accessibility
+
+- The sheet is a `role="dialog"` with `aria-modal`. Name it with
+  `aria-label` or `aria-labelledby` (default name: "Bottom sheet").
+- While open, focus moves into the sheet and is trapped there, the rest of
+  the page is `inert`, and body scroll is locked; on close, focus returns
+  to the element that opened it.
+- The drag handle is a real button (Enter / click dismisses); relabel it
+  with `dragHandleLabel` (default "Close").
+- Dragging is a pointer-only enhancement: every dismissal path also works
+  from the keyboard.
+
+## Props
+
+<PropsTable component="BottomSheet" />
