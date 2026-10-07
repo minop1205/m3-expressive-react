@@ -2,6 +2,7 @@
 title: Tooltip
 ---
 
+import { useState } from 'react'
 import Demo from '@site/src/components/Demo'
 import PropsTable from '@site/src/components/PropsTable'
 import { Tooltip, Button, IconButton } from 'm3-expressive-react'
@@ -126,7 +127,28 @@ no room and is always kept inside the viewport. Inside a top app bar, use
 ## Controlled
 
 Visibility is uncontrolled by default (`defaultOpen`); pass `open` together
-with `onOpenChange` to control it.
+with `onOpenChange` to control it. Here the "Show tooltip" button opens it
+programmatically; hover, focus, <kbd>Escape</kbd> and outside presses still
+report through `onOpenChange`.
+
+export function ControlledDemo() {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <Button variant="tonal" onClick={() => setOpen(true)}>
+        Show tooltip
+      </Button>
+      <Tooltip text="Copy link" open={open} onOpenChange={setOpen}>
+        <Button variant="outlined">Share</Button>
+      </Tooltip>
+      <span>Tooltip is {open ? 'open' : 'closed'}</span>
+    </>
+  )
+}
+
+<Demo>
+  <ControlledDemo />
+</Demo>
 
 ```tsx
 const [open, setOpen] = useState(false)

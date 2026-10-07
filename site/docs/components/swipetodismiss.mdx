@@ -132,6 +132,54 @@ the distance a slow release must pass to dismiss — a fling of at least
 125px/s dismisses regardless of distance. Directions are logical, so they
 mirror in RTL.
 
+### Direction and threshold
+
+The left list only dismisses start→end (`enableEndToStart={false}`); the
+right one needs a 160px slow drag (`threshold={160}`) instead of 56px.
+
+export function OptionsDemo({ label, ...props }) {
+  const [items, setItems] = useState([1, 2, 3])
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: '1 1 260px', maxWidth: 360 }}>
+      <List style={listStyle}>
+        {items.map((n) => (
+          <SwipeToDismiss
+            key={n}
+            onDismiss={() => setItems((prev) => prev.filter((x) => x !== n))}
+            startToEndBackground={archiveBackground}
+            endToStartBackground={deleteBackground}
+            {...props}
+          >
+            <ListItem headline={`${label} #${n}`} />
+          </SwipeToDismiss>
+        ))}
+      </List>
+      <Button variant="text" style={{ alignSelf: 'flex-start' }} onClick={() => setItems([1, 2, 3])}>
+        Reset
+      </Button>
+    </div>
+  )
+}
+
+<Demo>
+  <OptionsDemo label="Archive only" enableEndToStart={false} />
+  <OptionsDemo label="Drag 160px" threshold={160} />
+</Demo>
+
+```tsx
+<SwipeToDismiss
+  onDismiss={archive}
+  enableEndToStart={false}
+  startToEndBackground={<ArchiveBackground />}
+>
+  <ListItem headline="Archive only" />
+</SwipeToDismiss>
+
+<SwipeToDismiss onDismiss={remove} threshold={160} background={<DeleteBackground />}>
+  <ListItem headline="Drag 160px" />
+</SwipeToDismiss>
+```
+
 ## Delete button alternative
 
 Swiping must not be the only way to reach an action. The controlled

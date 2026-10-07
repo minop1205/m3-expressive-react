@@ -2,6 +2,7 @@
 title: SplitButton
 ---
 
+import { useState } from 'react'
 import Demo from '@site/src/components/Demo'
 import PropsTable from '@site/src/components/PropsTable'
 import { SplitButton, MenuItem } from 'm3-expressive-react'
@@ -75,13 +76,50 @@ leading button.
 ## Controlled menu
 
 The menu is uncontrolled by default (`defaultOpen`); pass `open` +
-`onOpenChange(open)` to control it. `menuAlign` aligns it to the trailing
-button (`'end'` by default).
+`onOpenChange(open)` to control it — here the state is mirrored in the
+text beside the button.
+
+export function ControlledDemo() {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <SplitButton
+        open={open}
+        onOpenChange={setOpen}
+        menu={sendMenu}
+        trailingAriaLabel="More send options"
+      >
+        Send
+      </SplitButton>
+      <span>Menu is {open ? 'open' : 'closed'}</span>
+    </>
+  )
+}
+
+<Demo>
+  <ControlledDemo />
+</Demo>
 
 ```tsx
 const [open, setOpen] = useState(false)
 
 <SplitButton open={open} onOpenChange={setOpen} menu={menu}>
+  Send
+</SplitButton>
+```
+
+## Menu alignment
+
+`menuAlign` aligns the menu to the trailing button: `'end'` (default)
+lines up the menu's end edge with it, `'start'` its start edge.
+
+<Demo>
+  <SplitButton variant="tonal" menuAlign="start" menu={sendMenu} trailingAriaLabel="More send options">Align start</SplitButton>
+  <SplitButton variant="tonal" menuAlign="end" menu={sendMenu} trailingAriaLabel="More send options">Align end</SplitButton>
+</Demo>
+
+```tsx
+<SplitButton menuAlign="start" menu={menu}>
   Send
 </SplitButton>
 ```
