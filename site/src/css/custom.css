@@ -28,3 +28,12 @@
   --ifm-color-primary-lightest: #4fddbf;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
 }
+
+/* MDX wraps text that sits on its own line inside JSX in a <p>. Inside a
+   control (e.g. a Button label written over several lines) that paragraph's
+   margins push the label off-center (#376, icons page). Neutralise only those
+   attribute-less, MDX-generated paragraphs inside live demos. */
+.m3-demo :is(button, label, [role='button'], [role='tab'], [role='option'], [role='menuitem'], [role='radio'])
+  p:not([class]):not([style]) {
+  display: contents;
+}
