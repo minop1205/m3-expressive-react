@@ -135,7 +135,40 @@ icon stays and the check appears beside it — give each such segment an
 />
 ```
 
-`showSelectedCheck={false}` hides the check on selected segments.
+`showSelectedCheck={false}` hides the check on selected segments; the
+selected container color alone marks the selection.
+
+<Demo>
+  <SegmentedButton
+    aria-label="Calendar view"
+    defaultValue="week"
+    showSelectedCheck={false}
+    options={[
+      { value: 'day', label: 'Day' },
+      { value: 'week', label: 'Week' },
+      { value: 'month', label: 'Month' },
+    ]}
+  />
+  <SegmentedButton
+    aria-label="Text alignment"
+    defaultValue="center"
+    showSelectedCheck={false}
+    options={[
+      { value: 'left', icon: <AlignLeftIcon />, ariaLabel: 'Align left' },
+      { value: 'center', icon: <AlignCenterIcon />, ariaLabel: 'Align center' },
+      { value: 'right', icon: <AlignRightIcon />, ariaLabel: 'Align right' },
+    ]}
+  />
+</Demo>
+
+```tsx
+<SegmentedButton
+  aria-label="Calendar view"
+  defaultValue="week"
+  showSelectedCheck={false}
+  options={views}
+/>
+```
 
 ## Disabled
 
