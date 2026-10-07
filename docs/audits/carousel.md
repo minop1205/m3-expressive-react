@@ -86,17 +86,90 @@ CR4 → #246、CR5 → #247、CR6 → #248、CR7 → #249
   CR1 の mask 実装が item 幅の不揃いを許すかは実装時に確認
 - **「Show all」ボタン / 見出しの矢印ボタン**: site a11y の「On vertically-scrolling pages, carousels require an accessible way to
   view all the items without horizontally scrolling」はアプリ側の構成要件(Compose も持たない)。JSDoc / ストーリーで推奨を示す
+  → **対応済み(#374)**: JSDoc・ストーリー `ShowAll`・サイト docs「Scrolling with a mouse, wheel and keyboard」で Show all を推奨
 - **`aria-label` 必須化**: 型では任意。名前がないと `group` が無名になる。JSDoc で必須と書く(型で強制するほどではない)
 - **container role の表記**: site「The carousel container has the container role」は抽象的。`group` + roledescription は APG と
   一致(`region` は landmark が増えるため採らない)
 - **snap の強さ**: Compose multi-browse / hero は `PagerSnapDistance.atMost(1)`(1 フリングで最大1 item)。CSS の
-  `scroll-snap-stop: always` 相当だが Web のホイール / トラックパッドでは過剰に重くなりうる → 採らない
+  `scroll-snap-stop: always` 相当だが Web のホイール / トラックパッドでは過剰に重くなりうる → 採らない。
+  ただしマウスドラッグ(#374、JS 制御)の release は Compose どおり**押下時の item から最大 ±1 item**
 - **snap アニメーションの spring**(`StiffnessMediumLow`): Web はネイティブ snap に任せる(`scroll-behavior` / reduced motion は
-  ブラウザ既定)
+  ブラウザ既定)。マウスドラッグの release も `scrollTo({ behavior: 'smooth' })`(ブラウザの snap と同じ曲線、
+  reduced motion は即時)で揃える — touch と同じ見え方を優先
 - **mask の transition**: 実装は scroll に `transition: short2 linear` を重ねて追従が遅れる。CR1 で scroll 位置から直接算出する
-  (Compose も補間は scroll offset の関数でアニメーションなし)
+  (Compose も補間は scroll offset の関数でアニメーションなし)。→ #245 で scroll イベントから算出、さらに #375 で
+  compositor 駆動に変更(下記「修正」)
 - **ストーリーのカバレッジ**: RTL、reduced motion、item 内テキスト / ボタン、画像 item、狭い幅(small が 40dp 未満になる幅)
   がない。CR1〜CR7 の修正 PR で足すこと
+
+## 修正(#374 マウススクロール / #375 スクロール中のガタつき、2026-10-07)
+
+### #375 — 方式の裁定: **案 A(ネイティブスクロール維持 + compositor 駆動の mask)を採用**
+
+原因: #245 の mask は `onScroll` で全 item の `--_item-start` / `--_item-size` / `--_content-start` を書き、CSS が
+`inset-inline-start` / `width`(レイアウトプロパティ)に変換していた。スクロール(特に touch の慣性)は compositor が
+即座に動かすのに mask はメインスレッドで ≥1 フレーム遅れて追従するため、古い mask が剛体スクロールされては
+次フレームで戻る =「行って戻る」ガタつき。uncontained は mask がないので滑らか。
+
+| 検討 | 結論 |
+|---|---|
+| A-1: `clip-path: inset()` + `transform` を scroll-driven animation で | **不可**。Chromium 147 の trace(`blink.animations` の `Animation` イベント)で `clip-path` は `compositeFailed: 8192, unsupportedProperties: ["clip-path"]` — scroll-driven でも compositor に乗らず、mask の端がメインスレッドに残る(transform 単独は `compositeFailed: 0`) |
+| **A-2: transform だけで mask(採用)** | item を「終端クリップ > 始端クリップ > item」の3層に分け、各層を `overflow: hidden` + 片側だけ角丸にして **translateX だけ**で動かす(終端クリップ = `start + size − L`、始端クリップ = `L − size`、item = `contentStart`)。keyline 補間(shift 領域は非線形)を `itemTrack()` が許容誤差 0.1px の区分線形キーフレームに標本化(粗グリッド + 二分 + 間引き、1 要素 5〜12 キーフレーム)し、`element.animate(frames, { timeline: new ScrollTimeline({ source, axis: 'inline' }) })` で compositor に渡す。RTL は ScrollTimeline の進捗が inline-start 起点(実測: `scrollLeft −250 / 1000` → 25%)なので符号だけ反転。trace で全アニメーション `compositeFailed: 0` |
+| B: Pager 風に自前スクロール(transform トラック) | 不採用。A-2 でラグが消えるため不要。B はネイティブ慣性・トラックパッド / Shift+ホイール・ブラウザのフォーカス scroll-into-view・支援技術のスクロール操作を全部作り直す必要があり a11y リスクが大きい |
+
+フォールバック: `ScrollTimeline` が無いブラウザ(Firefox、Safari 25 以前)は scroll イベントで **transform だけ**を書く
+(レイアウトなし。compositor スクロール中は従来同様 1 フレーム遅れうるが、layout は発生しない)。Safari 26 は
+scroll-driven animations を実装済み(MDN / caniuse)。WebKit がそれを compositor(threaded animation)で回すかは
+本機で WebKit を実行できず未検証 — 回らなくても最悪フォールバックと同等で、レイアウトは発生しない。
+
+補足の設計判断:
+- **縁の描画**: 2 つのクリップはそれぞれ自分の側の角だけを丸め、item 自身の端は可視範囲の外に置く → 各辺のアンチエイリアスは1回
+  (item の背景がにじまない)。幅 < 2 × 角丸の small item は JS が `--_corner-cap`(可視幅 / 2)で角丸を詰める(Compose /
+  CSS の角丸縮小と同じピル形状。値が変わる時だけ書く、paint のみ)
+- 完全に mask された item は始端クリップを 2px 余分にずらし、2 つのクリップ端のピクセルスナップ差で 1px の筋が残るのを防ぐ
+- クリップ要素は `pointer-events: none`(画面外 item のクリップが隣の item に重なってクリックを奪うため)、item だけが受ける
+- hover の elevation とフォーカスリングはクリップの外の `.frame`(可視ボックスに追従、hover / focus 中の slot だけ JS 更新)に移動。
+  FocusRing は `composes: ring fill` + `:has(:focus-visible)`(選択系コントロールと同じ方式)
+- 押下時の角丸変化は登録カスタムプロパティ `--_carousel-shape` を transition(角丸キャップの更新で transition が走らないように)
+- マウスドラッグ中(メインスレッドで `scrollLeft` を書く)は scroll-driven animation を一時停止して inline transform で同一フレーム
+  描画、release で再開(負荷時に compositor 側 mask が 1 フレーム遅れる現象を実測したため。再開直後の pending 中も inline を書く)
+
+### #374 — マウス操作
+
+- **ドラッグ**(`pointerType === 'mouse'`、主ボタン): 8px(Compose touch slop)を超えたらドラッグ開始。ポインタに追従し、release で
+  速度(直近 100ms)から — snap 系(multi-browse / hero / reduced motion)は **400px/s(Compose `MinFlingVelocityDp`)以上で
+  進行方向の次の snap 位置、未満なら最寄り、押下時の位置から最大 ±1 item**、uncontained は Android の spline decay(Compose
+  `rememberSplineBasedDecay`)の到達距離まで snap なしで流す。ドラッグ中と settle 中はネイティブ snap を切り、着地後に戻す
+- slop を超えたドラッグの後の click は capture で握りつぶす(`onClick` / `href` が発火・遷移しない)。押下中の ripple は
+  pointercancel で解除、押下の角丸変化も出さない。item 内の入れ子のインタラクティブ要素(input・button 等)からは開始しない。
+  touch / pen はネイティブスクロールのまま。画像・リンクのネイティブ drag は抑止
+- カーソル: スクロール可能な時 `grab`、ドラッグ中 `grabbing`(item 上も)
+- **縦ホイールは奪わない**(ページスクロールを優先)。opt-in の `wheelScroll` も**追加しない** — Shift + ホイールとトラックパッドの
+  横スワイプはネイティブで動き、ホイールの横取りはページのスクロールを止めてしまう。代わりに m3 推奨の「Show all」を
+  ストーリー `ShowAll` とサイト docs で示す
+
+### 実測(headless Chromium 147、Storybook、viewport 700px)
+
+`Page.startScreencast` で compositor の出力フレームを取り、各 item 色の可視範囲を走査線で追跡(rAF の
+`getBoundingClientRect` はメインスレッドの状態しか見えず、旧実装でもズレを検出できない)。**zigzag** = ある辺が 3 フレーム以内に
+前進→後退→前進した回数(ガタつき)。`load` = 毎フレーム 12ms のメインスレッド負荷(低速端末相当)。
+
+| ケース | 旧(develop) | 新 |
+|---|---|---|
+| multi-browse touch fling(load 0 / 12) | zigzag 71 / 58、最大逆行 30px | 0 / 0 |
+| hero touch fling(0 / 12) | 64 / 54、37px | 0 / 0 |
+| narrow touch fling(0 / 12) | 82 / 77、30px | 0 / 0 |
+| RTL touch fling | 67、30px | 0 |
+| マウスドラッグ + release(multi-browse / hero / narrow / interactive / RTL、load 12) | (動かない) | zigzag 0、snap 位置に着地 |
+| キーフレーム精度(全 scroll 位置 7px 刻み、厳密計算との差) | — | 最大 0.114px |
+
+その他(実ブラウザ): 通常クリックで link item が遷移・button item が発火、ドラッグでは発火しない、slop 未満の移動はクリック、
+入れ子の button からドラッグしない、縦ホイールで scrollLeft 不変(ページが動く)、横ホイールはネイティブで snap、
+uncontained の fling は 160px のドラッグで 220px 進んで snap なし、reduced motion は全 item 同寸・アニメーションなし・release 即時、
+RTL は右ドラッグで前進して右端に snap、矢印キー / フォーカスの scroll-into-view は従来どおり、hover の elevation と
+フォーカスリングは mask された item の可視ボックスに一致、axe-core(実ブラウザ)全ストーリー違反 0。
+静止時の見た目: reduced motion(VRT の撮影条件)は旧と同一(差 ≤ 4px・角の AA のみ)。motion 有効時は mask 端が
+小数位置のまま AA される(旧はレイアウトの整数スナップ)ため縁の 1px が僅かに異なる。
 
 ## ソース間の食い違い(スペック優先順位で裁定)
 
@@ -180,3 +253,8 @@ CR4 → #246、CR5 → #247、CR6 → #248、CR7 → #249
   ずれが見える。RTL で `document.documentElement.dir='rtl'` にして scroll イベントを dispatch すると差が顕在化する
 - axe は jsdom では `scrollable-region-focusable` を検出しない(レイアウトがないため)。スクロールコンテナは実ブラウザで
   axe を回すこと
+- compositor とメインスレッドのズレは rAF の `getBoundingClientRect` では見えない(どちらもメインスレッドの値)。
+  `Page.startScreencast` のフレームを走査して可視範囲を追う。CDP `Input.dispatchTouchEvent` の連続 move で touch fling を再現できる
+- 何が compositor に乗るかは trace の `blink.animations` / `Animation` イベントの `compositeFailed` で確認できる
+  (Chromium 147: scroll-driven でも `clip-path` は不可、`transform` は可)
+- 複数のクリップ要素を translate で重ねる時は、画面外の要素のクリップが隣に重なってヒットテストを奪う → `pointer-events`

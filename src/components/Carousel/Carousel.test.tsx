@@ -313,3 +313,90 @@ describe('Carousel keyboard navigation (#248)', () => {
     expect(one).toHaveFocus()
   })
 })
+
+describe('Carousel mouse drag (#374)', () => {
+  // jsdom has no layout: give carousels a scrollable range.
+  const restore: (() => void)[] = []
+  const stub = (prop: 'scrollWidth' | 'clientWidth', value: number) => {
+    const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, prop)
+    Object.defineProperty(HTMLElement.prototype, prop, {
+      configurable: true,
+      get(this: HTMLElement) {
+        return this.hasAttribute('data-carousel') ? value : (original?.get?.call(this) ?? 0)
+      },
+    })
+    restore.push(() => {
+      if (original) Object.defineProperty(HTMLElement.prototype, prop, original)
+    })
+  }
+  afterEach(() => {
+    restore.splice(0).forEach((r) => r())
+  })
+
+  const setup = (onClick = vi.fn()) => {
+    stub('scrollWidth', 1200)
+    stub('clientWidth', 400)
+    render(
+      <Carousel aria-label="Albums">
+        <CarouselItem onClick={onClick}>One</CarouselItem>
+        <CarouselItem onClick={onClick}>Two</CarouselItem>
+        <CarouselItem>
+          <input aria-label="Caption" />
+        </CarouselItem>
+      </Carousel>,
+    )
+    return { carousel: screen.getByRole('group', { name: 'Albums' }), onClick }
+  }
+
+  const press = (el: Element, x: number, pointerType = 'mouse') =>
+    fireEvent.pointerDown(el, { pointerId: 1, pointerType, button: 0, clientX: x, clientY: 10 })
+  const move = (x: number) =>
+    fireEvent.pointerMove(document.body, { pointerId: 1, pointerType: 'mouse', clientX: x, clientY: 10 })
+  const release = (x: number) =>
+    fireEvent.pointerUp(document.body, { pointerId: 1, pointerType: 'mouse', clientX: x, clientY: 10 })
+
+  it('marks a scrollable carousel as draggable (grab cursor)', () => {
+    const { carousel } = setup()
+    expect(carousel).toHaveAttribute('data-draggable')
+  })
+
+  it('drags past the slop and swallows the click that ends the drag', () => {
+    const { carousel, onClick } = setup()
+    const two = screen.getByRole('button', { name: 'Two' })
+    press(two, 200)
+    move(195)
+    expect(carousel).not.toHaveAttribute('data-dragging')
+    move(170)
+    expect(carousel).toHaveAttribute('data-dragging')
+    release(150)
+    fireEvent.click(two)
+    expect(onClick).not.toHaveBeenCalled()
+    expect(carousel).not.toHaveAttribute('data-dragging')
+  })
+
+  it('still clicks after a press that moved less than the slop', () => {
+    const { onClick } = setup()
+    const two = screen.getByRole('button', { name: 'Two' })
+    press(two, 200)
+    move(196)
+    release(196)
+    fireEvent.click(two)
+    expect(onClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('never starts a drag on interactive content nested inside an item', () => {
+    const { carousel } = setup()
+    press(screen.getByRole('textbox', { name: 'Caption' }), 200)
+    move(100)
+    expect(carousel).not.toHaveAttribute('data-dragging')
+    release(100)
+  })
+
+  it('leaves touch and pen to native scrolling', () => {
+    const { carousel } = setup()
+    press(screen.getByRole('button', { name: 'Two' }), 200, 'touch')
+    move(100)
+    expect(carousel).not.toHaveAttribute('data-dragging')
+    release(100)
+  })
+})

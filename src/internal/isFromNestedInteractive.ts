@@ -3,7 +3,7 @@
  * typing). A clickable container must not also act on events that come from
  * one of these descendants.
  */
-const INTERACTIVE_SELECTOR = [
+export const INTERACTIVE_SELECTOR = [
   'button',
   'a[href]',
   'input',

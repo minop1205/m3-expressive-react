@@ -995,3 +995,122 @@ export function revealScrollOffset(
   }
   return best
 }
+
+/**
+ * The item's mask as three translations (px along the inline axis), so it can
+ * be drawn with transforms only (composited, #375). Each is relative to its
+ * parent; all are zero for an unmasked item.
+ * - `end`     — the end-edge clip: an `L`-wide box whose end edge is the
+ *   visible end, `start + size − L`;
+ * - `start`   — the start-edge clip inside it, whose start edge is the visible
+ *   start: `L − size` (plus a 2px gap once the item is masked away entirely);
+ * - `content` — the item itself (unmasked, `L` wide) inside the start clip:
+ *   `contentStart`. Its own edges stay outside the visible box, so only the
+ *   two clips draw (and antialias) the masked edges.
+ */
+export interface ItemTransforms {
+  end: number
+  start: number
+  content: number
+}
+
+export function itemTransforms(s: Strategy, box: ItemBox): ItemTransforms {
+  const L = s.itemMainAxisSize
+  // Below 1px the start clip also slides up to 2px past the end clip, so a
+  // masked-away item leaves no pixel-snapped sliver where the two edges meet.
+  const gap = Math.max(0, 1 - box.size) * 2
+  return { end: box.start + box.size - L, start: L - box.size + gap, content: box.contentStart }
+}
+
+/** The item's transforms at `scrollOffset` (one call of the keyline model). */
+export function itemTransformsAt(
+  s: Strategy,
+  index: number,
+  itemCount: number,
+  scrollOffset: number,
+): ItemTransforms {
+  const keylines = getKeylineListForScrollOffset(s, scrollOffset, maxScrollOffset(s, itemCount))
+  return itemTransforms(s, itemBox(s, keylines, index, scrollOffset))
+}
+
+export interface ItemTrack {
+  /** Scroll offsets (px, ascending, `0 … range`). */
+  offsets: number[]
+  /** The transforms at each offset; linear interpolation between them stays within the tolerance. */
+  values: ItemTransforms[]
+}
+
+const CHANNELS = ['end', 'start', 'content'] as const
+
+/**
+ * A piecewise-linear approximation of the item's transforms over the scroll
+ * range `[0, range]` — the keyframes of a scroll-driven animation
+ * (`ScrollTimeline`), so the browser can mask the item on the compositor in
+ * the same frame as the scroll. The keyline model is piecewise linear except
+ * inside the start / end shift regions, so a coarse grid is refined by
+ * bisection until every channel is within `tolerance` px and then thinned to
+ * the knots that matter.
+ */
+export function itemTrack(
+  s: Strategy,
+  index: number,
+  itemCount: number,
+  range: number,
+  tolerance = 0.1,
+): ItemTrack {
+  const at = (o: number) => itemTransformsAt(s, index, itemCount, o)
+  if (!(range > 0)) return { offsets: [0], values: [at(0)] }
+
+  const err = (a: ItemTransforms, b: ItemTransforms, t: number, v: ItemTransforms) =>
+    Math.max(...CHANNELS.map((c) => Math.abs(lerpValue(a[c], b[c], t) - v[c])))
+
+  // Coarse grid (16px) refined by bisection.
+  const xs: number[] = []
+  const vs: ItemTransforms[] = []
+  const refine = (x0: number, v0: ItemTransforms, x1: number, v1: ItemTransforms, depth: number) => {
+    const probes = [0.25, 0.5, 0.75].map((t) => ({ t, v: at(lerpValue(x0, x1, t)) }))
+    const bad = probes.some((p) => err(v0, v1, p.t, p.v) > tolerance)
+    if (bad && x1 - x0 > 0.25 && depth < 16) {
+      const xm = (x0 + x1) / 2
+      const vm = probes[1].v
+      refine(x0, v0, xm, vm, depth + 1)
+      xs.push(xm)
+      vs.push(vm)
+      refine(xm, vm, x1, v1, depth + 1)
+    }
+  }
+  const steps = Math.max(1, Math.ceil(range / 16))
+  let px = 0
+  let pv = at(0)
+  xs.push(px)
+  vs.push(pv)
+  for (let i = 1; i <= steps; i++) {
+    const x = (range * i) / steps
+    const v = at(x)
+    refine(px, pv, x, v, 0)
+    xs.push(x)
+    vs.push(v)
+    px = x
+    pv = v
+  }
+
+  // Thin: drop knots that the line between their kept neighbours reproduces.
+  const offsets = [xs[0]]
+  const values = [vs[0]]
+  let anchor = 0
+  for (let j = 2; j < xs.length; j++) {
+    let fits = true
+    for (let k = anchor + 1; k < j && fits; k++) {
+      const t = (xs[k] - xs[anchor]) / (xs[j] - xs[anchor])
+      fits = err(vs[anchor], vs[j], t, vs[k]) <= tolerance
+    }
+    if (!fits) {
+      anchor = j - 1
+      offsets.push(xs[anchor])
+      values.push(vs[anchor])
+    }
+  }
+  offsets.push(xs[xs.length - 1])
+  values.push(vs[vs.length - 1])
+  return { offsets, values }
+}
