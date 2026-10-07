@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
+import { Button } from '../Button'
 import { Carousel, CarouselItem } from './Carousel'
 
 const meta = {
@@ -146,4 +148,55 @@ export const RightToLeft: Story = {
       </Carousel>
     </div>
   ),
+}
+
+/**
+ * Mouse and keyboard users (m3 carousel accessibility): the carousel scrolls by
+ * dragging with the mouse (fling + snap like touch), Shift + wheel, a
+ * trackpad's horizontal swipe, or Tab / Left / Right on interactive items — a
+ * plain vertical wheel keeps scrolling the page. On vertically scrolling pages
+ * m3 recommends a **Show all** control in nearby navigation (not arrow buttons
+ * on the carousel) so every item can be reached without horizontal scrolling.
+ */
+export const ShowAll: Story = {
+  render: function Render() {
+    const [all, setAll] = useState(false)
+    return (
+      <section aria-labelledby="show-all-title" style={{ maxWidth: 640 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 4px 0 16px',
+          }}
+        >
+          <h2 id="show-all-title" style={{ font: 'inherit', fontWeight: 600, margin: 0 }}>
+            Recent photos
+          </h2>
+          <Button variant="text" aria-expanded={all} onClick={() => setAll((v) => !v)}>
+            {all ? 'Show less' : 'Show all'}
+          </Button>
+        </div>
+        {all ? (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+              gap: 8,
+              padding: '8px 16px',
+            }}
+          >
+            {COLORS.map((c, i) => (
+              <div key={i} style={{ background: c, height: 120, borderRadius: 28 }}>
+                {label(i)}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <Carousel aria-labelledby="show-all-title">{items()}</Carousel>
+        )}
+      </section>
+    )
+  },
 }

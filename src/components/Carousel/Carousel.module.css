@@ -6,17 +6,41 @@
  * Keyline layout (data-mode="keylines", multi-browse / hero): each item owns a
  * fixed layout slot at the large size (`--_large-size`, computed in JS), so the
  * native scroll range and the snap points (`scroll-margin-inline-start` per
- * slot) never move. The visible item inside the slot is positioned and sized
- * from the scroll offset (`--_item-start` / `--_item-size`, Compose
- * `Modifier.carouselItem`): a mask, not a scale — the content keeps the large
- * size (`--_content-start` counter-offsets it), the item keeps its full height
- * and 28dp corners. The keylines span the content box inside the 16dp
- * start / end padding and items are clipped to it (JS), like a Compose
- * carousel inset by that padding.
+ * slot) never move. The visible item inside the slot is *masked* from the
+ * scroll offset (Compose `Modifier.carouselItem`) — a mask, not a scale: the
+ * content keeps the large size, the item keeps its full height and 28dp
+ * corners. The keylines span the content box inside the 16dp start / end
+ * padding and items are clipped to it, like a Compose carousel inset by that
+ * padding.
+ *
+ * The mask is drawn with transforms only (#375), so the browser can run it on
+ * the compositor in the same frame as the scroll (a scroll-driven animation
+ * per element, see Carousel.tsx — Chromium does not composite clip-path):
+ *
+ *   .slot          fixed L-wide layout box (the snap target)
+ *   .clip[end]     L wide, overflow-clipped, translated so its end edge is the
+ *                  visible end — clips (and rounds) the inline-end side
+ *   .clip[start]   L wide, overflow-clipped, translated so its start edge is
+ *                  the visible start — clips (and rounds) the inline-start side
+ *   .item          L wide, the unmasked item (background, content, ripple),
+ *                  translated to its keyline place; its own edges stay outside
+ *                  the visible box, so each masked edge is antialiased once
+ *
+ * The visible box is a 28dp-rounded rectangle of the masked size. `.frame`
+ * (interactive items) carries the hover elevation and the focus ring around
+ * that box, outside the clips.
  *
  * data-mode="uniform" (reduced motion) and "flow" (uncontained): plain
- * same-size items with 16dp inline padding.
+ * same-size items with 16dp inline padding (no transforms).
  */
+
+/* Registered so the pressed shape change can transition while the corner cap
+   (below) follows the scroll without one. */
+@property --_carousel-shape {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
 
 .scroller {
   display: flex;
@@ -50,6 +74,23 @@
   scroll-snap-type: none;
 }
 
+/* Mouse drag (#374): a grab cursor while there is something to scroll. While
+   dragging, and while the release animates to its snap position, native
+   snapping is off (it would fight the programmatic scroll). */
+.scroller[data-draggable] {
+  cursor: grab;
+}
+
+.scroller[data-dragging],
+.scroller[data-settling] {
+  scroll-snap-type: none;
+}
+
+.scroller[data-dragging] {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
 /* Fixed layout slot — the snap target. Never transformed or resized by the
    scroll, so snapping and the scroll range stay stable. */
 .slot {
@@ -59,20 +100,47 @@
   width: var(--_large-size, var(--_item-w, 320px));
   height: var(--_item-h, 200px);
   scroll-snap-align: start;
+
+  --_container-shape: var(--md-sys-shape-corner-extra-large);
+  --_carousel-shape: var(--_container-shape);
+  /* Items narrower than two corners keep a pill shape (Compose / CSS shrink
+     the corners to fit): JS caps the radius at half the visible size. */
+  --_shape: min(var(--_carousel-shape), var(--_corner-cap, 1000px));
 }
 
+.clip,
 .item {
   position: absolute;
   top: 0;
   bottom: 0;
-  inset-inline-start: var(--_item-start, 0px);
-  width: var(--_item-size, 100%);
+  inset-inline-start: 0;
+  width: 100%;
   box-sizing: border-box;
   display: block;
+  overflow: hidden;
+}
+
+/* A clip can be translated over its neighbours (an item masked away at the
+   edge keeps L-wide clips) — only the item inside takes the pointer. */
+.clip {
+  pointer-events: none;
+}
+
+.clip[data-carousel-clip='end'] {
+  border-start-end-radius: var(--_shape);
+  border-end-end-radius: var(--_shape);
+}
+
+.clip[data-carousel-clip='start'] {
+  border-start-start-radius: var(--_shape);
+  border-end-start-radius: var(--_shape);
+}
+
+.item {
+  pointer-events: auto;
   margin: 0;
   padding: 0;
   border: 0;
-  border-radius: var(--_container-shape);
   background-color: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface);
   font: inherit;
@@ -81,28 +149,16 @@
   outline: none;
   -webkit-tap-highlight-color: transparent;
 
-  --_container-shape: var(--md-sys-shape-corner-extra-large);
   --md-ripple-color: var(--md-sys-color-on-surface);
-  --md-focus-ring-color: var(--md-sys-color-secondary);
 }
 
-/* Clip layer: the visible (masked) item box with the 28dp corners. Kept apart
-   from .item so the focus ring (outside the item) is not clipped. */
-.clip {
-  position: absolute;
-  inset: 0;
-  display: block;
-  overflow: hidden;
-  border-radius: inherit;
-}
-
-/* The unmasked content: always the large size, counter-offset by the mask. */
+/* The item's children (the item is always the large size). */
 .content {
   position: absolute;
   top: 0;
   bottom: 0;
-  inset-inline-start: var(--_content-start, 0px);
-  width: var(--_large-size, var(--_item-w, 320px));
+  inset-inline-start: 0;
+  width: 100%;
   display: block;
 }
 
@@ -111,6 +167,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  -webkit-user-drag: none;
 }
 
 /* --------------------------------------------------------------------------- */
@@ -121,20 +178,45 @@
 
 .item[data-interactive] {
   cursor: pointer;
-  /* Press shape change: bounce-free like the Button press morph (Compose
-     DefaultEffects, B5). Elevation keeps the duration / easing tokens. */
-  transition:
-    border-radius var(--md-sys-motion-spring-default-effects-duration)
-      var(--md-sys-motion-spring-default-effects-easing),
-    box-shadow var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
 }
 
-.item[data-interactive]:hover:not([data-disabled]) {
+/* The visible item box (JS keeps `--_item-start` / `--_item-size` current for
+   a hovered / focused item); defaults to the whole slot when unmasked. */
+.frame {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  inset-inline-start: var(--_item-start, 0px);
+  width: var(--_item-size, 100%);
+  border-radius: var(--_shape);
+  pointer-events: none;
+  transition: box-shadow var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
+
+  --md-focus-ring-color: var(--md-sys-color-secondary);
+}
+
+.focusRing {
+  composes: ring fill from '../../primitives/FocusRing/FocusRing.module.css';
+}
+
+.slot:has(> .clip > .clip > .item[data-interactive]:focus-visible) > .frame > .focusRing {
+  display: flex;
+}
+
+.slot:has(> .clip > .clip > .item[data-interactive]:hover:not([data-disabled])) > .frame {
   box-shadow: var(--md-sys-elevation-shadow-level1);
 }
 
+/* Press shape change: bounce-free like the Button press morph (Compose
+   DefaultEffects, B5). Not while the press turned into a drag. */
+.slot:has(> .clip > .clip > .item[data-interactive]) {
+  transition: --_carousel-shape var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
+}
+
 /* Pressed: "Tapping on a carousel item changes the shape slightly". */
-.item[data-interactive]:active:not([data-disabled]) {
+.scroller:not([data-dragging])
+  .slot:has(> .clip > .clip > .item[data-interactive]:active:not([data-disabled])) {
   --_container-shape: var(--md-sys-shape-corner-large-increased);
 }
 
@@ -143,8 +225,15 @@
   opacity: 0.38;
 }
 
+/* Declared last: the dragging cursor wins over the items' pointer cursor. */
+.scroller[data-dragging],
+.scroller[data-dragging] .item {
+  cursor: grabbing;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .item[data-interactive] {
+  .slot:has(> .clip > .clip > .item[data-interactive]),
+  .frame {
     transition: none;
   }
 }

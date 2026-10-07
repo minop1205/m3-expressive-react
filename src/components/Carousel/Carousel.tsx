@@ -15,21 +15,27 @@ import {
   type FocusEvent,
   type HTMLAttributes,
   type KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
   type ReactNode,
   type Ref,
 } from 'react'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
-import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import { INTERACTIVE_SELECTOR } from '../../internal/isFromNestedInteractive'
 import {
   createStrategy,
   getKeylineListForScrollOffset,
   heroKeylineList,
   itemBox,
+  itemTrack,
+  itemTransforms,
   maxScrollOffset,
   multiBrowseKeylineList,
   snapPositionOffset,
+  snapScrollOffset,
   revealScrollOffset,
+  type ItemTransforms,
   type Strategy,
 } from './keylines'
 import styles from './Carousel.module.css'
@@ -86,6 +92,12 @@ export interface CarouselProps extends HTMLAttributes<HTMLDivElement> {
 
 /** 16dp start / end padding (m3 carousel specs). */
 const PAD = 16
+/** Mouse drag slop (Compose `ViewConfiguration.touchSlop`, 8dp). */
+const DRAG_SLOP = 8
+/** Fling threshold of a snapping release (Compose `MinFlingVelocityDp`, 400dp/s). */
+const MIN_FLING_VELOCITY = 400
+/** Pointer samples used for the release velocity (ms). */
+const VELOCITY_WINDOW = 100
 
 const defaultGetItemLabel = (position: number, count: number) => `${position} of ${count}`
 
@@ -102,8 +114,37 @@ const ItemContext = createContext<CarouselContextValue | null>(null)
 
 const SLOT = '[data-carousel-slot]'
 const ITEM = '[data-carousel-item]'
+const END_CLIP = '[data-carousel-clip="end"]'
+const START_CLIP = '[data-carousel-clip="start"]'
+const FRAME = '[data-carousel-frame]'
 const TABBABLE =
   'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]), [contenteditable="true"]'
+
+type ScrollTimelineCtor = new (options: {
+  source: Element
+  axis: 'block' | 'inline' | 'x' | 'y'
+}) => AnimationTimeline
+
+/** CSS scroll-driven animations (Chromium 115+, Safari 26+); `undefined` elsewhere. */
+const getScrollTimeline = (): ScrollTimelineCtor | undefined =>
+  typeof window === 'undefined'
+    ? undefined
+    : (window as unknown as { ScrollTimeline?: ScrollTimelineCtor }).ScrollTimeline
+
+/**
+ * Projected fling distance (px) for a release velocity (px/s) — Compose
+ * `rememberSplineBasedDecay` (Android `FlingCalculator`: scroll friction
+ * 0.015, inflexion 0.35, deceleration rate ln 0.78 / ln 0.9) at 1px per dp.
+ */
+function flingDistance(velocity: number): number {
+  const v = Math.abs(velocity)
+  if (v < 1) return 0
+  const DECELERATION_RATE = Math.log(0.78) / Math.log(0.9)
+  const physicalCoeff = 9.80665 * 39.37 * 160 * 0.84
+  const friction = 0.015 * physicalCoeff
+  const l = Math.log((0.35 * v) / friction)
+  return Math.sign(velocity) * friction * Math.exp((DECELERATION_RATE / (DECELERATION_RATE - 1)) * l)
+}
 
 function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(
@@ -129,6 +170,37 @@ function setRef<T>(ref: Ref<T> | undefined, node: T | null) {
   else if (ref) (ref as { current: T | null }).current = node
 }
 
+/** The mask's elements in a slot: end clip > start clip > item (see the CSS). */
+interface SlotParts {
+  end: HTMLElement | null
+  start: HTMLElement | null
+  content: HTMLElement | null
+  frame: HTMLElement | null
+}
+
+const slotParts = (slot: HTMLElement): SlotParts => {
+  const end = slot.querySelector<HTMLElement>(`:scope > ${END_CLIP}`)
+  const start = end?.querySelector<HTMLElement>(`:scope > ${START_CLIP}`) ?? null
+  return {
+    end,
+    start,
+    content: start?.querySelector<HTMLElement>(`:scope > ${ITEM}`) ?? null,
+    frame: slot.querySelector<HTMLElement>(`:scope > ${FRAME}`),
+  }
+}
+
+const PART_CHANNELS = ['end', 'start', 'content'] as const
+
+interface DragState {
+  pointerId: number
+  startX: number
+  startScroll: number
+  /** Logical scroll offset at the press (for the single-advance limit). */
+  pressOffset: number
+  dragging: boolean
+  samples: { t: number; x: number }[]
+}
+
 /**
  * Material Design 3 (Expressive) Carousel.
  *
@@ -139,9 +211,17 @@ function setRef<T>(ref: Ref<T> | undefined, node: T | null) {
  * out at the large size and *masked* (clipped, never scaled) to the size of
  * the keyline it passes, so items grow and shrink between large, medium and
  * small as they scroll while keeping their full height and 28dp corners.
- * Under `prefers-reduced-motion: reduce` all items keep one size (m3
- * carousel accessibility). `uncontained` items never change size and scroll
- * freely.
+ * Where CSS scroll-driven animations are supported the mask is a
+ * compositor-run animation of the scroll position, so it moves in the same
+ * frame as the scroll. Under `prefers-reduced-motion: reduce` all items keep
+ * one size (m3 carousel accessibility). `uncontained` items never change size
+ * and scroll freely.
+ *
+ * Scrolling: touch, trackpad, Shift + mouse wheel, keyboard and mouse drag
+ * (drag, fling and snap like touch — a drag never activates the item it
+ * started on). A plain vertical wheel keeps scrolling the page. For mouse /
+ * keyboard users on vertically scrolling pages, m3 recommends a "Show all"
+ * control near the carousel rather than arrow buttons.
  *
  * Give the carousel an `aria-label`. Items are announced as slides with their
  * position ("2 of 7", see `getItemLabel`). With `onClick` / `href` items, Tab
@@ -164,12 +244,23 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
     onScroll,
     onKeyDown,
     onFocus,
+    onPointerDown,
+    onPointerOver,
+    onClickCapture,
+    onDragStart,
     ...rest
   },
   ref,
 ) {
   const scrollerRef = useRef<HTMLDivElement | null>(null)
   const strategyRef = useRef<Strategy | null>(null)
+  /** Compositor-driven (ScrollTimeline) mask animations, when supported. */
+  const animationsRef = useRef<Animation[]>([])
+  const rtlRef = useRef(false)
+  const dragRef = useRef<DragState | null>(null)
+  const dragCleanupRef = useRef<(() => void) | null>(null)
+  const settleCleanupRef = useRef<(() => void) | null>(null)
+  const suppressClickRef = useRef(false)
   const reducedMotion = usePrefersReducedMotion()
   const [hasFocusable, setHasFocusable] = useState(false)
 
@@ -182,7 +273,17 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
       (el) => el.parentElement?.closest('[data-carousel]') === scrollerRef.current,
     )
 
-  /** Masks every item for the current scroll offset (Compose `carouselItem`). */
+  const cancelAnimations = () => {
+    animationsRef.current.forEach((a) => a.cancel())
+    animationsRef.current = []
+  }
+
+  /**
+   * Masks every item for the current scroll offset (Compose `carouselItem`):
+   * the transforms (unless a scroll-driven animation already runs them), the
+   * corner cap of items narrower than two corners, and the decoration frame
+   * (hover elevation, focus ring) of a hovered / focused item.
+   */
   const applyMask = useCallback(() => {
     const scroller = scrollerRef.current
     const strategy = strategyRef.current
@@ -196,11 +297,30 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
       offset,
       maxScrollOffset(strategy, count),
     )
+    // Live scroll-driven animations draw the transforms; until they are (none,
+    // cancelled while dragging, or still pending after a resume) the inline
+    // transforms below do.
+    const animations = animationsRef.current
+    const animated =
+      animations.length > 0 && animations.every((a) => a.playState === 'running' && !a.pending)
+    const sign = rtlRef.current ? -1 : 1
     els.forEach((slot, i) => {
       const box = itemBox(strategy, keylines, i, offset)
-      slot.style.setProperty('--_item-start', `${box.start}px`)
-      slot.style.setProperty('--_item-size', `${box.size}px`)
-      slot.style.setProperty('--_content-start', `${box.contentStart}px`)
+      const parts = slotParts(slot)
+      if (!animated) {
+        const t = itemTransforms(strategy, box)
+        for (const part of PART_CHANNELS) {
+          parts[part]?.style.setProperty('transform', `translateX(${sign * t[part]}px)`)
+        }
+      }
+      // Corners shrink to half the visible size (a pill) once it is narrower
+      // than two corners (28dp extra-large; 32px leaves headroom). Written only
+      // on change, so full-size items cost nothing per frame.
+      setIfChanged(slot, '--_corner-cap', box.size < 2 * 32 ? `${box.size / 2}px` : '')
+      if (parts.frame && (slot.matches(':hover') || slot.matches(':focus-within'))) {
+        setIfChanged(slot, '--_item-start', `${box.start}px`)
+        setIfChanged(slot, '--_item-size', `${box.size}px`)
+      }
     })
   }, [])
 
@@ -210,13 +330,21 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
     if (!scroller) return
     const els = slots()
     const count = els.length
+    rtlRef.current = getComputedStyle(scroller).direction === 'rtl'
+    cancelAnimations()
     const clearItems = () =>
       els.forEach((slot) => {
-        slot.style.removeProperty('--_item-start')
-        slot.style.removeProperty('--_item-size')
-        slot.style.removeProperty('--_content-start')
+        for (const name of ['--_item-start', '--_item-size', '--_corner-cap']) {
+          slot.style.removeProperty(name)
+        }
         slot.style.removeProperty('scroll-margin-inline-start')
+        const parts = slotParts(slot)
+        for (const part of PART_CHANNELS) parts[part]?.style.removeProperty('transform')
       })
+    const finish = () => {
+      if (scroller.scrollWidth - scroller.clientWidth >= 1) scroller.setAttribute('data-draggable', '')
+      else scroller.removeAttribute('data-draggable')
+    }
 
     strategyRef.current = null
     // Keylines span the content box inside the 16dp start / end padding
@@ -225,6 +353,7 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
     if (mode === 'flow' || width <= 0 || count === 0) {
       scroller.style.removeProperty('--_large-size')
       clearItems()
+      finish()
       return
     }
 
@@ -236,6 +365,7 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
     if (!strategy) {
       scroller.style.removeProperty('--_large-size')
       clearItems()
+      finish()
       return
     }
 
@@ -245,6 +375,7 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
       const size = Math.min(strategy.itemMainAxisSize, width)
       scroller.style.setProperty('--_large-size', `${size}px`)
       clearItems()
+      finish()
       return
     }
 
@@ -256,6 +387,36 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
         `${snapPositionOffset(strategy, i, count)}px`,
       )
     })
+    finish()
+
+    // #375: drive the mask from the scroll position on the compositor — a
+    // scroll-driven animation per masked element, sampled from the keyline
+    // model. Transforms only: Chromium does not composite clip-path, so the
+    // mask is two overflow clips moved by transforms (see Carousel.module.css).
+    const ScrollTimeline = getScrollTimeline()
+    const range = scroller.scrollWidth - scroller.clientWidth
+    if (ScrollTimeline && range >= 1 && typeof scroller.animate === 'function') {
+      try {
+        const timeline = new ScrollTimeline({ source: scroller, axis: 'inline' })
+        const sign = rtlRef.current ? -1 : 1
+        els.forEach((slot, i) => {
+          const track = itemTrack(strategy, i, count, range)
+          const parts = slotParts(slot)
+          for (const part of PART_CHANNELS) {
+            const el = parts[part]
+            if (!el) continue
+            const frames = track.offsets.map((o, k) => ({
+              offset: Math.min(1, o / range),
+              transform: `translateX(${sign * (track.values[k] as ItemTransforms)[part]}px)`,
+            }))
+            animationsRef.current.push(el.animate(frames, { timeline, fill: 'both' }))
+          }
+        })
+      } catch {
+        cancelAnimations()
+      }
+    }
+    // Static values (the fallback, and the state before the timeline is live).
     applyMask()
   }, [applyMask, mode, variant, preferredWidth, spacing])
 
@@ -267,8 +428,19 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
     if (!scroller || typeof ResizeObserver === 'undefined') return
     const ro = new ResizeObserver(() => applyLayout())
     ro.observe(scroller)
-    return () => ro.disconnect()
+    return () => {
+      ro.disconnect()
+      cancelAnimations()
+    }
   }, [applyLayout, childCount, itemHeight])
+
+  useEffect(
+    () => () => {
+      dragCleanupRef.current?.()
+      settleCleanupRef.current?.()
+    },
+    [],
+  )
 
   // Keep the container reachable by keyboard only when nothing inside it is
   // (m3: "Avoid focusing on the carousel container"; axe
@@ -312,7 +484,10 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
   const handleFocus = (event: FocusEvent<HTMLDivElement>) => {
     onFocus?.(event)
     const slot = (event.target as HTMLElement).closest<HTMLElement>(SLOT)
-    if (slot && scrollerRef.current?.contains(slot)) revealSlot(slot)
+    if (slot && scrollerRef.current?.contains(slot)) {
+      applyMask()
+      revealSlot(slot)
+    }
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -335,6 +510,194 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
     next.focus({ preventScroll: true })
     const slot = next.closest<HTMLElement>(SLOT)
     if (slot) revealSlot(slot)
+  }
+
+  // ------------------------------------------------------------------------
+  // Mouse drag (#374): drag, fling and snap like touch. Touch / pen keep the
+  // native scroller; the vertical wheel is left to the page.
+  // ------------------------------------------------------------------------
+
+  /** The snap positions (logical scroll offsets, ascending, deduplicated). */
+  const snapOffsets = (): number[] => {
+    const scroller = scrollerRef.current
+    if (!scroller) return []
+    const els = slots()
+    const max = scroller.scrollWidth - scroller.clientWidth
+    const strategy = strategyRef.current
+    const gap = parseFloat(getComputedStyle(scroller).columnGap) || 0
+    const raw = els.map((slot, i) =>
+      strategy
+        ? snapScrollOffset(strategy, i, els.length)
+        : i * (slot.getBoundingClientRect().width + gap),
+    )
+    const sorted = raw.map((o) => Math.min(Math.max(o, 0), max)).sort((a, b) => a - b)
+    return sorted.filter((o, i) => i === 0 || o - sorted[i - 1] >= 1)
+  }
+
+  /** Ends a settle animation: snapping back on, at the snap position. */
+  const endSettle = () => {
+    settleCleanupRef.current?.()
+    settleCleanupRef.current = null
+  }
+
+  /** Release: fling (uncontained) or snap at most one item onwards (Compose single advance). */
+  const settle = (logicalVelocity: number, pressOffset: number) => {
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    const current = Math.abs(scroller.scrollLeft)
+    const max = scroller.scrollWidth - scroller.clientWidth
+    let target = current
+    if (mode === 'flow') {
+      target = Math.min(Math.max(current + flingDistance(logicalVelocity), 0), max)
+    } else {
+      const offsets = snapOffsets()
+      if (offsets.length === 0) return
+      const nearest = (x: number) =>
+        offsets.reduce((best, o, i) => (Math.abs(o - x) < Math.abs(offsets[best] - x) ? i : best), 0)
+      const home = nearest(pressOffset)
+      let index = nearest(current)
+      if (Math.abs(logicalVelocity) >= MIN_FLING_VELOCITY) {
+        const forward = logicalVelocity > 0
+        const next = forward
+          ? offsets.findIndex((o) => o > current + 0.5)
+          : offsets.map((o, i) => (o < current - 0.5 ? i : -1)).filter((i) => i >= 0).pop() ?? -1
+        if (next >= 0) index = next
+      }
+      index = Math.min(Math.max(index, home - 1), home + 1)
+      target = offsets[index]
+    }
+    const left = rtlRef.current ? -target : target
+    if (Math.abs(target - current) < 0.5 || reducedMotion) {
+      scroller.scrollTo?.({ left, behavior: 'auto' })
+      return
+    }
+    // Snapping stays off until the scroll lands, then resumes exactly there.
+    scroller.setAttribute('data-settling', '')
+    let timer = 0
+    const done = () => {
+      scroller.removeEventListener('scrollend', done)
+      window.clearTimeout(timer)
+      scroller.removeAttribute('data-settling')
+      settleCleanupRef.current = null
+    }
+    scroller.addEventListener('scrollend', done)
+    timer = window.setTimeout(done, 1500)
+    settleCleanupRef.current = done
+    scroller.scrollTo?.({ left, behavior: 'smooth' })
+  }
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    onPointerDown?.(event)
+    const scroller = scrollerRef.current
+    if (event.defaultPrevented || !scroller) return
+    if (event.pointerType !== 'mouse' || event.button !== 0) return
+    if (!scroller.hasAttribute('data-draggable')) return
+    // Never start on content nested inside an item (inputs, buttons, links,
+    // text fields): only on the item itself or plain content.
+    const target = event.target as Element
+    const interactive = target.closest?.(INTERACTIVE_SELECTOR)
+    if (interactive && interactive !== scroller && scroller.contains(interactive) && !interactive.matches(ITEM)) {
+      return
+    }
+    dragCleanupRef.current?.()
+    if (settleCleanupRef.current) {
+      // Catch a settling carousel where it is.
+      endSettle()
+      scroller.scrollTo?.({ left: scroller.scrollLeft, behavior: 'auto' })
+    }
+    const state: DragState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startScroll: scroller.scrollLeft,
+      pressOffset: Math.abs(scroller.scrollLeft),
+      dragging: false,
+      samples: [{ t: event.timeStamp, x: event.clientX }],
+    }
+    dragRef.current = state
+    let synthetic: PointerEvent | null = null
+
+    const move = (e: PointerEvent) => {
+      if (e.pointerId !== state.pointerId) return
+      if (!state.dragging) {
+        if (Math.abs(e.clientX - state.startX) < DRAG_SLOP) return
+        state.dragging = true
+        // Continue from the slop point, without a jump.
+        state.startX = e.clientX
+        state.startScroll = scroller.scrollLeft
+        state.samples = []
+        scroller.setAttribute('data-dragging', '')
+        try {
+          scroller.setPointerCapture?.(e.pointerId)
+        } catch {
+          /* pointer already released */
+        }
+        window.getSelection?.()?.removeAllRanges()
+        // The drag scrolls from the main thread: mask from the main thread too,
+        // in the same frame (a compositor-sampled mask can lag such a scroll
+        // by a frame under load). Resumed for the release animation.
+        animationsRef.current.forEach((a) => a.cancel())
+        applyMask()
+        // A drag is not a press: release the item's ripple (Compose cancels
+        // the press interaction when the pager starts dragging).
+        if (typeof PointerEvent !== 'undefined') {
+          synthetic = new PointerEvent('pointercancel', { pointerId: e.pointerId })
+          window.dispatchEvent(synthetic)
+          synthetic = null
+        }
+      }
+      e.preventDefault()
+      scroller.scrollLeft = state.startScroll - (e.clientX - state.startX)
+      state.samples.push({ t: e.timeStamp, x: e.clientX })
+      while (state.samples.length > 2 && e.timeStamp - state.samples[0].t > VELOCITY_WINDOW) {
+        state.samples.shift()
+      }
+    }
+    const end = (e: PointerEvent) => {
+      if (e.pointerId !== state.pointerId || e === synthetic) return
+      cleanup()
+      if (!state.dragging) return
+      scroller.removeAttribute('data-dragging')
+      animationsRef.current.forEach((a) => a.play())
+      // The click that follows the release must not activate an item.
+      suppressClickRef.current = true
+      window.setTimeout(() => {
+        suppressClickRef.current = false
+      }, 0)
+      let velocity = 0 // px/s of the pointer
+      const first = state.samples[0]
+      const last = state.samples[state.samples.length - 1]
+      if (e.type === 'pointerup' && first && last && last.t - first.t > 0 && e.timeStamp - last.t < 50) {
+        velocity = ((last.x - first.x) / (last.t - first.t)) * 1000
+      }
+      // Content follows the pointer: pointer → right = towards inline-start
+      // in LTR, towards inline-end in RTL.
+      settle(rtlRef.current ? velocity : -velocity, state.pressOffset)
+    }
+    const cleanup = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', end)
+      window.removeEventListener('pointercancel', end)
+      if (dragRef.current === state) dragRef.current = null
+      dragCleanupRef.current = null
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', end)
+    window.addEventListener('pointercancel', end)
+    dragCleanupRef.current = () => {
+      cleanup()
+      scroller.removeAttribute('data-dragging')
+      animationsRef.current.forEach((a) => a.playState === 'idle' && a.play())
+    }
+  }
+
+  const handleClickCapture = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false
+      event.preventDefault()
+      event.stopPropagation()
+      return
+    }
+    onClickCapture?.(event)
   }
 
   let index = 0
@@ -364,6 +727,18 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
       }}
       onKeyDown={handleKeyDown}
       onFocus={handleFocus}
+      onPointerDown={handlePointerDown}
+      onPointerOver={(event) => {
+        onPointerOver?.(event)
+        applyMask()
+      }}
+      onClickCapture={handleClickCapture}
+      onDragStart={(event) => {
+        onDragStart?.(event)
+        // Images and links inside items are natively draggable; a mouse press
+        // on the carousel drags the carousel instead.
+        if (dragRef.current) event.preventDefault()
+      }}
       className={clsx(styles.scroller, className)}
       style={
         {
@@ -378,6 +753,14 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
     </div>
   )
 })
+
+/** Writes an inline custom property only when its value changes ('' removes it). */
+function setIfChanged(el: HTMLElement, name: string, value: string) {
+  if (el.style.getPropertyValue(name) === value) return
+  if (value) el.style.setProperty(name, value)
+  else el.style.removeProperty(name)
+}
+
 
 export interface CarouselItemProps extends HTMLAttributes<HTMLElement> {
   /** Makes the item a link (`<a>`): activated with Enter, opens in new tabs. */
@@ -401,6 +784,8 @@ export interface CarouselItemProps extends HTMLAttributes<HTMLElement> {
  * renders a `<button>`, with `href` an `<a>` — focusable, activated with
  * Enter / Space (links: Enter), with the hover / focus / pressed state layer,
  * ripple and focus ring; its position becomes the accessible description.
+ * A mouse drag that starts on the item scrolls the carousel instead of
+ * activating it.
  * Put nested interactive content only in non-interactive items.
  */
 export const CarouselItem = forwardRef<HTMLElement, CarouselItemProps>(function CarouselItem(
@@ -435,11 +820,8 @@ export const CarouselItem = forwardRef<HTMLElement, CarouselItemProps>(function 
   }
   const body = (
     <>
-      <span className={styles.clip}>
-        <span className={styles.content}>{children}</span>
-      </span>
+      <span className={styles.content}>{children}</span>
       {interactive && !disabled && <Ripple />}
-      {interactive && !disabled && <FocusRing />}
     </>
   )
   const describedBy =
@@ -496,7 +878,19 @@ export const CarouselItem = forwardRef<HTMLElement, CarouselItemProps>(function 
 
   return (
     <div className={styles.slot} data-carousel-slot="">
-      {item}
+      {interactive && !disabled && (
+        // Hover elevation + focus ring around the visible (masked) item: the
+        // item itself is clipped, so they live on this unclipped frame.
+        <span className={styles.frame} data-carousel-frame="" aria-hidden="true">
+          <span className={styles.focusRing} />
+        </span>
+      )}
+      {/* The mask: an end-edge and a start-edge clip (see Carousel.module.css). */}
+      <span className={styles.clip} data-carousel-clip="end">
+        <span className={styles.clip} data-carousel-clip="start">
+          {item}
+        </span>
+      </span>
       {interactive && positionLabel && (
         <span id={labelId} hidden>
           {positionLabel}

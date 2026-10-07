@@ -4,6 +4,9 @@ import {
   getKeylineListForScrollOffset,
   heroKeylineList,
   itemBox,
+  itemTrack,
+  itemTransforms,
+  itemTransformsAt,
   maxScrollOffset,
   multiBrowseKeylineList,
   revealScrollOffset,
@@ -135,5 +138,59 @@ describe('Strategy + item masks', () => {
     const b = boxes(h, count, snapScrollOffset(h, 3, count))
     expect(b.slice(2, 5).map((x) => Math.round(x.size))).toEqual([40, 492, 40])
     expect(b[3].start + b[3].size / 2).toBeCloseTo(W / 2, 0)
+  })
+})
+
+describe('itemTrack (scroll-driven mask keyframes, #375)', () => {
+  const lerp = (a: number, b: number, t: number) => a + (b - a) * t
+  const valueAt = (track: ReturnType<typeof itemTrack>, o: number) => {
+    const { offsets, values } = track
+    let k = 1
+    while (k < offsets.length - 1 && offsets[k] < o) k++
+    const t = (o - offsets[k - 1]) / (offsets[k] - offsets[k - 1] || 1)
+    return {
+      end: lerp(values[k - 1].end, values[k].end, t),
+      start: lerp(values[k - 1].start, values[k].start, t),
+      content: lerp(values[k - 1].content, values[k].content, t),
+    }
+  }
+
+  const cases: [string, KeylineList, number][] = [
+    ['multi-browse', multiBrowseKeylineList(588, 260, 8, 7), 588],
+    ['multi-browse (narrow)', multiBrowseKeylineList(328, 200, 8, 7), 328],
+    ['hero', heroKeylineList(588, undefined, 8, 7, true), 588],
+  ]
+  for (const [name, keylines, width] of cases) {
+    it(`reproduces the keyline model within 0.15px between its keyframes (${name})`, () => {
+      const s = strategy(keylines, width)
+      const range = maxScrollOffset(s, 7)
+      for (let i = 0; i < 7; i++) {
+        const track = itemTrack(s, i, 7, range)
+        expect(track.offsets[0]).toBe(0)
+        expect(track.offsets[track.offsets.length - 1]).toBeCloseTo(range)
+        // Thinned: far fewer keyframes than pixels of scroll range.
+        expect(track.offsets.length).toBeLessThan(range / 8)
+        for (let o = 0; o <= range; o += 1.7) {
+          const exact = itemTransformsAt(s, i, 7, o)
+          const approx = valueAt(track, o)
+          for (const c of ['end', 'start', 'content'] as const) {
+            expect(Math.abs(approx[c] - exact[c])).toBeLessThan(0.15)
+          }
+        }
+      }
+    })
+  }
+
+  it('is the identity for an unmasked item and slides a masked-away item past its clip', () => {
+    const s = strategy(multiBrowseKeylineList(588, 260, 8, 7), 588)
+    const L = s.itemMainAxisSize
+    expect(itemTransforms(s, { start: 0, size: L, contentStart: 0, isFullyShown: true })).toEqual({
+      end: 0,
+      start: 0,
+      content: 0,
+    })
+    // Masked away at the end edge: the start clip begins 2px after the end clip ends.
+    const hidden = itemTransforms(s, { start: 588, size: 0, contentStart: 0, isFullyShown: false })
+    expect(hidden.start).toBeCloseTo(L + 2)
   })
 })
