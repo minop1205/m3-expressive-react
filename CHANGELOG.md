@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.2 (2026-10-07)
+
+Docs-only patch (no library code changes).
+
+### Docs
+
+- **Icons page**: the Button demo's label is centered on its icon again —
+  MDX had wrapped the label in a paragraph whose margin pushed it 10px up
+  (#390). Live demos now neutralise such MDX-generated paragraphs inside
+  controls, so a label written over several lines can't misalign.
+
 ## 1.2.1 (2026-10-07)
 
 ### Fixed
