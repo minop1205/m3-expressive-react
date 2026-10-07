@@ -12,6 +12,13 @@
 .radio {
   position: relative;
   display: inline-flex;
+  /* Inline next to label text, center the control on the text (#376). The
+     box has no baseline, so its bottom edge sits on the text baseline raised
+     by vertical-align: lift it by the text's visual center (~0.35em above
+     the baseline: the glyph-box / cap-height middle of typical UI fonts)
+     minus half the control height. Plain `middle` (baseline + 0.5ex) sits
+     ~0.1em low. No effect on flex / grid items. */
+  vertical-align: calc(0.35em - 10px);
   align-items: center;
   justify-content: center;
   width: 20px;
