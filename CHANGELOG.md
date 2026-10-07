@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.2.1 (2026-10-07)
+
+### Fixed
+
+- **Button / FabMenu icons**: the Button icon slots (`startIcon` / `endIcon`)
+  and the FabMenu toggle / item icon slots now set `fill: currentColor`, like
+  every other icon slot. Fill-based SVGs without their own `fill` (e.g.
+  Material Symbols) previously rendered black — for example on a filled
+  Button.
+
+### Docs
+
+- **Icons guide rewritten** (#387): which packages to install, the exact
+  install commands, Vite setup (`vite-plugin-svgr`) including the TypeScript
+  types, Next.js setup for Turbopack and webpack (`@svgr/webpack`), choosing
+  Material Symbols styles / fill / weight, the icon-font and lucide-react
+  alternatives with their caveats, sizing and color, and accessibility. Every
+  step was verified in fresh projects.
+
 ## 1.2.0 (2026-10-07)
 
 Packaging, interaction polish and documentation. Backward compatible: the root
