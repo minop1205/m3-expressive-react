@@ -183,6 +183,67 @@
   text-align: center;
 }
 
+/* ---- Search app bar (variant="search") ---- */
+/*
+ * m3 search app bar measurements + Compose AppBarWithSearch: 4 | nav 48 | 8 |
+ * search field | 8 | actions | 4, a 56dp field with 4dp above / below → 64dp.
+ * The field fills the space between nav and actions up to 312dp, then only
+ * 50% of it (m3 guidelines "Adaptive design"), centered in that space
+ * (Compose Alignment.Center), max 720dp (Search). Colors (m3 search app bar
+ * color roles): field surface-container (surface-container-highest on
+ * scroll), nav / action icons on-surface-variant. The field color switches
+ * without animation, as in Compose (only the bar's color animates).
+ */
+.topBar[data-variant='search'] .row {
+  padding-inline: 0;
+}
+
+.topBar[data-variant='search'] .nav {
+  margin-inline-start: 4px;
+  color: var(--md-sys-color-on-surface-variant);
+  --md-icon-button-icon-color: var(--md-sys-color-on-surface-variant);
+}
+
+.topBar[data-variant='search'] .actions {
+  margin-inline-end: 4px;
+}
+
+.searchSlot {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 4px 8px;
+
+  /* SearchBar host contract (SearchBar.module.css). */
+  --md-search-bar-width: max(min(100%, 312px), 50%);
+  --md-search-bar-min-width: 0px;
+  --md-search-bar-container-color: var(--md-sys-color-surface-container);
+}
+
+.topBar[data-scrolled] .searchSlot {
+  --md-search-bar-container-color: var(--md-sys-color-surface-container-highest);
+}
+
+.topBar[data-text-alignment='center'] .searchSlot {
+  --md-search-bar-input-text-align: center;
+}
+
+/* The page heading when the search field replaces the visible title. */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ---- Medium / large flexible: second row with the title ---- */
 /*
  * Compose TwoRowsTopAppBar: the expanded row is (expanded − 64dp) tall, grows
@@ -367,9 +428,11 @@
 /*
  * Hiding: enterAlways follows the scroll delta (--_hide-offset, px) and only
  * animates when settling a half-hidden bar; the `hidden` state prop slides the
- * whole bar up with the DefaultEffects spring.
+ * whole bar up with the DefaultEffects spring. No transform at rest: a
+ * transform would make the bar the containing block of fixed descendants
+ * (e.g. a composed SearchBar's full-page scrim).
  */
-.topBar[data-scroll-behavior='enterAlways'] {
+.topBar[data-scroll-behavior='enterAlways'][data-hide-offset] {
   transform: translateY(calc(-1 * var(--_hide-offset)));
 }
 

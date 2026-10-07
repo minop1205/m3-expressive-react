@@ -1,7 +1,9 @@
 import { createRef, useRef } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import userEvent from '@testing-library/user-event'
 import { axe } from 'vitest-axe'
+import { SearchBar, type SearchBarProps } from '../SearchBar'
 import { BottomAppBar, TopAppBar, type TopAppBarProps } from './AppBar'
 
 describe('TopAppBar', () => {
@@ -158,9 +160,12 @@ describe('TopAppBar scrolling', () => {
     render(<Scroller scrollBehavior="enterAlways" />)
     const bar = screen.getByRole('banner')
     const scroller = screen.getByTestId('scroller')
+    // No transform at rest (it would trap fixed descendants, e.g. a scrim).
+    expect(bar).not.toHaveAttribute('data-hide-offset')
     scrollTo(scroller, 20)
     await waitFor(() => expect(bar.style.getPropertyValue('--_hide-offset')).toBe('20px'))
     expect(bar).not.toHaveAttribute('inert')
+    expect(bar).toHaveAttribute('data-hide-offset')
     scrollTo(scroller, 200)
     await waitFor(() => expect(bar).toHaveAttribute('inert'))
     expect(bar.style.getPropertyValue('--_hide-offset')).toBe('56px')
@@ -221,6 +226,107 @@ describe('TopAppBar scrolling', () => {
         navigationIcon={<button aria-label="Menu">m</button>}
       />,
     )
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('TopAppBar variant="search"', () => {
+  const field = (props: Partial<SearchBarProps> = {}) => (
+    <SearchBar aria-label="Product search" placeholder="Search product" startIcon={false} {...props} />
+  )
+
+  it('renders the search field instead of a visible heading', () => {
+    render(
+      <TopAppBar
+        variant="search"
+        title="Products"
+        subtitle="ignored"
+        searchBar={field()}
+        navigationIcon={<button aria-label="Menu">m</button>}
+        actions={<button aria-label="Account">a</button>}
+      />,
+    )
+    const bar = screen.getByRole('banner')
+    expect(bar).toHaveAttribute('data-variant', 'search')
+    // The title stays the page heading for assistive technology only.
+    const heading = screen.getByRole('heading', { level: 1, name: 'Products' })
+    expect(heading.className).toMatch(/visuallyHidden/)
+    expect(screen.queryByText('ignored')).toBeNull()
+    expect(bar).not.toHaveAttribute('data-subtitle')
+    // nav → field → actions, field inside the search slot.
+    const search = screen.getByRole('search', { name: 'Product search' })
+    const slot = search.parentElement!
+    expect(slot.className).toMatch(/searchSlot/)
+    expect(screen.getByRole('button', { name: 'Menu' }).parentElement!.nextElementSibling).toBe(
+      heading,
+    )
+    expect(slot.nextElementSibling).toBe(screen.getByRole('button', { name: 'Account' }).parentElement)
+    // No leading icon inside the field.
+    expect(search.querySelector('svg')).toBeNull()
+  })
+
+  it('renders no heading without a title', () => {
+    render(<TopAppBar variant="search" searchBar={field()} />)
+    expect(screen.queryByRole('heading')).toBeNull()
+    expect(screen.getByRole('searchbox')).toBeInTheDocument()
+  })
+
+  it('maps titleAlignment to the field text alignment', () => {
+    render(<TopAppBar variant="search" titleAlignment="center" searchBar={field()} />)
+    const bar = screen.getByRole('banner')
+    expect(bar).toHaveAttribute('data-text-alignment', 'center')
+    // The centered-title grid layout is not used on the search bar.
+    expect(bar).not.toHaveAttribute('data-title-alignment')
+  })
+
+  it('reflects the scrolled state', () => {
+    render(<TopAppBar variant="search" scrolled searchBar={field()} />)
+    expect(screen.getByRole('banner')).toHaveAttribute('data-scrolled')
+  })
+
+  it('opens the search view through the composed SearchBar', async () => {
+    const user = userEvent.setup()
+    const onOpenChange = vi.fn()
+    render(
+      <TopAppBar
+        variant="search"
+        searchBar={field({
+          onOpenChange,
+          children: <button type="button">Recent: Headphones</button>,
+        })}
+      />,
+    )
+    const input = screen.getByRole('combobox')
+    expect(input).toHaveAttribute('aria-expanded', 'false')
+    await user.click(input)
+    expect(onOpenChange).toHaveBeenCalledWith(true)
+    expect(input).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('has no axe violations (closed and with the search view open)', async () => {
+    const { container, rerender } = render(
+      <TopAppBar
+        variant="search"
+        title="Products"
+        navigationIcon={<button aria-label="Menu">m</button>}
+        actions={<button aria-label="Account">a</button>}
+        searchBar={field({ endIcon: <button aria-label="Voice search">v</button> })}
+      />,
+    )
+    expect(await axe(container)).toHaveNoViolations()
+    rerender(
+      <TopAppBar
+        variant="search"
+        title="Products"
+        navigationIcon={<button aria-label="Menu">m</button>}
+        actions={<button aria-label="Account">a</button>}
+        searchBar={field({
+          open: true,
+          children: <button type="button">Recent: Headphones</button>,
+        })}
+      />,
+    )
+    expect(screen.getByRole('combobox')).toHaveAttribute('aria-expanded', 'true')
     expect(await axe(container)).toHaveNoViolations()
   })
 })

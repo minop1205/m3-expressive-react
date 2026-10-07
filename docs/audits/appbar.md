@@ -97,6 +97,7 @@ Issue: AB1 → #233、AB2 → #234、AB3 → #235(TopAppBar と BottomAppBar の
 - **WindowInsets / スクロール時の固定**: Compose は system bar の inset を持つ。Web では利用者が `position: sticky` 等で
   配置するのが通常 → AB1 の API 設計で sticky を内蔵するかを合わせて判断
 - **Search app bar**: site の variant だが、Compose では `TopSearchBar`(SearchBar 側)。ライブラリの `SearchBar` の監査で扱う
+  → **#393 で `variant="search"` として実装**(下記「Search app bar」節)
 - **ストーリーのカバレッジ**: nav なし・actions なし・長いタイトル・RTL・スクロールがストーリーにない。AB1 / AB4 / AB6 の
   修正 PR で足すこと
 
@@ -192,3 +193,71 @@ Issue: AB1 → #233、AB2 → #234、AB3 → #235(TopAppBar と BottomAppBar の
   トークンと実装の両方を読むこと
 - スロットに `IconButton` を置く部品では、IconButton の「見た目 40px + `::before` 48px」がレイアウト上 40px しか
   占めない点を必ず実測する(Compose は 48dp をレイアウトに占める)。また standard IconButton は親の `color` を継承しない
+
+## Search app bar(2026-10-07・#393)
+
+`TopAppBar variant="search"` + `searchBar` スロット(API は docs/decisions/phase-b-api.md B30)。照合したソース:
+
+1. **m3.material.io** `/components/app-bars/specs`(Search 節の anatomy・icon layouts・color roles・Scroll states 図・
+   「Search app bar padding and size measurements」寸法図を `=w1400` で取得して読んだ。Search 用 token-viewer は
+   「Search - View」セットのみで app bar 固有の値はない — 「The default search component tokens are used in the search
+   app bar」)、`/guidelines`(Search app bar・Adaptive design・Behavior)、`/components/search/specs`(avatar 寸法図)
+2. **Compose androidx-main** `SearchBar.kt`(`AppBarWithSearch` / `AppBarWithSearchImpl` / `TopSearchBar`(deprecated
+   別名)/ `SearchBarDefaults.appBarWithSearchColors` / `AppBarContentPadding` / `enterAlwaysSearchBarScrollBehavior`、
+   定数 `SearchBarAsTopBarPadding` 8・`AppBarWithSearchHorizontalPadding` 4・`AppBarWithSearchVerticalPadding` 4・
+   `SearchBarMinWidth` 360・`SearchBarMaxWidth` 720)、`tokens/SearchBarTokens`・`tokens/AppBarTokens`、
+   `samples/SearchBarSamples.kt`(`DockedSearchBarScaffoldSample` / `FullScreenSearchBarScaffoldSample`)
+3. **実装の実測** — Storybook(dev, 6016)を headless Chromium で `getBoundingClientRect` / `getComputedStyle`(412 / 800 /
+   1280px 幅、全 Search ストーリー、scrolled、pinned で 200px スクロール、search view open)
+
+### 値(site / Compose / 実装・実測)
+
+| 項目 | site | Compose | 実装(実測) |
+|---|---|---|---|
+| 高さ | 64 | 56 + 上下 4 = 64 | 64 ✓ |
+| 横の並び | 4 \| 48 nav \| 8 \| field \| 8 \| 48 \| 4 | nav Box start 4、field 左右 8、actions Box end 4、`AppBarContentPadding` 0 | nav 48 枠 0–52 + 8 → field 60、field 右 8 → actions、右端 4 ✓。nav なしは field が端から 8 ✓ |
+| field | 56・stadium・Body large | `SearchBarDefaults.InputField`(56・CornerFull・BodyLarge) | 56・full・16/24 ✓(SearchBar) |
+| 内側 leading icon なしのテキスト開始 | 24(寸法図) | TextField 既定の 16 | **24**(`startIcon={false}`)— site |
+| 内側 trailing | 48 + 端 4 | 48(minimumInteractiveComponentSize) | 48、field 右端から 4 ✓ |
+| avatar | 外側 48 枠 / 内側 30(search 寸法図) | `AppBarTokens.AvatarSize` 32 / `SearchBarTokens.AvatarSize` 30 | ライブラリに Avatar 部品はない → ストーリーで 32dp in 48 |
+| field 幅 | 「nav と actions の間の 100% を 312dp まで、その後は 50% だけ伸びる」 | `weight(1f)` の中で `widthIn(360, 720)` 中央寄せ(制約が狭ければ縮む) | `max(min(100%, 312px), 50%)`、max 720、中央寄せ:412px → 244(100%)、800px → 316(632 の 50%)、1280px → 556 ✓ |
+| bar container | Surface | `AppBarTokens.ContainerColor` Surface | surface ✓ |
+| field container | **Surface container**(color roles・guidelines「By default, search containers in app bars use the surface container color」、図の画素 #F3EDF7) | `SearchBarDefaults.colors()` = **SurfaceContainerHigh** | **surface-container** — 裁定1 |
+| bar(scroll 時) | Surface container | `AppBarTokens.OnScrollContainerColor` SurfaceContainer | surface-container ✓ |
+| field(scroll 時) | Surface container highest(図の画素 #E6E0E9) | `scrolledSearchBarContainerColor` SurfaceContainerHighest | surface-container-highest ✓ |
+| nav icon | **On surface variant**(color roles の 2 番目 = anatomy 2 leading icon button) | `AppBarTokens.LeadingIconColor` **OnSurface** | **on-surface-variant** — 裁定2 |
+| hinted text / trailing | On surface variant | SupportingText / TrailingIcon OnSurfaceVariant | ✓(SearchBar) |
+| 中央揃え | Text alignment「Centered」(M3 Expressive のみ)、図は placeholder 中央 | 該当 API なし(`textStyle` で各自) | `titleAlignment="center"` → input / placeholder `text-align: center` ✓ |
+| 色の遷移 | — | bar: `animateColorAsState(DefaultEffects)`、field: アニメーションなし(`mutableStateOf`)、`overlappedFraction > 0.01` で 0/1 | bar は DefaultEffects spring、field は即時(Compose どおり)。reduced motion で bar も即時 |
+| スクロール | 「on scroll apply fill」「can hide and reappear」 | `enterAlwaysSearchBarScrollBehavior` | 共通の `scrollBehavior`(pinned / enterAlways。exitUntilCollapsed は pinned 相当) |
+| 検索ビュー | 「Selecting the search bar should open the search view」 | 同じ `SearchBarState` を `ExpandedDockedSearchBarWithGap` / `ExpandedFullScreenContainedSearchBar` へ | SearchBar の docked contained view(`open` / `onOpenChange`)。実測: field の 2px 下に field 幅 316 で表示、scrim は全画面 ✓ |
+
+### 裁定
+
+1. **field の container 色 — site(surface-container)を採用**。Compose の `appBarWithSearchColors()` は
+   `searchBarColors = colors()`(SurfaceContainerHigh)を既定にするが、site は color roles・guidelines 本文・図の 3 か所で
+   surface container と明言。「default search component tokens are used」は寸法・タイポの話と読む。scroll 時の
+   surface-container-highest は両者一致
+2. **nav icon の色 — site(on-surface-variant)を採用**。small 等の app bar は on-surface(Compose `LeadingIconColor`)だが、
+   search app bar の color roles は leading icon button を on surface variant とする。search variant だけ切り替える
+3. **field 幅 — site の 312dp / 50% 規則を採用**、上限は Search の 720dp。Compose の `widthIn(min = 360)` は狭い画面では
+   制約に負けて縮むので、電話幅(available < 312)では両者同じ。広い画面では site どおり 50%
+4. **field の位置** — Compose どおり nav と actions の間で中央寄せ。site の大画面図は bar 全体の中央に見えるが、差は
+   (actions 幅 − nav 幅) / 2 で、actions が 1 つなら 0。記録のみ
+5. **見出し** — site「search field instead of heading text」、Compose も見出しなし → 見える見出しは出さない。ページ見出しを
+   支援技術に残すため `title` 指定時は visually hidden の `<h1>`(B30)
+6. **enterAlways の transform** — 既存実装は静止時も `translateY(0)` を当てており、合成した SearchBar の全画面 scrim
+   (`position: fixed`)が header 内に閉じ込められた。オフセット > 0 のときだけ transform を当てるよう修正
+   (`data-hide-offset`。見た目の変化なし)
+
+### a11y
+
+- `<header>`(banner)の中に SearchBar の `role="search"` ランドマーク。検索ビューがあれば入力は `role="combobox"`
+  (`aria-expanded` / `aria-controls`)のまま。nav / actions は各 IconButton の `aria-label`
+- axe(jsdom): 閉じた状態・検索ビューを開いた状態とも違反なし(`AppBar.test.tsx`)
+
+### 見送り(記録のみ)
+
+- **full-screen 検索ビュー**(compact の Compose 既定)— SearchBar 側の未実装機能(searchbar 監査の軽微欄)のまま
+- **展開時に nav / actions を slide out**(Compose sample の `AnimatedVisibility`)— sample の演出で API ではないため対象外
+- **Avatar 部品** — ライブラリにない。actions / `endIcon` に任意のフォーカス可能要素を置ける

@@ -1,6 +1,6 @@
 {
  "TopAppBar": {
-  "description": "Material Design 3 (Expressive) Top app bar.\n\nSurface container; `small` is a 64dp row with a TitleLarge title, `medium` /\n`large` are the Expressive flexible bars — a 64dp row for the icons plus a\nsecond row holding a HeadlineMedium / DisplaySmall title (up to two lines),\n112 / 120dp tall (136 / 152dp with a `subtitle`), the title's last baseline\n24 / 28dp above the bottom edge. OnSurface title / nav icon, OnSurfaceVariant\nsubtitle / actions; icon buttons laid out in 48dp slots with no gaps (icons\n16dp from the edges); title at 16dp, or 56dp after a nav icon — per\nm3.material.io / Compose `AppBar.kt` (`TopAppBar`, `MediumFlexibleTopAppBar`,\n`LargeFlexibleTopAppBar`). Standard `IconButton`s in the slots pick up the\nslot color.\n\nScrolling (docs/decisions/phase-b-api.md B25): the state props (`scrolled`,\n`collapsedFraction`, `hidden`) render any state; `scrollBehavior` +\n`scrollTarget` derive them from a scroll container like Compose's pinned /\nenterAlways / exitUntilCollapsed behaviors. On scroll the container turns\nsurface-container — a color change only, no shadow.",
+  "description": "Material Design 3 (Expressive) Top app bar.\n\nSurface container; `small` is a 64dp row with a TitleLarge title, `medium` /\n`large` are the Expressive flexible bars — a 64dp row for the icons plus a\nsecond row holding a HeadlineMedium / DisplaySmall title (up to two lines),\n112 / 120dp tall (136 / 152dp with a `subtitle`), the title's last baseline\n24 / 28dp above the bottom edge. OnSurface title / nav icon, OnSurfaceVariant\nsubtitle / actions; icon buttons laid out in 48dp slots with no gaps (icons\n16dp from the edges); title at 16dp, or 56dp after a nav icon — per\nm3.material.io / Compose `AppBar.kt` (`TopAppBar`, `MediumFlexibleTopAppBar`,\n`LargeFlexibleTopAppBar`). Standard `IconButton`s in the slots pick up the\nslot color.\n\n`search` is the Expressive search app bar (m3 / Compose `AppBarWithSearch`):\na 64dp row — 4dp padding, nav icon, 8dp, the `searchBar` field (56dp,\nsurface-container), 8dp, actions, 4dp — with on-surface-variant icons.\nScrolled: the bar turns surface-container and the field\nsurface-container-highest.\n\nScrolling (docs/decisions/phase-b-api.md B25): the state props (`scrolled`,\n`collapsedFraction`, `hidden`) render any state; `scrollBehavior` +\n`scrollTarget` derive them from a scroll container like Compose's pinned /\nenterAlways / exitUntilCollapsed behaviors. On scroll the container turns\nsurface-container — a color change only, no shadow.",
   "props": [
    {
     "name": "actions",
@@ -52,32 +52,39 @@
     "description": "The scroll container observed by `scrollBehavior` (a ref, an element or\nthe window)."
    },
    {
+    "name": "searchBar",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "`variant=\"search\"`: the search field — typically a `<SearchBar>`. It\nreplaces the heading text and fills the space between the navigation\nicon and the actions (100% of it up to 312dp, then 50% — m3 search app\nbar; max 720dp), on a surface-container field that turns\nsurface-container-highest when `scrolled`. Icons inside the field use\nSearchBar's `startIcon` / `endIcon` (`startIcon={false}` for none);\nopening the search view is SearchBar's `open` / `onOpenChange`."
+   },
+   {
     "name": "subtitle",
     "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Supporting text under the title (on-surface-variant; LabelMedium on\n`small`, LabelLarge on `medium`, TitleMedium on `large`)."
+    "description": "Supporting text under the title (on-surface-variant; LabelMedium on\n`small`, LabelLarge on `medium`, TitleMedium on `large`). Not rendered on\n`variant=\"search\"`."
    },
    {
     "name": "title",
     "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "The bar title (rendered as the page heading)."
+    "description": "The bar title (rendered as the page heading). On `variant=\"search\"` the\nsearch field replaces the visible heading: a given `title` is rendered as\na visually hidden `<h1>` (the page heading for assistive technology)."
    },
    {
     "name": "titleAlignment",
     "type": "enum",
     "required": false,
     "defaultValue": "'start' ('center' for the deprecated `variant=\"center\"`)",
-    "description": "Title alignment, available on every size. A centered title is centered\nacross the full bar width and only pushed inward when it would collide\nwith the navigation icon or the actions."
+    "description": "Title alignment, available on every size. A centered title is centered\nacross the full bar width and only pushed inward when it would collide\nwith the navigation icon or the actions. On `variant=\"search\"` it\ncenters the search field's text and placeholder."
    },
    {
     "name": "variant",
     "type": "enum",
     "required": false,
     "defaultValue": "small",
-    "description": "Size / layout. `medium` / `large` are the M3 Expressive flexible bars.\n`'center'` is deprecated — use `titleAlignment=\"center\"`."
+    "description": "Size / layout. `medium` / `large` are the M3 Expressive flexible bars,\n`search` the search app bar (needs `searchBar`).\n`'center'` is deprecated — use `titleAlignment=\"center\"`."
    }
   ]
  },
@@ -2269,7 +2276,7 @@
     "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Leading content (defaults to a decorative search glyph). Rendered in a\n48dp slot, so it may be a navigation `IconButton` (back / menu) — it\nstays in the tab order and the accessibility tree. A purely decorative\ncustom icon should carry `aria-hidden` itself."
+    "description": "Leading content (defaults to a decorative search glyph). Rendered in a\n48dp slot, so it may be a navigation `IconButton` (back / menu) — it\nstays in the tab order and the accessibility tree. A purely decorative\ncustom icon should carry `aria-hidden` itself. Pass `false` for no\nleading icon at all (the text then starts 24dp in — e.g. in a search\napp bar whose navigation icon sits outside the field)."
    },
    {
     "name": "suggestionsLabel",
