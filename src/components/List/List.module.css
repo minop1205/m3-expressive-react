@@ -13,10 +13,6 @@
  */
 
 .list {
-  list-style: none;
-  margin: 0;
-  padding-block: 8px;
-  padding-inline: 0;
   /* Standard: transparent item containers, no segment corners (reset for
      lists nested in a segmented list). */
   --_list-container-color: transparent;
@@ -27,6 +23,19 @@
 /* Segmented (Compose SegmentedListItem / ListItemDefaults.segmentedShapes):
    surface segments 2dp apart (SegmentedGap), 16dp outer corners on the
    first / last item (List container shape). */
+/* Host-CSS hardening: page list / prose CSS (Infima `.markdown li + li`
+   0,1,2, Tailwind Typography, CMS styles) out-specifies a single-class
+   reset. The tripled class (0,3,0) — also above `.markdown h1:first-child`
+   style 0,2,1 prose selectors — keeps the box under the component's
+   control without !important, so a consumer can still override it (inline
+   style, or a selector of 0,3,1+). */
+.list.list.list {
+  list-style: none;
+  margin: 0;
+  padding-block: 8px;
+  padding-inline: 0;
+}
+
 .list[data-variant='segmented'] {
   display: flex;
   flex-direction: column;
@@ -48,6 +57,10 @@
 /* Interactive rows keep the <li> as the listitem; the button lives inside it. */
 .host {
   display: block;
+}
+
+/* Host-CSS hardening — see .list.list.list. */
+.host.host.host {
   margin: 0;
   padding: 0;
 }
@@ -60,8 +73,6 @@
   width: 100%;
   box-sizing: border-box;
   min-height: var(--_min-height);
-  padding-block: var(--_padding-block);
-  padding-inline: 16px;
   background-color: var(--_container-color, var(--_list-container-color, transparent));
   color: var(--_headline-color);
   /* Expressive shapes (ListItemDefaults.shapes): the state shape, never
@@ -85,6 +96,14 @@
   /* m3 List focus indicator offset −3dp: drawn inside the row, so stacked
      rows never cover it and scroll containers never clip it. */
   --md-focus-ring-offset: -3px;
+}
+
+/* Host-CSS hardening — see .list.list.list. (Also reached as a standalone <li>
+   outside a List.) */
+.item.item.item {
+  margin: 0;
+  padding-block: var(--_padding-block);
+  padding-inline: 16px;
 }
 
 .item[data-lines='2'] {

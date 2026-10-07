@@ -99,9 +99,18 @@
 
 .title,
 .subtitle {
-  margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Host-CSS hardening: page typography / prose CSS (Infima `.markdown
+   h1:first-child` 0,2,1, `.markdown li + li` 0,1,2, Tailwind Typography,
+   CMS styles) out-specifies a single-class reset. The repeated class
+   (0,3,0) keeps this element's margins under the component's control
+   without !important. */
+.title.title.title,
+.subtitle.subtitle.subtitle {
+  margin: 0;
 }
 
 .title {
