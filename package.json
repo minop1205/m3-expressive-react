@@ -1,6 +1,6 @@
 {
   "name": "m3-expressive-react",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Material Design 3 (Expressive) component library for React — token-first, spec-driven, MUI-idiomatic API",
   "type": "module",
   "license": "MIT",
