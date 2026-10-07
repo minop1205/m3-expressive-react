@@ -3,22 +3,366 @@ sidebar_position: 3
 title: Icons
 ---
 
+import Demo from '@site/src/components/Demo'
+import { Button, IconButton, NavigationBar, NavigationBarItem } from 'm3-expressive-react'
+import { AddIcon, SearchIcon } from '@site/src/components/icons/ActionIcons'
+import HomeIcon from '@material-symbols/svg-400/outlined/home.svg'
+import HomeFillIcon from '@material-symbols/svg-400/outlined/home-fill.svg'
+import MailIcon from '@material-symbols/svg-400/outlined/mail.svg'
+import MailFillIcon from '@material-symbols/svg-400/outlined/mail-fill.svg'
+
 # Icons
 
-The library is **icon-agnostic**: every icon prop (`icon`, `startIcon`,
-`endIcon`, …) takes a `ReactNode`, so any icon set works — nothing is
-bundled or required.
+**m3-expressive-react ships no icons.** Every icon prop takes a `ReactNode`
+— you pass an element, and the component sizes and colors it:
 
-For Material Design 3 we recommend
-[Material Symbols](https://fonts.google.com/icons). With the SVG package and
-[`vite-plugin-svgr`](https://github.com/pd4d10/vite-plugin-svgr):
+| Component | Icon props |
+| --- | --- |
+| `Button`, `MenuItem`, `TextField`, `SearchBar` | `startIcon`, `endIcon` |
+| `IconButton` | `icon`, `selectedIcon` (toggle) |
+| `Fab`, `FabMenu`, `FabMenuItem`, `Chip`, `Tab`, `SegmentedButton`, `Dialog`, `NavigationDrawerItem` | `icon` |
+| `NavigationBarItem`, `NavigationRailItem` | `icon`, `selectedIcon` |
+| `Switch` | `selectedIcon`, `unselectedIcon` |
+| `SplitButton` | `startIcon` |
+| `Slider` | `insetIcon` |
+| `ListItem` | `leading`, `trailing` |
+| `TopAppBar` | `navigationIcon`, `actions` |
+
+Nothing icon-related is a dependency of the library — **not even
+`@material-symbols/*`**. Install the icon source you want in your app. For
+Material Design 3 the natural choice is
+[Material Symbols](https://fonts.google.com/icons), the set m3.material.io and
+Jetpack Compose use.
+
+<Demo>
+  <IconButton icon={<SearchIcon />} aria-label="Search" />
+  <Button variant="filled" startIcon={<AddIcon />}>
+    Create
+  </Button>
+  <div style={{ width: 280 }}>
+    <NavigationBar aria-label="Demo" defaultValue="home">
+      <NavigationBarItem value="home" icon={<HomeIcon />} selectedIcon={<HomeFillIcon />} label="Home" />
+      <NavigationBarItem value="mail" icon={<MailIcon />} selectedIcon={<MailFillIcon />} label="Mail" />
+    </NavigationBar>
+  </div>
+</Demo>
+
+## Recommended: Material Symbols as SVG components (Vite)
+
+The SVG files from [`@material-symbols/svg-400`](https://www.npmjs.com/package/@material-symbols/svg-400)
+are turned into React components at build time by
+[`vite-plugin-svgr`](https://github.com/pd4d10/vite-plugin-svgr). Only the
+icons you import end up in your bundle, and no font or network request is
+needed at runtime.
+
+### 1. Install
+
+```bash
+npm install -D @material-symbols/svg-400 vite-plugin-svgr
+```
+
+Both are **dev dependencies**: the SVGs are compiled into your JavaScript
+bundle, so neither package is needed at runtime.
+
+The number is the stroke **weight**. There are seven packages,
+`@material-symbols/svg-100`, `-200`, … `-700`; MD3 uses **400**. Pick one
+weight per app; they all have the same file layout.
+
+### 2. Add the plugin to `vite.config.ts`
+
+```ts title="vite.config.ts"
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+import svgr from 'vite-plugin-svgr'
+
+export default defineConfig({
+  plugins: [
+    react(),
+    svgr({
+      svgrOptions: {
+        icon: true, // width/height = 1em instead of the files' fixed 48px
+        svgProps: { fill: 'currentColor' }, // paint with the text color
+      },
+    }),
+  ],
+})
+```
+
+`svgProps: { fill: 'currentColor' }` is recommended. The Material Symbols
+files have no `fill`, so outside a library icon slot SVG's default (black)
+would apply. Every icon slot in the library already paints SVGs with the
+surrounding text color; this option makes the same icons correct anywhere
+else in your app too.
+
+### 3. Add the TypeScript types
+
+`?react` imports need the plugin's type declarations. Projects created with
+`npm create vite@latest -- --template react-ts` list global types in
+`tsconfig.app.json`. Add `vite-plugin-svgr/client` there:
+
+```json title="tsconfig.app.json"
+{
+  "compilerOptions": {
+    "types": ["vite/client", "vite-plugin-svgr/client"]
+  }
+}
+```
+
+Older templates have a `src/vite-env.d.ts` instead. If yours does, add the
+reference there:
+
+```ts title="src/vite-env.d.ts"
+/// <reference types="vite/client" />
+/// <reference types="vite-plugin-svgr/client" />
+```
+
+Without either, `tsc` fails with _Cannot find module
+'…/search.svg?react'_.
+
+### 4. Import icons and pass them to components
+
+Add `?react` to the file path to get a component:
 
 ```tsx
 import Search from '@material-symbols/svg-400/outlined/search.svg?react'
-import { IconButton } from 'm3-expressive-react'
+import Add from '@material-symbols/svg-400/outlined/add.svg?react'
+import { Button, IconButton } from 'm3-expressive-react'
 
-;<IconButton icon={<Search />} aria-label="Search" />
+export function Actions() {
+  return (
+    <>
+      <IconButton icon={<Search />} aria-label="Search" />
+      <Button variant="filled" startIcon={<Add />}>
+        Create
+      </Button>
+    </>
+  )
+}
 ```
 
-Icons inherit color via `currentColor` and are sized by the component, so
-plain SVGs, icon fonts, or emoji all work.
+### Finding icons and choosing a style
+
+Browse [fonts.google.com/icons](https://fonts.google.com/icons). The name
+shown under each icon, such as `search`, `arrow_back` or `notifications`, is
+the file name. The import path is:
+
+```
+@material-symbols/svg-400/<style>/<name>.svg?react        outlined (unfilled) glyph
+@material-symbols/svg-400/<style>/<name>-fill.svg?react   filled glyph
+```
+
+- `<style>` is `outlined`, `rounded` or `sharp`. Use the same style
+  throughout your app.
+- `-fill` is the filled version of the same icon.
+
+MD3 shows a **filled icon for the selected / active state** and the outlined
+one otherwise. Pass both, and the component swaps them:
+
+```tsx
+import Home from '@material-symbols/svg-400/outlined/home.svg?react'
+import HomeFill from '@material-symbols/svg-400/outlined/home-fill.svg?react'
+
+<NavigationBar value={tab} onChange={(_event, value) => setTab(value)} aria-label="Main">
+  <NavigationBarItem value="home" icon={<Home />} selectedIcon={<HomeFill />} label="Home" />
+</NavigationBar>
+```
+
+The same pairing works for `NavigationRailItem` and for toggle
+`IconButton`s (`icon` / `selectedIcon`).
+
+## Next.js
+
+With Next.js you install
+[`@svgr/webpack`](https://www.npmjs.com/package/@svgr/webpack) instead of
+the Vite plugin. It works with both of Next's bundlers:
+
+```bash
+npm install -D @material-symbols/svg-400 @svgr/webpack
+```
+
+### `next.config.ts`
+
+The config below registers SVGR for **Turbopack** (`next dev`, `next build`)
+and for **webpack** (`next dev --webpack`, `next build --webpack`). Keep the
+block for the bundler you use, or both. Both blocks only match imports that
+end in `?react`, so your code imports icons the same way it does with Vite.
+
+```ts title="next.config.ts"
+import type { NextConfig } from 'next'
+
+const svgr = {
+  loader: '@svgr/webpack',
+  options: { icon: true, svgProps: { fill: 'currentColor' } },
+}
+
+const nextConfig: NextConfig = {
+  // Turbopack
+  turbopack: {
+    rules: {
+      '*.svg': {
+        condition: { query: '?react' },
+        loaders: [svgr],
+        as: '*.js',
+      },
+    },
+  },
+
+  // webpack
+  webpack(config) {
+    config.module.rules.push({ test: /\.svg$/i, resourceQuery: /react/, use: [svgr] })
+    return config
+  },
+}
+
+export default nextConfig
+```
+
+:::note webpack and plain `.svg` imports
+When a custom `.svg` rule is present, Next's webpack build stops handling
+`.svg` files as `next/image` static imports. Plain `import logo from
+'./logo.svg'` then fails to compile. Reference those files by URL from
+`public/` instead (`<Image src="/logo.svg" … />`). Turbopack keeps handling
+plain `.svg` imports as images.
+:::
+
+### TypeScript
+
+Next's built-in types cover plain `*.svg`, but not `*.svg?react`. Add a
+declaration file at the project root. The default `tsconfig.json` includes
+every `**/*.ts`:
+
+```ts title="svgr.d.ts"
+declare module '*.svg?react' {
+  import type { FC, SVGProps } from 'react'
+  const ReactComponent: FC<SVGProps<SVGSVGElement>>
+  export default ReactComponent
+}
+```
+
+### App Router: use the components from Client Components
+
+The library's components don't carry a `'use client'` directive yet. If you
+render them in a Server Component, the build fails with
+`TypeError: createContext is not a function`. Use them in a file that starts
+with `'use client'`:
+
+```tsx title="app/toolbar.tsx"
+'use client'
+
+import { Button, IconButton } from 'm3-expressive-react'
+import Search from '@material-symbols/svg-400/outlined/search.svg?react'
+import Add from '@material-symbols/svg-400/outlined/add.svg?react'
+
+export function Toolbar() {
+  return (
+    <>
+      <IconButton icon={<Search />} aria-label="Search" />
+      <Button startIcon={<Add />}>Create</Button>
+    </>
+  )
+}
+```
+
+Server Components such as `app/page.tsx` can then render `<Toolbar />`.
+Import `m3-expressive-react/styles.css` in `app/layout.tsx`.
+
+## Other icon sources
+
+### Material Symbols icon font
+
+The Google Fonts stylesheet needs no build setup:
+
+```html title="index.html"
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+/>
+```
+
+```tsx
+<IconButton
+  icon={<span className="material-symbols-outlined" aria-hidden="true">search</span>}
+  aria-label="Search"
+/>
+```
+
+The glyph takes the text color. For the filled version, set
+`style={{ fontVariationSettings: "'FILL' 1" }}` on the span.
+
+**The size does not adapt.** The components size icons with CSS on `svg`
+elements. A font glyph keeps the `font-size: 24px` from Google's
+`.material-symbols-outlined` class, whatever the slot size is:
+
+| Slot (icon size) | SVG | Font glyph |
+| --- | --- | --- |
+| IconButton `sm` (24px), Fab (24px), TextField, NavigationBar, ListItem (24px) | 24px | 24px — matches |
+| Button `sm` `startIcon` (20px) | 20px | 24px — too big |
+| IconButton / Button `lg` (32px) | 32px | 24px — too small |
+| Chip `icon` (18px) | 18px | 24px — too big |
+
+Button, IconButton and Fab set their slot's `font-size` to the icon size.
+Inside these, `style={{ fontSize: 'inherit' }}` on the span gives the right
+size at every size. Chips need an explicit `fontSize: 18`. Because of these
+per-slot fixes, we recommend the SVG setup above. It also avoids a
+blank or literal-text flash (`search`) while the font loads.
+
+### React icon libraries
+
+Icon components from other libraries can be passed the same way. They are
+sized by the slot and inherit the text color. For example, with
+[`lucide-react`](https://lucide.dev):
+
+```tsx
+import { Search } from 'lucide-react'
+
+<IconButton icon={<Search />} aria-label="Search" />
+```
+
+Lucide icons are **stroke-based** (`fill="none"`, `stroke="currentColor"`).
+Every icon slot sets `fill: currentColor` on the `svg` so that fill-based
+icons such as Material Symbols take the text color. That rule also fills
+the closed outlines of a stroke icon, which then render as solid shapes.
+Turn fill back off for that set once, in a global stylesheet:
+
+```css
+svg.lucide {
+  fill: none !important;
+}
+```
+
+Fill-based icons, such as Material Symbols, don't need this.
+
+## Size and color
+
+- **Color**: every slot sets `color`, and Material Symbols components
+  (configured as above) paint with `currentColor`. The icon follows the
+  component's state and variant colors and dark mode.
+  Avoid hard-coded `fill` / `stroke` colors in custom SVGs.
+- **Size**: the component sets the icon size, so you don't pass a size
+  prop. Slot sizes:
+
+| Component | Icon size |
+| --- | --- |
+| `Button` `startIcon` / `endIcon` | 20px (`xs`, `sm`), 24px (`md`), 32px (`lg`), 40px (`xl`) |
+| `IconButton` | 20px (`xs`), 24px (`sm`, `md`), 32px (`lg`), 40px (`xl`) |
+| `Fab` | 24px (`small`, `regular`), 28px (`medium`), 36px (`large`) |
+| `Chip` | 18px |
+| `TextField`, `NavigationBarItem`, `NavigationRailItem`, `Tab`, `ListItem`, `MenuItem` | 24px (`MenuItem` in `<Menu variant="vertical">`: 20px) |
+
+## Accessibility
+
+- **Icons next to a text label are decorative.** They need no label. SVGR
+  components render plain `<svg>` without a title, and screen readers read
+  the visible text.
+- **Icon-only buttons need an accessible name.** Put `aria-label` on the
+  button:
+
+  ```tsx
+  <IconButton icon={<Search />} aria-label="Search" />
+  ```
+
+- **Don't add a second text alternative on the icon itself** (`<title>`,
+  `aria-label` or `role="img"` on the `svg`) when the button is already
+  labelled, or screen readers may announce it twice. For icon-font spans,
+  add `aria-hidden="true"` so the ligature text (`search`) isn't read
+  aloud.
