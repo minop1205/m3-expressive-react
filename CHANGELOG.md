@@ -1,5 +1,26 @@
 # Changelog
 
+## 1.3.0 (2026-10-08)
+
+### Added
+
+- **AppBar** `variant="search"` — the M3 Expressive **search app bar**
+  (#393). A `SearchBar` passed as `searchBar` replaces the heading text, with
+  the navigation icon and actions outside it (icons inside the field come
+  from the SearchBar's own `startIcon` / `endIcon`). Surface-container field
+  (surface-container-highest on scroll), `titleAlignment="center"` for
+  centered text, and the existing scroll behaviors. A `title` is rendered as
+  a visually hidden `<h1>`. API ruling B30 in `docs/decisions/phase-b-api.md`.
+- **SearchBar**: `startIcon={false}` removes the leading icon; new host custom
+  properties `--md-search-bar-container-color` / `-width` / `-min-width` /
+  `-input-text-align`.
+
+### Fixed
+
+- **AppBar** `scrollBehavior="enterAlways"`: no transform while the bar is at
+  rest, so fixed-position descendants (e.g. the SearchBar scrim) are no longer
+  clipped to the bar.
+
 ## 1.2.3 (2026-10-07)
 
 ### Fixed
