@@ -11,3 +11,6 @@ export {
   type MenuVariant,
   type MenuColor,
 } from './Menu'
+
+// Default export for the `m3-expressive-react/Menu` subpath import.
+export { Menu as default } from './Menu'
