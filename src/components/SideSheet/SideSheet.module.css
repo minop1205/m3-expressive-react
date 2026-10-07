@@ -117,12 +117,20 @@
 
 .headline {
   flex: 1;
-  margin: 0;
   color: var(--md-sys-color-on-surface-variant);
   font-family: var(--md-sys-typescale-title-large-font);
   font-size: var(--md-sys-typescale-title-large-size);
   line-height: var(--md-sys-typescale-title-large-line-height);
   font-weight: var(--md-sys-typescale-title-large-weight);
+}
+
+/* Host-CSS hardening: page typography / prose CSS (Infima `.markdown
+   h1:first-child` 0,2,1, `.markdown li + li` 0,1,2, Tailwind Typography,
+   CMS styles) out-specifies a single-class reset. The repeated class
+   (0,3,0) keeps this element's margins under the component's control
+   without !important. */
+.headline.headline.headline {
+  margin: 0;
 }
 
 .headerButton {

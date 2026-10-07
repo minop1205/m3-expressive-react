@@ -13,7 +13,13 @@
   display: block;
   overflow: hidden;
   touch-action: pan-y;
-  /* The root is the <li> when used inside a List. */
+}
+
+/* The root is the <li> when used inside a List. Host-CSS hardening: page
+   list / prose CSS (Infima `.markdown li + li` 0,1,2, Tailwind Typography,
+   CMS styles) out-specifies a single-class reset; the tripled class (0,3,0)
+   keeps the box under the component's control without !important. */
+.root.root.root {
   list-style: none;
   margin: 0;
   padding: 0;

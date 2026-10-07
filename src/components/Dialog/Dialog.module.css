@@ -80,13 +80,21 @@
   fill: currentColor;
 }
 
+/* Host-CSS hardening: page typography / prose CSS (Infima `.markdown
+   h1:first-child` 0,2,1, `.markdown li + li` 0,1,2, Tailwind Typography,
+   CMS styles) out-specifies a single-class reset. The repeated class
+   (0,3,0) keeps this element's margins under the component's control
+   without !important. */
+.title.title.title {
+  margin: 0 0 16px;
+}
+
 /* Icon dialogs center the title. */
 .dialog[data-has-icon] .title {
   text-align: center;
 }
 
 .title {
-  margin: 0 0 16px;
   color: var(--md-sys-color-on-surface);
   font-family: var(--md-sys-typescale-headline-small-font);
   font-size: var(--md-sys-typescale-headline-small-size);
@@ -181,7 +189,6 @@
 .fsTitle {
   flex: 1 1 auto;
   min-width: 0;
-  margin: 0;
   color: var(--md-sys-color-on-surface);
   font-family: var(--md-sys-typescale-title-large-font);
   font-size: var(--md-sys-typescale-title-large-size);
@@ -190,6 +197,11 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Host-CSS hardening — see .title.title.title. */
+.fsTitle.fsTitle.fsTitle {
+  margin: 0;
 }
 
 .fsActions {
