@@ -78,6 +78,29 @@ export function FilterDemo() {
 />
 ```
 
+### Without the check
+
+`showSelectedIcon={false}` omits the leading check on a selected filter
+chip, so the container color alone shows the selection and the chip keeps
+its width. A chip with its own `icon` keeps showing that icon instead of
+swapping it for the check.
+
+<Demo>
+  <Chip variant="filter" label="With check" defaultSelected />
+  <Chip variant="filter" label="Without check" defaultSelected showSelectedIcon={false} />
+  <Chip variant="filter" label="Starred" icon={<StarIcon />} defaultSelected showSelectedIcon={false} />
+</Demo>
+
+```tsx
+<Chip
+  variant="filter"
+  label="Without check"
+  selected={selected}
+  onChange={(event, next) => setSelected(next)}
+  showSelectedIcon={false}
+/>
+```
+
 ## Input chips
 
 Input chips represent user-entered items. `removable` adds a trailing

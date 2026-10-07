@@ -1,11 +1,12 @@
 /**
  * MD3 Switch. Track 52×32dp, handle slides via logical margins.
  * Handle sizes: 16dp (unselected), 24dp (selected / with-icon), 28dp (pressed).
- * Structure follows material-web (material-components/material-web); motion
- * follows Compose Switch: thumb offset and size on the FastSpatial spring
- * (--md-sys-motion-spring-fast-spatial-*: expressive 0.6 / 800 by default,
- * standard 0.9 / 1400 under ThemeProvider motionScheme="standard"), with
- * changes snapping while pressed. Spec: docs/specs/switch.md.
+ * Structure follows material-web (material-components/material-web). Thumb
+ * motion is a web adaptation that matches material-web (#373, superseding the
+ * Compose FastSpatial / snap-while-pressed ruling): slide 300ms back-out
+ * overshoot, press grow 100ms linear, release / selection resize 250ms
+ * easing-standard. It does not follow ThemeProvider motionScheme.
+ * Spec: docs/specs/switch.md.
  */
 
 /* =========================================================================== */
@@ -14,6 +15,13 @@
 .switch {
   position: relative;
   display: inline-flex;
+  /* Inline next to label text, center the control on the text (#376). The
+     box has no baseline, so its bottom edge sits on the text baseline raised
+     by vertical-align: lift it by the text's visual center (~0.35em above
+     the baseline: the glyph-box / cap-height middle of typical UI fonts)
+     minus half the control height. Plain `middle` (baseline + 0.5ex) sits
+     ~0.1em low. No effect on flex / grid items. */
+  vertical-align: calc(0.35em - 16px);
   align-items: center;
   flex-shrink: 0;
   width: 52px;
@@ -108,9 +116,10 @@
   place-content: center;
   place-items: center;
   position: relative;
-  /* Slide: Compose FastSpatial (motion-scheme spring tokens). */
-  transition: margin var(--md-sys-motion-spring-fast-spatial-duration)
-    var(--md-sys-motion-spring-fast-spatial-easing);
+  /* Slide: material-web's 300ms back-out overshoot (web adaptation, #373);
+     also animates while pressed. */
+  transition: margin var(--md-sys-motion-duration-medium2)
+    var(--md-web-motion-easing-back-out);
 }
 
 /* margin = track-width - track-height = 52 - 32 = 20px */
@@ -126,12 +135,6 @@
   transition: none;
 }
 
-/* While pressed, changes snap (Compose SnapSpec) — including any press-time
-   slide */
-.switch:not(.disabled):has(.input:active) .handleContainer {
-  transition: none;
-}
-
 /* =========================================================================== */
 /* Handle                                                                      */
 /* =========================================================================== */
@@ -140,10 +143,11 @@
   height: 16px;
   width: 16px;
   transform-origin: center;
-  /* Size shares the slide's FastSpatial spring */
+  /* Size (16 / 24dp, release from pressed): 250ms easing-standard, as
+     material-web (#373) */
   transition-property: height, width;
-  transition-duration: var(--md-sys-motion-spring-fast-spatial-duration);
-  transition-timing-function: var(--md-sys-motion-spring-fast-spatial-easing);
+  transition-duration: var(--md-sys-motion-duration-medium1);
+  transition-timing-function: var(--md-sys-motion-easing-standard);
   z-index: 0;
   position: relative;
   display: flex;
@@ -184,13 +188,14 @@
   width: 24px;
 }
 
-/* -- Pressed: 28dp, instant — Compose snaps size changes while pressed
-   (SnapSpec); the release shrink animates via the base transition -- */
+/* -- Pressed: 28dp, grows over 100ms linear as material-web (#373); the
+   release shrink animates via the base 250ms transition -- */
 .selected:not(.disabled):has(.input:active) .handle,
 .unselected:not(.disabled):has(.input:active) .handle {
   height: 28px;
   width: 28px;
-  transition: none;
+  transition-duration: var(--md-sys-motion-duration-short2);
+  transition-timing-function: var(--md-sys-motion-easing-linear);
 }
 
 /* -- Disabled handle -- */

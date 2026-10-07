@@ -10,3 +10,6 @@ export type {
   CircularProgressIndicatorProps,
   CircularProgressIndicatorThickness,
 } from './CircularProgressIndicator'
+
+// Default export for the `m3-expressive-react/ProgressIndicator` subpath import.
+export { LinearProgressIndicator as default } from './LinearProgressIndicator'

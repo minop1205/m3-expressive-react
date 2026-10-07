@@ -13,16 +13,21 @@ MD3 modal bottom sheet: slides up from the bottom edge over a scrim, with
 28dp top corners and a drag handle. Scrim click, <kbd>Escape</kbd>, the
 drag handle, or dragging the sheet down dismisses it.
 
-export function BottomSheetDemo() {
+export function BottomSheetDemo({ label = 'Open bottom sheet', showDragHandle }) {
   const [open, setOpen] = useState(false)
   return (
     <>
-      <Button variant="filled" onClick={() => setOpen(true)}>
-        Open bottom sheet
+      <Button variant={showDragHandle === false ? 'outlined' : 'filled'} onClick={() => setOpen(true)}>
+        {label}
       </Button>
       {/* Raised above the docs navbar; the sheet itself is position: fixed. */}
       <div style={{ position: 'relative', zIndex: 'var(--ifm-z-index-overlay)' }}>
-        <BottomSheet open={open} onClose={() => setOpen(false)} aria-label="Share">
+        <BottomSheet
+          open={open}
+          onClose={() => setOpen(false)}
+          showDragHandle={showDragHandle}
+          aria-label="Share"
+        >
           <List aria-label="Share options">
             <ListItem headline="Copy link" onClick={() => setOpen(false)} />
             <ListItem headline="Send by email" onClick={() => setOpen(false)} />
@@ -57,6 +62,11 @@ down faster than 125px/s, dismisses it (Compose `ModalBottomSheet`
 thresholds); otherwise it settles back. Hide the drag handle with
 `showDragHandle={false}` — the sheet can still be closed by the scrim and
 <kbd>Escape</kbd>.
+
+<Demo>
+  <BottomSheetDemo label="With drag handle" />
+  <BottomSheetDemo label="Without drag handle" showDragHandle={false} />
+</Demo>
 
 ```tsx
 <BottomSheet open={open} onClose={close} showDragHandle={false}>

@@ -14,7 +14,7 @@ leading) edge, with a headline, optional back / close buttons, and a bottom
 action bar. `standard` sheets sit beside the content; `modal` sheets
 overlay it with a scrim.
 
-export function SideSheetDemo({ variant, anchor, label, headline, showBackButton, showDivider }) {
+export function SideSheetDemo({ variant, anchor, label, headline, showBackButton, showCloseButton, showDivider }) {
   const [open, setOpen] = useState(false)
   return (
     <>
@@ -31,6 +31,7 @@ export function SideSheetDemo({ variant, anchor, label, headline, showBackButton
           headline={headline}
           showBackButton={showBackButton}
           onBack={() => setOpen(false)}
+          showCloseButton={showCloseButton}
           showDivider={showDivider}
           actions={
             <>
@@ -102,6 +103,34 @@ from the leading edge, and `showBackButton` adds a leading back button
   headline="Navigation"
   showBackButton
   onBack={goBack}
+>
+  …
+</SideSheet>
+```
+
+## Without the close button
+
+`showCloseButton={false}` hides the trailing close button — for example
+when the sheet's own actions already close it. A modal sheet still closes
+on scrim click and <kbd>Escape</kbd>.
+
+<Demo>
+  <SideSheetDemo
+    variant="modal"
+    label="Open without close button"
+    headline="Sort"
+    showCloseButton={false}
+  />
+</Demo>
+
+```tsx
+<SideSheet
+  variant="modal"
+  open={open}
+  onClose={() => setOpen(false)}
+  headline="Sort"
+  showCloseButton={false}
+  actions={<Button variant="filled" onClick={() => setOpen(false)}>Save</Button>}
 >
   …
 </SideSheet>

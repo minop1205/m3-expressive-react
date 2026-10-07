@@ -8,3 +8,6 @@ export {
   type CardLinkProps,
   type CardVariant,
 } from './Card'
+
+// Default export for the `m3-expressive-react/Card` subpath import.
+export { Card as default } from './Card'

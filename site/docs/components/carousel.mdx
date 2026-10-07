@@ -140,6 +140,63 @@ an interactive item and removes it from the Tab order.
 </Carousel>
 ```
 
+Link items: `href` renders each item as an `<a>`, so it opens in a new tab
+with a middle click or <kbd>Ctrl</kbd>/<kbd>⌘</kbd>-click like any link.
+
+export const guides = [
+  ['Overview', 'https://m3.material.io/components/carousel/overview'],
+  ['Specs', 'https://m3.material.io/components/carousel/specs'],
+  ['Guidelines', 'https://m3.material.io/components/carousel/guidelines'],
+  ['Accessibility', 'https://m3.material.io/components/carousel/accessibility'],
+  ['Buttons', 'https://m3.material.io/components/buttons/overview'],
+  ['Chips', 'https://m3.material.io/components/chips/overview'],
+]
+
+<Demo>
+  <Frame>
+    <Carousel aria-label="Material 3 guides" itemHeight={160}>
+      {guides.map(([title, url], i) => (
+        <CarouselItem key={title} href={url} aria-label={title}>
+          <Slide i={i + 1}>{title}</Slide>
+        </CarouselItem>
+      ))}
+    </Carousel>
+  </Frame>
+</Demo>
+
+```tsx
+<Carousel aria-label="Articles">
+  {articles.map((article) => (
+    <CarouselItem key={article.id} href={article.url} aria-label={article.title}>
+      <img src={article.cover} alt="" />
+    </CarouselItem>
+  ))}
+</Carousel>
+```
+
+## Spacing
+
+`spacing` is the gap between items in px (8 by default); the keyline
+layout is fitted to the remaining width.
+
+<Demo>
+  <Frame>
+    <Carousel aria-label="Photos" spacing={24} itemHeight={160}>
+      {Array.from({ length: 8 }, (_, i) => (
+        <CarouselItem key={i}>
+          <Slide i={i + 3} />
+        </CarouselItem>
+      ))}
+    </Carousel>
+  </Frame>
+</Demo>
+
+```tsx
+<Carousel aria-label="Photos" spacing={24}>
+  …
+</Carousel>
+```
+
 ## Localized labels
 
 Each item is announced with its position — "2 of 7" by default. Pass

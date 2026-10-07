@@ -90,6 +90,21 @@ m3 and Compose both map the unselected track outline to `md.sys.color.outline`.
 
 ## Motion (m3 silent; Compose is the source)
 
+> **Superseded (thumb slide / size) — web-adaptation ruling #373
+> (owner, 2026-10-07).** The thumb now matches material-web instead of
+> Compose: slide = `margin 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275)`
+> (`--md-sys-motion-duration-medium2` + `--md-web-motion-easing-back-out`),
+> also animating while pressed; pressed grow to 28dp = 100ms linear;
+> release shrink and 16↔24dp selection resize = 250ms
+> `cubic-bezier(0.2, 0, 0, 1)` (easing-standard). Rationale: on touch the
+> finger hides the instant 28dp jump, but with a mouse it reads as abrupt,
+> and the official web implementation animates it. The thumb no longer
+> follows `motionScheme`. Disabled = no transition and reduced motion =
+> instant (B3) are unchanged. The FastSpatial / SnapSpec bullets and the
+> "CSS mapping guidance" below are kept as the Compose record only; the
+> same supersession applies to `docs/audits/selection-controls.md` SC5
+> (Switch part) and to the "Thumb motion" row of the table at the end.
+
 - Thumb **slide and size** animate with one spec: `MotionScheme.FastSpatial`
   — standard `spring(0.9, 1400)` ≈ 150–200ms, near-critically damped;
   Expressive theme `spring(0.6, 800)` (bouncy). While **pressed, changes
@@ -132,7 +147,7 @@ m3 and Compose both map the unselected track outline to `md.sys.color.outline`.
 | Interaction handle/icon colors | shift (primary-container / on-surface-variant) | tokens exist, unused (no color slots) | implements | follow m3 (S1) |
 | Focus state layer | 0.10 tokens | ripple/theme-gated inset ring | unsupported | follow m3 (S2) |
 | Pressed state-layer opacity | 0.10 | 0.10 (`StateTokens`) | 0.12 (v0.192 legacy) | 0.10 |
-| Thumb motion | not specified | FastSpatial spring; snap while pressed | 300ms overshoot bezier | follow Compose |
+| Thumb motion | not specified | FastSpatial spring; snap while pressed | 300ms overshoot bezier; 100ms linear grow / 250ms standard shrink | ~~follow Compose~~ **follow material-web** (web adaptation, #373 — supersedes) |
 | Icon crossfade | not specified | none (static) | 33ms opacity + 167ms rotate | follow Compose (none); revisit if m3 ever specs it |
 | Drag-to-toggle | not specified | TODO b/223797571 (absent) | absent | out of scope |
 
