@@ -2,9 +2,10 @@
 title: Carousel
 ---
 
+import { useState } from 'react'
 import Demo from '@site/src/components/Demo'
 import PropsTable from '@site/src/components/PropsTable'
-import { Carousel, CarouselItem } from 'm3-expressive-react'
+import { Button, Carousel, CarouselItem } from 'm3-expressive-react'
 
 # Carousel
 
@@ -175,6 +176,68 @@ descriptions.
 </Carousel>
 ```
 
+## Scrolling with a mouse, wheel and keyboard
+
+The carousel is a native scroller, so touch, a trackpad's horizontal swipe
+and **Shift + mouse wheel** scroll it (with momentum and snapping). With a
+mouse, **drag** it: it follows the pointer and, on release, flings and
+snaps to an item like a touch swipe (`uncontained` coasts without
+snapping). A drag that starts on an interactive item never activates it,
+and a drag never starts on controls nested inside an item. A plain
+vertical wheel keeps scrolling the page — the carousel does not capture
+it.
+
+On vertically scrolling pages, give mouse and keyboard users a way to see
+every item without scrolling horizontally: m3 recommends a **Show all**
+control in nearby navigation rather than arrow buttons on the carousel.
+
+export function ShowAllDemo() {
+  const [all, setAll] = useState(false)
+  return (
+    <section aria-labelledby="carousel-show-all" style={{ width: '100%', maxWidth: 640 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingInlineStart: 16 }}>
+        <strong id="carousel-show-all">Recent photos</strong>
+        <Button variant="text" aria-expanded={all} onClick={() => setAll((v) => !v)}>
+          {all ? 'Show less' : 'Show all'}
+        </Button>
+      </div>
+      {all ? (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 8, padding: '8px 16px' }}>
+          {Array.from({ length: 8 }, (_, i) => (
+            <div key={i} style={{ height: 120, borderRadius: 28, overflow: 'hidden' }}>
+              <Slide i={i} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <Carousel aria-labelledby="carousel-show-all">
+          {Array.from({ length: 8 }, (_, i) => (
+            <CarouselItem key={i}>
+              <Slide i={i} />
+            </CarouselItem>
+          ))}
+        </Carousel>
+      )}
+    </section>
+  )
+}
+
+<Demo>
+  <ShowAllDemo />
+</Demo>
+
+```tsx
+<section aria-labelledby="recent">
+  <header>
+    <h2 id="recent">Recent photos</h2>
+    <Button variant="text" onClick={() => navigate('/photos')}>
+      Show all
+    </Button>
+  </header>
+  <Carousel aria-labelledby="recent">…</Carousel>
+</section>
+```
+
 ## Accessibility
 
 - Always give the carousel an `aria-label`: it is a `group` announced with
@@ -186,7 +249,10 @@ descriptions.
   between items. Without them, the scroll container itself is focusable
   so keyboard users can still scroll it.
 - Under `prefers-reduced-motion: reduce`, every item keeps one size (no
-  keyline masking) and focus scrolling is instant.
+  keyline masking), and focus scrolling and the release of a mouse drag
+  are instant.
+- Mouse users can drag the carousel; offer a "Show all" control (above)
+  so nothing depends on horizontal scrolling alone.
 - Put nested interactive content only in non-interactive items.
 
 ## Props
