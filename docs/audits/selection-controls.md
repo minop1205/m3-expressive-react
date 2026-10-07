@@ -32,7 +32,7 @@ site 準拠で実装済み**)/ Checkbox の error 状態(Compose には API 自�
 | SC2 | 3つ共通 | **押下リップル(拡張円)が無い**(state layer のフェードのみ)。site は「Pressed (ripple)」、Compose も `ripple(bounded=false, radius=20dp)` を全てに付与。制約: 現行 Ripple プリミティブは親要素のイベントを監視するが、オーバーサイズ input がイベントを奪うため 40dp レイヤーに置けない → **Ripple にリッスン対象を指定できる API を追加**して採用する | 中 |
 | SC3 | 3つ共通 | FocusRing の CSS が**3ファイルに複製**(プリミティブ含め4コピー)— SC2 と同時にプリミティブ参照へ集約 | 中(保守性) |
 | SC4 | Checkbox / Radio | **インタラクション時の色シフト未実装**: unselected の outline(Checkbox)/ icon(Radio)は hover/focus/press で on-surface-variant → **on-surface** に、pressed の state layer 色は**次状態の色に反転**(unselected 押下=primary、selected 押下=on-surface)— site が明示。Compose は未実装(乖離をフラグ済み)だが優先順位で site が勝つ | 低 |
-| SC5 | Checkbox / Switch | モーション調整: Switch のスライドは 300ms backOut(明確なバウンス)だが Compose は FastSpatial(standard 0.9/1400 ≒ 200ms・ごく僅かな行き過ぎ)。Checkbox のチェック解除は Compose では**100ms 遅延スナップ**(アニメーションしない)だが実装は 350ms で逆再生 | 低 |
+| SC5 | Checkbox / Switch | **【2026-10-07 Switch 部分は撤回 — #373】** オーナー裁定(web アダプテーション)により Switch のつまみは material-web に合わせる: スライド 300ms backOut・押下時の拡大 100ms linear・解放時の縮小 250ms easing-standard(`docs/specs/switch.md` Motion 節の Superseded 注記を参照)。Checkbox の部分は有効のまま。<br>~~(旧)~~ モーション調整: Switch のスライドは 300ms backOut(明確なバウンス)だが Compose は FastSpatial(standard 0.9/1400 ≒ 200ms・ごく僅かな行き過ぎ)。Checkbox のチェック解除は Compose では**100ms 遅延スナップ**(アニメーションしない)だが実装は 350ms で逆再生 | 低 |
 | SC6 | 3つ共通 | テスト欠落: Space トグル(全)、フォーム送信(FormData)、Radio の排他とラジオグループ矢印キー、Checkbox error 表示、SC1 実装後の mixed 公開 | 中 |
 
 **判断・記録のみ(Issue 化しない — Phase A に接続)**:
@@ -57,7 +57,7 @@ site 準拠で実装済み**)/ Checkbox の error 状態(Compose には API 自�
 | unselected の hover/focus/press 色シフト・pressed 反転レイヤー | 明示(全3コンポーネント) | 未実装(state layer のみ反応) | site 優先 → SC4 で実装(Switch は実装済み) |
 | Checkbox error 状態 | トークンあり | API なし(dead tokens) | site 優先 → 実装済みを維持 |
 | Switch checked ボーダー | (トークンなし) | Transparent ハードコード | 現状(なし)維持 |
-| モーション | (規定なし) | スプリング(FastSpatial/DefaultSpatial)+ Checkbox 解除はスナップ | Compose 準拠 → SC5 |
+| モーション | (規定なし) | スプリング(FastSpatial/DefaultSpatial)+ Checkbox 解除はスナップ | Compose 準拠 → SC5(**Switch のつまみは #373 で material-web 準拠に変更 — superseded**) |
 
 ## スキルへのフィードバック
 

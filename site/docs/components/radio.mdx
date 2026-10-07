@@ -21,27 +21,41 @@ and tracks the selection. Use `defaultValue` for an uncontrolled group.
 <Demo>
   <RadioGroup aria-label="Notification frequency" defaultValue="daily">
     <label style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-      <Radio value="realtime" /> Real time
+      <Radio value="realtime" />
+      <span>Real time</span>
     </label>
     <label style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-      <Radio value="daily" /> Daily digest
+      <Radio value="daily" />
+      <span>Daily digest</span>
     </label>
     <label style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-      <Radio value="off" /> Off
+      <Radio value="off" />
+      <span>Off</span>
     </label>
   </RadioGroup>
 </Demo>
 
 ```tsx
 <RadioGroup aria-label="Notification frequency" defaultValue="daily">
-  <label>
-    <Radio value="realtime" /> Real time
+  <label style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <Radio value="realtime" />
+    <span>Real time</span>
   </label>
-  <label>
-    <Radio value="daily" /> Daily digest
+  <label style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <Radio value="daily" />
+    <span>Daily digest</span>
+  </label>
+  <label style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+    <Radio value="off" />
+    <span>Off</span>
   </label>
 </RadioGroup>
 ```
+
+A flex `<label>` with `alignItems: 'center'` and a `gap` is the recommended
+layout. The control also centers on the text line in a plain inline label
+(`<label><Radio value="a" /> Option A</label>`): its root sets a
+`vertical-align` that lines it up with the text's visual center.
 
 ## Controlled
 
@@ -76,11 +90,19 @@ export function ControlledRadioDemo() {
 ```tsx
 const [value, setValue] = useState('medium')
 
-<RadioGroup aria-label="Size" value={value} onChange={(event, next) => setValue(next)}>
-  <label><Radio value="small" /> Small</label>
-  <label><Radio value="medium" /> Medium</label>
-  <label><Radio value="large" /> Large</label>
+<RadioGroup
+  aria-label="Size"
+  value={value}
+  onChange={(event, next) => setValue(next)}
+  style={{ display: 'flex', gap: 24 }}
+>
+  {['small', 'medium', 'large'].map((size) => (
+    <label key={size} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <Radio value={size} /> {size}
+    </label>
+  ))}
 </RadioGroup>
+<p>Selected: {value}</p>
 ```
 
 ## Standalone radios

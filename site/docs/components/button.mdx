@@ -2,9 +2,16 @@
 title: Button
 ---
 
+import { useState } from 'react'
 import Demo from '@site/src/components/Demo'
 import PropsTable from '@site/src/components/PropsTable'
 import { Button } from 'm3-expressive-react'
+import {
+  AddIcon,
+  SendIcon,
+  FavoriteIcon,
+  FavoriteBorderIcon,
+} from '@site/src/components/icons/ActionIcons'
 
 # Button
 
@@ -44,6 +51,73 @@ Expressive spec.
   <Button shape="round">Round</Button>
   <Button shape="square">Square</Button>
 </Demo>
+
+## Icons
+
+`startIcon` / `endIcon` add a decorative leading or trailing icon, sized and
+spaced per the button's `size`.
+
+<Demo>
+  <Button variant="filled" startIcon={<AddIcon />}>Create</Button>
+  <Button variant="tonal" endIcon={<SendIcon />}>Send</Button>
+  <Button variant="outlined" size="lg" startIcon={<AddIcon />}>New project</Button>
+</Demo>
+
+```tsx
+<Button variant="filled" startIcon={<AddIcon />}>Create</Button>
+<Button variant="tonal" endIcon={<SendIcon />}>Send</Button>
+```
+
+## Toggle buttons
+
+`toggle` makes the button selectable (`aria-pressed`). Control it with
+`selected` + `onChange(event, selected)`, or leave it uncontrolled with
+`defaultSelected`. Selecting a toggle button morphs its resting shape
+(round → square, square → round) and switches it to the selected colors —
+an MD3 Expressive behavior. The `text` variant has no toggle styling.
+
+export function ToggleDemo() {
+  const [selected, setSelected] = useState(false)
+  return (
+    <>
+      <Button
+        variant="tonal"
+        toggle
+        selected={selected}
+        onChange={(event, next) => setSelected(next)}
+        startIcon={selected ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+      >
+        {selected ? 'Saved' : 'Save'}
+      </Button>
+      <Button variant="outlined" toggle defaultSelected>
+        Uncontrolled
+      </Button>
+      <Button variant="filled" shape="square" toggle>
+        Square
+      </Button>
+    </>
+  )
+}
+
+<Demo>
+  <ToggleDemo />
+</Demo>
+
+```tsx
+const [selected, setSelected] = useState(false)
+
+<Button
+  variant="tonal"
+  toggle
+  selected={selected}
+  onChange={(event, next) => setSelected(next)}
+  startIcon={selected ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+>
+  {selected ? 'Saved' : 'Save'}
+</Button>
+
+<Button variant="outlined" toggle defaultSelected>Uncontrolled</Button>
+```
 
 ## Disabled
 
