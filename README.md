@@ -136,20 +136,21 @@ More in the [theming guide](https://minop1205.github.io/m3-expressive-react/them
 
 ## Icons
 
-The library is **icon-agnostic**: every icon prop (`icon`, `startIcon`,
-`endIcon`, …) takes a `ReactNode`, so any icon set works — nothing is
-bundled. For MD3 we recommend
-[Material Symbols](https://fonts.google.com/icons), e.g. with the SVG
-package + [`vite-plugin-svgr`](https://github.com/pd4d10/vite-plugin-svgr):
+The library ships no icons: every icon prop (`icon`, `startIcon`,
+`selectedIcon`, …) takes a `ReactNode`, sized and colored by the component.
+We recommend [Material Symbols](https://fonts.google.com/icons) as SVG
+components (`@material-symbols/svg-400` + SVGR):
 
 ```tsx
 import Search from '@material-symbols/svg-400/outlined/search.svg?react'
-import { IconButton } from 'm3-expressive-react'
 
-;<IconButton icon={<Search />} aria-label="Search" />
+<IconButton icon={<Search />} aria-label="Search" />
 ```
 
-Icons inherit color via `currentColor` and are sized by the component.
+This needs a bundler plugin and a TypeScript declaration. See the
+[Icons guide](https://minop1205.github.io/m3-expressive-react/icons) for
+step-by-step Vite and Next.js setup, plus notes on icon fonts and other
+icon libraries.
 
 ## Spec fidelity
 
