@@ -19,6 +19,7 @@ export default function Demo({
   return (
     <ThemeProvider seedColor={seedColor} mode={colorMode === 'dark' ? 'dark' : 'light'}>
       <div
+        className="m3-demo"
         style={{
           display: 'flex',
           flexWrap: 'wrap',
