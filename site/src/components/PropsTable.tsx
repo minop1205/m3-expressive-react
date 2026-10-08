@@ -12,6 +12,27 @@ interface Entry {
   }[]
 }
 
+/**
+ * Renders the inline Markdown that JSDoc descriptions use — `code` and
+ * **bold** — instead of printing the backticks / asterisks literally.
+ * Line breaks inside a description are soft wraps and collapse as in HTML.
+ */
+function InlineMarkdown({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g).map((part, i) => {
+        if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
+          return <code key={i}>{part.slice(1, -1)}</code>
+        }
+        if (part.startsWith('**') && part.endsWith('**') && part.length > 4) {
+          return <strong key={i}>{part.slice(2, -2)}</strong>
+        }
+        return part
+      })}
+    </>
+  )
+}
+
 /** Auto-generated prop table (see scripts/gen-props.mjs). */
 export default function PropsTable({ component }: { component: string }) {
   const entry = (props as Record<string, Entry>)[component]
@@ -37,7 +58,9 @@ export default function PropsTable({ component }: { component: string }) {
               <code>{p.type}</code>
             </td>
             <td>{p.defaultValue != null ? <code>{p.defaultValue}</code> : '—'}</td>
-            <td>{p.description}</td>
+            <td>
+              <InlineMarkdown text={p.description} />
+            </td>
           </tr>
         ))}
       </tbody>
