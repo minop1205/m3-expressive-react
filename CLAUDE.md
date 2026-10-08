@@ -168,6 +168,17 @@ Reference tokens → System tokens (--md-sys-*) → Component tokens (--_*)
 - Determinism hooks: the runner sets `window.__VRT__` (preview freezes the
   clock via MockDate) and captures with reduced motion + animations disabled
 
+## Branches & Releases
+
+- Feature PRs target `develop`; `main` = released library (npm `latest`) +
+  live docs site (deployed on every push to `main`)
+- Releases: `develop` → `main` PR, then tag + GitHub Release
+- **Docs-only fixes do not need a release**: branch from `main`, change only
+  `site/` / `docs/` / `README.md` / `CONTRIBUTING.md`, PR to `main` (the
+  `Main PR scope` check enforces the paths), then back-merge `main` →
+  `develop`. Any library change — even a CSS fix — is a release. Details:
+  CONTRIBUTING.md § Documentation site
+
 ## Commands
 
 ```bash

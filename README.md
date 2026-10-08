@@ -178,7 +178,8 @@ npm run vrt      # visual regression (see CLAUDE.md for baseline rules)
 ```
 
 The docs site lives in [`site/`](site/) (Docusaurus) and deploys to GitHub
-Pages from `develop`:
+Pages from `main` — releases, plus docs-only hotfixes (see
+[CONTRIBUTING.md](CONTRIBUTING.md#documentation-site)):
 
 ```bash
 cd site && npm install && npm start
