@@ -32,7 +32,7 @@
    },
    {
     "name": "scrollBehavior",
-    "type": "enum",
+    "type": "\"pinned\" | \"enterAlways\" | \"exitUntilCollapsed\"",
     "required": false,
     "defaultValue": null,
     "description": "Observe `scrollTarget` and drive the state above automatically. The bar\nthen becomes `position: sticky; top: 0` (override with `style` /\n`className`) and is meant to sit at the top of the scrolling content.\nLeave it unset (and use the state props, or nothing) to keep the bar\nfully expanded and reachable — e.g. for assistive-technology users.\nMotion is instant under `prefers-reduced-motion: reduce`."
@@ -74,14 +74,14 @@
    },
    {
     "name": "titleAlignment",
-    "type": "enum",
+    "type": "\"start\" | \"center\"",
     "required": false,
     "defaultValue": "'start' ('center' for the deprecated `variant=\"center\"`)",
     "description": "Title alignment, available on every size. A centered title is centered\nacross the full bar width and only pushed inward when it would collide\nwith the navigation icon or the actions. On `variant=\"search\"` it\ncenters the search field's text and placeholder."
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"small\" | \"medium\" | \"large\" | \"search\" | \"center\"",
     "required": false,
     "defaultValue": "small",
     "description": "Size / layout. `medium` / `large` are the M3 Expressive flexible bars,\n`search` the search app bar (needs `searchBar`).\n`'center'` is deprecated — use `titleAlignment=\"center\"`."
@@ -133,7 +133,7 @@
    },
    {
     "name": "size",
-    "type": "enum",
+    "type": "\"small\" | \"large\"",
     "required": false,
     "defaultValue": "large",
     "description": "Badge size. `\"small\"` renders a dot; `\"large\"` renders a label."
@@ -220,14 +220,14 @@
    },
    {
     "name": "shape",
-    "type": "enum",
+    "type": "\"round\" | \"square\"",
     "required": false,
     "defaultValue": "round",
     "description": "Resting shape; both shapes morph to a tighter corner while pressed."
    },
    {
     "name": "size",
-    "type": "enum",
+    "type": "\"xs\" | \"sm\" | \"md\" | \"lg\" | \"xl\"",
     "required": false,
     "defaultValue": "sm",
     "description": "Container size on the Expressive scale."
@@ -248,7 +248,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"elevated\" | \"filled\" | \"tonal\" | \"outlined\" | \"text\"",
     "required": false,
     "defaultValue": "filled",
     "description": "Visual emphasis."
@@ -281,14 +281,14 @@
    },
    {
     "name": "orientation",
-    "type": "enum",
+    "type": "\"horizontal\" | \"vertical\"",
     "required": false,
     "defaultValue": "'horizontal'",
     "description": "Layout direction."
    },
    {
     "name": "selectionMode",
-    "type": "enum",
+    "type": "\"none\" | \"single\" | \"multiple\"",
     "required": false,
     "defaultValue": "'none'",
     "description": ""
@@ -302,7 +302,7 @@
    },
    {
     "name": "size",
-    "type": "enum",
+    "type": "\"xs\" | \"sm\" | \"md\" | \"lg\" | \"xl\"",
     "required": false,
     "defaultValue": "'sm'",
     "description": "Match the child button size: sets the between-space (standard) or the\ninner corners and 48dp minimum width (connected)."
@@ -316,7 +316,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"standard\" | \"connected\"",
     "required": false,
     "defaultValue": "'standard'",
     "description": "`standard` spaces buttons and widens the pressed one; `connected` joins\nthem into a single shape with small inner corners."
@@ -363,7 +363,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"filled\" | \"elevated\" | \"outlined\"",
     "required": false,
     "defaultValue": "filled",
     "description": "Container style."
@@ -464,7 +464,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"multi-browse\" | \"uncontained\" | \"hero\"",
     "required": false,
     "defaultValue": "multi-browse",
     "description": "Layout (m3.material.io / Compose `HorizontalMultiBrowseCarousel`,\n`HorizontalUncontainedCarousel`, `HorizontalCenteredHeroCarousel`):\n- `multi-browse` — large, medium and small (40–56dp) items, start-snapped;\n- `uncontained` — single-size items flowing past the edge, free scrolling;\n- `hero` — centered hero: a large item with a small item on each side,\n  center-snapped (the first / last item align to the start / end)."
@@ -647,7 +647,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"assist\" | \"filter\" | \"input\" | \"suggestion\"",
     "required": false,
     "defaultValue": "assist",
     "description": "Visual variant."
@@ -685,7 +685,7 @@
    },
    {
     "name": "layout",
-    "type": "enum",
+    "type": "\"modal\" | \"docked\"",
     "required": false,
     "defaultValue": "modal",
     "description": "`modal`: month-year menu button + month arrows, year grid.\n`docked`: month and year menu buttons each with arrows, list menus,\nneighbouring-month days shown at 38%."
@@ -774,7 +774,7 @@
    },
    {
     "name": "defaultMode",
-    "type": "enum",
+    "type": "\"calendar\" | \"input\"",
     "required": false,
     "defaultValue": "calendar",
     "description": "Uncontrolled initial display mode."
@@ -837,7 +837,7 @@
    },
    {
     "name": "mode",
-    "type": "enum",
+    "type": "\"calendar\" | \"input\"",
     "required": false,
     "defaultValue": null,
     "description": "Controlled display mode (calendar grid or text input)."
@@ -1195,14 +1195,14 @@
    },
    {
     "name": "orientation",
-    "type": "enum",
+    "type": "\"horizontal\" | \"vertical\"",
     "required": false,
     "defaultValue": "horizontal",
     "description": "Orientation. A vertical divider stretches to the height of its flex /\ngrid row (`align-self: stretch`)."
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"full-width\" | \"inset\" | \"middle-inset\"",
     "required": false,
     "defaultValue": "full-width",
     "description": "Layout variant."
@@ -1214,7 +1214,7 @@
   "props": [
    {
     "name": "color",
-    "type": "enum",
+    "type": "\"primary\" | \"secondary\" | \"tertiary\"",
     "required": false,
     "defaultValue": "primary",
     "description": "Color set for the container/content roles."
@@ -1256,7 +1256,7 @@
    },
    {
     "name": "size",
-    "type": "enum",
+    "type": "\"small\" | \"regular\" | \"medium\" | \"large\"",
     "required": false,
     "defaultValue": "regular",
     "description": "Container size: small 40dp (no longer recommended by MD3 — prefer a larger\nsize; it keeps a 48dp touch target), regular 56dp, medium 80dp (the size\nMD3 recommends most), large 96dp."
@@ -1296,7 +1296,7 @@
    },
    {
     "name": "color",
-    "type": "enum",
+    "type": "\"primary\" | \"secondary\" | \"tertiary\"",
     "required": false,
     "defaultValue": "primary",
     "description": "Color set. Items use its `*-container` roles; the open close button its\nbase roles (e.g. `primary` / `on-primary`)."
@@ -1331,7 +1331,7 @@
    },
    {
     "name": "size",
-    "type": "enum",
+    "type": "\"regular\" | \"medium\" | \"large\"",
     "required": false,
     "defaultValue": "regular",
     "description": "Size of the closed FAB — the menu can open from any FAB size (Fab\nvocabulary). The close button is always 56dp, pinned to the top-trailing\ncorner of the FAB's footprint."
@@ -1404,14 +1404,14 @@
    },
    {
     "name": "shape",
-    "type": "enum",
+    "type": "\"round\" | \"square\"",
     "required": false,
     "defaultValue": "round",
     "description": "Resting shape; morphs on press and on toggle selection."
    },
    {
     "name": "size",
-    "type": "enum",
+    "type": "\"xs\" | \"sm\" | \"md\" | \"lg\" | \"xl\"",
     "required": false,
     "defaultValue": "sm",
     "description": "Container size on the Expressive scale."
@@ -1425,14 +1425,14 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"standard\" | \"filled\" | \"tonal\" | \"outlined\"",
     "required": false,
     "defaultValue": "filled",
     "description": "Visual emphasis."
    },
    {
     "name": "width",
-    "type": "enum",
+    "type": "\"narrow\" | \"default\" | \"wide\"",
     "required": false,
     "defaultValue": "default",
     "description": "Container width footprint."
@@ -1458,7 +1458,7 @@
    },
    {
     "name": "selectionMode",
-    "type": "enum",
+    "type": "\"none\" | \"single\" | \"multiple\"",
     "required": false,
     "defaultValue": "'none'",
     "description": ""
@@ -1472,7 +1472,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"standard\" | \"segmented\"",
     "required": false,
     "defaultValue": "'standard'",
     "description": "`standard`: items on a transparent container. `segmented`: each item is\nits own surface-colored segment, 2dp apart, with 16dp outer corners on\nthe first and last item (Compose `SegmentedListItem`). Both use the\nExpressive item shapes."
@@ -1615,7 +1615,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"uncontained\" | \"contained\"",
     "required": false,
     "defaultValue": "uncontained",
     "description": "`uncontained` (shape only) or `contained` (shape on a PrimaryContainer circle)."
@@ -1627,7 +1627,7 @@
   "props": [
    {
     "name": "align",
-    "type": "enum",
+    "type": "\"start\" | \"end\"",
     "required": false,
     "defaultValue": "start",
     "description": "Horizontal alignment to the trigger."
@@ -1641,7 +1641,7 @@
    },
    {
     "name": "color",
-    "type": "enum",
+    "type": "\"standard\" | \"vibrant\"",
     "required": false,
     "defaultValue": "standard",
     "description": "Color option for the `vertical` variant: `'standard'` (surface based) or\n`'vibrant'` (tertiary based, higher emphasis)."
@@ -1676,7 +1676,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"standard\" | \"vertical\"",
     "required": false,
     "defaultValue": "standard",
     "description": "`'standard'` is the baseline dropdown menu; `'vertical'` is the MD3\nExpressive vertical menu (segmented `MenuGroup` containers, 44dp items,\nselected states with shape morph)."
@@ -1740,7 +1740,7 @@
    },
    {
     "name": "itemLayout",
-    "type": "enum",
+    "type": "\"vertical\" | \"horizontal\"",
     "required": false,
     "defaultValue": "vertical",
     "description": "Item layout: icon over label (`vertical`) or beside it (`horizontal`).\nHorizontal items are centered with the extra width at both ends of the bar\n(20 / 15 / 10 / 5 % per side for 3 / 4 / 5 / 6 items)."
@@ -1841,7 +1841,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"standard\" | \"modal\"",
     "required": false,
     "defaultValue": "standard",
     "description": "Standard (inline) or modal (overlay + scrim)."
@@ -1947,7 +1947,7 @@
   "props": [
    {
     "name": "arrangement",
-    "type": "enum",
+    "type": "\"top\" | \"center\" | \"bottom\"",
     "required": false,
     "defaultValue": "top",
     "description": "Vertical placement of the destinations below the header."
@@ -2010,7 +2010,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"collapsed\" | \"expanded\"",
     "required": false,
     "defaultValue": "collapsed",
     "description": "`collapsed` (96dp, icon-over-label) or `expanded` (icon beside label in a\npill; the rail is as wide as its widest item, 220–360dp). The change is a\nspring morph."
@@ -2022,7 +2022,7 @@
   "props": [
    {
     "name": "shape",
-    "type": "enum",
+    "type": "\"flat\" | \"wavy\"",
     "required": false,
     "defaultValue": "flat",
     "description": "Indicator shape."
@@ -2055,7 +2055,7 @@
   "props": [
    {
     "name": "shape",
-    "type": "enum",
+    "type": "\"flat\" | \"wavy\"",
     "required": false,
     "defaultValue": "flat",
     "description": "Indicator shape."
@@ -2414,7 +2414,7 @@
    },
    {
     "name": "anchor",
-    "type": "enum",
+    "type": "\"left\" | \"right\"",
     "required": false,
     "defaultValue": "right",
     "description": "Edge the sheet is anchored to."
@@ -2484,7 +2484,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"standard\" | \"modal\"",
     "required": false,
     "defaultValue": "standard",
     "description": "Standard (inline) or modal (overlay + scrim)."
@@ -2552,7 +2552,7 @@
    },
    {
     "name": "orientation",
-    "type": "enum",
+    "type": "\"horizontal\" | \"vertical\"",
     "required": false,
     "defaultValue": "horizontal",
     "description": "Orientation."
@@ -2587,7 +2587,7 @@
    },
    {
     "name": "size",
-    "type": "enum",
+    "type": "\"xs\" | \"sm\" | \"md\" | \"lg\" | \"xl\"",
     "required": false,
     "defaultValue": "xs",
     "description": "Expressive size (track thickness / handle height)."
@@ -2700,7 +2700,7 @@
    },
    {
     "name": "menuAlign",
-    "type": "enum",
+    "type": "\"start\" | \"end\"",
     "required": false,
     "defaultValue": "end",
     "description": "Menu alignment to the trailing button."
@@ -2721,7 +2721,7 @@
    },
    {
     "name": "size",
-    "type": "enum",
+    "type": "\"xs\" | \"sm\" | \"md\" | \"lg\" | \"xl\"",
     "required": false,
     "defaultValue": "sm",
     "description": "Container size on the Expressive scale."
@@ -2742,7 +2742,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"elevated\" | \"filled\" | \"tonal\" | \"outlined\"",
     "required": false,
     "defaultValue": "filled",
     "description": "Visual emphasis (shared by both buttons)."
@@ -2911,7 +2911,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"primary\" | \"secondary\"",
     "required": false,
     "defaultValue": "primary",
     "description": "Indicator style."
@@ -3138,7 +3138,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"filled\" | \"outlined\"",
     "required": false,
     "defaultValue": "filled",
     "description": "Container style."
@@ -3171,7 +3171,7 @@
    },
    {
     "name": "defaultMode",
-    "type": "enum",
+    "type": "\"dial\" | \"input\"",
     "required": false,
     "defaultValue": "'dial'",
     "description": "Uncontrolled initial display mode."
@@ -3227,7 +3227,7 @@
    },
    {
     "name": "mode",
-    "type": "enum",
+    "type": "\"dial\" | \"input\"",
     "required": false,
     "defaultValue": null,
     "description": "Display mode: clock `dial` or keyboard `input`. Controlled when\n`onModeChange` is also passed.\n@deprecated Passing `mode` **without** `onModeChange` keeps the v1.0\nbehavior — it only sets the initial mode and the toggle still switches.\nUse `defaultMode` for that; in v2 `mode` will always be controlled."
@@ -3358,7 +3358,7 @@
    },
    {
     "name": "color",
-    "type": "enum",
+    "type": "\"standard\" | \"vibrant\"",
     "required": false,
     "defaultValue": "standard",
     "description": "Color scheme."
@@ -3400,14 +3400,14 @@
    },
    {
     "name": "orientation",
-    "type": "enum",
+    "type": "\"horizontal\" | \"vertical\"",
     "required": false,
     "defaultValue": "horizontal",
     "description": "Item flow direction (floating only)."
    },
    {
     "name": "scrollBehavior",
-    "type": "enum",
+    "type": "\"exitAlways\" | \"collapse\"",
     "required": false,
     "defaultValue": null,
     "description": "Observe `scrollTarget` and hide / collapse the toolbar automatically. A\ndocked toolbar becomes `position: sticky; bottom: 0`; position a floating\none yourself (e.g. `position: fixed`, 16dp from the edge). Leave it unset\nto keep every control on screen — e.g. for assistive-technology users\n(Compose disables these behaviors while TalkBack is on). Motion is\ninstant under `prefers-reduced-motion: reduce`."
@@ -3428,7 +3428,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"docked\" | \"floating\"",
     "required": false,
     "defaultValue": "docked",
     "description": "Docked (full-width bar) or floating (rounded, elevated)."
@@ -3482,7 +3482,7 @@
    },
    {
     "name": "placement",
-    "type": "enum",
+    "type": "\"top\" | \"bottom\"",
     "required": false,
     "defaultValue": "'top' for plain, 'bottom' for rich",
     "description": "Preferred placement relative to the trigger. The tooltip flips to the\nother side when there is no room and is kept inside the viewport.\nInside a top app bar, use `'bottom'`."
@@ -3503,7 +3503,7 @@
    },
    {
     "name": "variant",
-    "type": "enum",
+    "type": "\"plain\" | \"rich\"",
     "required": false,
     "defaultValue": "plain",
     "description": "Plain style or rich (with subhead + action)."
