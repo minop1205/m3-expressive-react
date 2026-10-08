@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.1 (2026-10-08)
+
+### Fixed
+
+- **Divider** `orientation="vertical"`: stretches to the height of its row
+  again under host / reset CSS that sizes `<hr>` (e.g. Docusaurus/Infima's
+  `hr { height: 1px }`), instead of collapsing to a 1×1 dot (#400).
+
 ## 1.3.0 (2026-10-08)
 
 ### Added

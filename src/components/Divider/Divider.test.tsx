@@ -69,6 +69,20 @@ describe('Divider', () => {
     expect(screen.getByTestId('my-divider')).toBeInTheDocument()
   })
 
+  it('vertical: overrides a host `hr { height }` so it can stretch to its row', () => {
+    // Infima (Docusaurus) and other resets give <hr> a fixed 1px height,
+    // which beats align-self: stretch and collapses the line to a dot.
+    const sheet = document.createElement('style')
+    sheet.textContent = 'hr { height: 1px; }'
+    document.head.appendChild(sheet)
+    try {
+      render(<Divider data-testid="d" orientation="vertical" />)
+      expect(getComputedStyle(screen.getByTestId('d')).height).toBe('auto')
+    } finally {
+      sheet.remove()
+    }
+  })
+
   it('has no axe violations', async () => {
     const { container } = render(<Divider />)
     expect(await axe(container)).toHaveNoViolations()

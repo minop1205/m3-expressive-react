@@ -36,6 +36,9 @@
    VerticalDivider are full-bleed (thickness 1dp, outline-variant). */
 .divider[data-orientation='vertical'] {
   width: var(--_thickness);
+  /* height: auto lets align-self: stretch fill the row — host / reset CSS
+     such as Infima's `hr { height: 1px }` would otherwise pin it to a dot. */
+  height: auto;
   align-self: stretch;
   background-color: var(--_color);
 }
