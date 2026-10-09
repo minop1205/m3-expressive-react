@@ -25,6 +25,9 @@ jobs:
       - run: npm run lint:tokens
       - run: npm test
       - run: npm run build
+      # Package shape (#408): exports / types resolve for every consumer mode.
+      - run: npx -y publint --strict
+      - run: npx -y @arethetypeswrong/cli --pack . --exclude-entrypoints styles.css tokens.css package.json
 
   # Visual regression testing moved from Chromatic to the self-hosted
   # Playwright suite — see .github/workflows/vrt.yml (issue #112).
