@@ -390,3 +390,47 @@ describe('TimePicker 24-hour clock (B8)', () => {
     expect(await axe(input.container)).toHaveNoViolations()
   })
 })
+
+describe('TimePicker stale state (#415)', () => {
+  it('a modal reopens on the hour field', async () => {
+    const user = userEvent.setup()
+    render(<ModalHarness onClose={() => {}} />)
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    await user.click(screen.getByRole('radio', { name: 'Select minutes' }))
+    expect(screen.getByRole('group', { name: 'Minute' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    expect(screen.getByRole('radio', { name: 'Select hour' })).toBeChecked()
+    expect(screen.getByRole('group', { name: 'Hour' })).toBeInTheDocument()
+  })
+
+  it('inline Cancel reverts to a controlled value loaded after mount', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    function Harness() {
+      const [value, setValue] = useState<TimeValue>({ hour: 9, minute: 0 })
+      return (
+        <>
+          <button type="button" onClick={() => setValue({ hour: 14, minute: 30 })}>
+            Load
+          </button>
+          <TimePicker
+            value={value}
+            onChange={(v) => {
+              onChange(v)
+              setValue(v)
+            }}
+            onCancel={() => {}}
+          />
+        </>
+      )
+    }
+    render(<Harness />)
+    await user.click(screen.getByRole('button', { name: 'Load' }))
+    await user.click(screen.getByRole('radio', { name: 'AM' }))
+    expect(onChange).toHaveBeenLastCalledWith({ hour: 2, minute: 30 })
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(onChange).toHaveBeenLastCalledWith({ hour: 14, minute: 30 })
+    expect(screen.getByRole('radio', { name: 'PM' })).toBeChecked()
+  })
+})
