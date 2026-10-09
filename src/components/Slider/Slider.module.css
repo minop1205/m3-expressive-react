@@ -291,11 +291,36 @@
 /* --------------------------------------------------------------------------- */
 /* Native range input(s)                                                       */
 /* --------------------------------------------------------------------------- */
-.input {
+/*
+ * Pointer mapping (#431): a native range input maps a pointer at `x` to
+ * `(x - thumb/2) / (W - thumb)`, while the visual track / handle use `x / W`.
+ * Each input therefore overhangs the track by half its (invisible) native
+ * thumb at both ends, so its thumb centre sweeps exactly 0..W and a pointer
+ * lands on the value under it. `.inputs` clips the overhang (no hit area or
+ * scrollable overflow beyond the slider — `clip`, not `hidden`, so focusing an
+ * input can't scroll it) and grows the cross axis to the 48dp minimum touch
+ * target (#429) without changing any visual.
+ */
+.inputs {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
+  overflow: clip;
+  /* Native thumb main-axis size (half of it overhangs each end). */
+  --_input-thumb: 24px;
+  /* Cross-axis touch target: the handle, at least 48dp. */
+  --_input-target: max(48px, var(--_handle));
+}
+
+.slider[data-orientation='horizontal'] .inputs {
+  inset-block: min(0px, calc((var(--_handle) - 48px) / 2));
+}
+
+.slider[data-orientation='vertical'] .inputs {
+  inset-inline: min(0px, calc((var(--_handle) - 48px) / 2));
+}
+
+.input {
+  position: absolute;
   margin: 0;
   cursor: pointer;
   opacity: 0;
@@ -303,7 +328,18 @@
   -webkit-appearance: none;
 }
 
+.slider[data-orientation='horizontal'] .input {
+  inset-block: 0;
+  inset-inline-start: calc(var(--_input-thumb) / -2);
+  width: calc(100% + var(--_input-thumb));
+  height: 100%;
+}
+
 .slider[data-orientation='vertical'] .input {
+  inset-inline: 0;
+  top: calc(var(--_input-thumb) / -2);
+  width: 100%;
+  height: calc(100% + var(--_input-thumb));
   writing-mode: vertical-lr;
   direction: rtl;
 }
@@ -312,15 +348,28 @@
   cursor: default;
 }
 
-.input::-webkit-slider-thumb {
+/* Thumb: --_input-thumb along the main axis, the full touch target across. */
+.slider[data-orientation='horizontal'] .input::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 24px;
-  height: 24px;
+  width: var(--_input-thumb);
+  height: var(--_input-target);
 }
 
-.input::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
+.slider[data-orientation='vertical'] .input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: var(--_input-target);
+  height: var(--_input-thumb);
+}
+
+.slider[data-orientation='horizontal'] .input::-moz-range-thumb {
+  width: var(--_input-thumb);
+  height: var(--_input-target);
+  border: none;
+}
+
+.slider[data-orientation='vertical'] .input::-moz-range-thumb {
+  width: var(--_input-target);
+  height: var(--_input-thumb);
   border: none;
 }
 

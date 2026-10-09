@@ -1,6 +1,7 @@
 import {
   forwardRef,
   useEffect,
+  useRef,
   useState,
   type ChangeEvent,
   type CSSProperties,
@@ -10,6 +11,7 @@ import {
   type Ref,
 } from 'react'
 import clsx from 'clsx'
+import { devWarnOnce } from '../../internal/devWarning'
 import styles from './Slider.module.css'
 
 export type SliderSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
@@ -78,6 +80,22 @@ const GAP = 8
 function clamp(v: number, min: number, max: number) {
   return Math.min(max, Math.max(min, v))
 }
+
+/** Tolerance for float step counts — `0.3 / 0.1` is `2.9999999999999996`. */
+const STEP_EPSILON = 1e-9
+
+/** Whole step intervals in `span` (float-tolerant). */
+function stepIntervals(span: number, step: number) {
+  return Math.floor(span / step + STEP_EPSILON)
+}
+
+/** Number of decimal places needed to write `n` exactly (`1e-7` → 7). */
+function decimals(n: number) {
+  if (!Number.isFinite(n)) return 0
+  const [mantissa, exponent] = n.toExponential().split('e')
+  const fraction = mantissa.split('.')[1]?.length ?? 0
+  return clamp(fraction - Number(exponent), 0, 100)
+}
 /** `calc(<frac>*100% <op> <gap>px)` for positioning along the main axis. */
 function pos(frac: number, gap = 0) {
   const g = gap === 0 ? '' : gap > 0 ? ` + ${gap}px` : ` - ${-gap}px`
@@ -101,8 +119,8 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
   {
     value,
     defaultValue,
-    min = 0,
-    max = 100,
+    min: minProp = 0,
+    max: maxProp = 100,
     step = 1,
     onChange,
     size = 'xs',
@@ -124,6 +142,19 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
   },
   ref,
 ) {
+  // Normalize inverted bounds (#431): `min > max` would draw the handle off
+  // the track. Swap them, and tell the developer.
+  const inverted = minProp > maxProp
+  const min = inverted ? maxProp : minProp
+  const max = inverted ? minProp : maxProp
+  useEffect(() => {
+    if (inverted) {
+      devWarnOnce(
+        `Slider: \`min\` (${minProp}) is greater than \`max\` (${maxProp}); the bounds were swapped.`,
+      )
+    }
+  }, [inverted, minProp, maxProp])
+
   const rangeInit = Array.isArray(value ?? defaultValue)
   const isControlled = value !== undefined
   const [internal, setInternal] = useState<SliderValue>(
@@ -132,9 +163,21 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
   // Index of the handle currently pressed/dragged (Compose PressInteraction /
   // DragInteraction — drives the 4 → 2dp handle squeeze).
   const [pressed, setPressed] = useState<number | null>(null)
+  // The pointer press in progress: which thumb its drag drives (decided on
+  // the first change), and that thumb's input so it can take focus on release.
+  const pressRef = useRef<{ input: number; thumb: number | null; el?: HTMLInputElement } | null>(
+    null,
+  )
   useEffect(() => {
     if (pressed === null) return
-    const clear = () => setPressed(null)
+    const clear = () => {
+      const press = pressRef.current
+      pressRef.current = null
+      setPressed(null)
+      // A drag handed to the other thumb leaves focus on the input that was
+      // grabbed; move it to the thumb that moved so the keyboard follows.
+      if (press?.el && press.thumb !== press.input) press.el.focus({ preventScroll: true })
+    }
     window.addEventListener('pointerup', clear)
     window.addEventListener('pointercancel', clear)
     return () => {
@@ -151,7 +194,33 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
   const clamped = values.map((v) => clamp(v, min, max))
   const fractions = clamped.map((v) => (v - min) / span)
 
-  const commit = (next: number, index: number, event: ChangeEvent<HTMLInputElement>) => {
+  // Values on the step grid are written with the step's (and min's) decimal
+  // places, so float noise (`0.1 + 0.2`) never reaches onChange (#431).
+  const precision = step > 0 ? Math.max(decimals(step), decimals(min)) : null
+  const round = (v: number) => (precision === null ? v : Number(v.toFixed(precision)))
+
+  const commit = (raw: number, inputIndex: number, event: ChangeEvent<HTMLInputElement>) => {
+    const next = round(raw)
+    let index = inputIndex
+    const press = pressRef.current
+    if (isRange && press) {
+      if (press.thumb === null && next !== clamped[inputIndex]) {
+        // Stacked thumbs (#431): only the top input receives the pointer, but
+        // it may be the one that can't move that way (both at max → the end
+        // thumb). Hand the drag to the thumb that can move in its direction —
+        // left / down drives the start thumb, right / up the end thumb.
+        press.thumb =
+          clamped[0] === clamped[1] ? (next < clamped[0] ? 0 : 1) : inputIndex
+        if (press.thumb !== inputIndex) {
+          press.el =
+            event.currentTarget.parentElement?.querySelector<HTMLInputElement>(
+              `input[data-index='${press.thumb}']`,
+            ) ?? undefined
+          setPressed(press.thumb)
+        }
+      }
+      if (press.thumb !== null) index = press.thumb
+    }
     let out: SliderValue
     if (isRange) {
       const pair: [number, number] = [clamped[0], clamped[1]]
@@ -177,10 +246,10 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
     const { key } = event
     let next: number | null = null
     if (key === 'PageUp' || key === 'PageDown') {
-      const intervals = step > 0 ? Math.max(1, Math.floor(span / step)) : 100
+      const intervals = step > 0 ? Math.max(1, stepIntervals(span, step)) : 100
       const page = clamp(Math.floor(intervals / 10), 1, 10)
       const delta = page * (step > 0 ? step : span / 100)
-      next = clamp(clamped[index] + (key === 'PageUp' ? delta : -delta), min, max)
+      next = round(clamp(clamped[index] + (key === 'PageUp' ? delta : -delta), min, max))
     } else if (key === 'Home') {
       next = min
     } else if (key === 'End') {
@@ -223,10 +292,12 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
     gapAtB = true
   }
 
-  const tickCount = showTicks && step > 0 ? Math.floor(span / step) : 0
+  // Ticks sit on the valid values `min + i * step` (#431) — not spread
+  // evenly to `max`, which may be off the grid (max 10, step 3 → 0/3/6/9).
+  const tickCount = showTicks && step > 0 ? stepIntervals(span, step) : 0
   const ticks =
     tickCount > 0 && tickCount <= 100
-      ? Array.from({ length: tickCount + 1 }, (_, i) => i / tickCount)
+      ? Array.from({ length: tickCount + 1 }, (_, i) => (round(min + i * step) - min) / span)
       : []
 
   const s = SIZES[size]
@@ -317,29 +388,34 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
           </span>
         ))}
 
-      {values.map((_, i) => (
-        <input
-          key={i}
-          ref={i === 0 ? inputRef : undefined}
-          type="range"
-          className={styles.input}
-          data-index={i}
-          min={min}
-          max={max}
-          step={step}
-          value={clamped[i]}
-          disabled={disabled}
-          aria-label={isRange ? (i === 0 ? rangeStartLabel : rangeEndLabel) : ariaLabel}
-          aria-labelledby={isRange ? undefined : ariaLabelledby}
-          aria-orientation={orientation === 'vertical' ? 'vertical' : undefined}
-          aria-valuetext={ariaValueText(valueLabelFormat, clamped[i])}
-          onChange={(event) => commit(Number(event.target.value), i, event)}
-          onKeyDown={handleKeyDown(i)}
-          onPointerDown={() => {
-            if (!disabled) setPressed(i)
-          }}
-        />
-      ))}
+      {/* Clip box for the inputs' half-thumb overhang + 48dp target (CSS). */}
+      <span className={styles.inputs}>
+        {values.map((_, i) => (
+          <input
+            key={i}
+            ref={i === 0 ? inputRef : undefined}
+            type="range"
+            className={styles.input}
+            data-index={i}
+            min={min}
+            max={max}
+            step={step}
+            value={clamped[i]}
+            disabled={disabled}
+            aria-label={isRange ? (i === 0 ? rangeStartLabel : rangeEndLabel) : ariaLabel}
+            aria-labelledby={isRange ? undefined : ariaLabelledby}
+            aria-orientation={orientation === 'vertical' ? 'vertical' : undefined}
+            aria-valuetext={ariaValueText(valueLabelFormat, clamped[i])}
+            onChange={(event) => commit(Number(event.target.value), i, event)}
+            onKeyDown={handleKeyDown(i)}
+            onPointerDown={() => {
+              if (disabled) return
+              pressRef.current = { input: i, thumb: null }
+              setPressed(i)
+            }}
+          />
+        ))}
+      </span>
     </span>
   )
 })
