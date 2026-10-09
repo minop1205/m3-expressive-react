@@ -2,11 +2,14 @@ import {
   forwardRef,
   useCallback,
   useContext,
+  useRef,
   type ChangeEvent,
   type InputHTMLAttributes,
   type Ref,
 } from 'react'
 import clsx from 'clsx'
+import { assignRef } from '../../internal/assignRef'
+import { syncCheckedToDefault, useFormReset } from '../../internal/useFormReset'
 import { RadioGroupContext } from './RadioGroup'
 import styles from './Radio.module.css'
 
@@ -60,6 +63,28 @@ export const Radio = forwardRef<HTMLSpanElement, RadioProps>(
       group != null && value !== undefined ? group.value === String(value) : undefined
     const resolvedChecked = group != null ? (groupChecked ?? false) : checked
 
+    const internalInputRef = useRef<HTMLInputElement | null>(null)
+    const setInputRef = useCallback(
+      (node: HTMLInputElement | null) => {
+        internalInputRef.current = node
+        assignRef(inputRef, node)
+      },
+      [inputRef],
+    )
+
+    // Native form reset (#432): the browser restores each radio's default
+    // checkedness without going through the `checked` setter, so resync
+    // React's value tracker (otherwise re-selecting the radio that was
+    // checked before the reset fires no onChange), and let an uncontrolled
+    // group restore its own default value.
+    useFormReset(internalInputRef, () => {
+      const input = internalInputRef.current
+      if (!input) return
+      if (group == null && checked !== undefined) return
+      syncCheckedToDefault(input)
+      group?.onFormReset()
+    })
+
     const handleChange = useCallback(
       (event: ChangeEvent<HTMLInputElement>) => {
         onChange?.(event, event.target.value)
@@ -76,7 +101,7 @@ export const Radio = forwardRef<HTMLSpanElement, RadioProps>(
         className={clsx(styles.radio, disabled && styles.disabled, className)}
       >
         <input
-          ref={inputRef}
+          ref={setInputRef}
           {...rest}
           type="radio"
           className={styles.input}

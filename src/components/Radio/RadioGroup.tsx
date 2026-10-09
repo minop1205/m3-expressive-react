@@ -2,6 +2,7 @@ import {
   createContext,
   forwardRef,
   useId,
+  useRef,
   useState,
   type ChangeEvent,
   type HTMLAttributes,
@@ -14,6 +15,8 @@ export interface RadioGroupContextValue {
   value: string | undefined
   disabled: boolean
   onSelect: (event: ChangeEvent<HTMLInputElement>, value: string) => void
+  /** Called by member radios when their form fires `reset`. */
+  onFormReset: () => void
 }
 
 export const RadioGroupContext = createContext<RadioGroupContextValue | null>(null)
@@ -60,15 +63,22 @@ export const RadioGroup = forwardRef<HTMLDivElement, RadioGroupProps>(
     const isControlled = controlledValue !== undefined
     const [uncontrolled, setUncontrolled] = useState(defaultValue)
     const value = isControlled ? controlledValue : uncontrolled
+    // The native reset restores each radio's initial checkedness, i.e. the
+    // group's initial default — not a later `defaultValue` prop.
+    const initialDefaultRef = useRef(defaultValue)
 
     const onSelect = (event: ChangeEvent<HTMLInputElement>, next: string) => {
       if (!isControlled) setUncontrolled(next)
       onChange?.(event, next)
     }
 
+    const onFormReset = () => {
+      if (!isControlled) setUncontrolled(initialDefaultRef.current)
+    }
+
     return (
       <div ref={ref} {...rest} role="radiogroup" className={clsx(className)}>
-        <RadioGroupContext.Provider value={{ name, value, disabled, onSelect }}>
+        <RadioGroupContext.Provider value={{ name, value, disabled, onSelect, onFormReset }}>
           {children}
         </RadioGroupContext.Provider>
       </div>
