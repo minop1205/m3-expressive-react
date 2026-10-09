@@ -264,6 +264,16 @@ export const SwipeToDismiss = forwardRef<HTMLDivElement, SwipeToDismissProps>(
       }
     }, [drag, dismissed])
 
+    // A dismissed row is off-screen: keep its content out of the tab order
+    // and the accessibility tree (#417). Set via the DOM — React 18 has no
+    // `inert` prop.
+    useEffect(() => {
+      const content = contentRef.current
+      if (!content) return
+      if (dismissed != null) content.setAttribute('inert', '')
+      else content.removeAttribute('inert')
+    }, [dismissed])
+
     const gesturesEnabled = dismissed == null && (enableStartToEnd || enableEndToStart)
 
     const clampLogical = (x: number, width: number) => {
@@ -307,6 +317,14 @@ export const SwipeToDismiss = forwardRef<HTMLDivElement, SwipeToDismissProps>(
     const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
       const g = gesture.current
       if (!g || event.pointerId !== g.pointerId) return
+      // Pointer capture is only taken past the slop, so a mouse press
+      // released outside the row never delivers its pointerup here: a move
+      // with no button held means that press is over — drop it instead of
+      // dragging the row on hover (#417).
+      if (!g.active && event.pointerType === 'mouse' && event.buttons === 0) {
+        gesture.current = null
+        return
+      }
       const dxPhysical = event.clientX - g.startX
       const dx = g.rtl ? -dxPhysical : dxPhysical
       if (!g.active) {
