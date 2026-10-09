@@ -88,7 +88,10 @@ export function ThemeProvider({
         data-md-color-scheme={mode}
         data-md-motion-scheme={motionScheme}
         className={className}
-        style={{ ...cssVars, ...style } as CSSProperties}
+        // color-scheme lets the UA paint native parts (scrollbars, form
+        // control internals, autofill) to match the mode (#424). A consumer
+        // `style` still overrides it.
+        style={{ colorScheme: mode, ...cssVars, ...style } as CSSProperties}
       >
         {children}
       </Element>
