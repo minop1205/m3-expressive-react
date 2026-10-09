@@ -121,6 +121,18 @@
   transform-origin: right center;
 }
 
+/* High contrast (forced colors): the badge is a background fill, which forced
+   colors replaces with Canvas — the dot vanishes and the count becomes bare
+   text. The badge paints its own system colors instead: a CanvasText fill
+   with a Canvas label (opted out so no text backplate is drawn). */
+@media (forced-colors: active) {
+  .badge {
+    forced-color-adjust: none;
+    --_container-color: CanvasText;
+    --_label-text-color: Canvas;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .badge,
   .visible {

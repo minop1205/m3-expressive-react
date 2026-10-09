@@ -377,3 +377,42 @@
   height: 100%;
   fill: currentColor;
 }
+
+/* ------------------------------------------------------------------ */
+/* High contrast (forced colors)                                       */
+/* ------------------------------------------------------------------ */
+/* Forced colors replaces the popup / group fills with Canvas and drops the
+   shadow, so the menu floated edgeless over the page, and the vertical
+   variant's checked item (container color only) looked unchecked. Outline the
+   surfaces (outlines take no space), fill checked items with Highlight (the
+   label opted out of the forced palette so the Canvas text backplate does not
+   hide it), and paint disabled items GrayText. */
+@media (forced-colors: active) {
+  .menu:not([data-variant='vertical']),
+  .menu[data-variant='vertical'] .group {
+    outline: 1px solid CanvasText;
+  }
+
+  .menu[data-variant='vertical'] .group .item[aria-checked='true']:not([aria-disabled='true']),
+  .menu[data-variant='vertical'] .item[aria-checked='true']:not([aria-disabled='true']) {
+    background-color: Highlight;
+    color: HighlightText;
+  }
+
+  .menu[data-variant='vertical'] .item[aria-checked='true']:not([aria-disabled='true']) .label,
+  .menu[data-variant='vertical'] .item[aria-checked='true']:not([aria-disabled='true']) .leading,
+  .menu[data-variant='vertical'] .item[aria-checked='true']:not([aria-disabled='true']) .trailing {
+    forced-color-adjust: none;
+    color: HighlightText;
+  }
+
+  .menu[data-variant='vertical'] .item[aria-checked='true'][aria-disabled='true'] {
+    outline: 1px solid GrayText;
+    outline-offset: -1px;
+    color: GrayText;
+  }
+
+  .menu .item[aria-disabled='true'] {
+    color: GrayText;
+  }
+}

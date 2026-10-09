@@ -70,3 +70,13 @@
     animation: none;
   }
 }
+
+/* High contrast (forced colors): the outline color is forced anyway, except
+   inside hosts that opt out with `forced-color-adjust: none` to paint their
+   own system colors (e.g. a Highlight-filled selected field) — keep the ring
+   a system color there too. */
+@media (forced-colors: active) {
+  .ring {
+    --_color: CanvasText;
+  }
+}

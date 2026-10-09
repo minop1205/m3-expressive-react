@@ -440,6 +440,60 @@
 }
 
 /* B3: state changes are instant — the hand jumps, the numbers swap. */
+/* High contrast (forced colors): the dial, hand, selector and the selected
+   field / period are all background fills, which forced colors replaces with
+   Canvas — the clock vanished and selection was invisible. Repaint with
+   system colors: CanvasText outlines for the surface, fields and dial
+   (outlines take no space), Highlight for the hand / selector / center and
+   the selected field and period (their text opted out of the forced palette
+   so the Canvas text backplate does not hide HighlightText). The modal scrim
+   paints its own translucent CanvasText. */
+@media (forced-colors: active) {
+  .picker {
+    outline: 1px solid CanvasText;
+  }
+
+  .field,
+  .fieldInput,
+  .dial {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+
+  .field[data-active],
+  .periodButton[data-selected] {
+    forced-color-adjust: none;
+    background-color: Highlight;
+    color: HighlightText;
+    outline-color: Highlight;
+    --md-focus-ring-color: CanvasText;
+  }
+
+  .fieldInput:focus {
+    border-color: Highlight;
+    outline-color: Highlight;
+  }
+
+  .track,
+  .handle,
+  .center {
+    background-color: Highlight;
+  }
+
+  .handleLabels {
+    forced-color-adjust: none;
+  }
+
+  .handleLabels .labelText {
+    color: HighlightText;
+  }
+
+  .scrim {
+    forced-color-adjust: none;
+    background-color: color-mix(in srgb, CanvasText 40%, transparent);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .arm,
   .handleLabels,
