@@ -217,6 +217,22 @@
   padding: 8px 24px 24px;
 }
 
+/* High contrast (forced colors): the container fill and shadow and the scrim
+   are all dropped (fills become Canvas), so the dialog floated edgeless over
+   an undimmed page. Outline the container (outlines take no space) and let
+   the scrim paint its own translucent CanvasText. The full-screen dialog
+   covers the viewport and needs neither. */
+@media (forced-colors: active) {
+  .dialog:not([data-full-screen]) {
+    outline: 1px solid CanvasText;
+  }
+
+  .scrim {
+    forced-color-adjust: none;
+    background-color: color-mix(in srgb, CanvasText 40%, transparent);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .scrim,
   .dialog {

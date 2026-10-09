@@ -124,3 +124,12 @@
   --md-focus-ring-color: var(--_focus-indicator-color);
   margin-inline: 4px;
 }
+
+/* High contrast (forced colors): the inverse-surface fill and the shadow are
+   dropped, so the snackbar floated edgeless over the page. Outline it
+   (outlines take no space). */
+@media (forced-colors: active) {
+  .snackbar {
+    outline: 1px solid CanvasText;
+  }
+}

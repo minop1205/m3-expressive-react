@@ -655,3 +655,42 @@ textarea.input {
 .disabled .suffix {
   color: var(--_disabled-color);
 }
+
+/* =========================================================================== */
+/* High contrast (forced colors)                                               */
+/* =========================================================================== */
+/* Forced colors replaces the filled container with Canvas (only the bottom
+   indicator line would remain) and reverts the 38% disabled colors to plain
+   text colors, so disabled fields looked enabled. Outline the filled
+   container (inset, no layout change) and paint disabled content GrayText. */
+@media (forced-colors: active) {
+  .filled .background {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+
+  .filled.disabled .background {
+    outline-color: GrayText;
+  }
+
+  .disabled .activeIndicator::before {
+    border-bottom-color: GrayText;
+  }
+
+  .outlined.disabled {
+    --_outline-color: GrayText;
+  }
+
+  .disabled .label,
+  .disabled .content,
+  .disabled .input,
+  .disabled .input::placeholder,
+  .disabled .leadingIcon,
+  .disabled .trailingIcon,
+  .disabled .supportingText,
+  .disabled .prefix,
+  .disabled .suffix,
+  .disabled .outlineLabel {
+    color: GrayText;
+  }
+}
