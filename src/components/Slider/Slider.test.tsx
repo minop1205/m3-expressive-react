@@ -2,6 +2,7 @@ import { createRef } from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
+import { resetDevWarnings } from '../../internal/devWarning'
 import { Slider } from './Slider'
 
 describe('Slider', () => {
@@ -311,5 +312,104 @@ describe('Slider press/drag squeeze (SL1/SL2)', () => {
       // :has(:focus-visible)-driven, which jsdom cannot evaluate).
       expect(thumb!.querySelector('span')).toBeInTheDocument()
     })
+  })
+})
+
+describe('Slider value / geometry (#431)', () => {
+  const pressThenChange = (input: HTMLElement, value: string) => {
+    firePointer(input, 'pointerdown', { pointerId: 1 })
+    fireEvent.change(input, { target: { value } })
+  }
+  const getThumb = (container: HTMLElement, index: number) =>
+    container.querySelector<HTMLElement>(`span[aria-hidden][data-index='${index}']`)
+
+  it('hands a drag on thumbs stacked at max to the start thumb', () => {
+    const onChange = vi.fn()
+    const { container } = render(
+      <Slider aria-label="Price" defaultValue={[100, 100]} onChange={onChange} />,
+    )
+    // The end input is on top, so it receives the pointer.
+    const [start, end] = screen.getAllByRole('slider')
+    pressThenChange(end, '80')
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), [80, 100])
+    expect(start).toHaveValue('80')
+    expect(end).toHaveValue('100')
+    // The rest of the drag stays with the start thumb, shown as pressed.
+    fireEvent.change(end, { target: { value: '70' } })
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), [70, 100])
+    expect(getThumb(container, 0)).toHaveAttribute('data-pressed')
+    expect(getThumb(container, 1)).not.toHaveAttribute('data-pressed')
+    // On release, focus follows the thumb that moved.
+    firePointer(window, 'pointerup', { pointerId: 1 })
+    expect(start).toHaveFocus()
+  })
+
+  it('hands a drag on stacked thumbs to the thumb that can move that way', () => {
+    const onChange = vi.fn()
+    render(<Slider aria-label="Price" defaultValue={[0, 0]} onChange={onChange} />)
+    const [start] = screen.getAllByRole('slider')
+    pressThenChange(start, '20')
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), [0, 20])
+  })
+
+  it('still clamps a crossing drag when the thumbs are apart', () => {
+    const onChange = vi.fn()
+    render(<Slider aria-label="Price" defaultValue={[40, 60]} onChange={onChange} />)
+    const [, end] = screen.getAllByRole('slider')
+    pressThenChange(end, '20')
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), [40, 40])
+  })
+
+  const tickPositions = (container: HTMLElement) =>
+    Array.from(
+      container.querySelectorAll<HTMLElement>('span[aria-hidden] > span[style*="--_p"]'),
+    ).map((el) => el.style.getPropertyValue('--_p'))
+
+  it('places ticks on the valid step values when max is off the grid', () => {
+    const { container } = render(<Slider aria-label="S" min={0} max={10} step={3} showTicks />)
+    expect(tickPositions(container)).toEqual([
+      'calc(0 * 100%)',
+      'calc(0.3 * 100%)',
+      'calc(0.6 * 100%)',
+      'calc(0.9 * 100%)',
+    ])
+  })
+
+  it('counts ticks for decimal steps without float truncation', () => {
+    const { container } = render(
+      <Slider aria-label="S" min={0} max={0.3} step={0.1} showTicks />,
+    )
+    expect(tickPositions(container)).toEqual([
+      'calc(0 * 100%)',
+      `calc(${0.1 / 0.3} * 100%)`,
+      `calc(${0.2 / 0.3} * 100%)`,
+      'calc(1 * 100%)',
+    ])
+  })
+
+  it('swaps inverted bounds and warns in development', () => {
+    resetDevWarnings()
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { container } = render(<Slider aria-label="Inv" min={100} max={0} defaultValue={25} />)
+    const input = screen.getByRole('slider')
+    expect(input).toHaveAttribute('min', '0')
+    expect(input).toHaveAttribute('max', '100')
+    expect(input).toHaveValue('25')
+    expect(getThumb(container, 0)!.style.getPropertyValue('--_p')).toBe('calc(0.25 * 100%)')
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('greater than `max`'))
+    warn.mockRestore()
+  })
+
+  it('rounds emitted values to the step precision', () => {
+    const onChange = vi.fn()
+    render(
+      <Slider aria-label="D" min={0} max={1} step={0.1} defaultValue={0.2} onChange={onChange} />,
+    )
+    const input = screen.getByRole('slider')
+    // 0.2 + 0.1 === 0.30000000000000004
+    fireEvent.keyDown(input, { key: 'PageUp' })
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 0.3)
+    fireEvent.change(input, { target: { value: String(0.1 * 7) } })
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 0.7)
   })
 })
