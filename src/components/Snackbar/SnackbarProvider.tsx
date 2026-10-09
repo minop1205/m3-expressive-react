@@ -140,7 +140,15 @@ export function SnackbarProvider({ children, className, style }: SnackbarProvide
   const restoreRef = useRef<Element | null>(null)
   const exitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
-  useEffect(() => () => clearTimeout(exitTimer.current), [])
+  // Unmounting settles every pending show() promise (the current snackbar
+  // and the queue) instead of leaving them pending forever (#423).
+  useEffect(
+    () => () => {
+      clearTimeout(exitTimer.current)
+      for (const entry of queueRef.current) entry.resolve('dismiss')
+    },
+    [],
+  )
 
   const closeCurrent = useCallback((reason: SnackbarCloseReason) => {
     const current = queueRef.current[0]

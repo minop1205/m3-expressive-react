@@ -68,12 +68,14 @@ function useActionSurface({
   disabled,
   onClick,
   onKeyDown,
+  onKeyUp,
   isLink,
 }: {
   interactive: boolean
   disabled: boolean
   onClick?: (event: MouseEvent<HTMLElement>) => void
   onKeyDown?: (event: KeyboardEvent<HTMLElement>) => void
+  onKeyUp?: (event: KeyboardEvent<HTMLElement>) => void
   isLink: boolean
 }) {
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
@@ -84,6 +86,16 @@ function useActionSurface({
     if (isLink) return
     if (interactive && !disabled && isContainerKeyActivation(event)) {
       event.preventDefault()
+      // Like a native <button>: Enter activates on keydown, Space on keyup
+      // (handled below) — and a held Space never auto-repeats (#423).
+      if (event.key === 'Enter') event.currentTarget.click()
+    }
+  }
+
+  const handleKeyUp = (event: KeyboardEvent<HTMLElement>) => {
+    onKeyUp?.(event)
+    if (isLink || !interactive || disabled) return
+    if (event.key === ' ' && event.target === event.currentTarget && !event.defaultPrevented) {
       event.currentTarget.click()
     }
   }
@@ -98,7 +110,7 @@ function useActionSurface({
     onClick?.(event)
   }
 
-  return { handleKeyDown, handleClick }
+  return { handleKeyDown, handleKeyUp, handleClick }
 }
 
 /**
@@ -138,11 +150,12 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(
 ) {
   const isLink = href != null
   const interactive = onClick != null || isLink
-  const { handleKeyDown, handleClick } = useActionSurface({
+  const { handleKeyDown, handleKeyUp, handleClick } = useActionSurface({
     interactive,
     disabled,
     onClick: onClick as ((event: MouseEvent<HTMLElement>) => void) | undefined,
     onKeyDown: onKeyDown as ((event: KeyboardEvent<HTMLElement>) => void) | undefined,
+    onKeyUp: (rest as HTMLAttributes<HTMLElement>).onKeyUp,
     isLink,
   })
 
@@ -169,6 +182,7 @@ export const Card = forwardRef<HTMLElement, CardProps>(function Card(
     'data-dragged': dragged || undefined,
     className: clsx(styles.card, isLink && styles.link, className),
     onKeyDown: handleKeyDown,
+    onKeyUp: handleKeyUp,
   }
   const content = (
     <>
@@ -246,11 +260,12 @@ export const CardActionArea = forwardRef<HTMLElement, CardActionAreaProps>(
     ref,
   ) {
     const isLink = href != null
-    const { handleKeyDown, handleClick } = useActionSurface({
+    const { handleKeyDown, handleKeyUp, handleClick } = useActionSurface({
       interactive: true,
       disabled,
       onClick,
       onKeyDown,
+      onKeyUp: (rest as HTMLAttributes<HTMLElement>).onKeyUp,
       isLink,
     })
     const content = (
@@ -265,6 +280,7 @@ export const CardActionArea = forwardRef<HTMLElement, CardActionAreaProps>(
       'data-disabled': disabled || undefined,
       className: clsx(styles.actionArea, className),
       onKeyDown: handleKeyDown,
+      onKeyUp: handleKeyUp,
       onClick: disabled ? undefined : handleClick,
       'aria-disabled': disabled || undefined,
     }
