@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from 'react'
+import { useEffect, useRef, useState, type RefObject } from 'react'
 
 /**
  * Where a scroll-linked component (TopAppBar / Toolbar `scrollBehavior`)
@@ -54,9 +54,18 @@ export function useScrollObserver(
   onUpdateRef.current = onUpdate
   onEndRef.current = onEnd
 
+  // A ref target may mount (or change) after the first effect ran — e.g. a
+  // scroll container rendered once data loads. Re-resolve it after every
+  // commit and resubscribe when the element changes.
+  const [source, setSource] = useState<HTMLElement | Window | null>(() =>
+    enabled ? resolveScrollTarget(target) : null,
+  )
   useEffect(() => {
-    if (!enabled) return
-    const source = resolveScrollTarget(target)
+    const next = enabled ? resolveScrollTarget(target) : null
+    if (next !== source) setSource(next)
+  })
+
+  useEffect(() => {
     if (!source) return
 
     const canScrollForward = () => {
@@ -95,5 +104,5 @@ export function useScrollObserver(
       if (frame) cancelAnimationFrame(frame)
       if (endTimer !== undefined) clearTimeout(endTimer)
     }
-  }, [target, enabled, endDelay])
+  }, [source, endDelay])
 }

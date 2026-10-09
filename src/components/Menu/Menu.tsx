@@ -19,7 +19,11 @@ import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { usePopupPosition } from '../../internal/usePopupPosition'
-import { moveMenuFocus } from '../../internal/menuNavigation'
+import {
+  createMenuTypeahead,
+  handleMenuTypeahead,
+  moveMenuFocus,
+} from '../../internal/menuNavigation'
 import styles from './Menu.module.css'
 
 interface MenuContextValue {
@@ -60,9 +64,6 @@ export interface MenuProps extends Omit<HTMLAttributes<HTMLDivElement>, 'childre
   color?: MenuColor
 }
 
-/** How long a pause resets the typeahead buffer (APG-typical). */
-const TYPEAHEAD_RESET_MS = 500
-
 /** Gap between the trigger and the menu. */
 const ANCHOR_GAP_PX = 4
 
@@ -74,7 +75,9 @@ const VIEWPORT_MARGIN_PX = 8
  *
  * Anchors a `role="menu"` popup to a trigger. SurfaceContainer container, 4dp
  * corners, elevation 2, 112–280dp wide, 8dp vertical padding — per Compose
- * MenuTokens. Closes on outside click, Escape, Tab-out, or item selection.
+ * MenuTokens. Closes on outside press, Escape, Tab-out (or any focus move out
+ * of it), or item selection. The trigger gets `aria-controls`, and the menu
+ * is named by the trigger (`aria-labelledby`) unless it has its own label.
  * The menu is drawn in the top layer (Popover API) below the trigger — above
  * it when it doesn't fit below — and kept inside the viewport, so ancestors'
  * `overflow` / `z-index` can't clip it; it follows scrolling and layout shifts.
@@ -116,11 +119,16 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   const menuRef = useRef<HTMLDivElement | null>(null)
   // Where to move focus once the menu opens ('last' for ArrowUp on the trigger).
   const pendingFocus = useRef<'first' | 'last'>('first')
-  const typeahead = useRef({ buffer: '', at: 0 })
+  const typeahead = useRef(createMenuTypeahead())
+  const autoId = useId()
 
+  // Read through a ref: the document listeners below are bound once per
+  // open, so they must not call a stale `onOpenChange`.
+  const latest = useRef({ isControlled, onOpenChange })
+  latest.current = { isControlled, onOpenChange }
   const setOpen = (value: boolean) => {
-    if (!isControlled) setUncontrolled(value)
-    onOpenChange?.(value)
+    if (!latest.current.isControlled) setUncontrolled(value)
+    latest.current.onOpenChange?.(value)
   }
 
   // The trigger is always the wrapper's first element child; focusing it via
@@ -166,7 +174,9 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
 
   useEffect(() => {
     if (!open) return
-    const onPointerDown = (event: globalThis.MouseEvent) => {
+    // `pointerdown`, like Tooltip: a page that prevents the default of
+    // pointerdown (drag libraries) suppresses the compatibility mousedown.
+    const onPointerDown = (event: globalThis.PointerEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
         setOpen(false)
       }
@@ -174,10 +184,10 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     const onDocKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key === 'Escape') closeMenu(true)
     }
-    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('keydown', onDocKeyDown)
     return () => {
-      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onDocKeyDown)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -185,9 +195,10 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
 
   const handleMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     onKeyDown?.(event)
+    // A consumer onKeyDown that calls preventDefault() opts out.
+    if (event.defaultPrevented) return
     const items = getItems()
     if (items.length === 0) return
-    const current = items.indexOf(document.activeElement as HTMLElement)
 
     if (moveMenuFocus(event, items)) return
 
@@ -198,30 +209,23 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     }
 
     // Typeahead: printable characters move focus to the next matching item.
-    if (event.key.length === 1 && /\S/.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
-      const now = Date.now()
-      const state = typeahead.current
-      if (now - state.at > TYPEAHEAD_RESET_MS) state.buffer = ''
-      state.at = now
-      state.buffer += event.key.toLowerCase()
-      // A repeated single character cycles through matches; a growing buffer
-      // keeps matching from the focused item.
-      const searchFrom = state.buffer.length === 1 ? current + 1 : Math.max(current, 0)
-      for (let offset = 0; offset < items.length; offset++) {
-        const item = items[(searchFrom + offset + items.length) % items.length]
-        if ((item.textContent ?? '').trim().toLowerCase().startsWith(state.buffer)) {
-          item.focus()
-          return
-        }
-      }
-    }
+    handleMenuTypeahead(event, items, typeahead.current)
   }
 
   const child = Children.only(trigger) as ReactElement<{
+    id?: string
     onClick?: (event: MouseEvent) => void
     onKeyDown?: (event: KeyboardEvent) => void
   }>
+  // APG menu button: the trigger controls the menu, and the menu is named
+  // by the trigger unless it has its own label. Consumer ids are kept.
+  const menuId = rest.id ?? `${autoId}-menu`
+  const triggerId = child.props.id ?? `${autoId}-trigger`
+  const labelledBy =
+    rest['aria-label'] != null || rest['aria-labelledby'] != null ? undefined : triggerId
   const triggerEl = cloneElement(child, {
+    id: triggerId,
+    'aria-controls': menuId,
     onClick: (event: MouseEvent) => {
       child.props.onClick?.(event)
       setOpen(!open)
@@ -253,11 +257,23 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   }
 
   return (
-    <span ref={wrapperRef} className={styles.wrapper}>
+    <span
+      ref={wrapperRef}
+      className={styles.wrapper}
+      onBlur={(event) => {
+        // Focus moved out (e.g. programmatically): close, like Tab-out. A
+        // null relatedTarget (window switch, press on a non-focusable area)
+        // doesn't count — outside presses are handled on pointerdown.
+        const next = event.relatedTarget as Node | null
+        if (open && next && !wrapperRef.current?.contains(next)) setOpen(false)
+      }}
+    >
       {triggerEl}
       <div
         ref={setMenuRef}
+        aria-labelledby={labelledBy}
         {...rest}
+        id={menuId}
         role="menu"
         data-open={open || undefined}
         data-align={align}

@@ -157,4 +157,22 @@ describe('SplitButton — Button styling and menu behavior', () => {
     )
     expect(await axe(container)).toHaveNoViolations()
   })
+
+  it('never shows its menu while disabled, even when open (#430)', () => {
+    const { rerender } = render(
+      <SplitButton menu={items} disabled defaultOpen>
+        Send
+      </SplitButton>,
+    )
+    const trailing = screen.getByRole('button', { name: 'More options' })
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(trailing).toHaveAttribute('aria-expanded', 'false')
+    rerender(
+      <SplitButton menu={items} disabled open>
+        Send
+      </SplitButton>,
+    )
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(trailing).toHaveAttribute('aria-expanded', 'false')
+  })
 })

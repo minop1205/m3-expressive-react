@@ -11,6 +11,7 @@ import {
 } from 'react'
 import clsx from 'clsx'
 import { getToolbarItems, handleToolbarKeyDown } from '../../internal/toolbarNavigation'
+import { holdsKeyboardFocus, releaseFocus } from '../../internal/barFocus'
 import {
   resolveScrollTarget,
   useScrollObserver,
@@ -196,7 +197,11 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
     ({ top, delta }) => {
       if (scrollBehavior === 'exitAlways') {
         const limit = measureExitDistance()
-        const next = top <= 0 ? 0 : Math.min(limit, Math.max(0, offsetRef.current + delta))
+        // A bar holding keyboard focus stays put (internal/barFocus.ts).
+        const next =
+          top <= 0 || holdsKeyboardFocus(rootRef.current)
+            ? 0
+            : Math.min(limit, Math.max(0, offsetRef.current + delta))
         if (next !== offsetRef.current) applyOffset(next, limit, false)
       } else if (scrollBehavior === 'collapse' && floating) {
         if (top <= 0) {
@@ -242,6 +247,8 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
       : 1
 
   useLayoutEffect(() => {
+    // Release focus first so it never sits inside the inert bar.
+    if (fullyHidden) releaseFocus(rootRef.current)
     rootRef.current?.toggleAttribute('inert', fullyHidden)
   }, [fullyHidden])
 

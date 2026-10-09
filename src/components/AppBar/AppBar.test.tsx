@@ -217,6 +217,52 @@ describe('TopAppBar scrolling', () => {
     expect(bar).not.toHaveAttribute('inert')
   })
 
+  it('hidden: moves focus out before going inert (#420)', () => {
+    const nav = <button aria-label="Menu">m</button>
+    const { rerender } = render(<TopAppBar title="T" navigationIcon={nav} />)
+    const bar = document.querySelector('header')!
+    const button = screen.getByRole('button', { name: 'Menu' })
+    button.focus()
+    rerender(<TopAppBar title="T" navigationIcon={nav} hidden />)
+    expect(bar).toHaveAttribute('inert')
+    expect(bar.contains(document.activeElement)).toBe(false)
+  })
+
+  it('enterAlways: stays visible while it holds keyboard focus (#420)', async () => {
+    // jsdom never matches :focus-visible; treat focus as keyboard focus.
+    const matches = Element.prototype.matches
+    const spy = vi
+      .spyOn(Element.prototype, 'matches')
+      .mockImplementation(function (this: Element, selector: string) {
+        return selector === ':focus-visible' ? this === document.activeElement : matches.call(this, selector)
+      })
+    try {
+      function FocusScroller() {
+        const ref = useRef<HTMLDivElement>(null)
+        return (
+          <div ref={ref} data-testid="scroller">
+            <TopAppBar
+              title="Title"
+              scrollBehavior="enterAlways"
+              scrollTarget={ref}
+              navigationIcon={<button aria-label="Menu">m</button>}
+            />
+          </div>
+        )
+      }
+      render(<FocusScroller />)
+      const bar = screen.getByRole('banner')
+      screen.getByRole('button', { name: 'Menu' }).focus()
+      scrollTo(screen.getByTestId('scroller'), 200)
+      await new Promise((r) => setTimeout(r, 50))
+      expect(bar).not.toHaveAttribute('inert')
+      expect(bar.style.getPropertyValue('--_hide-offset')).toBe('0px')
+      expect(screen.getByRole('button', { name: 'Menu' })).toHaveFocus()
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
   it('has no axe violations while collapsed', async () => {
     const { container } = render(
       <TopAppBar

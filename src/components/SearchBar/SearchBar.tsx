@@ -106,8 +106,8 @@ const VIEW_GAP_PX = 2
  * announced via `suggestionsLabel`. Keyboard: ArrowDown opens the view /
  * moves into the results, ArrowUp / ArrowDown / Home / End move between the
  * focusable result items (ArrowUp from the first returns to the input),
- * Escape closes the view from anywhere in it and returns focus to the input,
- * and moving focus out of the component closes it. While the view is open,
+ * Escape closes the view from anywhere in it and returns focus to the input
+ * (typing, or pressing the focused input, reopens it), and moving focus out of the component closes it. While the view is open,
  * Escape only closes it (the native `type="search"` clear is suppressed);
  * with the view closed — or without a view — Escape keeps the browser's
  * native behavior (Chromium / Safari clear the query). Enter calls
@@ -157,7 +157,9 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
     const hasView = children != null
     const openControlled = controlledOpen !== undefined
     const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
-    const open = hasView && (openControlled ? controlledOpen : uncontrolledOpen)
+    // A disabled bar never shows its view (its input can't take focus or
+    // keys to close it again).
+    const open = hasView && !disabled && (openControlled ? controlledOpen : uncontrolledOpen)
     const wrapperRef = useRef<HTMLDivElement>(null)
     const inputElRef = useRef<HTMLInputElement | null>(null)
     const viewRef = useRef<HTMLDivElement>(null)
@@ -199,13 +201,15 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
 
     useEffect(() => {
       if (!open) return
-      const onDown = (e: globalThis.MouseEvent) => {
+      // `pointerdown`, like Tooltip: a page that prevents the default of
+      // pointerdown (drag libraries) suppresses the compatibility mousedown.
+      const onDown = (e: globalThis.PointerEvent) => {
         if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
           setOpen(false)
         }
       }
-      document.addEventListener('mousedown', onDown)
-      return () => document.removeEventListener('mousedown', onDown)
+      document.addEventListener('pointerdown', onDown)
+      return () => document.removeEventListener('pointerdown', onDown)
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open])
 
@@ -229,6 +233,8 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
       if (!isControlled) setInternal(event.target.value)
       onChange?.(event, event.target.value)
+      // APG combobox: typing reopens a view that Escape closed.
+      if (hasView && !open) setOpen(true)
     }
 
     /** Focusable, enabled elements inside the view, in DOM order. */
@@ -382,6 +388,20 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
               'aria-autocomplete': 'list' as const,
             })}
             onChange={handleChange}
+            onPointerDown={(event) => {
+              inputProps?.onPointerDown?.(event)
+              // A press on the already-focused input (no focus event) reopens
+              // a view that Escape closed; an unfocused one opens on focus.
+              if (
+                hasView &&
+                !open &&
+                !disabled &&
+                event.button === 0 &&
+                document.activeElement === event.currentTarget
+              ) {
+                setOpen(true)
+              }
+            }}
             onKeyDown={handleKeyDown}
             onBlur={(event) => {
               setFocusVisible(false)

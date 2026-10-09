@@ -27,10 +27,31 @@ function keepsOwnArrowKeys(el: HTMLElement): boolean {
   return role != null && ARROW_ROLES.has(role)
 }
 
+// Popup containers that own their keyboard interaction.
+const NESTED_POPUP = '[popover], [role="menu"], [role="listbox"], [role="dialog"], [role="tooltip"]'
+
+/**
+ * Whether `el` sits inside a popup nested in the toolbar — a menu / listbox /
+ * dialog / top-layer popover, or the view a combobox in the toolbar controls
+ * (e.g. an open SearchBar's results). Those keep their own keys and are not
+ * toolbar items.
+ */
+function isInNestedPopup(el: HTMLElement, toolbar: HTMLElement): boolean {
+  const popup = el.closest(NESTED_POPUP)
+  if (popup && popup !== toolbar && toolbar.contains(popup)) return true
+  for (const combobox of toolbar.querySelectorAll('[role="combobox"][aria-controls]')) {
+    for (const id of (combobox.getAttribute('aria-controls') ?? '').split(/\s+/)) {
+      const view = id ? document.getElementById(id) : null
+      if (view && view.contains(el)) return true
+    }
+  }
+  return false
+}
+
 /**
  * The toolbar's keyboard-reachable items, in DOM order: natively focusable,
  * in the Tab order, not disabled / aria-disabled, not inside an `inert`
- * subtree (e.g. collapsed content).
+ * subtree (e.g. collapsed content) or a nested popup.
  */
 export function getToolbarItems(toolbar: HTMLElement): HTMLElement[] {
   return Array.from(toolbar.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
@@ -39,7 +60,8 @@ export function getToolbarItems(toolbar: HTMLElement): HTMLElement[] {
       !(el as HTMLButtonElement).disabled &&
       el.getAttribute('aria-disabled') !== 'true' &&
       !el.closest('[inert]') &&
-      el.closest('[role="toolbar"]') === toolbar,
+      el.closest('[role="toolbar"]') === toolbar &&
+      !isInNestedPopup(el, toolbar),
   )
 }
 
@@ -72,7 +94,7 @@ export function handleToolbarKeyDown(
   if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return false
   const toolbar = event.currentTarget
   const target = event.target as HTMLElement
-  if (keepsOwnArrowKeys(target)) return false
+  if (keepsOwnArrowKeys(target) || isInNestedPopup(target, toolbar)) return false
 
   let step: number | 'first' | 'last'
   switch (event.key) {
