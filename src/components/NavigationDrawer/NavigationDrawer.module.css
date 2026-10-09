@@ -70,6 +70,12 @@
     var(--md-sys-motion-spring-fast-effects-easing);
 }
 
+/* The drawer sits at the inline-start edge (the right in RTL), so it must
+   slide off towards that edge rather than across the content (#428). */
+[dir='rtl'] .modalRoot .drawer {
+  transform: translateX(100%);
+}
+
 .modalRoot[data-open] .drawer {
   transform: translateX(0);
   /* … and opens on DefaultSpatial (openDrawerMotionSpec). */

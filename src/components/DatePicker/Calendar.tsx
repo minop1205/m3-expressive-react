@@ -426,6 +426,7 @@ export function Calendar({
     return (
       <IconButton
         variant="standard"
+        className={styles.navArrow}
         icon={delta < 0 ? <ChevronLeftIcon /> : <ChevronRightIcon />}
         aria-label={label}
         disabled={!monthReachable(target.getFullYear(), target.getMonth())}

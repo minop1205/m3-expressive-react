@@ -765,8 +765,10 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
         )}
 
         <div className={styles.fields}>
+          {/* Clock time reads hour:minute left-to-right in every locale, so the
+              row is pinned LTR and an RTL page doesn't show "30 : 10" (#428). */}
           {isInput ? (
-            <div className={styles.timeFields}>
+            <div className={styles.timeFields} dir="ltr">
               {renderFieldInput('hour')}
               <span className={styles.separator} aria-hidden="true">
                 :
@@ -774,7 +776,7 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
               {renderFieldInput('minute')}
             </div>
           ) : (
-            <div className={styles.timeFields} role="radiogroup">
+            <div className={styles.timeFields} role="radiogroup" dir="ltr">
               {renderSelector('hour')}
               <span className={styles.separator} aria-hidden="true">
                 :
