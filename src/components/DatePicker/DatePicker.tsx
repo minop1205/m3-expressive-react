@@ -21,6 +21,7 @@ import {
   isWithin,
   parseDateInput,
   sameDay,
+  startOfDay,
   type DateInputError,
 } from './dateUtils'
 import styles from './DatePicker.module.css'
@@ -66,7 +67,7 @@ export interface DatePickerProps
   onAccept?: (value: Date | DateRange) => void
   /**
    * Cancel, Escape or a scrim click: the value reverts to what it was when
-   * the picker opened (or was last accepted) — reported through `onChange`
+   * the picker opened (or was last accepted, or last set from outside) — reported through `onChange`
    * when it can be expressed (a date, or a range) — and this fires.
    */
   onCancel?: () => void
@@ -213,7 +214,11 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
     const hasActions = modal || onAccept != null || onCancel != null
 
     const single = range ? null : (currentValue as Date | null)
-    const [rStart, rEnd] = range ? asRange(currentValue) : [null, null]
+    // Range endpoints as calendar days, so a time of day on an incoming value
+    // never skews the comparisons (grid picks, in-range, input validation).
+    const [rStart, rEnd] = range
+      ? asRange(currentValue).map((d) => (d ? startOfDay(d) : null))
+      : [null, null]
 
     const anchor = single ?? rStart
     const [view, setView] = useState<CalendarView>(() => {
@@ -233,13 +238,38 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
     }, [anchorTime])
 
     // The committed value Cancel reverts to: captured when a modal opens,
-    // otherwise on mount and on each accept.
+    // otherwise on mount and on each accept — and whenever the value changes
+    // from outside (not echoing a pick reported through `onChange`), e.g. a
+    // parent that loads the value after mount.
     const committed = useRef<Date | DateRange | null>(currentValue)
     const wasOpen = useRef(false)
+    const lastValue = useRef(currentValue)
+    const emitted = useRef<Date | DateRange | null | undefined>(undefined)
     if (isOpen && !wasOpen.current) committed.current = currentValue
+    else if (
+      !sameValue(currentValue, lastValue.current) &&
+      (emitted.current === undefined || !sameValue(currentValue, emitted.current))
+    ) {
+      committed.current = currentValue
+    }
     wasOpen.current = isOpen
+    lastValue.current = currentValue
+
+    // Each closed → open transition starts on the month of the value.
+    const [prevOpen, setPrevOpen] = useState(isOpen)
+    if (prevOpen !== isOpen) {
+      setPrevOpen(isOpen)
+      if (isOpen) {
+        const d = anchor ?? new Date()
+        setView({ year: d.getFullYear(), month: d.getMonth() })
+      }
+    }
+
+    // Bumped on Cancel so input-mode text drafts are dropped with the value.
+    const [cancelCount, setCancelCount] = useState(0)
 
     const commit = (next: Date | DateRange) => {
+      emitted.current = next
       if (!isControlled) setInternal(next)
       onChange?.(next)
     }
@@ -257,8 +287,12 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
         if (!isControlled) setInternal(back)
         // onChange cannot carry "no date" in single mode; a range can.
         const revert = back ?? (range ? ([null, null] as DateRange) : null)
-        if (revert != null) onChange?.(revert)
+        if (revert != null) {
+          emitted.current = revert
+          onChange?.(revert)
+        }
       }
+      setCancelCount((n) => n + 1)
       onCancel?.()
       if (modal) onClose?.(reason)
     }
@@ -356,6 +390,7 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
         >
           {inputMode ? (
             <DateInputs
+              key={cancelCount}
               range={range}
               single={single}
               rStart={rStart}
@@ -469,6 +504,26 @@ function DateInputs({
     Object.fromEntries(fields.map(([key, , d]) => [key, d ? formatDateInput(d, locale) : ''])),
   )
   const [errors, setErrors] = useState<Partial<Record<InputKey, DateInputError | null>>>({})
+
+  // Re-sync a field's text (and drop its error) when its date changes from
+  // outside — a controlled value, or a revert — not only at mount.
+  const times = fields.map(([, , d]) => d?.getTime() ?? null)
+  const lastTimes = useRef(times)
+  const lastLocale = useRef(locale)
+  useEffect(() => {
+    const changed = fields.filter(
+      ([, , d], i) => locale !== lastLocale.current || (d?.getTime() ?? null) !== lastTimes.current[i],
+    )
+    lastTimes.current = times
+    lastLocale.current = locale
+    if (changed.length === 0) return
+    setText((prev) => ({
+      ...prev,
+      ...Object.fromEntries(changed.map(([key, , d]) => [key, d ? formatDateInput(d, locale) : ''])),
+    }))
+    setErrors((prev) => ({ ...prev, ...Object.fromEntries(changed.map(([key]) => [key, null])) }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [times.join(), locale])
 
   const commitField = (key: InputKey, viaEnter: boolean) => {
     const raw = (text[key] ?? '').trim()

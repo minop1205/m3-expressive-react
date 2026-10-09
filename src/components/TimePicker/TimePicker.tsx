@@ -316,6 +316,7 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
 
     const commit = (next: TimeValue) => {
       if (next.hour === current.hour && next.minute === current.minute) return
+      emitted.current = next
       if (!isControlled) setInternal(next)
       onChange?.(next)
     }
@@ -337,11 +338,21 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
 
     // ---- Draft / commit (B6) ------------------------------------------------
     // The committed value Cancel reverts to: captured when a modal opens,
-    // otherwise on mount and on each accept.
+    // otherwise on mount and on each accept — and whenever the value changes
+    // from outside (not echoing a change reported through `onChange`), e.g. a
+    // parent that loads the value after mount.
     const committed = useRef<TimeValue>(current)
     const wasOpen = useRef(false)
+    const lastValue = useRef<TimeValue>(current)
+    const emitted = useRef<TimeValue | null>(null)
+    const sameTime = (a: TimeValue, b: TimeValue | null) =>
+      b != null && a.hour === b.hour && a.minute === b.minute
     if (isOpen && !wasOpen.current) committed.current = current
+    else if (!sameTime(current, lastValue.current) && !sameTime(current, emitted.current)) {
+      committed.current = current
+    }
     wasOpen.current = isOpen
+    lastValue.current = current
 
     const accept = () => {
       committed.current = current
@@ -699,6 +710,19 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
     if (shownField.current !== activeField) {
       shownField.current = activeField
       fieldSwitched.current = true
+    }
+
+    // Each closed → open transition starts on the hour field (Compose
+    // TimePickerState is created fresh per dialog).
+    const [prevOpen, setPrevOpen] = useState(isOpen)
+    if (prevOpen !== isOpen) {
+      setPrevOpen(isOpen)
+      if (isOpen && activeField !== 'hour') {
+        clearTimeout(autoSwitchTimer.current)
+        setActiveField('hour')
+        shownField.current = 'hour'
+        fieldSwitched.current = false
+      }
     }
 
     if (modal && !open) return null
