@@ -79,6 +79,10 @@ export function Ripple({
     // there (e.g. autoFocus, or re-enabling a focused control).
     if (surface.matches(':focus-visible')) setFocused(true)
 
+    // Presses still held when the effect tears down (host disabled or
+    // unmounted mid-press): drop their window listeners (#412).
+    const pendingReleases = new Set<() => void>()
+
     const handleDown = (event: PointerEvent) => {
       if (event.pointerType === 'mouse' && event.button !== 0) return
       if (
@@ -105,9 +109,11 @@ export function Ripple({
         )
         window.removeEventListener('pointerup', release)
         window.removeEventListener('pointercancel', release)
+        pendingReleases.delete(release)
       }
       window.addEventListener('pointerup', release)
       window.addEventListener('pointercancel', release)
+      pendingReleases.add(release)
     }
 
     surface.addEventListener('pointerenter', handleEnter)
@@ -116,7 +122,12 @@ export function Ripple({
     surface.addEventListener('focus', handleFocus)
     surface.addEventListener('blur', handleBlur)
     return () => {
+      // A disabled (or re-targeted) host gets no pointerleave / blur, so
+      // reset every interaction state here — a stale hover would otherwise
+      // reappear when the host is re-enabled (#412).
       setFocused(false)
+      setHovered(false)
+      for (const release of Array.from(pendingReleases)) release()
       surface.removeEventListener('pointerenter', handleEnter)
       surface.removeEventListener('pointerleave', handleLeave)
       surface.removeEventListener('pointerdown', handleDown)
