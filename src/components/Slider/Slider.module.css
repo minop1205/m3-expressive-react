@@ -151,6 +151,13 @@
   transform: translate(-50%, -50%);
 }
 
+/* inset-inline-start anchors from the right in RTL, so the centring
+   translate flips with it (#428). `[dir='rtl']`, not `:dir(rtl)`, which
+   Lightning CSS lowers to a `:lang()` list that ignores the `dir` attribute. */
+[dir='rtl'] .slider[data-orientation='horizontal'] .tick {
+  transform: translate(50%, -50%);
+}
+
 .slider[data-orientation='vertical'] .tick {
   left: 50%;
   bottom: var(--_p);
@@ -203,6 +210,10 @@
   inset-inline-start: var(--_p);
   top: 50%;
   transform: translate(-50%, -50%);
+}
+
+[dir='rtl'] .slider[data-orientation='horizontal'] .thumb {
+  transform: translate(50%, -50%);
 }
 
 .slider[data-orientation='vertical'] .thumb {
@@ -274,6 +285,10 @@
   bottom: calc(50% + var(--_handle) / 2 + 8px);
   inset-inline-start: var(--_p);
   transform: translateX(-50%);
+}
+
+[dir='rtl'] .slider[data-orientation='horizontal'] .valueLabel {
+  transform: translateX(50%);
 }
 
 .slider[data-orientation='vertical'] .valueLabel {

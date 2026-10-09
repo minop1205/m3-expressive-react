@@ -30,7 +30,10 @@ const BackIcon = (
 export interface SideSheetProps extends HTMLAttributes<HTMLDivElement> {
   /** Standard (inline) or modal (overlay + scrim). @default 'standard' */
   variant?: SideSheetVariant
-  /** Edge the sheet is anchored to. @default 'right' */
+  /**
+   * Physical edge the sheet is anchored to; it does not flip in RTL.
+   * @default 'right'
+   */
   anchor?: SideSheetAnchor
   /** Whether the sheet is shown. @default true */
   open?: boolean
@@ -58,7 +61,7 @@ export interface SideSheetProps extends HTMLAttributes<HTMLDivElement> {
 /**
  * Material Design 3 Side sheet (standard or modal).
  *
- * A 400dp max-width panel anchored to the trailing (or leading) edge. Standard
+ * A 400dp max-width panel anchored to the right (or left) edge. Standard
  * = inline Surface panel; modal = SurfaceContainerLow over a 0.32 Scrim with
  * `role="dialog" aria-modal` and Escape-to-close — per m3.material.io specs.
  * Header uses 24dp side padding (16dp with a back icon), 12dp gaps, a Title
