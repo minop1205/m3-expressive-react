@@ -10,7 +10,8 @@
   ],
   "files": [
     "dist",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -549,7 +550,6 @@
     "react-dom": ">=18"
   },
   "dependencies": {
-    "@material/material-color-utilities": "^0.3.0",
     "clsx": "^2.1.1"
   },
   "devDependencies": {
@@ -557,6 +557,7 @@
     "@commitlint/config-conventional": "^21.0.2",
     "@fontsource/roboto": "^5.2.10",
     "@material-symbols/svg-400": "^0.45.5",
+    "@material/material-color-utilities": "^0.3.0",
     "@playwright/test": "^1.63.0",
     "@storybook/addon-a11y": "^10.6.0",
     "@storybook/react-vite": "^10.6.0",

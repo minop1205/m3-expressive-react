@@ -46,7 +46,11 @@ export default defineConfig({
       fileName: moduleFileName,
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      // clsx is a dual CJS/ESM runtime dependency, so consumers resolve
+      // their own copy (#411). @material/material-color-utilities is
+      // ESM-only and stays bundled (dist/vendor) so require() keeps working;
+      // its Apache-2.0 notice ships in THIRD_PARTY_NOTICES.md.
+      external: ['react', 'react-dom', 'react/jsx-runtime', 'clsx'],
       output: {
         // One output file per source module: shared code (primitives,
         // internal hooks, theme) is emitted once and shared by every entry.
