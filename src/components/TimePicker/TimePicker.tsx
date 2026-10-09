@@ -358,19 +358,15 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
     const dismissRef = useRef(dismiss)
     dismissRef.current = dismiss
 
-    // Escape dismisses a modal picker.
-    useEffect(() => {
-      if (!modal || !open) return
-      const handle = (event: globalThis.KeyboardEvent) => {
-        if (event.key === 'Escape') dismissRef.current('escapeKeyDown')
-      }
-      document.addEventListener('keydown', handle)
-      return () => document.removeEventListener('keydown', handle)
-    }, [modal, open])
-
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLDivElement | null>(null)
-    useModal({ active: modal && !!open, rootRef, surfaceRef })
+    // Escape dismisses a modal picker (only when it is the topmost modal).
+    useModal({
+      active: modal && !!open,
+      rootRef,
+      surfaceRef,
+      onEscape: () => dismissRef.current('escapeKeyDown'),
+    })
 
     const setMode = (next: TimePickerMode) => {
       if (!modeControlled) setInternalMode(next)
