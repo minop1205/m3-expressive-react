@@ -261,8 +261,11 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
   const dragCleanupRef = useRef<(() => void) | null>(null)
   const settleCleanupRef = useRef<(() => void) | null>(null)
   const suppressClickRef = useRef(false)
+  /** The slot elements the last layout ran for (#416). */
+  const laidOutSlotsRef = useRef<HTMLElement[]>([])
   const reducedMotion = usePrefersReducedMotion()
   const [hasFocusable, setHasFocusable] = useState(false)
+  const hasFocusableRef = useRef(false)
 
   const mode: Mode =
     variant === 'uncontained' ? 'flow' : reducedMotion ? 'uniform' : 'keylines'
@@ -330,6 +333,7 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
     if (!scroller) return
     const els = slots()
     const count = els.length
+    laidOutSlotsRef.current = els
     rtlRef.current = getComputedStyle(scroller).direction === 'rtl'
     cancelAnimations()
     const clearItems = () =>
@@ -442,13 +446,46 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
     [],
   )
 
-  // Keep the container reachable by keyboard only when nothing inside it is
-  // (m3: "Avoid focusing on the carousel container"; axe
-  // scrollable-region-focusable when the items are not interactive).
+  /**
+   * Re-syncs with the rendered items (#416): re-runs the layout when the set
+   * of slot elements changed even though the count did not (re-keyed items
+   * get no snap offset or mask otherwise, and the scroll-driven animations
+   * stay on the detached nodes), and keeps the container reachable by
+   * keyboard only when nothing inside it is (m3: "Avoid focusing on the
+   * carousel container"; axe scrollable-region-focusable when the items are
+   * not interactive).
+   */
+  const syncItems = useCallback(() => {
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    const els = slots()
+    const prev = laidOutSlotsRef.current
+    if (els.length !== prev.length || els.some((el, i) => el !== prev[i])) applyLayout()
+    const next = !!scroller.querySelector(TABBABLE)
+    if (next !== hasFocusableRef.current) {
+      hasFocusableRef.current = next
+      setHasFocusable(next)
+    }
+  }, [applyLayout])
+
+  // After every render of the carousel…
   useIsoLayoutEffect(() => {
-    const next = !!scrollerRef.current?.querySelector(TABBABLE)
-    if (next !== hasFocusable) setHasFocusable(next)
+    syncItems()
   })
+
+  // …and when an item's own content changes without re-rendering it.
+  useEffect(() => {
+    const scroller = scrollerRef.current
+    if (!scroller || typeof MutationObserver === 'undefined') return
+    const mo = new MutationObserver(() => syncItems())
+    mo.observe(scroller, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['tabindex', 'disabled', 'href', 'contenteditable', 'type'],
+    })
+    return () => mo.disconnect()
+  }, [syncItems])
 
   const isRtl = () =>
     !!scrollerRef.current && getComputedStyle(scrollerRef.current).direction === 'rtl'
@@ -618,6 +655,12 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
 
     const move = (e: PointerEvent) => {
       if (e.pointerId !== state.pointerId) return
+      // No button down: the release was missed (e.g. outside the window) —
+      // drop the stale drag instead of scrolling with a free-moving mouse.
+      if (e.buttons === 0) {
+        end(e)
+        return
+      }
       if (!state.dragging) {
         if (Math.abs(e.clientX - state.startX) < DRAG_SLOP) return
         state.dragging = true
