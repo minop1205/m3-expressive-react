@@ -25,6 +25,8 @@ jobs:
       - run: npm run lint:tokens
       - run: npm test
       - run: npm run build
+      # dist keeps "use client" on client modules; RSC import works (#409)
+      - run: npm run check:rsc
 
   # Visual regression testing moved from Chromatic to the self-hosted
   # Playwright suite — see .github/workflows/vrt.yml (issue #112).

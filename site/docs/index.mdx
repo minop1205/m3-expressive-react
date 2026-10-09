@@ -103,6 +103,36 @@ the client bundle carries the styles. If your bundler cannot import CSS at
 all, use the root entry with `styles.css`.
 :::
 
+### Next.js App Router
+
+Interactive components and `ThemeProvider` ship with a `'use client'`
+directive, so Server Components (`app/layout.tsx`, `app/page.tsx`) can import
+them directly, from the root entry or a subpath — no wrapper file needed:
+
+```tsx
+// app/layout.tsx (Server Component)
+import { ThemeProvider } from 'm3-expressive-react'
+import 'm3-expressive-react/styles.css'
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <ThemeProvider seedColor="#6750A4" mode="light">
+          {children}
+        </ThemeProvider>
+      </body>
+    </html>
+  )
+}
+```
+
+The usual Server Components rule still applies: event handlers (`onClick`,
+`onChange`, …) can't be passed from a Server Component, so put interactive
+markup in your own `'use client'` component. The presentational `Badge` and
+`Divider` and the pure helpers (`generateColorScheme`, `schemeToCssVars`,
+`schemeToCssText`, the motion tokens) are server-safe.
+
 ## Next steps
 
 - Browse the [component gallery](/components)

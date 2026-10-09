@@ -47,6 +47,19 @@ export default defineConfig({
     },
     rollupOptions: {
       external: ['react', 'react-dom', 'react/jsx-runtime'],
+      // Client modules start with 'use client' (React Server Components,
+      // #409). preserveModules keeps the directive at the top of each emitted
+      // module, so the bundler's "module-level directive" notice is noise.
+      // scripts/check-rsc.mjs verifies the output.
+      onLog(level, log, handler) {
+        if (
+          log.code === 'MODULE_LEVEL_DIRECTIVE' &&
+          log.message.includes('use client')
+        ) {
+          return
+        }
+        handler(level, log)
+      },
       output: {
         // One output file per source module: shared code (primitives,
         // internal hooks, theme) is emitted once and shared by every entry.
