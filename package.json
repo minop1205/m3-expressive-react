@@ -539,6 +539,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
+    "check:rsc": "node scripts/check-rsc.mjs",
     "lint:tokens": "! grep -rEn 'var\\(--md-sys-[a-z0-9-]+,' src --include='*.css' && ! grep -rzlE 'var\\(\\s*--md-sys-[a-z0-9-]+\\s*,' src --include='*.css'",
     "prepare": "husky",
     "vrt": "playwright test",
