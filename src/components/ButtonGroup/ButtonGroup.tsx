@@ -13,6 +13,7 @@ import {
 import clsx from 'clsx'
 import styles from './ButtonGroup.module.css'
 import { usePressWidth } from './usePressWidth'
+import { getItems } from './getItems'
 import {
   ButtonGroupSelectionContext,
   type ButtonGroupSelection,
@@ -84,13 +85,6 @@ export type ButtonGroupProps =
   | ButtonGroupMultipleSelectionProps
 
 type SelectionValue = string | null | string[]
-
-/** Items = direct `<button>` children, or buttons one wrapper deep (e.g. a Tooltip span). */
-function getItems(root: HTMLElement): HTMLButtonElement[] {
-  return Array.from(
-    root.querySelectorAll<HTMLButtonElement>(':scope > button, :scope > :not(button) > button'),
-  )
-}
 
 /**
  * Material Design 3 (Expressive) Button group — an invisible container that adds

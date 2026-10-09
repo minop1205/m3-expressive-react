@@ -1,4 +1,5 @@
 import { useEffect, type RefObject } from 'react'
+import { getItems } from './getItems'
 
 /** Compose ButtonGroupDefaults.ExpandedRatio. */
 export const EXPANDED_RATIO = 0.15
@@ -59,9 +60,12 @@ function motion(el: Element): { duration: number; easing: string } {
 /**
  * Standard ButtonGroup press interaction: while a child button is pressed it
  * widens and its neighbours narrow (Web Animations on `width` / `min-width`,
- * so the children's own CSS `transition`s are left untouched). Horizontal
- * groups only; skipped under reduced motion (B3 — spatial motion stops) and
- * where `Element.animate` is unavailable.
+ * so the children's own CSS `transition`s are left untouched). Items are the
+ * group's buttons, direct or one wrapper deep (getItems — e.g. Tooltip-wrapped
+ * IconButtons). A press is a primary pointer press or, like Compose
+ * `EnlargeOnPress` (which follows every PressInteraction), Space / Enter held
+ * on a focused item. Horizontal groups only; skipped under reduced motion (B3
+ * — spatial motion stops) and where `Element.animate` is unavailable.
  */
 export function usePressWidth(ref: RefObject<HTMLElement | null>, enabled: boolean) {
   useEffect(() => {
@@ -69,10 +73,19 @@ export function usePressWidth(ref: RefObject<HTMLElement | null>, enabled: boole
     if (!group || !enabled) return
 
     let running: Animation[] = []
+    /** The key holding a keyboard press, if any. */
+    let pressKey: string | null = null
 
-    const release = () => {
+    const removeReleaseListeners = () => {
       window.removeEventListener('pointerup', release)
       window.removeEventListener('pointercancel', release)
+      window.removeEventListener('keyup', onKeyUp)
+      group.removeEventListener('focusout', release)
+    }
+
+    function release() {
+      removeReleaseListeners()
+      pressKey = null
       for (const anim of running) {
         anim.onfinish = () => anim.cancel()
         anim.reverse()
@@ -80,18 +93,22 @@ export function usePressWidth(ref: RefObject<HTMLElement | null>, enabled: boole
       running = []
     }
 
-    const onPointerDown = (event: PointerEvent) => {
-      if (event.button !== 0) return
-      if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
-      const items = Array.from(group.children).filter(
-        (el): el is HTMLElement => el instanceof HTMLElement && el.tagName === 'BUTTON',
-      )
-      const index = items.findIndex((el) => el.contains(event.target as Node))
-      if (index < 0 || items.length < 2) return
-      const pressed = items[index] as HTMLButtonElement
-      if (pressed.disabled || typeof pressed.animate !== 'function') return
+    function onKeyUp(event: KeyboardEvent) {
+      if (event.key === pressKey) release()
+    }
+
+    /** Starts the press-widen for the item containing `target`; true if it did. */
+    const press = (target: EventTarget | null): boolean => {
+      if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return false
+      const items = getItems(group)
+      const index = items.findIndex((el) => el.contains(target as Node))
+      if (index < 0 || items.length < 2) return false
+      const pressed = items[index]
+      if (pressed.disabled || typeof pressed.animate !== 'function') return false
 
       // A new press before the previous release finished: settle first.
+      removeReleaseListeners()
+      pressKey = null
       for (const anim of running) anim.cancel()
       running = []
 
@@ -114,15 +131,34 @@ export function usePressWidth(ref: RefObject<HTMLElement | null>, enabled: boole
           ),
         )
       })
+      return true
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.button !== 0) return
+      if (!press(event.target)) return
       window.addEventListener('pointerup', release)
       window.addEventListener('pointercancel', release)
     }
 
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== ' ' && event.key !== 'Enter') return
+      if (event.repeat || event.defaultPrevented || pressKey === event.key) return
+      if (event.altKey || event.ctrlKey || event.metaKey) return
+      // Only a key on the item itself (never from content nested inside it).
+      if (!getItems(group).includes(event.target as HTMLButtonElement)) return
+      if (!press(event.target)) return
+      pressKey = event.key
+      window.addEventListener('keyup', onKeyUp)
+      group.addEventListener('focusout', release)
+    }
+
     group.addEventListener('pointerdown', onPointerDown)
+    group.addEventListener('keydown', onKeyDown)
     return () => {
       group.removeEventListener('pointerdown', onPointerDown)
-      window.removeEventListener('pointerup', release)
-      window.removeEventListener('pointercancel', release)
+      group.removeEventListener('keydown', onKeyDown)
+      removeReleaseListeners()
       for (const anim of running) anim.cancel()
     }
   }, [ref, enabled])
