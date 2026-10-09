@@ -1,5 +1,5 @@
 import { createRef } from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
@@ -304,6 +304,44 @@ describe('FabMenu', () => {
       screen.getByRole('menuitem', { name: 'Image' }).focus()
       rerender(<Page open={false} />)
       expect(screen.getByRole('button', { name: 'Create' })).toHaveFocus()
+    })
+  })
+
+  describe('typeahead and outside press (#430)', () => {
+    function Fruits() {
+      return (
+        <FabMenu icon={add} ariaLabel="Create" defaultOpen>
+          <FabMenuItem>Apple</FabMenuItem>
+          <FabMenuItem>Avocado</FabMenuItem>
+          <FabMenuItem>Banana</FabMenuItem>
+        </FabMenu>
+      )
+    }
+
+    it('moves focus by typeahead, cycling on a repeated letter', async () => {
+      const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(1_000_000)
+      try {
+        const user = userEvent.setup()
+        render(<Fruits />)
+        screen.getByRole('menuitem', { name: 'Apple' }).focus()
+        await user.keyboard('b')
+        expect(screen.getByRole('menuitem', { name: 'Banana' })).toHaveFocus()
+        nowSpy.mockReturnValue(2_000_000)
+        await user.keyboard('a')
+        expect(screen.getByRole('menuitem', { name: 'Apple' })).toHaveFocus()
+        await user.keyboard('a')
+        expect(screen.getByRole('menuitem', { name: 'Avocado' })).toHaveFocus()
+      } finally {
+        nowSpy.mockRestore()
+      }
+    })
+
+    it('closes on an outside pointerdown', () => {
+      render(<Fruits />)
+      const toggle = screen.getByRole('button', { name: 'Create' })
+      expect(toggle).toHaveAttribute('aria-expanded', 'true')
+      fireEvent.pointerDown(document.body)
+      expect(toggle).toHaveAttribute('aria-expanded', 'false')
     })
   })
 })

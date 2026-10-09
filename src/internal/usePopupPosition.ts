@@ -118,6 +118,23 @@ export function computePopupPosition(
   }
 }
 
+/**
+ * Whether the anchor lies entirely outside the viewport (Floating UI's
+ * `hide` middleware, `referenceHidden`). Edges touching the viewport and
+ * degenerate zero-size rects at the origin still count as visible.
+ */
+export function isAnchorOutsideViewport(
+  anchor: Pick<PopupAnchorRect, 'top' | 'bottom' | 'left' | 'right'>,
+  viewport: PopupSize,
+): boolean {
+  return (
+    anchor.bottom < 0 ||
+    anchor.top > viewport.height ||
+    anchor.right < 0 ||
+    anchor.left > viewport.width
+  )
+}
+
 type PopoverElement = HTMLElement & {
   showPopover?: () => void
   hidePopover?: () => void
@@ -226,8 +243,10 @@ function observeMove(element: Element, onMove: () => void): () => void {
  * (`position: fixed` coordinates) plus `--_popup-available-height` (the room
  * on the side used), and follows scroll / resize, size changes
  * of the anchor or the popup (ResizeObserver) and layout shifts that move the
- * anchor (IntersectionObserver). Returns the side actually used, for `data-*`
- * styling hooks.
+ * anchor (IntersectionObserver). While the anchor is entirely outside the
+ * viewport the popup is hidden (`visibility: hidden`, so it also leaves the
+ * accessibility tree) but stays open, returning when the anchor scrolls back.
+ * Returns the side actually used, for `data-*` styling hooks.
  */
 export function usePopupPosition({
   open,
@@ -276,6 +295,11 @@ export function usePopupPosition({
           ? viewport.height - anchor.bottom - gap - margin
           : anchor.top - gap - margin
       popup.style.setProperty('--_popup-available-height', `${Math.max(0, Math.floor(available))}px`)
+      // An anchor scrolled fully out of view would leave a clamped popup
+      // floating with no visible trigger: hide it (it stays open, so it
+      // reappears in place once the anchor scrolls back) rather than close
+      // it, which would surprise a controlled consumer mid-scroll.
+      popup.style.visibility = isAnchorOutsideViewport(anchor, viewport) ? 'hidden' : ''
       setResolvedSide(position.side)
     }
 
@@ -293,6 +317,8 @@ export function usePopupPosition({
       window.removeEventListener('scroll', update, true)
       observer?.disconnect()
       stopMoveObserver()
+      // Hand visibility back to the component's CSS (e.g. its close motion).
+      popup.style.visibility = ''
     }
   }, [open, anchorRef, popupRef, side, align, gap, margin, rtl, avoidCollisions, matchAnchorWidth])
 

@@ -442,5 +442,57 @@ describe('SearchBar', () => {
       const { container } = renderView()
       expect(await axe(container)).toHaveNoViolations()
     })
+
+    it('reopens the view on input after Escape closed it (#430)', async () => {
+      const user = userEvent.setup()
+      renderView()
+      const input = screen.getByRole('combobox')
+      await user.click(input)
+      expect(input).toHaveAttribute('aria-expanded', 'true')
+      await user.keyboard('{Escape}')
+      expect(input).toHaveAttribute('aria-expanded', 'false')
+      expect(input).toHaveFocus()
+      await user.keyboard('abc')
+      expect(input).toHaveAttribute('aria-expanded', 'true')
+    })
+
+    it('reopens the view on pointer-down of the focused input after Escape (#430)', async () => {
+      const user = userEvent.setup()
+      renderView()
+      const input = screen.getByRole('combobox')
+      await user.click(input)
+      await user.keyboard('{Escape}')
+      expect(input).toHaveAttribute('aria-expanded', 'false')
+      await user.click(input)
+      expect(input).toHaveAttribute('aria-expanded', 'true')
+    })
+
+    it('never shows the view while disabled, even when open (#430)', () => {
+      const { rerender } = render(
+        <SearchBar aria-label="Search" disabled defaultOpen>
+          <button type="button">One</button>
+        </SearchBar>,
+      )
+      const input = screen.getByRole('combobox')
+      expect(input).toHaveAttribute('aria-expanded', 'false')
+      expect(screen.getByRole('search')).not.toHaveAttribute('data-open')
+      rerender(
+        <SearchBar aria-label="Search" disabled open>
+          <button type="button">One</button>
+        </SearchBar>,
+      )
+      expect(input).toHaveAttribute('aria-expanded', 'false')
+      expect(screen.getByRole('search')).not.toHaveAttribute('data-open')
+    })
+
+    it('closes on an outside pointerdown (#430)', async () => {
+      const user = userEvent.setup()
+      renderView()
+      const input = screen.getByRole('combobox')
+      await user.click(input)
+      expect(input).toHaveAttribute('aria-expanded', 'true')
+      fireEvent.pointerDown(screen.getByRole('button', { name: 'Outside' }))
+      expect(input).toHaveAttribute('aria-expanded', 'false')
+    })
   })
 })

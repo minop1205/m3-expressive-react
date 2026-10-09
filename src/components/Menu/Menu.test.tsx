@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react'
+import type { KeyboardEvent } from 'react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
@@ -305,5 +306,58 @@ describe('Menu (vertical variant)', () => {
     const { container } = render(<VerticalExample color="vibrant" />)
     await user.click(screen.getByRole('button', { name: 'Open' }))
     expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('Menu behavior (#430)', () => {
+  function Fruits(props: { onKeyDown?: (e: KeyboardEvent<HTMLDivElement>) => void }) {
+    return (
+      <Menu trigger={<button>Open</button>} aria-label="Fruits" {...props}>
+        <MenuItem>Apple</MenuItem>
+        <MenuItem>Avocado</MenuItem>
+        <MenuItem>Apricot</MenuItem>
+        <MenuItem>Banana</MenuItem>
+      </Menu>
+    )
+  }
+
+  it('cycles through matches when the same letter is typed repeatedly', async () => {
+    // A frozen clock keeps every keypress inside the typeahead window.
+    const nowSpy = vi.spyOn(Date, 'now').mockReturnValue(1_000_000)
+    try {
+      const user = userEvent.setup()
+      render(<Fruits />)
+      await user.click(screen.getByRole('button', { name: 'Open' }))
+      expect(item('Apple')).toHaveFocus()
+      await user.keyboard('a')
+      expect(item('Avocado')).toHaveFocus()
+      await user.keyboard('a')
+      expect(item('Apricot')).toHaveFocus()
+      await user.keyboard('a')
+      expect(item('Apple')).toHaveFocus()
+    } finally {
+      nowSpy.mockRestore()
+    }
+  })
+
+  it('respects a consumer onKeyDown that calls preventDefault()', async () => {
+    const user = userEvent.setup()
+    render(<Fruits onKeyDown={(e) => e.preventDefault()} />)
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    expect(item('Apple')).toHaveFocus()
+    await user.keyboard('{ArrowDown}')
+    expect(item('Apple')).toHaveFocus()
+    await user.keyboard('b')
+    expect(item('Apple')).toHaveFocus()
+  })
+
+  it('closes on an outside pointerdown', async () => {
+    const user = userEvent.setup()
+    render(<Fruits />)
+    const trigger = screen.getByRole('button', { name: 'Open' })
+    await user.click(trigger)
+    expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    fireEvent.pointerDown(document.body)
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
   })
 })

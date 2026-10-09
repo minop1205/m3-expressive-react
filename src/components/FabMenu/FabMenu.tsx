@@ -19,7 +19,7 @@ import {
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
-import { moveMenuFocus } from '../../internal/menuNavigation'
+import { createMenuTypeahead, handleMenuTypeahead, moveMenuFocus } from '../../internal/menuNavigation'
 import { effectsSprings } from '../../tokens/motion'
 import styles from './FabMenu.module.css'
 
@@ -147,9 +147,10 @@ export interface FabMenuProps
  * Keyboard / focus (m3.material.io a11y + Compose FloatingActionButtonMenu +
  * WAI-ARIA APG menu): opening keeps focus on the toggle; Tab / ArrowDown from
  * the open toggle move to the top item (ArrowUp: the bottom one); ArrowUp /
- * ArrowDown cycle the items with wrap, Home / End jump; Shift+Tab returns to
- * the toggle; Tab closes and leaves the component; Escape and item selection
- * close and return focus to the toggle. While closed the item list is `inert`
+ * ArrowDown cycle the items with wrap, Home / End jump, printable characters
+ * move focus by typeahead; Shift+Tab returns to the toggle; Tab closes and
+ * leaves the component; Escape and item selection close and return focus to
+ * the toggle. While closed the item list is `inert`
  * and `aria-hidden`, so hidden items are out of the Tab order and the
  * accessibility tree while they still animate out.
  */
@@ -176,6 +177,7 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
   const rootRef = useRef<HTMLDivElement | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const toggleRef = useRef<HTMLButtonElement>(null)
+  const typeahead = useRef(createMenuTypeahead())
 
   useEffect(() => {
     if (closeAriaLabel === undefined || warnedCloseAriaLabel) return
@@ -217,7 +219,9 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
 
   useEffect(() => {
     if (!open) return
-    const onPointerDown = (event: globalThis.MouseEvent) => {
+    // `pointerdown`, like Tooltip: a page that prevents the default of
+    // pointerdown (drag libraries) suppresses the compatibility mousedown.
+    const onPointerDown = (event: globalThis.PointerEvent) => {
       if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
         setOpen(false)
       }
@@ -225,10 +229,10 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key === 'Escape') closeMenu()
     }
-    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
     return () => {
-      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -246,7 +250,9 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
   }
 
   const handleListKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (moveMenuFocus(event, getItems())) return
+    const menuItems = getItems()
+    if (moveMenuFocus(event, menuItems)) return
+    if (handleMenuTypeahead(event, menuItems, typeahead.current)) return
     if (event.key !== 'Tab') return
     if (event.shiftKey) {
       // Shift+Tab goes back to the (close) toggle, keeping the menu open.

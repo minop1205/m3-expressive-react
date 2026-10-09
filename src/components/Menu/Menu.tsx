@@ -19,7 +19,11 @@ import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { usePopupPosition } from '../../internal/usePopupPosition'
-import { moveMenuFocus } from '../../internal/menuNavigation'
+import {
+  createMenuTypeahead,
+  handleMenuTypeahead,
+  moveMenuFocus,
+} from '../../internal/menuNavigation'
 import styles from './Menu.module.css'
 
 interface MenuContextValue {
@@ -59,9 +63,6 @@ export interface MenuProps extends Omit<HTMLAttributes<HTMLDivElement>, 'childre
    */
   color?: MenuColor
 }
-
-/** How long a pause resets the typeahead buffer (APG-typical). */
-const TYPEAHEAD_RESET_MS = 500
 
 /** Gap between the trigger and the menu. */
 const ANCHOR_GAP_PX = 4
@@ -116,7 +117,7 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   const menuRef = useRef<HTMLDivElement | null>(null)
   // Where to move focus once the menu opens ('last' for ArrowUp on the trigger).
   const pendingFocus = useRef<'first' | 'last'>('first')
-  const typeahead = useRef({ buffer: '', at: 0 })
+  const typeahead = useRef(createMenuTypeahead())
 
   const setOpen = (value: boolean) => {
     if (!isControlled) setUncontrolled(value)
@@ -166,7 +167,9 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
 
   useEffect(() => {
     if (!open) return
-    const onPointerDown = (event: globalThis.MouseEvent) => {
+    // `pointerdown`, like Tooltip: a page that prevents the default of
+    // pointerdown (drag libraries) suppresses the compatibility mousedown.
+    const onPointerDown = (event: globalThis.PointerEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
         setOpen(false)
       }
@@ -174,10 +177,10 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     const onDocKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key === 'Escape') closeMenu(true)
     }
-    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('keydown', onDocKeyDown)
     return () => {
-      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onDocKeyDown)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -185,9 +188,10 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
 
   const handleMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     onKeyDown?.(event)
+    // A consumer onKeyDown that calls preventDefault() opts out.
+    if (event.defaultPrevented) return
     const items = getItems()
     if (items.length === 0) return
-    const current = items.indexOf(document.activeElement as HTMLElement)
 
     if (moveMenuFocus(event, items)) return
 
@@ -198,23 +202,7 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     }
 
     // Typeahead: printable characters move focus to the next matching item.
-    if (event.key.length === 1 && /\S/.test(event.key) && !event.ctrlKey && !event.metaKey && !event.altKey) {
-      const now = Date.now()
-      const state = typeahead.current
-      if (now - state.at > TYPEAHEAD_RESET_MS) state.buffer = ''
-      state.at = now
-      state.buffer += event.key.toLowerCase()
-      // A repeated single character cycles through matches; a growing buffer
-      // keeps matching from the focused item.
-      const searchFrom = state.buffer.length === 1 ? current + 1 : Math.max(current, 0)
-      for (let offset = 0; offset < items.length; offset++) {
-        const item = items[(searchFrom + offset + items.length) % items.length]
-        if ((item.textContent ?? '').trim().toLowerCase().startsWith(state.buffer)) {
-          item.focus()
-          return
-        }
-      }
-    }
+    handleMenuTypeahead(event, items, typeahead.current)
   }
 
   const child = Children.only(trigger) as ReactElement<{

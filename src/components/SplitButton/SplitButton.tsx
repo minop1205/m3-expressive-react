@@ -89,7 +89,9 @@ export const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
   ) {
     const isControlled = controlledOpen !== undefined
     const [uncontrolled, setUncontrolled] = useState(defaultOpen)
-    const open = isControlled ? controlledOpen : uncontrolled
+    // A disabled split button never shows its menu (its trigger can't be
+    // operated to close it again).
+    const open = !disabled && (isControlled ? controlledOpen : uncontrolled)
     const setOpen = (value: boolean) => {
       if (!isControlled) setUncontrolled(value)
       onOpenChange?.(value)
