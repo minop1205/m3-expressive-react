@@ -64,11 +64,18 @@
   --_pressed-inner-corner-size: 16px;
 }
 
+/* Items: direct <button> children, or buttons one wrapper deep (e.g. a
+   Tooltip's wrapper span) — the same set getItems() resolves in JS (#418).
+   Positional rules (first / last) look at the direct child, so a wrapper's
+   own extra children (the tooltip popup) never change a button's corners. */
+
 /* XS / S connected groups: every button is at least 48dp wide (site "Minimum
    widths"). :where() keeps this at 0,0,1 so a Button's own larger min-width
    (64dp) still wins; only narrower children such as IconButton grow. */
 :where(.group[data-variant='connected'][data-size='xs']) > button,
-:where(.group[data-variant='connected'][data-size='sm']) > button {
+:where(.group[data-variant='connected'][data-size='sm']) > button,
+:where(.group[data-variant='connected'][data-size='xs'] > :not(button)) > button,
+:where(.group[data-variant='connected'][data-size='sm'] > :not(button)) > button {
   min-width: 48px;
 }
 
@@ -77,7 +84,8 @@
    switched to round below. `[data-size]` lifts the border-radius rule to
    0,3,1 so it beats the children's own `:active` / `data-shape-state` radius
    rules (0,3,0). */
-.group[data-variant='connected'] > button {
+.group[data-variant='connected'] > button,
+.group[data-variant='connected'] > :not(button) > button {
   --_connected-outer: calc(var(--_height) / 2);
   --_connected-inner: var(--_inner-corner-size);
   --_connected-ss: var(--_connected-inner);
@@ -86,35 +94,42 @@
   --_connected-ee: var(--_connected-inner);
 }
 
-.group[data-variant='connected'][data-size] > button {
+.group[data-variant='connected'][data-size] > button,
+.group[data-variant='connected'][data-size] > :not(button) > button {
   border-start-start-radius: var(--_connected-ss);
   border-start-end-radius: var(--_connected-se);
   border-end-start-radius: var(--_connected-es);
   border-end-end-radius: var(--_connected-ee);
 }
 
-.group[data-variant='connected'][data-orientation='horizontal'] > button:first-child {
+.group[data-variant='connected'][data-orientation='horizontal'] > button:first-child,
+.group[data-variant='connected'][data-orientation='horizontal'] > :first-child:not(button) > button {
   --_connected-ss: var(--_connected-outer);
   --_connected-es: var(--_connected-outer);
 }
-.group[data-variant='connected'][data-orientation='horizontal'] > button:last-child {
+.group[data-variant='connected'][data-orientation='horizontal'] > button:last-child,
+.group[data-variant='connected'][data-orientation='horizontal'] > :last-child:not(button) > button {
   --_connected-se: var(--_connected-outer);
   --_connected-ee: var(--_connected-outer);
 }
-.group[data-variant='connected'][data-orientation='vertical'] > button:first-child {
+.group[data-variant='connected'][data-orientation='vertical'] > button:first-child,
+.group[data-variant='connected'][data-orientation='vertical'] > :first-child:not(button) > button {
   --_connected-ss: var(--_connected-outer);
   --_connected-se: var(--_connected-outer);
 }
-.group[data-variant='connected'][data-orientation='vertical'] > button:last-child {
+.group[data-variant='connected'][data-orientation='vertical'] > button:last-child,
+.group[data-variant='connected'][data-orientation='vertical'] > :last-child:not(button) > button {
   --_connected-es: var(--_connected-outer);
   --_connected-ee: var(--_connected-outer);
 }
 
 /* Selected (toggle): fully round. Pressed wins over selected (Compose
    ToggleButton shape precedence), and only ever changes the inner corners. */
-.group[data-variant='connected'] > button[data-selected='true'] {
+.group[data-variant='connected'] > button[data-selected='true'],
+.group[data-variant='connected'] > :not(button) > button[data-selected='true'] {
   --_connected-inner: var(--_connected-outer);
 }
-.group[data-variant='connected'] > button:active:not(:disabled) {
+.group[data-variant='connected'] > button:active:not(:disabled),
+.group[data-variant='connected'] > :not(button) > button:active:not(:disabled) {
   --_connected-inner: var(--_pressed-inner-corner-size);
 }
