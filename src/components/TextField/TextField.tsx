@@ -9,6 +9,7 @@ import {
   type ChangeEventHandler,
   type FocusEvent,
   type FocusEventHandler,
+  type InputEvent,
   type HTMLAttributes,
   type InputHTMLAttributes,
   type MouseEvent,
@@ -17,6 +18,7 @@ import {
   type TextareaHTMLAttributes,
 } from 'react'
 import clsx from 'clsx'
+import { useFormReset } from '../../internal/useFormReset'
 import styles from './TextField.module.css'
 
 export type TextFieldVariant = 'filled' | 'outlined'
@@ -66,7 +68,9 @@ export interface TextFieldProps
    * `inputProps` keys — the controlled `value` / `onChange` / `onFocus` /
    * `onBlur`, `id`, `className`, and every dedicated input prop the
    * component sets (`type`, `name`, `placeholder`, `required`, `readOnly`,
-   * `autoComplete`, `maxLength`, `rows`, …).
+   * `autoComplete`, `maxLength`, `rows`, …). Exceptions: `aria-describedby`
+   * is merged (the field's own ids first), and an `onInput` handler is
+   * called after the component's own.
    */
   inputProps?:
     | InputHTMLAttributes<HTMLInputElement>
@@ -166,9 +170,20 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
 
     const [focused, setFocused] = useState(false)
     const [internalValue, setInternalValue] = useState(defaultValue ?? '')
+    // Uncontrolled semantics: only the initial `defaultValue` counts. Pinning
+    // it keeps a later prop change from rewriting the native default (and
+    // the shown value of a not-yet-edited input) behind the state's back.
+    const [initialDefaultValue] = useState(defaultValue)
     const isControlled = controlledValue !== undefined
     const currentValue = isControlled ? controlledValue : internalValue
-    const populated = currentValue.length > 0
+    // Content the value doesn't report: partial number input ("-", "1e" —
+    // `value` is '' but `validity.badInput` is set) and browser autofill
+    // (Chrome's page-load autofill fires no input event, and its preview
+    // isn't readable from script). Either keeps the label floated and the
+    // content visible (#432).
+    const [badInput, setBadInput] = useState(false)
+    const [autofilled, setAutofilled] = useState(false)
+    const populated = currentValue.length > 0 || badInput || autofilled
 
     const internalRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
 
@@ -210,6 +225,58 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
       [isControlled, onChange],
     )
 
+    const inputPropsOnInput = inputProps?.onInput as unknown as
+      | ((event: InputEvent<HTMLInputElement & HTMLTextAreaElement>) => void)
+      | undefined
+    // `input` fires for every edit, including ones React's onChange skips
+    // because `value` stays '' (partial number input).
+    const handleInput = useCallback(
+      (event: InputEvent<HTMLInputElement & HTMLTextAreaElement>) => {
+        setBadInput(event.currentTarget.validity?.badInput ?? false)
+        inputPropsOnInput?.(event)
+      },
+      [inputPropsOnInput],
+    )
+
+    // A value set from outside (controlled update, reset) replaces any
+    // partial number input, so re-read the flag rather than keep it stale.
+    useEffect(() => {
+      const el = internalRef.current
+      if (el) setBadInput(el.validity?.badInput ?? false)
+    }, [currentValue])
+
+    // Autofill detection (MUI's technique): `.input:-webkit-autofill` runs the
+    // no-op `autofillStart` keyframes, and leaving autofill runs
+    // `autofillCancel` (TextField.module.css). A native listener, because
+    // React may bind a vendor-prefixed animation event name.
+    useEffect(() => {
+      const el = internalRef.current
+      if (!el) return
+      const handleAnimationStart = (event: Event) => {
+        const { animationName } = event as globalThis.AnimationEvent
+        if (animationName === styles.autofillStart) setAutofilled(true)
+        else if (animationName === styles.autofillCancel) setAutofilled(false)
+      }
+      el.addEventListener('animationstart', handleAnimationStart)
+      return () => el.removeEventListener('animationstart', handleAnimationStart)
+    }, [multiline])
+
+    // Native form reset (#432). The uncontrolled input is natively
+    // uncontrolled (`defaultValue`), so the browser restores the default;
+    // mirror it in state so the label, counter and `populated` follow.
+    // Assigning the value up front (the reset event precedes the reset)
+    // also resyncs React's value tracker, so retyping the pre-reset value
+    // still fires onChange.
+    useFormReset(internalRef, () => {
+      const el = internalRef.current
+      if (!el) return
+      setBadInput(false)
+      setAutofilled(false)
+      if (isControlled) return
+      el.value = el.defaultValue
+      setInternalValue(el.defaultValue)
+    })
+
     // Auto-resize textarea
     useEffect(() => {
       if (multiline && internalRef.current) {
@@ -238,22 +305,35 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
 
     // Prefix/suffix are read with the input (m3 a11y: they need their own
     // ids), followed by the supporting line.
+    // Extra ids from `inputProps` are merged after the field's own (#414).
     const describedBy =
       [
         prefixText && prefixId,
         suffixText && suffixId,
         showSupportingText && supportingId,
+        inputProps?.['aria-describedby'],
       ]
         .filter(Boolean)
         .join(' ') || undefined
 
-    const labelText = label ? `${label}${required ? '*' : ''}` : undefined
+    // The required asterisk is visual only: `required` already exposes
+    // aria-required, so keep the `*` out of the accessible name ("Email",
+    // not "Email star").
+    const labelText = label ? (
+      <>
+        {label}
+        {required && <span aria-hidden="true">*</span>}
+      </>
+    ) : undefined
 
     const controlProps = {
       ref: setRefs,
       id: inputId,
       className: styles.input,
-      value: currentValue,
+      // Uncontrolled stays natively uncontrolled so form.reset() restores
+      // `defaultValue` (a React-controlled value would also become the
+      // reset default via React's value-attribute syncing).
+      ...(isControlled ? { value: controlledValue } : { defaultValue: initialDefaultValue }),
       disabled,
       name,
       placeholder,
@@ -263,6 +343,7 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
       autoFocus,
       inputMode,
       onChange: handleChange,
+      onInput: handleInput,
       onFocus: handleFocus,
       onBlur: handleBlur,
       'aria-invalid': showError || undefined,
@@ -278,6 +359,14 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
     const definedControlProps = Object.fromEntries(
       Object.entries(controlProps).filter(([, v]) => v !== undefined),
     ) as typeof controlProps
+    // The value always comes from the component (controlled `value` or
+    // uncontrolled `defaultValue`), so an `inputProps` value can't sneak in
+    // where the component now leaves the key unset.
+    const {
+      value: _ignoredValue,
+      defaultValue: _ignoredDefaultValue,
+      ...passthroughInputProps
+    } = (inputProps ?? {}) as InputHTMLAttributes<HTMLInputElement>
 
     return (
       <div
@@ -343,13 +432,13 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
               )}
               {multiline ? (
                 <textarea
-                  {...(inputProps as TextareaHTMLAttributes<HTMLTextAreaElement> | undefined)}
+                  {...(passthroughInputProps as TextareaHTMLAttributes<HTMLTextAreaElement>)}
                   {...(definedControlProps as TextareaHTMLAttributes<HTMLTextAreaElement> & { ref: typeof setRefs })}
                   rows={rows}
                 />
               ) : (
                 <input
-                  {...(inputProps as InputHTMLAttributes<HTMLInputElement> | undefined)}
+                  {...passthroughInputProps}
                   {...(definedControlProps as InputHTMLAttributes<HTMLInputElement> & { ref: typeof setRefs })}
                   type={type}
                 />

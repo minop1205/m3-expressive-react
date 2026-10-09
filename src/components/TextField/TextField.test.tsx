@@ -1,9 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'vitest-axe'
 import { describe, expect, it, vi } from 'vitest'
 import { createRef } from 'react'
 import { TextField } from './TextField'
+import styles from './TextField.module.css'
 
 describe('TextField', () => {
   it('renders an input element', () => {
@@ -288,5 +289,149 @@ describe('TextField', () => {
     )
     const results = await axe(container)
     expect(results).toHaveNoViolations()
+  })
+})
+
+describe('TextField native form integration (#432)', () => {
+  const root = (container: HTMLElement) => container.querySelector(`.${styles.textField}`)!
+
+  it('restores an uncontrolled value on form.reset(); label, counter and populated follow', async () => {
+    const user = userEvent.setup()
+    const { container } = render(
+      <form>
+        <TextField label="Name" name="n" defaultValue="a" maxLength={10} />
+      </form>,
+    )
+    const form = container.querySelector('form')!
+    const input = screen.getByRole('textbox') as HTMLInputElement
+
+    await user.type(input, 'bc')
+    expect(input).toHaveValue('abc')
+    expect(screen.getByText('3 / 10')).toBeInTheDocument()
+
+    act(() => form.reset())
+    expect(input).toHaveValue('a')
+    expect(new FormData(form).get('n')).toBe('a')
+    expect(screen.getByText('1 / 10')).toBeInTheDocument()
+    expect(root(container)).toHaveClass(styles.populated)
+  })
+
+  it('clears populated on reset to an empty default and keeps onChange firing', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const { container } = render(
+      <form>
+        <TextField label="Name" maxLength={10} onChange={onChange} />
+      </form>,
+    )
+    const form = container.querySelector('form')!
+    const input = screen.getByRole('textbox')
+
+    await user.type(input, 'x')
+    expect(root(container)).toHaveClass(styles.populated)
+
+    act(() => form.reset())
+    expect(input).toHaveValue('')
+    expect(root(container)).not.toHaveClass(styles.populated)
+    expect(screen.getByText('0 / 10')).toBeInTheDocument()
+
+    // The same value as before the reset must still register as a change.
+    onChange.mockClear()
+    await user.type(input, 'x')
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(screen.getByText('1 / 10')).toBeInTheDocument()
+  })
+
+  it('follows the form attribute for reset', async () => {
+    const user = userEvent.setup()
+    const { container } = render(
+      <>
+        <form id="f" />
+        <TextField label="Name" inputProps={{ form: 'f' }} />
+      </>,
+    )
+    const form = container.querySelector('form')!
+    const input = screen.getByRole('textbox')
+    await user.type(input, 'abc')
+    act(() => form.reset())
+    expect(input).toHaveValue('')
+    expect(root(container)).not.toHaveClass(styles.populated)
+  })
+
+  it('keeps the required asterisk out of the accessible name (visual unchanged)', () => {
+    const { rerender } = render(<TextField label="Email" required />)
+    const input = screen.getByRole('textbox', { name: 'Email' })
+    expect(input).toBeRequired()
+    const label = document.querySelector('label')!
+    expect(label).toHaveTextContent('Email*')
+    expect(label.querySelector('[aria-hidden="true"]')).toHaveTextContent(/^\*$/)
+
+    rerender(<TextField label="Email" required variant="outlined" />)
+    expect(screen.getByRole('textbox', { name: 'Email' })).toBeInTheDocument()
+    expect(document.querySelector(`.${styles.outlineLabel}`)).toHaveTextContent('Email*')
+  })
+
+  it('treats partial number input (validity.badInput) as populated', () => {
+    const { container } = render(<TextField label="Amount" type="number" />)
+    const input = screen.getByRole('spinbutton') as HTMLInputElement
+    expect(root(container)).not.toHaveClass(styles.populated)
+
+    // "-" / "1e": the browser reports value === '' but flags badInput.
+    Object.defineProperty(input, 'validity', {
+      configurable: true,
+      value: { ...input.validity, badInput: true },
+    })
+    fireEvent.input(input)
+    expect(root(container)).toHaveClass(styles.populated)
+
+    Object.defineProperty(input, 'validity', {
+      configurable: true,
+      value: { ...input.validity, badInput: false },
+    })
+    fireEvent.input(input)
+    expect(root(container)).not.toHaveClass(styles.populated)
+  })
+
+  it('treats browser autofill as populated (animationstart detection)', () => {
+    const { container } = render(<TextField label="Email" />)
+    const input = screen.getByRole('textbox')
+    expect(root(container)).not.toHaveClass(styles.populated)
+
+    // jsdom has no AnimationEvent / CSS animations: dispatch what the
+    // browser fires when `:-webkit-autofill` starts / stops matching.
+    const animationStart = (animationName: string) => {
+      const event = new Event('animationstart', { bubbles: true })
+      Object.defineProperty(event, 'animationName', { value: animationName })
+      fireEvent(input, event)
+    }
+    animationStart(styles.autofillStart)
+    expect(root(container)).toHaveClass(styles.populated)
+
+    animationStart(styles.autofillCancel)
+    expect(root(container)).not.toHaveClass(styles.populated)
+  })
+
+  it('merges inputProps aria-describedby with the field ids', () => {
+    render(
+      <>
+        <span id="extra">Extra hint</span>
+        <TextField
+          label="Name"
+          supportingText="Help"
+          inputProps={{ 'aria-describedby': 'extra' }}
+        />
+      </>,
+    )
+    expect(screen.getByRole('textbox')).toHaveAccessibleDescription('Help Extra hint')
+  })
+
+  it('keeps inputProps aria-describedby when the field has no ids of its own', () => {
+    render(
+      <>
+        <span id="extra">Extra hint</span>
+        <TextField label="Name" inputProps={{ 'aria-describedby': 'extra' }} />
+      </>,
+    )
+    expect(screen.getByRole('textbox')).toHaveAttribute('aria-describedby', 'extra')
   })
 })

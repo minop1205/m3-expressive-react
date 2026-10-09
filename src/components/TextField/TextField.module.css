@@ -481,6 +481,35 @@
   transition: opacity var(--_show-duration) var(--_show-easing) 67ms;
 }
 
+/* Autofill detection (#432): Chrome's page-load autofill fires no input
+   event, so TextField.tsx listens for these no-op animations (MUI's
+   technique) and treats an autofilled input as populated. The keyframes
+   only touch a private custom property, so nothing renders differently;
+   the animation runs regardless of reduced motion because it is not
+   motion. */
+@keyframes autofillStart {
+  from {
+    --_autofill: 1;
+  }
+}
+
+@keyframes autofillCancel {
+  from {
+    --_autofill: 0;
+  }
+}
+
+.input {
+  animation-name: autofillCancel;
+  animation-duration: 10ms;
+}
+
+.input:-webkit-autofill {
+  animation-name: autofillStart;
+  /* Long enough to outlast any page; the keyframes are invisible. */
+  animation-duration: 5000s;
+}
+
 /* Textarea */
 textarea.input {
   resize: none;

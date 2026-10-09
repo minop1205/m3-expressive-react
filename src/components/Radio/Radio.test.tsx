@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createRef } from 'react'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'vitest-axe'
 import { Radio } from './Radio'
@@ -181,5 +181,30 @@ describe('Radio uncontrolled mode', () => {
     await user.click(screen.getByRole('radio', { name: 'B' }))
     expect(screen.getByRole('radio', { name: 'B' })).toBeChecked()
     expect(screen.getByRole('radio', { name: 'A' })).not.toBeChecked()
+  })
+})
+
+describe('Radio form reset (#432)', () => {
+  it('keeps onChange firing after form.reset() (standalone, uncontrolled)', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const { container } = render(
+      <form>
+        <Radio name="r" value="a" aria-label="A" defaultChecked />
+        <Radio name="r" value="b" aria-label="B" onChange={onChange} />
+      </form>,
+    )
+    const form = container.querySelector('form')!
+    const a = screen.getByRole('radio', { name: 'A' })
+    const b = screen.getByRole('radio', { name: 'B' })
+
+    await user.click(b)
+    act(() => form.reset())
+    expect(a).toBeChecked()
+    expect(b).not.toBeChecked()
+
+    onChange.mockClear()
+    await user.click(b)
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'b')
   })
 })

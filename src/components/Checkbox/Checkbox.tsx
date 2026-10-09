@@ -10,6 +10,7 @@ import {
   type Ref,
 } from 'react'
 import clsx from 'clsx'
+import { syncCheckedToDefault, useFormReset } from '../../internal/useFormReset'
 import styles from './Checkbox.module.css'
 
 export interface CheckboxProps
@@ -75,6 +76,15 @@ export const Checkbox = forwardRef<HTMLSpanElement, CheckboxProps>(
     // the native flag even when the `indeterminate` prop stays true.
     useEffect(() => {
       if (internalInputRef.current) internalInputRef.current.indeterminate = indeterminate
+    })
+
+    // Native form reset (#432): restore the uncontrolled default and resync
+    // React's value tracker so the next click still fires onChange.
+    useFormReset(internalInputRef, () => {
+      const input = internalInputRef.current
+      if (!input || isControlled) return
+      syncCheckedToDefault(input)
+      setInternalChecked(input.defaultChecked)
     })
 
     const handleChange = useCallback(

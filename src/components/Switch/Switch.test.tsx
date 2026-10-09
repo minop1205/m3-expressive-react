@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createRef, type KeyboardEvent } from 'react'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'vitest-axe'
 import { Switch } from './Switch'
@@ -232,5 +232,55 @@ describe('Switch icon visibility logic', () => {
     const { container } = render(<Switch aria-label="Toggle" selected />)
     expect(container.getElementsByClassName(styles.icons).length).toBe(0)
     expect(handle(container)).not.toHaveClass(styles.withIcon)
+  })
+})
+
+describe('Switch form reset (#432)', () => {
+  it('restores the uncontrolled default on form.reset() and keeps onChange firing', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const { container } = render(
+      <form>
+        <Switch aria-label="Wi-Fi" name="s" defaultSelected onChange={onChange} />
+      </form>,
+    )
+    const form = container.querySelector('form')!
+    const input = screen.getByRole('switch')
+    const root = input.parentElement!
+
+    await user.click(input)
+    expect(input).not.toBeChecked()
+    expect(root).toHaveClass(styles.unselected)
+
+    act(() => form.reset())
+    expect(input).toBeChecked()
+    expect(root).toHaveClass(styles.selected)
+    expect(new FormData(form).get('s')).toBe('on')
+
+    onChange.mockClear()
+    await user.click(input)
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), false)
+    expect(root).toHaveClass(styles.unselected)
+  })
+
+  it('follows the form attribute and removes its listener on unmount', async () => {
+    const user = userEvent.setup()
+    const { container, unmount } = render(
+      <>
+        <form id="f" />
+        <Switch aria-label="Wi-Fi" form="f" />
+      </>,
+    )
+    const form = container.querySelector('form')!
+    const removeSpy = vi.spyOn(form, 'removeEventListener')
+    const input = screen.getByRole('switch')
+
+    await user.click(input)
+    act(() => form.reset())
+    expect(input).not.toBeChecked()
+    expect(input.parentElement).toHaveClass(styles.unselected)
+
+    unmount()
+    expect(removeSpy).toHaveBeenCalledWith('reset', expect.any(Function))
   })
 })
