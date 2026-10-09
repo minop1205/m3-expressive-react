@@ -17,6 +17,7 @@ import {
   type TextareaHTMLAttributes,
 } from 'react'
 import clsx from 'clsx'
+import { INTERACTIVE_SELECTOR } from '../../internal/isFromNestedInteractive'
 import styles from './TextField.module.css'
 
 export type TextFieldVariant = 'filled' | 'outlined'
@@ -222,7 +223,22 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
     const handleContainerClick = useCallback(
       (event: MouseEvent<HTMLDivElement>) => {
         onClick?.(event)
-        internalRef.current?.focus()
+        // Leave clicks (and Enter-generated clicks) on interactive icon slots —
+        // a visibility toggle, a clear button, the date picker toggle — to
+        // those controls instead of pulling focus into the input (#414). The
+        // input itself and the field's own <label> still focus it.
+        const input = internalRef.current
+        const target = event.target instanceof Element ? event.target : null
+        const interactive = target?.closest(INTERACTIVE_SELECTOR)
+        if (
+          interactive != null &&
+          interactive !== input &&
+          interactive.tagName !== 'LABEL' &&
+          event.currentTarget.contains(interactive)
+        ) {
+          return
+        }
+        input?.focus()
       },
       [onClick],
     )

@@ -270,6 +270,43 @@ describe('TextField', () => {
     expect(screen.getByRole('textbox')).toHaveFocus()
   })
 
+  it('leaves clicks on an interactive endIcon to that control (#414)', async () => {
+    const user = userEvent.setup()
+    const onToggle = vi.fn()
+    render(
+      <TextField
+        label="Password"
+        endIcon={
+          <button type="button" onClick={onToggle}>
+            Show
+          </button>
+        }
+      />,
+    )
+    const toggle = screen.getByRole('button', { name: 'Show' })
+    await user.click(toggle)
+    expect(onToggle).toHaveBeenCalledTimes(1)
+    expect(toggle).toHaveFocus()
+  })
+
+  it('keeps focus on an interactive endIcon activated with Enter (#414)', async () => {
+    const user = userEvent.setup()
+    render(
+      <TextField label="Search" endIcon={<button type="button">Clear</button>} />,
+    )
+    const clear = screen.getByRole('button', { name: 'Clear' })
+    clear.focus()
+    await user.keyboard('{Enter}')
+    expect(clear).toHaveFocus()
+  })
+
+  it('still focuses the input when a decorative icon is clicked', async () => {
+    const user = userEvent.setup()
+    render(<TextField label="Search" startIcon={<svg data-testid="icon" />} />)
+    await user.click(screen.getByTestId('icon'))
+    expect(screen.getByRole('textbox')).toHaveFocus()
+  })
+
   it('has no axe violations (filled)', async () => {
     const { container } = render(<TextField label="Name" variant="filled" />)
     const results = await axe(container)
