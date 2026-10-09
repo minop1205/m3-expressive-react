@@ -98,6 +98,8 @@ function emphasizedAccelerateEasing(progress: number) {
 }
 
 function clampProgress(value: number) {
+  // NaN / ±Infinity would reach aria-valuenow as-is (#423).
+  if (!Number.isFinite(value)) return 0
   return Math.min(1, Math.max(0, value))
 }
 

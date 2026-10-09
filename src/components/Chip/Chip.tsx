@@ -179,12 +179,22 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
             .find((button): button is HTMLButtonElement => !!button && !button.disabled)
         }
         onRemove?.(event)
-        if (!root || !target) return
-        const focusTarget = target
+        // The last chip of a ChipSet: fall back to the set itself rather
+        // than dropping focus to <body> (#423). It is made focusable only
+        // for this hand-off and stays out of the Tab order.
+        const fallback = !target && chipSetRef?.current ? chipSetRef.current : undefined
+        if (!root || (!target && !fallback)) return
+        const focusTarget: HTMLElement = target ?? fallback!
         setTimeout(() => {
           if (root.isConnected || !focusTarget.isConnected) return
           const active = document.activeElement
           if (active && active !== document.body) return
+          if (focusTarget === fallback && !fallback.hasAttribute('tabindex')) {
+            fallback.tabIndex = -1
+            fallback.addEventListener('blur', () => fallback.removeAttribute('tabindex'), {
+              once: true,
+            })
+          }
           focusTarget.focus()
         })
       },
