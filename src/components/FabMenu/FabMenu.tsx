@@ -188,9 +188,13 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
     )
   }, [closeAriaLabel])
 
+  // Read through a ref: the document listeners below are bound once per
+  // open, so they must not call a stale `onOpenChange`.
+  const latest = useRef({ isControlled, onOpenChange })
+  latest.current = { isControlled, onOpenChange }
   const setOpen = (value: boolean) => {
-    if (!isControlled) setUncontrolled(value)
-    onOpenChange?.(value)
+    if (!latest.current.isControlled) setUncontrolled(value)
+    latest.current.onOpenChange?.(value)
   }
 
   const focusToggle = () => toggleRef.current?.focus()

@@ -34,6 +34,15 @@ describe('moveMenuFocus', () => {
     expect(document.activeElement).toBe(items[0])
   })
 
+  it('goes to the last item on ArrowUp and the first on ArrowDown with no item focused (#420)', () => {
+    const items = makeItems(['A', 'B', 'C'])
+    moveMenuFocus(key('ArrowUp'), items)
+    expect(document.activeElement).toBe(items[2])
+    ;(document.activeElement as HTMLElement).blur()
+    moveMenuFocus(key('ArrowDown'), items)
+    expect(document.activeElement).toBe(items[0])
+  })
+
   it('ignores other keys', () => {
     const items = makeItems(['A'])
     expect(moveMenuFocus(key('x'), items)).toBe(false)
@@ -71,6 +80,20 @@ describe('handleMenuTypeahead', () => {
     expect(document.activeElement).toBe(items[1])
     handleMenuTypeahead(key('b'), items, state, 5000)
     expect(document.activeElement).toBe(items[2])
+  })
+
+  it('matches the label text only, skipping aria-hidden icon ligatures (#420)', () => {
+    const items = makeItems([
+      'Copy',
+      '<span aria-hidden="true">delete</span><span>Remove</span>',
+      'Duplicate',
+    ])
+    const state = createMenuTypeahead()
+    items[0].focus()
+    handleMenuTypeahead(key('d'), items, state, 1000)
+    expect(document.activeElement).toBe(items[2])
+    handleMenuTypeahead(key('r'), items, state, 5000)
+    expect(document.activeElement).toBe(items[1])
   })
 
   it('ignores modified, whitespace and non-printable keys', () => {

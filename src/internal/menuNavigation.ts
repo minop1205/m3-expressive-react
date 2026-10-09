@@ -17,7 +17,9 @@ export function moveMenuFocus(
       target = items[(current + 1) % items.length]
       break
     case 'ArrowUp':
-      target = items[(current - 1 + items.length) % items.length]
+      // No item focused (current -1): go to the last item, not the one
+      // before it.
+      target = items[current === -1 ? items.length - 1 : (current - 1 + items.length) % items.length]
       break
     case 'Home':
       target = items[0]
@@ -87,6 +89,19 @@ export function handleMenuTypeahead(
   return true
 }
 
+/**
+ * The item's label text for typeahead: its text without `aria-hidden`
+ * subtrees, so decorative icons — e.g. a Material Symbols `delete` ligature
+ * in front of "Remove" — never match.
+ */
 function getTypeaheadLabel(item: HTMLElement): string {
-  return (item.textContent ?? '').trim().toLowerCase()
+  let text = ''
+  const walk = (node: Node) => {
+    for (const child of node.childNodes) {
+      if (child.nodeType === Node.TEXT_NODE) text += child.textContent ?? ''
+      else if (child instanceof Element && child.getAttribute('aria-hidden') !== 'true') walk(child)
+    }
+  }
+  walk(item)
+  return text.trim().toLowerCase()
 }

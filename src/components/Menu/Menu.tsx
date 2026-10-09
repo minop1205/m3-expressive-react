@@ -75,7 +75,9 @@ const VIEWPORT_MARGIN_PX = 8
  *
  * Anchors a `role="menu"` popup to a trigger. SurfaceContainer container, 4dp
  * corners, elevation 2, 112–280dp wide, 8dp vertical padding — per Compose
- * MenuTokens. Closes on outside click, Escape, Tab-out, or item selection.
+ * MenuTokens. Closes on outside press, Escape, Tab-out (or any focus move out
+ * of it), or item selection. The trigger gets `aria-controls`, and the menu
+ * is named by the trigger (`aria-labelledby`) unless it has its own label.
  * The menu is drawn in the top layer (Popover API) below the trigger — above
  * it when it doesn't fit below — and kept inside the viewport, so ancestors'
  * `overflow` / `z-index` can't clip it; it follows scrolling and layout shifts.
@@ -118,10 +120,15 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   // Where to move focus once the menu opens ('last' for ArrowUp on the trigger).
   const pendingFocus = useRef<'first' | 'last'>('first')
   const typeahead = useRef(createMenuTypeahead())
+  const autoId = useId()
 
+  // Read through a ref: the document listeners below are bound once per
+  // open, so they must not call a stale `onOpenChange`.
+  const latest = useRef({ isControlled, onOpenChange })
+  latest.current = { isControlled, onOpenChange }
   const setOpen = (value: boolean) => {
-    if (!isControlled) setUncontrolled(value)
-    onOpenChange?.(value)
+    if (!latest.current.isControlled) setUncontrolled(value)
+    latest.current.onOpenChange?.(value)
   }
 
   // The trigger is always the wrapper's first element child; focusing it via
@@ -206,10 +213,19 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   }
 
   const child = Children.only(trigger) as ReactElement<{
+    id?: string
     onClick?: (event: MouseEvent) => void
     onKeyDown?: (event: KeyboardEvent) => void
   }>
+  // APG menu button: the trigger controls the menu, and the menu is named
+  // by the trigger unless it has its own label. Consumer ids are kept.
+  const menuId = rest.id ?? `${autoId}-menu`
+  const triggerId = child.props.id ?? `${autoId}-trigger`
+  const labelledBy =
+    rest['aria-label'] != null || rest['aria-labelledby'] != null ? undefined : triggerId
   const triggerEl = cloneElement(child, {
+    id: triggerId,
+    'aria-controls': menuId,
     onClick: (event: MouseEvent) => {
       child.props.onClick?.(event)
       setOpen(!open)
@@ -241,11 +257,23 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   }
 
   return (
-    <span ref={wrapperRef} className={styles.wrapper}>
+    <span
+      ref={wrapperRef}
+      className={styles.wrapper}
+      onBlur={(event) => {
+        // Focus moved out (e.g. programmatically): close, like Tab-out. A
+        // null relatedTarget (window switch, press on a non-focusable area)
+        // doesn't count — outside presses are handled on pointerdown.
+        const next = event.relatedTarget as Node | null
+        if (open && next && !wrapperRef.current?.contains(next)) setOpen(false)
+      }}
+    >
       {triggerEl}
       <div
         ref={setMenuRef}
+        aria-labelledby={labelledBy}
         {...rest}
+        id={menuId}
         role="menu"
         data-open={open || undefined}
         data-align={align}

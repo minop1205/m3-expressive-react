@@ -1,5 +1,5 @@
 import type { KeyboardEvent } from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
@@ -358,6 +358,83 @@ describe('Menu behavior (#430)', () => {
     await user.click(trigger)
     expect(trigger).toHaveAttribute('aria-expanded', 'true')
     fireEvent.pointerDown(document.body)
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+  })
+})
+
+describe('Menu focus and ARIA (#420)', () => {
+  it('typeahead matches the label, not icon ligature text', async () => {
+    const user = userEvent.setup()
+    render(
+      <Menu trigger={<button>Open</button>} aria-label="Edit">
+        <MenuItem>Copy</MenuItem>
+        {/* Material Symbols render the "delete" ligature as an icon. */}
+        <MenuItem startIcon={<span className="material-symbols-outlined">delete</span>}>
+          Remove
+        </MenuItem>
+        <MenuItem>Duplicate</MenuItem>
+      </Menu>,
+    )
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    await user.keyboard('d')
+    expect(item('Duplicate')).toHaveFocus()
+  })
+
+  it('uses the latest onOpenChange in its document listeners', async () => {
+    const first = vi.fn()
+    const second = vi.fn()
+    const { rerender } = render(
+      <Menu trigger={<button>Open</button>} aria-label="m" open onOpenChange={first}>
+        <MenuItem>Copy</MenuItem>
+      </Menu>,
+    )
+    rerender(
+      <Menu trigger={<button>Open</button>} aria-label="m" open onOpenChange={second}>
+        <MenuItem>Copy</MenuItem>
+      </Menu>,
+    )
+    fireEvent.pointerDown(document.body)
+    expect(second).toHaveBeenCalledWith(false)
+    expect(first).not.toHaveBeenCalled()
+  })
+
+  it('links the trigger and the menu (aria-controls / aria-labelledby)', async () => {
+    const user = userEvent.setup()
+    const { container } = render(
+      <Menu trigger={<button>Actions</button>}>
+        <MenuItem>Copy</MenuItem>
+      </Menu>,
+    )
+    const trigger = screen.getByRole('button', { name: 'Actions' })
+    await user.click(trigger)
+    const menu = screen.getByRole('menu', { name: 'Actions' })
+    expect(trigger).toHaveAttribute('aria-controls', menu.id)
+    expect(menu).toHaveAttribute('aria-labelledby', trigger.id)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('keeps consumer ids and an explicit aria-label', async () => {
+    const user = userEvent.setup()
+    render(
+      <Menu trigger={<button id="my-trigger">Open</button>} id="my-menu" aria-label="Named">
+        <MenuItem>Copy</MenuItem>
+      </Menu>,
+    )
+    const trigger = screen.getByRole('button', { name: 'Open' })
+    await user.click(trigger)
+    const menu = screen.getByRole('menu', { name: 'Named' })
+    expect(menu.id).toBe('my-menu')
+    expect(trigger).toHaveAttribute('aria-controls', 'my-menu')
+    expect(menu).not.toHaveAttribute('aria-labelledby')
+  })
+
+  it('closes when focus moves out of it programmatically', async () => {
+    const user = userEvent.setup()
+    render(<Example />)
+    const trigger = screen.getByRole('button', { name: 'Open' })
+    await user.click(trigger)
+    expect(item('Copy')).toHaveFocus()
+    act(() => screen.getByRole('button', { name: 'After' }).focus())
     expect(trigger).toHaveAttribute('aria-expanded', 'false')
   })
 })

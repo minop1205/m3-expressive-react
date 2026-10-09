@@ -344,4 +344,32 @@ describe('FabMenu', () => {
       expect(toggle).toHaveAttribute('aria-expanded', 'false')
     })
   })
+
+  describe('listeners and typeahead labels (#420)', () => {
+    it('uses the latest onOpenChange in its document listeners', () => {
+      const first = vi.fn()
+      const second = vi.fn()
+      const { rerender } = render(<Example open onOpenChange={first} />)
+      rerender(<Example open onOpenChange={second} />)
+      fireEvent.pointerDown(document.body)
+      expect(second).toHaveBeenCalledWith(false)
+      expect(first).not.toHaveBeenCalled()
+    })
+
+    it('typeahead matches the label, not icon ligature text', async () => {
+      const user = userEvent.setup()
+      render(
+        <FabMenu icon={add} ariaLabel="Create" defaultOpen>
+          <FabMenuItem>Copy</FabMenuItem>
+          <FabMenuItem icon={<span className="material-symbols-outlined">delete</span>}>
+            Remove
+          </FabMenuItem>
+          <FabMenuItem>Duplicate</FabMenuItem>
+        </FabMenu>,
+      )
+      screen.getByRole('menuitem', { name: 'Copy' }).focus()
+      await user.keyboard('d')
+      expect(screen.getByRole('menuitem', { name: 'Duplicate' })).toHaveFocus()
+    })
+  })
 })
