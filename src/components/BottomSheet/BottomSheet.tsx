@@ -1,6 +1,5 @@
 import {
   forwardRef,
-  useEffect,
   useRef,
   type HTMLAttributes,
   type PointerEvent,
@@ -59,7 +58,7 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
   ) {
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLDivElement | null>(null)
-    useModal({ active: open, rootRef, surfaceRef })
+    useModal({ active: open, rootRef, surfaceRef, onEscape: () => onClose?.() })
 
     // The sheet has no title slot, so default the accessible name (consumer
     // aria props win) — Compose sets a "Bottom Sheet" paneTitle.
@@ -67,15 +66,6 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
     const restLabelledby = (rest as Record<string, unknown>)['aria-labelledby'] as
       | string
       | undefined
-
-    useEffect(() => {
-      if (!open) return
-      const handle = (event: globalThis.KeyboardEvent) => {
-        if (event.key === 'Escape') onClose?.()
-      }
-      document.addEventListener('keydown', handle)
-      return () => document.removeEventListener('keydown', handle)
-    }, [open, onClose])
 
     // --- Drag-to-dismiss -------------------------------------------------
     const drag = useRef<{
