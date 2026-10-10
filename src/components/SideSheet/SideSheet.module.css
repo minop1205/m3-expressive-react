@@ -13,6 +13,9 @@
   z-index: 24;
   display: flex;
   pointer-events: none;
+  /* Stay visible until the exit motion has played (#433), then hide —
+     the same delayed-visibility pattern as NavigationDrawer. */
+  transition: visibility 0s linear max(var(--md-sys-motion-duration-medium4), var(--md-sys-motion-spring-default-effects-duration));
 }
 
 .standardRoot[data-anchor='right'],
@@ -28,10 +31,14 @@
 /* Standard sheets stay in the layout flow; only the panel is interactive. */
 .standardRoot {
   visibility: hidden;
+  /* Stay visible until the exit motion has played (#433), then hide —
+     the same delayed-visibility pattern as NavigationDrawer. */
+  transition: visibility 0s linear var(--md-sys-motion-duration-medium4);
 }
 
 .standardRoot[data-open] {
   visibility: visible;
+  transition-delay: 0s;
 }
 
 .modalRoot {
@@ -41,6 +48,7 @@
 .modalRoot[data-open] {
   visibility: visible;
   pointer-events: auto;
+  transition-delay: 0s;
 }
 
 .scrim {
@@ -159,6 +167,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .standardRoot,
+  .modalRoot,
   .scrim,
   .sheet {
     transition: none;
