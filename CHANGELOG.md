@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **Package**: the root entry's types now resolve per condition
+  (`import` → `index.d.ts`, `require` → `index.d.cts`), so CommonJS
+  TypeScript consumers (`module: node16` / `.cts`) no longer get TS1479
+  "masquerading as ESM" (#408). Added `./package.json` to `exports`,
+  `engines.node >= 18`, and narrowed the React peer range to
+  `^18.0.0 || ^19.0.0`.
+
 ## 1.3.1 (2026-10-08)
 
 ### Fixed

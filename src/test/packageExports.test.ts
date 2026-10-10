@@ -23,18 +23,20 @@ const expectedDefault: Record<string, string> = {
 
 describe('package exports', () => {
   it('keeps the root and styles.css entries unchanged', () => {
+    // Per-condition types: a shared `types` would make require() consumers
+    // resolve the ESM .d.ts ("masquerading as ESM", #408).
     expect(pkg.exports['.']).toEqual({
-      types: './dist/index.d.ts',
-      import: './dist/index.js',
-      require: './dist/index.cjs',
+      import: { types: './dist/index.d.ts', default: './dist/index.js' },
+      require: { types: './dist/index.d.cts', default: './dist/index.cjs' },
     })
     expect(pkg.exports['./styles.css']).toBe('./dist/styles.css')
     expect(pkg.exports['./tokens.css']).toBe('./dist/tokens.css')
+    expect(pkg.exports['./package.json']).toBe('./package.json')
   })
 
   it('exposes one subpath per component folder', () => {
     const subpaths = Object.keys(pkg.exports)
-      .filter((key) => !['.', './styles.css', './tokens.css'].includes(key))
+      .filter((key) => !['.', './styles.css', './tokens.css', './package.json'].includes(key))
       .map((key) => key.slice(2))
       .sort()
     expect(subpaths).toEqual(folders)
