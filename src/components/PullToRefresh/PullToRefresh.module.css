@@ -1,0 +1,155 @@
+/**
+ * MD3 pull-to-refresh (Compose PullToRefreshBox + PullToRefreshDefaults).
+ *
+ * The root is the scroll container. The indicator rides in a zero-height
+ * sticky anchor at the top of the scrollport (so it stays put while the
+ * content scrolls) and is clipped by the scrollport above its top edge —
+ * Compose's `clipRect(top = 0)`.
+ *
+ * Indicator flavors (PullToRefreshDefaults):
+ *   circular  40dp circle, surfaceContainerHigh, onSurfaceVariant, Level2
+ *   loading   48dp circle, LoadingIndicator contained colors
+ *             (primaryContainer / onPrimaryContainer), Level0
+ *
+ * Motion: the settle to the threshold / back to hidden is Compose's
+ * `Animatable.animateTo` default `spring()` (no bounce, StiffnessMedium) —
+ * not a MotionScheme key, so it stays on the duration / easing tokens.
+ * The determinate ↔ indeterminate crossfade and the arrow alpha use
+ * MotionSchemeKeyTokens.DefaultEffects, as Compose does.
+ *
+ * Public styling hooks (root): data-indicator / data-refreshing /
+ * data-pulling / data-disabled and --md-pull-to-refresh-progress.
+ */
+
+.root {
+  position: relative;
+  display: block;
+  overflow-y: auto;
+  /* The pull replaces the overscroll: no scroll chaining to the page (and
+     no browser pull-to-refresh) from inside the container. */
+  overscroll-behavior-y: contain;
+}
+
+.root[data-pulling] {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.anchor {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 0;
+  pointer-events: none;
+}
+
+.indicator {
+  --_container-size: 48px;
+  --_container-color: var(--md-sys-color-primary-container);
+  --_indicator-color: var(--md-sys-color-on-primary-container);
+  --_container-elevation: var(--md-sys-elevation-shadow-level0);
+
+  position: absolute;
+  top: 0;
+  left: calc(50% - var(--_container-size) / 2);
+  width: var(--_container-size);
+  height: var(--_container-size);
+  border-radius: var(--md-sys-shape-corner-full);
+  background-color: var(--_container-color);
+  color: var(--_indicator-color);
+  overflow: hidden;
+  box-shadow: none;
+  will-change: transform;
+  transition:
+    transform var(--md-sys-motion-duration-medium1)
+      var(--md-sys-motion-easing-standard),
+    box-shadow var(--md-sys-motion-duration-medium1)
+      var(--md-sys-motion-easing-standard),
+    opacity var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing);
+}
+
+.root[data-indicator='circular'] .indicator {
+  --_container-size: 40px;
+  --_container-color: var(--md-sys-color-surface-container-high);
+  --_indicator-color: var(--md-sys-color-on-surface-variant);
+  --_container-elevation: var(--md-sys-elevation-shadow-level2);
+}
+
+/* Compose shows the shadow only while the indicator is out. */
+.indicator[data-visible] {
+  box-shadow: var(--_container-elevation);
+}
+
+/* The indicator follows the finger directly while pulling. */
+.root[data-pulling] .indicator {
+  transition:
+    box-shadow var(--md-sys-motion-duration-medium1)
+      var(--md-sys-motion-easing-standard),
+    opacity var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing);
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
+}
+
+.layer[data-hidden] {
+  opacity: 0;
+}
+
+/* Crossfade in (Compose Crossfade, DefaultEffects). */
+.spinner:not([data-hidden]) {
+  animation: pull-to-refresh-fade-in
+    var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
+}
+
+@keyframes pull-to-refresh-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Circular arrow: MinAlpha 0.3 below the threshold, 1 past it. */
+.arrow {
+  display: block;
+  overflow: visible;
+  transition: opacity var(--md-sys-motion-spring-default-effects-duration)
+    var(--md-sys-motion-spring-default-effects-easing);
+}
+
+.arrow[data-dim] {
+  opacity: 0.3;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* B3 / B32: no spatial motion under reduced motion — the indicator stays at
+   its resting position (JS) and only fades. */
+@media (prefers-reduced-motion: reduce) {
+  .indicator,
+  .root[data-pulling] .indicator {
+    transition:
+      box-shadow var(--md-sys-motion-duration-medium1)
+        var(--md-sys-motion-easing-standard),
+      opacity var(--md-sys-motion-spring-default-effects-duration)
+        var(--md-sys-motion-spring-default-effects-easing);
+  }
+}
