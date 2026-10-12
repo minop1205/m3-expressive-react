@@ -2,7 +2,32 @@
 
 ## Unreleased
 
+### Added
+
+- **Dialog / BottomSheet / SideSheet / NavigationDrawer / NavigationRail
+  (modal)**: `onClose` now receives `(event, reason)` with `reason` one of
+  `'escapeKeyDown' | 'backdropClick' | 'closeButton' | 'drag'` as applicable
+  (exported per component, e.g. `DialogCloseReason`). Non-breaking (#407,
+  ruling B7 addendum).
+- **NavigationDrawer**: `defaultValue` for uncontrolled selection, like
+  NavigationBar / NavigationRail (#421).
+
+### Changed
+
+- **Dialog** `fullScreen`: the close button is now a standard `IconButton`
+  (ripple, pressed state layer, focus ring) labelled by `closeLabel` (#423).
+
 ### Fixed
+
+- **BottomSheet**: a fling followed by a pause no longer dismisses on
+  release (velocity is measured up to the release); `pointercancel` after a
+  drag no longer swallows the next handle activation (#433).
+- **SnackbarProvider**: a queued snackbar that appears under a resting
+  pointer starts paused (#423).
+- **NavigationDrawer** `variant="modal"`: the dialog surface is a `<div>`
+  (`role="dialog"` is not allowed on `<aside>`) (#429).
+- **Modal overlays**: the body scroll lock pads the body by the scrollbar
+  width, so the page no longer shifts sideways on open (#424).
 
 - **Package**: the root entry's types now resolve per condition
   (`import` → `index.d.ts`, `require` → `index.d.cts`), so CommonJS
