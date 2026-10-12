@@ -472,3 +472,78 @@ describe('TextField native form integration (#432)', () => {
     expect(screen.getByRole('textbox')).toHaveAttribute('aria-describedby', 'extra')
   })
 })
+
+describe('TextField label placement (B37, #439)', () => {
+  const root = (container: HTMLElement) => container.querySelector(`.${styles.textField}`)!
+
+  it("labelPlacement='above' renders the label outside the container", () => {
+    const { container } = render(<TextField label="Email" labelPlacement="above" required />)
+    const input = screen.getByRole('textbox', { name: 'Email' })
+    const label = container.querySelector(`.${styles.aboveLabel}`)!
+    expect(label.tagName).toBe('LABEL')
+    expect(label).toHaveAttribute('for', input.id)
+    expect(label).toHaveTextContent('Email*')
+    // Before the container, not inside it; no floating label.
+    expect(label.nextElementSibling).toHaveClass(styles.field)
+    expect(container.querySelector(`.${styles.field} label`)).toBeNull()
+    expect(container.querySelectorAll('label')).toHaveLength(1)
+    // The container lays out like a label-less field.
+    expect(root(container)).toHaveClass(styles.noLabel)
+  })
+
+  it("labelPlacement='above' draws no outlined notch", () => {
+    const { container } = render(
+      <TextField variant="outlined" label="Email" labelPlacement="above" />,
+    )
+    expect(container.querySelector(`.${styles.outlineLabel}`)).toBeNull()
+    expect(root(container)).toHaveClass(styles.noLabel)
+  })
+
+  it("labelPlacement='above' clicks on the label focus the input", async () => {
+    const user = userEvent.setup()
+    render(<TextField label="Email" labelPlacement="above" />)
+    await user.click(screen.getByText('Email'))
+    expect(screen.getByRole('textbox')).toHaveFocus()
+  })
+
+  it("labelPlacement='above' without a label renders nothing extra", () => {
+    const { container } = render(<TextField labelPlacement="above" aria-label="x" />)
+    expect(container.querySelector('label')).toBeNull()
+  })
+
+  it('shrinkLabel keeps the floating label minimized (both variants)', () => {
+    const { container, rerender } = render(<TextField label="Amount" shrinkLabel />)
+    expect(root(container)).toHaveClass(styles.shrinkLabel)
+    expect(root(container)).not.toHaveClass(styles.noLabel)
+    expect(container.querySelector(`.${styles.field} .${styles.label}`)).toHaveTextContent('Amount')
+
+    rerender(<TextField variant="outlined" label="Amount" shrinkLabel />)
+    expect(root(container)).toHaveClass(styles.shrinkLabel)
+    expect(container.querySelector(`.${styles.outlineLabel}`)).toHaveTextContent('Amount')
+  })
+
+  it('shrinkLabel has no effect without a label or with the label above', () => {
+    const { container, rerender } = render(<TextField shrinkLabel aria-label="x" />)
+    expect(root(container)).not.toHaveClass(styles.shrinkLabel)
+    rerender(<TextField label="Amount" labelPlacement="above" shrinkLabel />)
+    expect(root(container)).not.toHaveClass(styles.shrinkLabel)
+  })
+
+  it('defaults to the floating placement (no new classes)', () => {
+    const { container } = render(<TextField label="Name" />)
+    expect(root(container)).not.toHaveClass(styles.shrinkLabel)
+    expect(container.querySelector(`.${styles.aboveLabel}`)).toBeNull()
+  })
+
+  it('has no axe violations with the label above or shrunk', async () => {
+    const { container } = render(
+      <>
+        <TextField label="Above filled" labelPlacement="above" supportingText="Help" />
+        <TextField variant="outlined" label="Above outlined" labelPlacement="above" error errorText="Error" />
+        <TextField label="Shrunk filled" shrinkLabel placeholder="Placeholder" />
+        <TextField variant="outlined" label="Shrunk outlined" shrinkLabel prefixText="$" />
+      </>,
+    )
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
