@@ -1,0 +1,147 @@
+---
+title: PullToRefresh
+---
+
+import { useRef, useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { PullToRefresh, List, ListItem, Button } from 'm3-expressive-react'
+
+export const frameStyle = {
+  width: '100%',
+  maxWidth: 360,
+  border: '1px solid var(--md-sys-color-outline-variant)',
+  borderRadius: 12,
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
+  background: 'var(--md-sys-color-surface)',
+}
+
+export const headerStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: '8px 8px 8px 16px',
+  borderBottom: '1px solid var(--md-sys-color-outline-variant)',
+  color: 'var(--md-sys-color-on-surface)',
+}
+
+export function Feed({ indicator }) {
+  const [refreshing, setRefreshing] = useState(false)
+  const [round, setRound] = useState(1)
+  const timer = useRef(0)
+  const refresh = () => {
+    setRefreshing(true)
+    window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(() => {
+      setRound((r) => r + 1)
+      setRefreshing(false)
+    }, 2000)
+  }
+  return (
+    <div style={frameStyle}>
+      <div style={headerStyle}>
+        <span>{indicator === 'circular' ? 'Circular' : 'Loading'} indicator</span>
+        <Button variant="text" onClick={refresh} disabled={refreshing}>
+          Refresh
+        </Button>
+      </div>
+      <PullToRefresh
+        indicator={indicator}
+        refreshing={refreshing}
+        onRefresh={refresh}
+        style={{ height: 320 }}
+      >
+        <List>
+          {Array.from({ length: 10 }, (_, i) => (
+            <ListItem key={i} headline={`Message ${i + 1}`} supportingText={`Fetched in round ${round}`} />
+          ))}
+        </List>
+      </PullToRefresh>
+    </div>
+  )
+}
+
+# PullToRefresh
+
+MD3 pull-to-refresh (Compose `PullToRefreshBox`) — the interaction the
+[loading indicator](/components/loadingindicator) is designed for. Pull the
+list down from its top (touch, mouse or pen): the indicator follows at half
+the finger speed, shows the pulled fraction as a determinate indicator, and
+releasing past the 80px threshold calls `onRefresh`. While `refreshing` it
+sits at the threshold with an indeterminate indicator.
+
+<Demo>
+  <Feed />
+  <Feed indicator="circular" />
+</Demo>
+
+```tsx
+const [refreshing, setRefreshing] = useState(false)
+const reload = async () => {
+  setRefreshing(true)
+  await fetchMessages()
+  setRefreshing(false)
+}
+
+<Button variant="text" onClick={reload}>Refresh</Button>
+<PullToRefresh refreshing={refreshing} onRefresh={reload} style={{ height: 480 }}>
+  <List>{messages}</List>
+</PullToRefresh>
+```
+
+## The scroll container
+
+`PullToRefresh` **is** the scroll container (`overflow-y: auto`): give it a
+height — or a flex / grid track — and put the content inside. `ref`,
+`onScroll`, `className` and `style` land on that element. A pull starts only
+while it, and every scrollable element between it and the pointer, is
+scrolled to the top, so nested scrollers do not trigger it by accident. The
+page (`window`) scroll is not covered.
+
+## Indicators
+
+- `indicator="loading"` (default) — the Expressive contained loading
+  indicator: 48dp, PrimaryContainer / OnPrimaryContainer, no elevation. It
+  morphs from a circle to the soft-burst shape while pulling and keeps
+  turning past the threshold.
+- `indicator="circular"` — the classic indicator: a 40dp
+  SurfaceContainerHigh disc at elevation level 2 with an arrow arc that
+  becomes a spinner.
+
+## Refreshing state
+
+`refreshing` is controlled. Leave it out and return a promise from
+`onRefresh` to let the component show the refresh until the promise settles:
+
+```tsx
+<PullToRefresh onRefresh={() => queryClient.invalidateQueries()}>…</PullToRefresh>
+```
+
+`disabled` turns the gesture off (a refresh in progress is still shown), and
+`threshold` changes the release distance (px of indicator travel, after the
+0.5 drag resistance).
+
+## Accessibility
+
+- **The pull gesture is not keyboard-reachable.** Always provide a visible
+  refresh control as well — a button in the app bar, a menu item, or a
+  keyboard shortcut — that runs the same refresh.
+- While refreshing, the container has `aria-busy="true"` and a polite live
+  region (`role="status"`, outside the busy container) announces
+  `refreshingLabel` (default "Refreshing"; localize it).
+- The indicator is decorative to assistive technology (`aria-hidden`); the
+  live region carries the announcement.
+- Under `prefers-reduced-motion: reduce` the indicator does not move with the
+  finger: it fades in at its resting position.
+
+## Styling hooks
+
+The root exposes `data-indicator`, `data-refreshing`, `data-pulling`,
+`data-disabled`, and `--md-pull-to-refresh-progress` (the indicator's
+distance fraction: 0 at rest, 1 at the threshold, up to 2 when over-pulled).
+
+## Props
+
+<PropsTable component="PullToRefresh" />

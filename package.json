@@ -272,6 +272,17 @@
         "default": "./dist/components/ProgressIndicator/index.cjs"
       }
     },
+    "./PullToRefresh": {
+      "import": {
+        "types": "./dist/components/PullToRefresh/index.d.ts",
+        "node": "./dist/components/PullToRefresh/index.js",
+        "default": "./dist/PullToRefresh/index.js"
+      },
+      "require": {
+        "types": "./dist/components/PullToRefresh/index.d.cts",
+        "default": "./dist/components/PullToRefresh/index.cjs"
+      }
+    },
     "./Radio": {
       "import": {
         "types": "./dist/components/Radio/index.d.ts",
@@ -505,6 +516,9 @@
       ],
       "ProgressIndicator": [
         "./dist/components/ProgressIndicator/index.d.ts"
+      ],
+      "PullToRefresh": [
+        "./dist/components/PullToRefresh/index.d.ts"
       ],
       "Radio": [
         "./dist/components/Radio/index.d.ts"
