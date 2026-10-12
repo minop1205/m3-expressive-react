@@ -158,6 +158,23 @@ describe('SnackbarProvider / useSnackbar', () => {
     expect(r.reason).toBe('timeout')
   })
 
+  it('starts a queued snackbar paused when it appears under a resting pointer (#423)', async () => {
+    setup()
+    const a = showTracked('First')
+    const b = showTracked('Second')
+    fireEvent.pointerEnter(screen.getByText('First'))
+    act(() => api.close())
+    await advance(150)
+    expect(a.reason).toBe('dismiss')
+    expect(screen.getByText('Second')).toBeInTheDocument()
+    // No new pointerenter: the pointer never moved, yet B stays paused.
+    await advance(10_000)
+    expect(b.reason).toBeUndefined()
+    fireEvent.pointerLeave(screen.getByText('Second'))
+    await advance(4000)
+    expect(b.reason).toBe('timeout')
+  })
+
   it('pauses the timer while focus is inside', async () => {
     setup()
     const r = showTracked({ message: 'Focus me', actionLabel: 'Retry', duration: 'short' })
