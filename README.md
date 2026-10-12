@@ -53,6 +53,35 @@ export function App() {
 > Docusaurus' default minimizer — set `USE_SIMPLE_CSS_MINIFIER=true`),
 > switch to cssnano or Lightning CSS.
 
+### Next.js App Router
+
+Interactive components (and `ThemeProvider`) ship with a `'use client'`
+directive, so you can import them straight into Server Components such as
+`app/layout.tsx` / `app/page.tsx` — no wrapper file needed. The usual React
+Server Components rule applies: event handlers (`onClick`, `onChange`, …)
+can't be passed from a Server Component, so put interactive markup in your
+own `'use client'` component. Presentational `Badge` / `Divider` and the pure
+helpers (`generateColorScheme`, `schemeToCssVars`, `schemeToCssText`, motion
+tokens) stay server-safe.
+
+```tsx
+// app/layout.tsx (Server Component)
+import { ThemeProvider } from 'm3-expressive-react'
+import 'm3-expressive-react/styles.css'
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <ThemeProvider seedColor="#6750A4" mode="light">
+          {children}
+        </ThemeProvider>
+      </body>
+    </html>
+  )
+}
+```
+
 ## Per-component imports
 
 Every component folder is also its own entry point with a **default
