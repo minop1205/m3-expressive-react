@@ -28,6 +28,42 @@ export const Standard: Story = {
   },
 }
 
+/**
+ * `variant="dismissible"` (Compose DismissibleNavigationDrawer): inline, no
+ * scrim — toggling `open` slides the drawer in / out and pushes the content.
+ */
+export const Dismissible: Story = {
+  render: () => {
+    const [open, setOpen] = useState(true)
+    const [value, setValue] = useState('inbox')
+    return (
+      <div style={{ height: 480, display: 'flex', overflow: 'hidden' }}>
+        <NavigationDrawer
+          id="dismissible-drawer"
+          variant="dismissible"
+          open={open}
+          onClose={() => setOpen(false)}
+          value={value}
+          onChange={(_event, v) => setValue(v)}
+        >
+          <NavigationDrawerItem value="inbox" icon={<Inbox />} label="Inbox" badge="24" />
+          <NavigationDrawerItem value="starred" icon={<Star />} label="Starred" />
+        </NavigationDrawer>
+        <main style={{ flex: 1, minWidth: 0, padding: 24 }}>
+          <Button
+            variant="outlined"
+            aria-expanded={open}
+            aria-controls="dismissible-drawer"
+            onClick={() => setOpen((o) => !o)}
+          >
+            {open ? 'Close drawer' : 'Open drawer'}
+          </Button>
+        </main>
+      </div>
+    )
+  },
+}
+
 export const Modal: Story = {
   render: () => {
     const [open, setOpen] = useState(true)

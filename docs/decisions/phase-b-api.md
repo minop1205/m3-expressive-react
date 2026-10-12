@@ -58,6 +58,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B38 | #440 | Tooltip の配置拡張・rich の既定位置・caret | **`placement` に `'start' \| 'end' \| 'left' \| 'right'`(論理値は RTL で反転、flip あり)、`placement` 未指定の rich は bottom-end の角 + 4 隅の動的配置、`caret?: boolean`(16×8dp)** | 既定値変更(rich の未指定時の位置) | 決定(2026-10-13・#440 の提案どおり) |
 | B32 | #441 | PullToRefresh(新規) | **自身がスクロールコンテナになる `<PullToRefresh refreshing onRefresh indicator disabled threshold>`、touch + pointer、reduced motion はフェードのみ、`aria-busy` + polite live region** | なし(追加) | 決定(2026-10-13・#441 の API 案をもとに確定) |
 | B40 | #443 | Tabs のインラインアイコンとバッジ | **`Tab iconPosition="top" \| "start"`(MUI 名、既定 `'top'`)+ `badge={<Badge …/>}`(アイコン上 / テキストのみはラベルの後ろ、読み上げはラベルの後)** | なし(追加) | 決定(2026-10-13・#443 の API 案どおり) |
+| B41 | #444 | 小さな構成の不足(FabMenu 配置・Toolbar elevation・dismissible drawer・Carousel 幅) | **FabMenu `horizontalAlignment`、Toolbar `disableElevation`、NavigationDrawer `variant="dismissible"`、Carousel `itemWidth` の JSDoc 修正** | なし(追加) | 決定(2026-10-13) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -1136,6 +1137,63 @@ API:
 
 **影響**: 非破壊(新規コンポーネント・新しい subpath `m3-expressive-react/PullToRefresh`)。VRT: `Components/PullToRefresh` の
 Default / Refreshing / Circular を追加。
+
+---
+
+## 2026-10 スイープの小さな構成追加
+
+### B41: FabMenu の配置・Toolbar の elevation・dismissible drawer・Carousel の幅(#444 の小項目)
+
+- **Issue**: #444(トラッキング。TimePicker のホイール / vibrant / 横向き、ScrollField、TextField tonal / secure、
+  VerticalDragHandle は別途。#444 は開いたまま)
+- **状態**: 決定(2026-10-13)
+- **背景**: 2026-10-09 の m3.material.io / Compose androidx-main スイープで見つかった、優先度の低い構成の不足のうち
+  小さな 4 件。いずれも既存 API の語彙で足せる。
+
+**決定**
+
+1. **FabMenu `horizontalAlignment?: 'start' | 'center' | 'end'`(既定 `'end'`、既存の見た目は不変)**
+   - Compose `FloatingActionButtonMenu(horizontalAlignment: Alignment.Horizontal = Alignment.End)`
+     (FloatingActionButtonMenu.kt:120)。項目列とボタンを同じ alignment で置き(:181 / :186)、各項目も列内で
+     揃え(:299)、項目の幅リビールも同じ端を基準にする(:390 — `End` は trailing 端から、`Start` は leading 端から、
+     `CenterHorizontally` は中央から開く)
+   - prop 名は Compose と同じ。値は Web の論理方向(`start` / `end`、RTL で鏡映)。`'end'` のときは `data-alignment`
+     を出さず、既存の DOM / CSS をそのまま使う(既存ストーリーはピクセル不変)
+   - close ボタンは alignment に関係なく FAB の footprint の上端 trailing 角に固定する。Compose の
+     `ToggleFloatingActionButton(contentAlignment = Alignment.TopEnd)`(:450)は menu の alignment と独立した引数で、
+     既定は TopEnd のため。これを変える prop は足さない(必要になったら別途)
+2. **Toolbar `disableElevation?: boolean`(既定 false、floating のみ有効)**
+   - m3 toolbars guidelines「The elevation on floating toolbars can be removed if on a visually distinct background」。
+     Fab の `disableElevation` と同名(前例あり)。docked はもともと影がないので、`data-disable-elevation` は floating
+     のときだけ出す
+   - toolbar 監査(docs/audits/toolbar.md 軽微欄)の「`style` / `className` で外せるので prop は不要」は本裁定で
+     superseded(監査側に相互参照を追記)
+3. **NavigationDrawer `variant="dismissible"`**(Compose `DismissibleNavigationDrawer`、NavigationDrawer.kt:489)
+   - 現行の構造に素直に収まるので実装した。standard と同じインラインの `<aside>`(Surface —
+     `DismissibleDrawerSheet` の既定 `DrawerDefaults.standardContainerColor`、:737)を `open` で出し入れする。
+     scrim・focus trap・`useModal` なし
+   - Compose は content を drawer の offset 分だけずらす(:581 `contentX = sheet.width + offset`)。Web では閉じた
+     drawer を負の `margin-inline-start`(自身の幅)で inline-start 側へ逃がし、flex / grid の隣の兄弟が空いた幅を
+     使う — content は覆われず押される。利用側は drawer と content を横並びの行に置く(`overflow: hidden` 推奨)。
+     content の子に drawer を取る API(Compose の `content` スロット)は足さない — standard / modal と同じく
+     drawer はパネルだけを描く
+   - モーション: 開き DefaultSpatial・閉じ FastEffects(:501–502、modal と同じ)。reduced motion は即時(B3 —
+     閉じは spatial な性質を effects トークンで動かすので CSS で無効化)
+   - フォーカス: 開いたら選択中(なければ先頭)の項目へ(Compose :513 `focusRequester.requestFocus()`)。
+     マウント時点で開いているときは動かさない。Escape(drawer 内にフォーカスがあるとき、Compose :548)で
+     `onClose(event, 'escapeKeyDown')`。閉じた drawer は `inert`(Compose は閉じた sheet を配置しない、:584–588)。
+     フォーカスを持ったまま閉じたら、開く前にフォーカスがあった要素へ返す
+   - `open` は modal と同じく controlled のみ(既定 false)。トグル側の `aria-expanded` / `aria-controls` は JSDoc と
+     docs で案内する
+4. **Carousel `itemWidth` の JSDoc**: 上限ではなく**目標値**であることを明記(Compose は androidx `98c93887a0` で
+   `maxItemWidth` → `preferredItemWidth` に改名。carousel/Carousel.kt:85–90 multi-browse、:241–248 hero)。末尾では
+   最後の項目が end に揃うよう配置がずれること(:224–232)、hero は 3 項目未満だと中央揃えにできず start 揃えのまま
+   (carousel/Keylines.kt:229 `isCentered && itemCount >= 3`、Carousel.kt:234)も書いた。prop 名は変えない(`itemWidth`
+   のまま — 型の破壊を避ける。挙動は既に Compose どおり)。m3 の寸法表の「最大幅を指定」は改名前の記述と見なす
+
+**影響**: 非破壊(prop と variant 値の追加・JSDoc のみ)。既定値は不変、既存ストーリーはピクセル不変。VRT: FabMenu
+`HorizontalAlignment` / `RightToLeftStart`、Toolbar `FloatingWithoutElevation`、NavigationDrawer `Dismissible` を追加。
+対象: FabMenu、Toolbar、NavigationDrawer、Carousel。
 
 ---
 
