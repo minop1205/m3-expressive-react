@@ -162,6 +162,23 @@ describe('SearchBar', () => {
     expect(screen.getByRole('searchbox')).not.toHaveAttribute('data-testid')
   })
 
+  it('calls the consumer onPointerDownCapture / onPointerUpCapture on the root', () => {
+    const onPointerDownCapture = vi.fn()
+    const onPointerUpCapture = vi.fn()
+    render(
+      <SearchBar
+        aria-label="Search"
+        onPointerDownCapture={onPointerDownCapture}
+        onPointerUpCapture={onPointerUpCapture}
+      />,
+    )
+    const input = screen.getByRole('searchbox')
+    fireEvent.pointerDown(input)
+    fireEvent.pointerUp(input)
+    expect(onPointerDownCapture).toHaveBeenCalledTimes(1)
+    expect(onPointerUpCapture).toHaveBeenCalledTimes(1)
+  })
+
   it('has no axe violations', async () => {
     const { container } = render(<SearchBar aria-label="Search products" />)
     expect(await axe(container)).toHaveNoViolations()

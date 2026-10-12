@@ -2,7 +2,6 @@
 
 import {
   Children,
-  cloneElement,
   forwardRef,
   useEffect,
   useId,
@@ -18,6 +17,14 @@ import {
 } from 'react'
 import clsx from 'clsx'
 import { usePopupPosition } from '../../internal/usePopupPosition'
+import {
+  FORWARDED_TRIGGER_PROPS,
+  TRIGGER_SLOT,
+  applyTriggerProps,
+  baseTriggerProps,
+  findTriggerElement,
+  type TriggerProps,
+} from '../../internal/triggerSlot'
 import styles from './Tooltip.module.css'
 
 export type TooltipVariant = 'plain' | 'rich'
@@ -130,10 +137,14 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     onFocus,
     onBlur,
     onClickCapture,
-    ...rest
+    ...restProps
   },
   ref,
 ) {
+  // Trigger props forwarded by an enclosing Menu (internal, #419).
+  const { [FORWARDED_TRIGGER_PROPS]: forwarded, ...rest } = restProps as typeof restProps & {
+    [FORWARDED_TRIGGER_PROPS]?: TriggerProps
+  }
   const id = useId()
   const subheadId = `${id}-subhead`
   const textId = `${id}-text`
@@ -193,10 +204,18 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     if (persistentRef.current || !openRef.current) return
     if (!hovered.current && !focusWithin.current) scheduleHide()
   }
+  // While a popup the trigger opens is expanded (an enclosing Menu forwards
+  // `aria-expanded`), the transient tooltip stays hidden so it doesn't cover
+  // the menu.
+  const suppressed = !persistent && forwarded?.['aria-expanded'] === true
+  const suppressedRef = useRef(suppressed)
+  suppressedRef.current = suppressed
   const show = () => {
     cancelHide()
+    if (suppressedRef.current) return
     setOpen(true)
   }
+  const triggerElement = () => findTriggerElement(wrapperRef.current, popupRef.current)
 
   useEffect(
     () => () => {
@@ -230,9 +249,7 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
       const focusInPopup = popupRef.current?.contains(document.activeElement) ?? false
       escapeDismissed.current = focusWithin.current
       close()
-      if (focusInPopup) {
-        ;(wrapperRef.current?.firstElementChild as HTMLElement | null)?.focus()
-      }
+      if (focusInPopup) triggerElement()?.focus()
     }
     const onPointerDown = (event: globalThis.PointerEvent) => {
       if (wrapperRef.current?.contains(event.target as Node)) return
@@ -247,6 +264,11 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
 
+  useEffect(() => {
+    if (suppressed) close()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suppressed])
+
   const side = usePopupPosition({
     open: isOpen,
     anchorRef: wrapperRef,
@@ -256,7 +278,11 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     margin: VIEWPORT_MARGIN_PX,
   })
 
-  const child = Children.only(children) as ReactElement<{
+  const child = Children.only(children) as ReactElement<Record<string, unknown>>
+  // What the trigger already carries: its own props, or — when it is a Menu
+  // — the props an outer wrapper forwarded. Ours are forwarded through a
+  // Menu so they land on the real button (#419).
+  const base = baseTriggerProps(child, forwarded) as {
     'aria-describedby'?: string
     'aria-expanded'?: boolean
     'aria-haspopup'?: 'dialog'
@@ -269,7 +295,7 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     onPointerCancel?: (event: PointerEvent) => void
     onContextMenu?: (event: MouseEvent) => void
     onClick?: (event: MouseEvent) => void
-  }>
+  }
 
   // Popup ARIA: a rich tooltip with actions is a non-modal dialog (B11) whose
   // content the trigger is described by; otherwise the popup is the tooltip.
@@ -277,7 +303,7 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     ? [hasSubhead ? subheadId : undefined, text != null ? textId : undefined]
     : [id]
   const describedBy =
-    [child.props['aria-describedby'], ...(isOpen ? descriptionIds : [])]
+    [base['aria-describedby'], ...(isOpen ? descriptionIds : [])]
       .filter(Boolean)
       .join(' ') || undefined
 
@@ -286,7 +312,7 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     longPress.current.timer = undefined
   }
 
-  const trigger = cloneElement(child, {
+  const trigger = applyTriggerProps(child, forwarded, {
     'aria-describedby': describedBy,
     ...(persistent && {
       'aria-expanded': isOpen,
@@ -295,18 +321,18 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     }),
     // Pointer events (not mouse events) so the compatibility mouse events a
     // touch tap fires don't open the tooltip; touch uses long-press instead.
-    onPointerEnter: compose(child.props.onPointerEnter, (event: PointerEvent) => {
+    onPointerEnter: compose(base.onPointerEnter, (event: PointerEvent) => {
       if (event.pointerType === 'touch') return
       hovered.current = true
       if (!persistentRef.current) show()
       else cancelHide()
     }),
-    onPointerLeave: compose(child.props.onPointerLeave, (event: PointerEvent) => {
+    onPointerLeave: compose(base.onPointerLeave, (event: PointerEvent) => {
       if (event.pointerType === 'touch') return
       hovered.current = false
       maybeScheduleHide()
     }),
-    onPointerDown: compose(child.props.onPointerDown, (event: PointerEvent) => {
+    onPointerDown: compose(base.onPointerDown, (event: PointerEvent) => {
       // A browser may not follow a long-press with a click; never let a stale
       // flag eat the next press.
       longPress.current.suppressClick = false
@@ -324,14 +350,14 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
         show()
       }, LONG_PRESS_MS)
     }),
-    onPointerMove: compose(child.props.onPointerMove, (event: PointerEvent) => {
+    onPointerMove: compose(base.onPointerMove, (event: PointerEvent) => {
       const state = longPress.current
       if (event.pointerType !== 'touch' || state.timer === undefined) return
       if (Math.hypot(event.clientX - state.x, event.clientY - state.y) > LONG_PRESS_SLOP_PX) {
         clearLongPress()
       }
     }),
-    onPointerUp: compose(child.props.onPointerUp, (event: PointerEvent) => {
+    onPointerUp: compose(base.onPointerUp, (event: PointerEvent) => {
       if (event.pointerType !== 'touch') return
       lastTouchAt.current = Date.now()
       clearLongPress()
@@ -344,7 +370,7 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
         scheduleHide()
       }
     }),
-    onPointerCancel: compose(child.props.onPointerCancel, (event: PointerEvent) => {
+    onPointerCancel: compose(base.onPointerCancel, (event: PointerEvent) => {
       if (event.pointerType !== 'touch') return
       clearLongPress()
       if (longPress.current.fired) {
@@ -358,16 +384,16 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
         event.preventDefault()
         return
       }
-      child.props.onContextMenu?.(event)
+      base.onContextMenu?.(event)
     },
     onClick: (event: MouseEvent) => {
-      child.props.onClick?.(event)
+      base.onClick?.(event)
       if (persistentRef.current && !event.defaultPrevented) {
         if (openRef.current) close()
         else show()
       }
     },
-  } as Partial<typeof child.props>)
+  })
 
   const handleFocus = (event: FocusEvent<HTMLSpanElement>) => {
     onFocus?.(event)
@@ -376,7 +402,22 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     // opens on long-press only) nor cancels the long-press hide delay.
     if (Date.now() - lastTouchAt.current < TOUCH_FOCUS_WINDOW_MS) return
     cancelHide()
-    const triggerEl = wrapperRef.current?.firstElementChild
+    const target = event.target as Element
+    // Focus moving into a popup the trigger opened (a Menu nested in the
+    // tooltip) hides the tooltip so it doesn't cover the popup.
+    const nestedPopup = target.closest?.('[role="menu"], [role="listbox"], [role="dialog"]')
+    if (
+      nestedPopup &&
+      nestedPopup !== wrapperRef.current &&
+      wrapperRef.current?.contains(nestedPopup) &&
+      !popupRef.current?.contains(nestedPopup)
+    ) {
+      close()
+      return
+    }
+    // The real trigger: the first tabbable descendant, which is not the
+    // wrapper's first child when the trigger is a Menu (#419).
+    const triggerEl = triggerElement()
     // Focus on the trigger opens a transient tooltip, unless it was just
     // dismissed with Escape (focus returning to the trigger mustn't reopen it).
     if (!persistent && event.target === triggerEl && !escapeDismissed.current) {
@@ -461,3 +502,6 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     </span>
   )
 })
+
+// Tooltip forwards trigger props it receives from an enclosing Menu.
+;(Tooltip as unknown as Record<string, unknown>)[TRIGGER_SLOT] = 'children'

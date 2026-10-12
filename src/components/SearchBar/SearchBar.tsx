@@ -316,10 +316,12 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
         data-disabled={disabled || undefined}
         data-open={open || undefined}
         className={clsx(styles.wrapper, className)}
-        onPointerDownCapture={() => {
+        onPointerDownCapture={(event) => {
+          rest.onPointerDownCapture?.(event)
           pointerDownRef.current = true
         }}
-        onPointerUpCapture={() => {
+        onPointerUpCapture={(event) => {
+          rest.onPointerUpCapture?.(event)
           // After the press's focus changes have settled.
           setTimeout(() => {
             pointerDownRef.current = false

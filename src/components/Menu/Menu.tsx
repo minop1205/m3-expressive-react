@@ -2,7 +2,6 @@
 
 import {
   Children,
-  cloneElement,
   createContext,
   forwardRef,
   useContext,
@@ -26,6 +25,15 @@ import {
   handleMenuTypeahead,
   moveMenuFocus,
 } from '../../internal/menuNavigation'
+import {
+  FORWARDED_TRIGGER_PROPS,
+  TRIGGER_SLOT,
+  applyTriggerProps,
+  baseTriggerProps,
+  findTriggerElement,
+  innermostTrigger,
+  type TriggerProps,
+} from '../../internal/triggerSlot'
 import styles from './Menu.module.css'
 
 interface MenuContextValue {
@@ -110,10 +118,14 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     color = 'standard',
     className,
     onKeyDown,
-    ...rest
+    ...restProps
   },
   ref,
 ) {
+  // Trigger props forwarded by an enclosing Tooltip (internal, #419).
+  const { [FORWARDED_TRIGGER_PROPS]: forwarded, ...rest } = restProps as typeof restProps & {
+    [FORWARDED_TRIGGER_PROPS]?: TriggerProps
+  }
   const [uncontrolled, setUncontrolled] = useState(defaultOpen)
   const isControlled = controlledOpen !== undefined
   const open = isControlled ? controlledOpen : uncontrolled
@@ -133,10 +145,17 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     latest.current.onOpenChange?.(value)
   }
 
-  // The trigger is always the wrapper's first element child; focusing it via
-  // the DOM avoids fragile ref-merging with a user-provided element.
+  // Focus the real trigger element via the DOM (avoids fragile ref-merging
+  // with a user-provided element): the element carrying the trigger id, or
+  // the first tabbable descendant outside the menu — not the wrapper's first
+  // child, which is a Tooltip's wrapper when the trigger has a tooltip (#419).
   const focusTrigger = () => {
-    const el = wrapperRef.current?.firstElementChild as HTMLElement | null
+    const wrapper = wrapperRef.current
+    const byId = document.getElementById(triggerId)
+    const el =
+      byId && wrapper?.contains(byId) && !menuRef.current?.contains(byId)
+        ? byId
+        : findTriggerElement(wrapper, menuRef.current)
     el?.focus()
   }
 
@@ -218,26 +237,31 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     handleMenuTypeahead(event, items, typeahead.current)
   }
 
-  const child = Children.only(trigger) as ReactElement<{
+  const child = Children.only(trigger) as ReactElement<Record<string, unknown>>
+  // What the trigger already carries: its own props, or — when it is a
+  // Tooltip — the props an outer wrapper forwarded. Ours are forwarded
+  // through a Tooltip so they land on the real button (#419).
+  const base = baseTriggerProps(child, forwarded) as {
     id?: string
     onClick?: (event: MouseEvent) => void
     onKeyDown?: (event: KeyboardEvent) => void
-  }>
+  }
   // APG menu button: the trigger controls the menu, and the menu is named
   // by the trigger unless it has its own label. Consumer ids are kept.
   const menuId = rest.id ?? `${autoId}-menu`
-  const triggerId = child.props.id ?? `${autoId}-trigger`
+  const triggerId =
+    (innermostTrigger(child).props.id as string | undefined) ?? base.id ?? `${autoId}-trigger`
   const labelledBy =
     rest['aria-label'] != null || rest['aria-labelledby'] != null ? undefined : triggerId
-  const triggerEl = cloneElement(child, {
+  const triggerEl = applyTriggerProps(child, forwarded, {
     id: triggerId,
     'aria-controls': menuId,
     onClick: (event: MouseEvent) => {
-      child.props.onClick?.(event)
+      base.onClick?.(event)
       setOpen(!open)
     },
     onKeyDown: (event: KeyboardEvent) => {
-      child.props.onKeyDown?.(event)
+      base.onKeyDown?.(event)
       if (event.defaultPrevented) return
       // Enter/Space open via the native click; the open effect focuses the
       // first item. Arrow keys open with an explicit target.
@@ -254,7 +278,7 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     },
     'aria-haspopup': 'menu',
     'aria-expanded': open,
-  } as Partial<typeof child.props>)
+  })
 
   const setMenuRef = (node: HTMLDivElement | null) => {
     menuRef.current = node
@@ -296,6 +320,9 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     </span>
   )
 })
+
+// Menu forwards trigger props it receives from an enclosing Tooltip.
+;(Menu as unknown as Record<string, unknown>)[TRIGGER_SLOT] = 'trigger'
 
 export interface MenuItemProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** Icon at the start of the item (decorative). */
