@@ -319,6 +319,32 @@ describe('List / ListItem', () => {
       expect(c).toHaveAttribute('aria-selected', 'false')
     })
 
+    it('the Tab stop follows a controlled value change until the user focuses a row', async () => {
+      const user = userEvent.setup()
+      const Example = ({ value }: { value: string }) => (
+        <List selectionMode="single" value={value} aria-label="Account">
+          <ListItem value="a" headline="Personal" />
+          <ListItem value="b" headline="Work" />
+          <ListItem value="c" headline="Other" />
+        </List>
+      )
+      const { rerender } = render(<Example value="a" />)
+      const [a, b, c] = screen.getAllByRole('option')
+      expect(a).toHaveAttribute('tabindex', '0')
+
+      rerender(<Example value="c" />)
+      expect(c).toHaveAttribute('tabindex', '0')
+      expect(a).toHaveAttribute('tabindex', '-1')
+
+      // Once the user has focused a row, the stop stays where they left it.
+      b.focus()
+      await user.keyboard('{ArrowUp}')
+      expect(a).toHaveFocus()
+      rerender(<Example value="b" />)
+      expect(a).toHaveAttribute('tabindex', '0')
+      expect(b).toHaveAttribute('tabindex', '-1')
+    })
+
     it('multiple: aria-multiselectable, toggles values', async () => {
       const user = userEvent.setup()
       const onChange = vi.fn()
