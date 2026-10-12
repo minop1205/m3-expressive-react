@@ -344,3 +344,37 @@ describe('useModal — focus return', () => {
     expect(screen.getByRole('button', { name: 'Inside' })).not.toHaveFocus()
   })
 })
+
+describe('useModal — body scroll lock', () => {
+  it('pads the body by the scrollbar width and restores it on close (#424)', () => {
+    const clientWidth = vi
+      .spyOn(document.documentElement, 'clientWidth', 'get')
+      .mockReturnValue(window.innerWidth - 15)
+    document.body.style.paddingInlineEnd = '4px'
+    try {
+      const { rerender } = render(<Modal open={false} label="A" />)
+      rerender(<Modal open label="A" />)
+      expect(document.body.style.overflow).toBe('hidden')
+      expect(document.body.style.paddingInlineEnd).toBe('19px')
+      rerender(<Modal open={false} label="A" />)
+      expect(document.body.style.overflow).toBe('')
+      expect(document.body.style.paddingInlineEnd).toBe('4px')
+    } finally {
+      clientWidth.mockRestore()
+      document.body.style.paddingInlineEnd = ''
+    }
+  })
+
+  it('adds no padding when the scrollbar takes no space', () => {
+    const clientWidth = vi
+      .spyOn(document.documentElement, 'clientWidth', 'get')
+      .mockReturnValue(window.innerWidth)
+    try {
+      const { rerender } = render(<Modal open label="A" />)
+      expect(document.body.style.paddingInlineEnd).toBe('')
+      rerender(<Modal open={false} label="A" />)
+    } finally {
+      clientWidth.mockRestore()
+    }
+  })
+})
