@@ -18,11 +18,15 @@ import {
   type NavigationRailVariant,
 } from './NavigationRailContext'
 import { useRailMorph } from './useRailMorph'
+import type { ModalCloseEvent } from '../../internal/closeReason'
 import { useModal } from '../../internal/useModal'
 import styles from './NavigationRail.module.css'
 
 export type { NavigationRailVariant, NavigationRailArrangement } from './NavigationRailContext'
 export { NavigationRailItem, type NavigationRailItemProps } from './NavigationRailItem'
+
+/** Why the modal rail asked to close (ruling B7 vocabulary): Escape or a scrim click. */
+export type NavigationRailCloseReason = 'escapeKeyDown' | 'backdropClick'
 
 export interface NavigationRailProps
   extends Omit<HTMLAttributes<HTMLElement>, 'onChange'> {
@@ -57,8 +61,11 @@ export interface NavigationRailProps
    * @default false
    */
   hideOnCollapse?: boolean
-  /** With `modal`: called when the scrim is clicked or Escape is pressed. */
-  onClose?: () => void
+  /**
+   * With `modal`: called when the scrim is clicked or Escape is pressed, with
+   * the triggering event and the `reason`.
+   */
+  onClose?: (event: ModalCloseEvent, reason: NavigationRailCloseReason) => void
   /** Accessible name of the open modal rail (a dialog). @default 'Navigation rail' */
   modalLabel?: string
   children?: ReactNode
@@ -110,7 +117,12 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
     const open = modal && expanded
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLDivElement>(null)
-    useModal({ active: open, rootRef, surfaceRef, onEscape: () => onClose?.() })
+    useModal({
+      active: open,
+      rootRef,
+      surfaceRef,
+      onEscape: (event) => onClose?.(event, 'escapeKeyDown'),
+    })
 
     const setRefs = useCallback(
       (node: HTMLElement | null) => {
@@ -178,7 +190,11 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
             data-open={open || undefined}
             data-hide-on-collapse={hide || undefined}
           >
-            <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
+            <div
+              className={styles.scrim}
+              aria-hidden="true"
+              onClick={(event) => onClose?.(event, 'backdropClick')}
+            />
             <div
               ref={surfaceRef}
               className={styles.modalSurface}

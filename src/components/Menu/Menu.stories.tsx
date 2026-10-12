@@ -3,7 +3,10 @@ import ContentCopy from '@material-symbols/svg-400/outlined/content_copy.svg?rea
 import Share from '@material-symbols/svg-400/outlined/share.svg?react'
 import FormatBold from '@material-symbols/svg-400/outlined/format_bold.svg?react'
 import FormatItalic from '@material-symbols/svg-400/outlined/format_italic.svg?react'
+import MoreVert from '@material-symbols/svg-400/outlined/more_vert.svg?react'
 import { Button } from '../Button'
+import { IconButton } from '../IconButton'
+import { Tooltip } from '../Tooltip'
 import { Menu, MenuDivider, MenuGroup, MenuItem } from './Menu'
 
 const meta = {
@@ -92,6 +95,30 @@ export const VerticalVibrant: Story = {
         <MenuGroup>
           <MenuItem startIcon={<ContentCopy />}>Copy</MenuItem>
         </MenuGroup>
+      </Menu>
+    </div>
+  ),
+}
+
+/**
+ * Overflow "More" icon button with a tooltip that opens a menu: the Tooltip
+ * wraps the trigger, and the menu-button ARIA, handlers and focus return land
+ * on the real button. Shown open so the menu surface is covered by VRT.
+ */
+export const TooltipTrigger: Story = {
+  render: () => (
+    <div style={{ paddingBottom: 160 }}>
+      <Menu
+        defaultOpen
+        aria-label="More options"
+        trigger={
+          <Tooltip text="More options">
+            <IconButton icon={<MoreVert />} aria-label="More options" variant="standard" />
+          </Tooltip>
+        }
+      >
+        <MenuItem startIcon={<ContentCopy />}>Copy</MenuItem>
+        <MenuItem startIcon={<Share />}>Share</MenuItem>
       </Menu>
     </div>
   ),

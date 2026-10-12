@@ -1,5 +1,5 @@
 import { createRef, useState } from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
@@ -317,5 +317,24 @@ describe('NavigationRail modal (#180)', () => {
       </NavigationRail>,
     )
     expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('NavigationRail modal onClose reason (#407)', () => {
+  it('passes escapeKeyDown and backdropClick', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const { container } = render(
+      <NavigationRail aria-label="Mail" modal variant="expanded" onClose={onClose} defaultValue="a">
+        <NavigationRailItem value="a" icon={Icon} label="Alpha" />
+      </NavigationRail>,
+    )
+    await user.keyboard('{Escape}')
+    expect(onClose).toHaveBeenLastCalledWith(expect.any(KeyboardEvent), 'escapeKeyDown')
+    fireEvent.click(container.querySelector('[class*="scrim"]')!)
+    expect(onClose).toHaveBeenLastCalledWith(
+      expect.objectContaining({ type: 'click' }),
+      'backdropClick',
+    )
   })
 })

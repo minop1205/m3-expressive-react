@@ -161,35 +161,6 @@
   color: var(--md-sys-color-on-surface);
 }
 
-.fsClose {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  cursor: pointer;
-  outline: none;
-  color: var(--md-sys-color-on-surface);
-}
-
-.fsClose:hover {
-  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
-}
-
-.fsClose:focus-visible {
-  outline: 2px solid var(--md-sys-color-secondary);
-}
-
-.fsClose svg {
-  width: 24px;
-  height: 24px;
-  fill: currentColor;
-}
-
 .fsTitle {
   flex: 1 1 auto;
   min-width: 0;

@@ -163,6 +163,52 @@ describe('usePopupPosition', () => {
     expect(getByTestId('popup').style.visibility).toBe('')
   })
 
+  it('keeps a focused popup focusable while its anchor is outside the viewport', () => {
+    // visibility: hidden would make the browser blur the focused element and
+    // trip close-on-focus-out (DatePickerField / SearchBar / Tooltip).
+    function FocusHarness() {
+      const anchorRef = useRef<HTMLButtonElement>(null)
+      const popupRef = useRef<HTMLDivElement>(null)
+      usePopupPosition({ open: true, side: 'bottom', anchorRef, popupRef })
+      return (
+        <>
+          <button ref={anchorRef}>anchor</button>
+          <div ref={popupRef} data-testid="popup">
+            <button>inside</button>
+          </div>
+        </>
+      )
+    }
+    let anchor = anchorAt(100, 100, 200, 40)
+    vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(800)
+    vi.spyOn(document.documentElement, 'clientHeight', 'get').mockReturnValue(600)
+    vi.spyOn(HTMLButtonElement.prototype, 'getBoundingClientRect').mockImplementation(
+      () => anchor as DOMRect,
+    )
+    const { getByTestId, getByText } = render(<FocusHarness />)
+    const popup = getByTestId('popup')
+    getByText('inside').focus()
+
+    anchor = anchorAt(100, -300, 200, 40)
+    window.dispatchEvent(new Event('scroll'))
+    expect(popup.style.visibility).toBe('')
+    expect(popup.style.opacity).toBe('0')
+    expect(popup.style.pointerEvents).toBe('none')
+    expect(document.activeElement).toBe(getByText('inside'))
+
+    anchor = anchorAt(100, 100, 200, 40)
+    window.dispatchEvent(new Event('scroll'))
+    expect(popup.style.opacity).toBe('')
+    expect(popup.style.pointerEvents).toBe('')
+
+    // Without focus inside, it leaves the accessibility tree as before.
+    getByText('inside').blur()
+    anchor = anchorAt(100, -300, 200, 40)
+    window.dispatchEvent(new Event('scroll'))
+    expect(popup.style.visibility).toBe('hidden')
+    expect(popup.style.opacity).toBe('')
+  })
+
   it('clears the hidden state when the popup closes (#430)', () => {
     const { getByTestId, rerender } = setup(
       { open: true, side: 'bottom' },

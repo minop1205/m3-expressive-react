@@ -103,6 +103,7 @@ DP9 → #157、DP10 → #158、DP11 → #159、DP12/DP13 → #160(セル配列�
 | 手入力の書式 | 入力マスクを使わない、Enter/フォーカスアウトで整形 | 数字のみ受け付けて区切り文字を自動挿入(マスク) | site 優先 → **マスクなし・確定時に解析/整形**(DP11) |
 | Container surface tint | `Container surface tint layer color`(Docked / Modal input は warning 付き) | tint なし(surface-container-high) | warning = 非推奨の旧行 → **tint なし**(現実装のまま) |
 | 日付コンテナの寸法(docked) | Docked: date container 48(state layer 40)/ Modal: 40 | 40 のセル + 48 のタッチターゲット | 実質同じ(48 のセル内に 40 の円)→ 現構造のまま |
+| 前後の月の日付(outside month)の表示と色(#429) | Docked: anatomy に「Outside month date」、トークン `Date unselected outside month label text color` = on-surface(#1D1B20)+ `… opacity` = **0.38**(Enabled 群。2026-10-12 に Playwright で再確認)。Modal のセットにはこの行がない | docked なし。modal の `Month` は月外のセルを空の `Spacer`(48dp)で埋め、数字を描かない(`DatePicker.kt` androidx-main) | 矛盾なし → **modal は描かない(現状のまま)、docked は on-surface 38% で描く(site どおり、色は変えない)**。axe `color-contrast` の 2.28:1 は誤検知扱い: この数字は選択もフォーカスもできない非アクティブな装飾(`aria-hidden`、グリッドの `gridcell` は名前なし)で、WCAG 1.4.3 の例外(inactive UI / pure decoration)に当たる。コントラストを上げると「選択できる日付」と見分けがつかなくなり spec の意図に反する。数字は `aria-hidden` の span の `::after { content: attr(data-day) }` で描き、テキストノードを置かない(アクセシビリティツリー外であることを DOM でも明示し、axe の対象からも外れる)。見た目は変わらない |
 
 ## 詳細対照表
 
