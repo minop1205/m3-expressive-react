@@ -1,6 +1,7 @@
 'use client'
 
-import { useLayoutEffect, useState, type RefObject } from 'react'
+import { useState, type RefObject } from 'react'
+import { useIsoLayoutEffect } from './useIsoLayoutEffect'
 
 /**
  * Shared anchored-popup positioning (Phase B ruling B4).
@@ -266,7 +267,7 @@ export function usePopupPosition({
 }: UsePopupPositionOptions): PopupSide {
   const [resolvedSide, setResolvedSide] = useState<PopupSide>(side)
 
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const popup = popupRef.current as PopoverElement | null
     if (!open || !popup) {
       if (popup) hideFromTopLayer(popup)
@@ -344,7 +345,7 @@ export function usePopupPosition({
 
   // Leave the top layer on unmount (a still-open popover would linger there
   // only until removal, but hiding keeps the Popover API state consistent).
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const popup = popupRef.current as PopoverElement | null
     return () => {
       if (popup) hideFromTopLayer(popup)

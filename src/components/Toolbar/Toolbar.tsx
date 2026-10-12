@@ -4,13 +4,13 @@ import {
   Children,
   forwardRef,
   useCallback,
-  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
   type HTMLAttributes,
   type ReactNode,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { getToolbarItems, handleToolbarKeyDown } from '../../internal/toolbarNavigation'
 import { holdsKeyboardFocus, releaseFocus } from '../../internal/barFocus'
@@ -235,7 +235,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
   )
 
   // The `hidden` state prop needs the exit distance as well.
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     if (hiddenProp) setHiddenDistance(measureExitDistance())
   }, [hiddenProp, exitDirection])
 
@@ -248,7 +248,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
       ? -1
       : 1
 
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     // Release focus first so it never sits inside the inert bar.
     if (fullyHidden) releaseFocus(rootRef.current)
     rootRef.current?.toggleAttribute('inert', fullyHidden)
@@ -257,7 +257,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
   // Collapsed content leaves the focus order / accessibility tree; if it held
   // focus, move focus to the first remaining item.
   const collapsed = floating && !expanded
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const slots = [startRef.current, endRef.current]
     const hadFocus = slots.some((s) => s?.contains(document.activeElement))
     for (const s of slots) s?.toggleAttribute('inert', collapsed)

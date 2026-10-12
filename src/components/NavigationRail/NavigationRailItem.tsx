@@ -4,11 +4,11 @@ import {
   forwardRef,
   useCallback,
   useContext,
-  useLayoutEffect,
   useRef,
   type ButtonHTMLAttributes,
   type ReactNode,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { Ripple } from '../../primitives/Ripple/Ripple'
@@ -115,7 +115,7 @@ export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailIt
     // which sizes its expanded width to the widest item), and the collapsed
     // label's wrapped height (so the item can grow for multi-line labels).
     const hasExpandedBadge = showBadge && label != null
-    useLayoutEffect(() => {
+    useIsoLayoutEffect(() => {
       const btn = buttonRef.current
       if (!btn) return
       const measure = () => {

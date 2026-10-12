@@ -14,11 +14,11 @@ import {
   useCallback,
   useContext,
   useId,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
@@ -229,7 +229,7 @@ export const List = forwardRef<HTMLUListElement, ListProps>(function List(props,
   // Resolve the roving Tab stop after every render: before the user has
   // focused a row, the selected row; otherwise keep the current one while it
   // is an enabled row. Fall back to the selected row, else the first.
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const root = rootRef.current
     if (!root) return
     const rows = navItems(root).filter(isEnabled)
@@ -335,7 +335,7 @@ function useMeasuredLayout(hasSupporting: boolean) {
   const supportingRef = useRef<HTMLSpanElement>(null)
   const [layout, setLayout] = useState({ multiline: false, tall: false })
 
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     if (!item || typeof ResizeObserver === 'undefined') return
     const measure = () => {
       const supporting = supportingRef.current

@@ -86,6 +86,15 @@ export interface DatePickerFieldProps
   selectMonthLabel?: string
   /** Accessible name of the year menu list. @default 'Select year' */
   selectYearLabel?: string
+  /**
+   * The date treated as "today": it opens the calendar on its month when no
+   * date is selected and receives the today marker. Defaults to the client's
+   * current date. With server rendering, pass the same date on the server and
+   * the client (e.g. computed once in the user's time zone) so the initially
+   * visible month hydrates identically; without it the today marker appears
+   * only after hydration.
+   */
+  referenceDate?: Date
   /** Prefix announced on today's cell. @default 'Today' */
   todayLabel?: string
   /** Native input `name` (the typed date text is what a form submits). */
@@ -141,6 +150,7 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
       selectMonthLabel = 'Select month',
       selectYearLabel = 'Select year',
       todayLabel = 'Today',
+      referenceDate,
       name,
       inputRef,
       inputProps,
@@ -168,7 +178,7 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
 
     const [text, setText] = useState(current ? formatDateInput(current, locale) : '')
     const [view, setView] = useState<CalendarView>(() => {
-      const d = current ?? new Date()
+      const d = current ?? referenceDate ?? new Date()
       return { year: d.getFullYear(), month: d.getMonth() }
     })
 
@@ -200,7 +210,7 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
     }
 
     const openPopup = () => {
-      const d = current ?? new Date()
+      const d = current ?? referenceDate ?? new Date()
       setView({ year: d.getFullYear(), month: d.getMonth() })
       setOpen(true)
     }
@@ -325,6 +335,7 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
               min={min ?? null}
               max={max ?? null}
               locale={locale}
+              referenceDate={referenceDate}
               view={view}
               onViewChange={setView}
               autoFocus

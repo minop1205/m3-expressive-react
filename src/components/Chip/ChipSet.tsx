@@ -3,13 +3,13 @@
 import {
   forwardRef,
   useCallback,
-  useLayoutEffect,
   useRef,
   type FocusEvent,
   type HTMLAttributes,
   type KeyboardEvent,
   type ReactNode,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { ChipSetContext, ChipSetDisabledContext } from './ChipSetContext'
 import chipStyles from './Chip.module.css'
@@ -99,7 +99,7 @@ export const ChipSet = forwardRef<HTMLDivElement, ChipSetProps>(function ChipSet
 
   // Initial tab stops + keep them valid when chips are added, removed,
   // disabled or re-enabled.
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const root = rootRef.current
     if (!root) return
     syncTabStops()

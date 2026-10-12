@@ -3,7 +3,6 @@
 import {
   forwardRef,
   useImperativeHandle,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -12,6 +11,7 @@ import {
   type ReactNode,
   type SyntheticEvent,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import styles from './ButtonGroup.module.css'
 import { usePressWidth } from './usePressWidth'
@@ -155,7 +155,7 @@ export const ButtonGroup = forwardRef<HTMLDivElement, ButtonGroupProps>(
     const [tabStop, setTabStop] = useState<string | null>(
       typeof current === 'string' ? current : null,
     )
-    useLayoutEffect(() => {
+    useIsoLayoutEffect(() => {
       if (selectionMode !== 'single' || !rootRef.current) return
       const items = getItems(rootRef.current).filter((el) => !el.disabled)
       const stop = items.find((el) => el.value === current) ?? items[0]
