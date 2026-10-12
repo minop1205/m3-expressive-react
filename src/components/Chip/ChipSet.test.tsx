@@ -156,6 +156,18 @@ describe('ChipSet (#189)', () => {
     expect(btn('A')).toHaveAttribute('tabindex', '-1')
   })
 
+  it('focuses the set when the last chip is removed, not <body> (#423)', async () => {
+    const user = userEvent.setup()
+    render(<Recipients initial={['A']} />)
+    btn('A').focus()
+    await user.keyboard('{Backspace}')
+    const set = screen.getByRole('toolbar', { name: 'Recipients' })
+    await waitFor(() => expect(set).toHaveFocus())
+    // Focusable only for the hand-off: it leaves the Tab order on blur.
+    await user.tab()
+    expect(set).not.toHaveAttribute('tabindex')
+  })
+
   it('keeps a Tab stop when the active chip is removed from outside', async () => {
     const { rerender } = render(
       <ChipSet aria-label="Set">

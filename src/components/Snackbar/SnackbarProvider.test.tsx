@@ -193,6 +193,16 @@ describe('SnackbarProvider / useSnackbar', () => {
     other.remove()
   })
 
+  it('settles pending show() promises when the provider unmounts (#423)', async () => {
+    const { unmount } = setup()
+    const current = showTracked({ message: 'One', actionLabel: 'Undo' })
+    const queued = showTracked('Two')
+    unmount()
+    await advance(0)
+    expect(current.reason).toBe('dismiss')
+    expect(queued.reason).toBe('dismiss')
+  })
+
   it('throws when useSnackbar is used outside a provider', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
     function Orphan() {
