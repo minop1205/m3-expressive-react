@@ -72,3 +72,33 @@ export const SearchView: Story = {
     </div>
   ),
 }
+
+const fullScreenResults = (
+  <List>
+    <ListItem headline="Recent: Material Design" supportingText="Searched yesterday" onClick={() => {}} />
+    <ListItem headline="Recent: Components" supportingText="Searched last week" onClick={() => {}} />
+    <ListItem headline="Recent: Tokens" supportingText="Searched last month" onClick={() => {}} />
+  </List>
+)
+
+/**
+ * `layout="fullscreen"`: clicking the bar (or typing / ArrowDown) expands a
+ * modal view over the viewport — a back button replaces the search icon and
+ * the results sit below the field. Escape or Back collapses it.
+ */
+export const FullScreen: Story = {
+  args: { layout: 'fullscreen', endIcon: <Mic /> },
+  render: (args) => (
+    <div style={{ maxWidth: 720 }}>
+      <SearchBar {...args} aria-label="Search">
+        {fullScreenResults}
+      </SearchBar>
+    </div>
+  ),
+}
+
+/** The full-screen view, open (Compose ExpandedFullScreenContainedSearchBar). */
+export const FullScreenOpen: Story = {
+  args: { layout: 'fullscreen', defaultOpen: true, defaultValue: 'Rec', endIcon: <Mic /> },
+  render: FullScreen.render,
+}

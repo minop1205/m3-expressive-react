@@ -235,13 +235,14 @@ function supportsPopover(el: PopoverElement) {
  * server markup stays stable and environments that style `[popover]` without
  * implementing it (e.g. jsdom) don't hide the popup for good.
  */
-function showInTopLayer(el: PopoverElement) {
+export function showInTopLayer(el: PopoverElement) {
   if (!supportsPopover(el) || !el.isConnected) return
   if (!el.hasAttribute('popover')) el.setAttribute('popover', 'manual')
   if (!isPopoverOpen(el)) el.showPopover!()
 }
 
-function hideFromTopLayer(el: PopoverElement) {
+/** Leave the top layer (no-op when not shown there). */
+export function hideFromTopLayer(el: PopoverElement) {
   if (typeof el.hidePopover !== 'function' || !isPopoverOpen(el)) return
   el.hidePopover()
 }

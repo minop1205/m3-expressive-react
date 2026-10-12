@@ -57,6 +57,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B30 | #393 | Search app bar | **`TopAppBar variant="search"` + `searchBar` スロット(SearchBar を合成)、`titleAlignment` で中央揃え、`title` は visually hidden の h1** | なし(追加) | 決定(2026-10-07・#393 の API 案どおり) |
 | B38 | #440 | Tooltip の配置拡張・rich の既定位置・caret | **`placement` に `'start' \| 'end' \| 'left' \| 'right'`(論理値は RTL で反転、flip あり)、`placement` 未指定の rich は bottom-end の角 + 4 隅の動的配置、`caret?: boolean`(16×8dp)** | 既定値変更(rich の未指定時の位置) | 決定(2026-10-13・#440 の提案どおり) |
 | B32 | #441 | PullToRefresh(新規) | **自身がスクロールコンテナになる `<PullToRefresh refreshing onRefresh indicator disabled threshold>`、touch + pointer、reduced motion はフェードのみ、`aria-busy` + polite live region** | なし(追加) | 決定(2026-10-13・#441 の API 案をもとに確定) |
+| B39 | #442 | SearchBar の full-screen レイアウト | **`layout="docked" \| "fullscreen"`(既定 docked)、full-screen は Compose `ExpandedFullScreenContainedSearchBar`(contained)、戻るボタンの名前は `backLabel`** | なし(追加) | 決定(2026-10-13・#442 の API 案どおり) |
 | B37 | #439 | TextField のラベル位置(上置き・常時縮小) | **`labelPlacement?: 'floating' \| 'above'`(既定 `'floating'`)+ `shrinkLabel?: boolean`、DatePickerField も同名で素通し** | なし(追加) | 決定(2026-10-13・#439 の API 案どおり) |
 | B41 | #444 | 小さな構成の不足(FabMenu 配置・Toolbar elevation・dismissible drawer・Carousel 幅) | **FabMenu `horizontalAlignment`、Toolbar `disableElevation`、NavigationDrawer `variant="dismissible"`、Carousel `itemWidth` の JSDoc 修正** | なし(追加) | 決定(2026-10-13) |
 
@@ -1010,10 +1011,68 @@ subtitle / centered ストーリー追加(`update-vrt-baselines`)。対象: TopA
   `--md-search-bar-width` / `--md-search-bar-min-width` / `--md-search-bar-input-text-align`(IconButton の
   `--md-icon-button-*` と同じ契約方式)
 - `scrollBehavior` / `scrolled` / `hidden` は他の variant と共通(単一行なので `exitUntilCollapsed` は `pinned` 相当)。
-  検索ビューは SearchBar の docked contained view(full-screen レイアウトは未実装 — searchbar 監査の機能候補のまま)
+  検索ビューは SearchBar の docked contained view(~~full-screen レイアウトは未実装 — searchbar 監査の機能候補のまま~~ →
+  B39 で SearchBar `layout="fullscreen"` を追加。search app bar の `searchBar` にもそのまま渡せる)
 
 **影響**: 非破壊(新しい variant 値・新しい prop・SearchBar の追加のみ)。VRT: Search 系ストーリー追加。対象: TopAppBar,
 SearchBar。数値と裁定は docs/audits/appbar.md「Search app bar」節。
+
+---
+
+### B39: SearchBar の full-screen レイアウト(`layout="fullscreen"`)
+
+- **Issue**: #442
+- **状態**: 決定(2026-10-13・#442 の API 案どおり。実装時に補足事項を確定)
+- **背景**: m3 search/specs「two layout options: full-screen and docked」。SearchBar は docked のみだった(searchbar 監査の
+  軽微欄・B30 で「full-screen は未実装」と記録)。Compose は full-screen を compact 画面の既定とし、
+  `ExpandedFullScreenSearchBar`(SearchBar.kt:812、divided — 全画面に広がる面 + `HorizontalDivider`)と
+  `ExpandedFullScreenContainedSearchBar`(SearchBar.kt:698、`@material3expressive` — 入力欄が畳んだ形のまま、divider なし)の
+  2 種を持つ。どちらも全画面 dialog(`BasicEdgeToEdgeDialog`、:905)で、`FullScreenSearchBarScaffoldSample`
+  (samples/SearchBarSamples.kt:118)は contained 版 + 展開時に leading を戻る矢印の IconButton(:277、「Back」)に差し替える。
+
+**選択肢**
+
+- **(a) `layout?: 'docked' | 'fullscreen'`**(issue 案・m3 の語「layout」)
+  - 利点: m3 の用語どおり、将来の値(例: 画面幅で自動切替の `'auto'`)を足せる。variant 方式の API 方針と同じ「列挙 prop で選ぶ」形
+- **(b) `fullScreen?: boolean`**(MUI `Dialog fullScreen` 風) — 2 値で閉じてしまい、拡張できない
+- **(c) 別コンポーネント `FullScreenSearchBar`** — 「1 MD3 コンポーネント = 1 コンポーネント」の方針に反する
+
+**決定**: **(a)**。補足:
+
+- **既定は `'docked'`**(従来どおり・非破壊)。Compose の「compact では full-screen」は画面幅依存の推奨なので、自動切替はしない
+  (利用側がメディアクエリで `layout` を選ぶ。docs に記載)
+- **スタイルは contained(Compose `ExpandedFullScreenContainedSearchBar`)を採用**。理由: Compose の公式 sample と
+  Expressive 版がこちら、本ライブラリの docked view も contained(`ExpandedDockedSearchBarWithGap`)を正としている
+  (searchbar 監査「divided は Not recommended. Use contained」)。divided(全画面の面 + divider)は実装しない
+- 数値(すべて Compose SearchBar.kt、`FullScreenSearchBarLayout` :3777 の `isContained = true` 分岐):
+  面 = `fullScreenContainedSearchBarColor` = **surface-container-low**(:2037、TODO 付きの直値)・シェイプ none、
+  入力欄 = 56dp の stadium のまま **surface-container-high**(`collapsedContainedSearchBarColor` :2031)、
+  展開後の入力欄は上 **4dp**(`AppBarWithSearchVerticalPadding` :4165)・左右 **8dp**(`FullScreenExpandedHorizontalPadding` :4171)、
+  結果は入力欄の **8dp** 下(`SearchBarVerticalPadding` :4181)から全幅・divider なし、window insets は `safeDrawing`
+  (→ `env(safe-area-inset-*)`)
+- モーション(`rememberContainedSearchBarState` :1674): 展開・収納とも **FastSpatial**。入力欄はバーの位置・幅から上端へ移動し、
+  面は同じ progress で alpha 0→1(Compose は spatial の 1 本の animatable で alpha も駆動するので、opacity も fast-spatial
+  トークンに揃えた — 記録)、結果は contentProgress(100ms・50ms 遅延・standard accelerate / 退出 100ms・standard decelerate、
+  :4230 — docked view と同じ tween)。収納中は元のバーを隠す(AppBarWithSearch の `isVisible` :624 — 入力欄の二重表示を防ぐ)。
+  reduced motion(B3)は位置を動かさず全体のフェードのみ(fast-effects)
+- **前面化**: view は `popover="manual"` の top layer に出す(B4 と同じ仕組み)。`TopAppBar` の hide(`transform`)や祖先の
+  `overflow` / `z-index` に閉じ込められないため。インラインに置く(ポータルなし)のでテーマのトークンは継承される
+- **モーダル挙動**: `useModal`(focus trap・背景 inert・body スクロールロック・`onEscape`)。初期フォーカスは view の入力欄
+  (`data-autofocus`)、閉じたらバーの入力へ戻す(起動元が外部ボタンならそこへ — useModal の既定。戻し先が失われた場合はバーの入力)
+- **開くきっかけ**: クリック(Compose の「畳んだ入力欄のクリックで展開」)・入力・ArrowDown。**Tab でのフォーカスだけでは開かない**
+  (モーダルが Tab 移動で開くと抜けられなくなる。Compose もキーボード操作時はフォーカス ≠ 展開)。docked はフォーカスで開く(従来どおり)
+- **戻るボタン**: 展開中の leading は常に戻る矢印の `IconButton`(standard)。利用側の `startIcon`(`false` を含む)は畳んだバー
+  だけに効く。名前は B1 に従い **`backLabel`**(既定 `'Back'` = Compose sample の contentDescription)。RTL では矢印を反転
+- **ARIA**: バーの入力は `role="combobox"` + `aria-haspopup="dialog"` + `aria-expanded` + `aria-controls`(dialog)。
+  view は `role="dialog"` `aria-modal="true"`(名前は `inputProps['aria-label']` か placeholder)、中の入力欄が結果に対する
+  combobox(`aria-controls` = 結果、`aria-autocomplete="list"`)。`suggestionsLabel` の告知は dialog 内の live region から
+- **イベントの対応**: `value` / `onChange` / `onSearch` / `onKeyDown` は view の入力欄にも効く(同じクエリの 2 つ目の表示)。
+  `onFocus` / `onBlur` / `inputRef` / `name` はバーの入力のみ(view の入力はフォームに参加しない)
+
+**影響**: 非破壊(新しい prop 2 つと型 `SearchBarLayout` の追加のみ。docked の DOM・見た目は不変)。VRT: SearchBar
+`FullScreen` / `FullScreenOpen`、AppBar `SearchFullScreenOpen` の追加。対象: SearchBar(AppBar `variant="search"` は
+合成した SearchBar に `layout="fullscreen"` を渡すだけで動く)。内部: `usePopupPosition` の top layer ヘルパーを export、
+`internal/icons` に `ArrowBackIcon`。
 
 ---
 
