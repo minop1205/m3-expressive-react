@@ -104,10 +104,12 @@ Recommended when the tooltip has an `action`; avoid it on icon buttons.
 
 ## Placement
 
-`placement` is the preferred side — `'top'` by default for plain tooltips,
-`'bottom'` for rich ones. The tooltip flips to the other side when there is
-no room and is always kept inside the viewport. Inside a top app bar, use
-`'bottom'`.
+`placement` is the preferred side of the trigger. `'top'` / `'bottom'`
+center the tooltip on the trigger; `'start'` / `'end'` (logical, mirrored in
+right-to-left layouts) and `'left'` / `'right'` (physical) put it beside the
+trigger, vertically centered. The tooltip flips to the opposite side when
+there is no room and is always kept inside the viewport. Plain tooltips
+default to `'top'`. Inside a top app bar, use `'bottom'`.
 
 <Demo>
   <Tooltip text="Shown above" placement="top">
@@ -116,11 +118,78 @@ no room and is always kept inside the viewport. Inside a top app bar, use
   <Tooltip text="Shown below" placement="bottom">
     <Button variant="tonal">Bottom</Button>
   </Tooltip>
+  <Tooltip text="Shown at the start" placement="start">
+    <Button variant="tonal">Start</Button>
+  </Tooltip>
+  <Tooltip text="Shown at the end" placement="end">
+    <Button variant="tonal">End</Button>
+  </Tooltip>
 </Demo>
 
 ```tsx
-<Tooltip text="Shown below" placement="bottom">
-  <Button variant="tonal">Bottom</Button>
+<Tooltip text="Shown at the end" placement="end">
+  <Button variant="tonal">End</Button>
+</Tooltip>
+```
+
+### Rich tooltip corners
+
+Without a `placement`, a rich tooltip sits at the trigger's **bottom-end**
+corner: below it, aligned with its start edge, extending toward the end. Near
+the viewport edges it moves to whichever of the four corners keeps it on
+screen (bottom-start, top-end, top-start). An explicit `placement` overrides
+this, so `placement="bottom"` centers a rich tooltip below its trigger.
+
+<Demo>
+  <Tooltip
+    variant="rich"
+    subhead="Bottom-end"
+    text="The default position of a rich tooltip."
+  >
+    <Button variant="outlined">Default corner</Button>
+  </Tooltip>
+  <Tooltip
+    variant="rich"
+    subhead="Centered"
+    text="An explicit placement centers the tooltip."
+    placement="bottom"
+  >
+    <Button variant="outlined">placement=&quot;bottom&quot;</Button>
+  </Tooltip>
+</Demo>
+
+```tsx
+<Tooltip variant="rich" subhead="Bottom-end" text="The default position of a rich tooltip.">
+  <Button variant="outlined">Default corner</Button>
+</Tooltip>
+```
+
+## Caret
+
+`caret` adds a small 16 × 8dp triangle on the side that faces the trigger,
+pointing at the trigger's center. It is off by default. With a caret, the
+tip of the caret (not the container) keeps the 4dp distance from the trigger.
+
+<Demo>
+  <Tooltip text="Add to favorites" caret>
+    <IconButton icon={<InfoIcon />} aria-label="Add to favorites" variant="standard" />
+  </Tooltip>
+  <Tooltip text="Beside the trigger" placement="end" caret>
+    <Button variant="tonal">End</Button>
+  </Tooltip>
+  <Tooltip
+    variant="rich"
+    subhead="Rich tooltip"
+    text="The caret points at the center of the trigger."
+    caret
+  >
+    <Button variant="outlined">Rich</Button>
+  </Tooltip>
+</Demo>
+
+```tsx
+<Tooltip text="Add to favorites" caret>
+  <IconButton icon={<Info />} aria-label="Add to favorites" variant="standard" />
 </Tooltip>
 ```
 
