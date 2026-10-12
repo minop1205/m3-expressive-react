@@ -33,6 +33,7 @@ import {
   isFromNestedInteractive,
 } from '../../internal/isFromNestedInteractive'
 import { assignRef } from '../../internal/assignRef'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './List.module.css'
 
 export type ListVariant = 'standard' | 'segmented'
@@ -176,11 +177,12 @@ export const List = forwardRef<HTMLUListElement, ListProps>(function List(props,
   const multiple = selectionMode === 'multiple'
   const selecting = selectionMode !== 'none'
 
-  const [inner, setInner] = useState<SelectionValue>(
-    () => (defaultValue as SelectionValue | undefined) ?? (multiple ? [] : null),
-  )
-  const controlled = value !== undefined
-  const current = controlled ? value : inner
+  const [current, setInner, controlled] = useControllableState<SelectionValue>({
+    value,
+    defaultValue: (defaultValue as SelectionValue | undefined) ?? (multiple ? [] : null),
+    name: 'List',
+    state: 'value',
+  })
 
   const [tabStop, setTabStop] = useState<string | null>(null)
   const rootRef = useRef<HTMLUListElement | null>(null)

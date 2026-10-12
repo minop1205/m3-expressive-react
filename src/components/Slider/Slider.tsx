@@ -14,6 +14,7 @@ import {
 } from 'react'
 import clsx from 'clsx'
 import { devWarnOnce } from '../../internal/devWarning'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './Slider.module.css'
 
 export type SliderSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
@@ -158,10 +159,15 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
   }, [inverted, minProp, maxProp])
 
   const rangeInit = Array.isArray(value ?? defaultValue)
-  const isControlled = value !== undefined
-  const [internal, setInternal] = useState<SliderValue>(
-    defaultValue ?? (rangeInit ? [min, max] : min),
-  )
+  // The fallback default is pinned to the first render, so a later
+  // `min` / `max` change is not reported as a changed default.
+  const [fallbackDefault] = useState<SliderValue>(() => (rangeInit ? [min, max] : min))
+  const [current, setInternal, isControlled] = useControllableState<SliderValue>({
+    value,
+    defaultValue: defaultValue ?? fallbackDefault,
+    name: 'Slider',
+    state: 'value',
+  })
   // Index of the handle currently pressed/dragged (Compose PressInteraction /
   // DragInteraction — drives the 4 → 2dp handle squeeze).
   const [pressed, setPressed] = useState<number | null>(null)
@@ -188,7 +194,6 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
     }
   }, [pressed])
 
-  const current = isControlled ? value : internal
   const values = Array.isArray(current) ? current : [current]
   const isRange = values.length === 2
   const span = max > min ? max - min : 1

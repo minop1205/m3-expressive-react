@@ -19,6 +19,7 @@ import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './Tabs.module.css'
 
 export type TabsVariant = 'primary' | 'secondary'
@@ -131,9 +132,12 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
     }
     tabs[nextIndex].focus()
   }
-  const isControlled = value !== undefined
-  const [uncontrolled, setUncontrolled] = useState(defaultValue ?? '')
-  const current = isControlled ? value : uncontrolled
+  const [current, setUncontrolled, isControlled] = useControllableState({
+    value,
+    defaultValue: defaultValue ?? '',
+    name: 'Tabs',
+    state: 'value',
+  })
   const preferredStop = focusedValue ?? current
 
   // Fallback tab stop: when the preferred stop matches no enabled tab (no

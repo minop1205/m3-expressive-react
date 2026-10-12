@@ -9,7 +9,6 @@ import {
   useContext,
   useEffect,
   useRef,
-  useState,
   type ButtonHTMLAttributes,
   type CSSProperties,
   type HTMLAttributes,
@@ -23,6 +22,7 @@ import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { createMenuTypeahead, handleMenuTypeahead, moveMenuFocus } from '../../internal/menuNavigation'
 import { effectsSprings } from '../../tokens/motion'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './FabMenu.module.css'
 
 export type FabMenuColor = 'primary' | 'secondary' | 'tertiary'
@@ -173,9 +173,12 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
   },
   ref,
 ) {
-  const isControlled = controlledOpen !== undefined
-  const [uncontrolled, setUncontrolled] = useState(defaultOpen)
-  const open = isControlled ? controlledOpen : uncontrolled
+  const [open, setUncontrolled, isControlled] = useControllableState({
+    value: controlledOpen,
+    defaultValue: defaultOpen,
+    name: 'FabMenu',
+    state: 'open',
+  })
   const rootRef = useRef<HTMLDivElement | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const toggleRef = useRef<HTMLButtonElement>(null)

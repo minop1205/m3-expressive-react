@@ -5,7 +5,6 @@ import {
   useCallback,
   useContext,
   useRef,
-  useState,
   type ButtonHTMLAttributes,
   type KeyboardEvent,
   type MouseEvent,
@@ -16,6 +15,7 @@ import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { CheckIcon, CloseIcon } from '../../internal/icons'
 import { ChipSetContext, ChipSetDisabledContext } from './ChipSetContext'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './Chip.module.css'
 
 export type ChipVariant = 'assist' | 'filter' | 'input' | 'suggestion'
@@ -126,9 +126,13 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
         (controlledSelected !== undefined ||
           defaultSelected !== undefined ||
           onChange !== undefined))
-    const isControlled = controlledSelected !== undefined
-    const [uncontrolledSelected, setUncontrolledSelected] = useState(defaultSelected ?? false)
-    const selected = isSelectable && (isControlled ? controlledSelected : uncontrolledSelected)
+    const [storedSelected, setUncontrolledSelected, isControlled] = useControllableState({
+      value: controlledSelected,
+      defaultValue: defaultSelected ?? false,
+      name: 'Chip',
+      state: 'selected',
+    })
+    const selected = isSelectable && storedSelected
 
     const hasAvatar = variant === 'input' && avatar != null
     const hasIcon = !hasAvatar && icon != null
