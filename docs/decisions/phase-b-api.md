@@ -55,6 +55,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B28 | #265 | Badge のラベルと非表示時の扱い | **visually-hidden の既定英語ラベル + `label` で上書き、`role="status"` 廃止、非表示時は AT からも隠す** | a11y のみ | 決定(2026-09-30・推奨どおり) |
 | B29 | #267 | Divider を既定で装飾扱いに | **既定 decorative(AT から隠す)+ `decorative={false}` で意味付き区切り** | a11y のみ | 決定(2026-09-30・推奨どおり) |
 | B30 | #393 | Search app bar | **`TopAppBar variant="search"` + `searchBar` スロット(SearchBar を合成)、`titleAlignment` で中央揃え、`title` は visually hidden の h1** | なし(追加) | 決定(2026-10-07・#393 の API 案どおり) |
+| B35 | #437 | BottomSheet の standard variant と detent | **`variant="standard" \| "modal"`(既定 modal)+ `expanded` / `defaultExpanded` / `onExpandedChange` + `skipPartiallyExpanded`、部分展開 = `min(画面/2, シート/2)`(Compose 現行フラグ、TODO 付き)、ハンドルは partial ↔ expanded のトグル** | 挙動のみ(既定で部分展開) | 決定(2026-10-13) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -1008,6 +1009,66 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 意図が伝わるため。MenuDivider(`role="menu"` 内の separator)は対象外で現状維持。
 
 **影響**: a11y ツリーのみ(区切りが読まれなくなる)。VRT なし。対象: Divider(SideSheet の `showDivider` 等の内部利用も含む)。
+
+---
+
+## シート
+
+### B35: BottomSheet の standard variant と detent(部分展開 / 全展開)
+
+- **Issue**: #437
+- **状態**: 決定(2026-10-13・#437 の API 案を実装時に確定)
+- **背景**: BottomSheet はモーダル・単一の高さのみだった。m3 は「Two variants: standard and modal」「Standard bottom sheets
+  co-exist with the screen's main UI region」「preset positions from full-screen height to preview」「toggled between a
+  collapsed and expanded state」。Compose は `ModalBottomSheet` / 非モーダルの `BottomSheet`(BottomSheet.kt)/
+  `BottomSheetScaffold`(BottomSheetScaffold.kt:116、スクリムなし)と `SheetValue.Hidden / PartiallyExpanded / Expanded`
+  (`skipPartiallyExpanded`)を持つ。SideSheet・NavigationDrawer は既に `variant: 'standard' | 'modal'`。
+
+**選択肢**
+
+- **(a) `variant` + `expanded` / `defaultExpanded` / `onExpandedChange(expanded)` + `skipPartiallyExpanded`**
+  - 利点: 隠す / 出すは既存の `open` / `onClose`(A3)のまま、見えている間の 2 状態だけを boolean で持つ。Toolbar の
+    `expanded` / `defaultExpanded` / `onExpandedChange` と同じ形(値のみのコールバック)。`skipPartiallyExpanded` は Compose と同名
+  - 欠点: detent が 3 つ以上に増えたら別 prop が要る(Compose・m3 とも可視 detent は 2 つ)
+- **(b) `detent: 'partial' | 'full'` / `onDetentChange`** — 拡張性はあるが、`open` と hidden の二重表現になりやすい
+- **(c) Compose 流の `sheetState` オブジェクト** — Compose 専用の形で API 方針に反する
+
+**決定**: **(a)**。補足:
+
+- **`variant="standard" | "modal"`、既定 `'modal'`**(既存利用者の挙動を保つ)。standard はスクリム・フォーカストラップ・
+  inert・スクロールロックなし(`useModal` を使わない)、`role="region"`(既定名 "Bottom sheet")、`aria-modal` なし。
+  **最も近い position 指定祖先の下端に `position: absolute` で置く**(Compose `BottomSheetScaffold` の「scaffold 内の
+  レイアウト」に相当。ビューポートに固定したい場合は fixed のコンテナに入れる)。standard はフォーカスが内側にあるときだけ
+  Escape で `onClose(event, 'escapeKeyDown')`(Compose `BottomSheet` の `backHandlerEnabled` 既定 true に相当)
+- **部分展開の高さ = `min(fullHeight / 2, sheetHeight / 2)`**(シートの半分、最大で画面 / コンテナの半分)。Compose の現行既定
+  `ComposeMaterial3Flags.isBottomSheetPartiallyExpandedDeterministicEnabled = true`(ComposeMaterial3Flags.kt:114)での
+  `calculatePartiallyExpandedOffset`(BottomSheet.kt:427-440、androidx commit `02b1dbca`, 2026-09-30)。CSS では
+  ルートを size container にして `translateY(max(50%, 100% - 50cqh))` で表す(計測不要・SSR 安全)
+  - **注意(TODO)**: このフラグには `// TODO: b/512076811` が付いており、Compose 側でまだ確定扱いではない。旧挙動(フラグ
+    false)は「シートが画面の半分以下なら部分展開を自動で除外、ある場合は画面の 50% 位置」で、非推奨の
+    `rememberModalBottomSheetState` / `rememberStandardBottomSheetState` は今も旧挙動を固定で渡す(ModalBottomSheet.kt:251、
+    BottomSheetScaffold.kt:238)。m3.material.io は「preview」位置の高さを数値で規定していない。フラグが撤回・変更されたら
+    本裁定を見直す
+- **既定は部分展開で開く**(`skipPartiallyExpanded` 既定 false、`defaultExpanded` 既定 false)— Compose の `show()` が
+  PartiallyExpanded を優先する現行挙動(SheetDefaults.kt:283-289)。`skipPartiallyExpanded` で常に全展開(従来の見た目)。
+  uncontrolled のシートは閉じるたびに初期 detent に戻る(`show()` 相当)
+- **ドラッグ**: hidden / partial / expanded の 3 アンカー間でスナップ。Compose の `AnchoredDraggable` と同じ判定 —
+  開始 detent から 56px(`PositionalThreshold`)を超えたら隣の detent、125px/s(`VelocityThreshold`)を超える fling は
+  その方向で最も近い detent。hidden に達したら `onClose(event, 'drag')`
+- **ドラッグハンドル(キーボード操作)**: 部分展開があるときは **partial ↔ expanded をトグルするボタン**(`aria-expanded`、
+  既定ラベル "Drag handle")。Compose `BottomSheet` のハンドルクリックは Expanded → 閉じる、`BottomSheetScaffold`
+  (skipHiddenState)は Expanded → PartiallyExpanded で、Web では閉じる手段は Escape / スクリムに既にあるため、
+  ハンドルは detent 専用(Scaffold 側の挙動)とした。`skipPartiallyExpanded` のときは従来どおり閉じるボタン
+  (`'closeButton'`、既定ラベル "Close")
+- **Escape(modal)は常に閉じる**。Compose の back(`settleToDismiss`)は Expanded → PartiallyExpanded だが、APG の
+  モーダルダイアログでは Escape は閉じる操作のため Web の慣習を優先
+- **reduced motion**(B3): detent 間の移動は空間移動なので即時(既存の `transition: none`)。JS 駆動のモーションはない
+
+**影響**: 型は追加のみ(`variant` / `expanded` / `defaultExpanded` / `onExpandedChange` / `skipPartiallyExpanded`、
+`BottomSheetVariant`)。**挙動の変更**: 既定で部分展開で開き、ハンドルのクリック / Enter が閉じる代わりに展開する
+(従来の挙動は `skipPartiallyExpanded`)、ハンドルの既定ラベルが "Close" → "Drag handle"。VRT: Default ストーリーが
+部分展開に変わる + Expanded / ControlledDetent / SkipPartiallyExpanded / Standard を追加。対象: BottomSheet。
+数値と裁定は docs/audits/modal-overlays.md「BottomSheet の standard variant と detent」節。
 
 ---
 

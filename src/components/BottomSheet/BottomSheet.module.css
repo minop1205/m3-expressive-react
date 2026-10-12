@@ -1,8 +1,13 @@
 /**
- * MD3 Modal bottom sheet. Values from androidx.compose.material3
+ * MD3 bottom sheet (modal + standard). Values from androidx.compose.material3
  * SheetBottomTokens: SurfaceContainerLow container, CornerExtraLargeTop (28dp),
  * elevation Level1, max-width 640dp; drag handle OnSurfaceVariant 32×4 pill with
- * 22dp vertical padding; Scrim @ 0.32.
+ * 22dp vertical padding; modal Scrim @ 0.32.
+ *
+ * Detents (ruling B35): the root is a size container, so the partially
+ * expanded translate `max(50%, 100% - 50cqh)` shows
+ * `min(container / 2, sheet / 2)` of the sheet — Compose
+ * `calculatePartiallyExpandedOffset` with the deterministic flag on.
  */
 
 .root {
@@ -14,6 +19,9 @@
   justify-content: center;
   visibility: hidden;
   pointer-events: none;
+  /* Size container: `cqh` in the partial-detent translate is the container
+     (viewport / scaffold) height. */
+  container-type: size;
   /* Stay visible until the exit motion has played (#433), then hide —
      the same delayed-visibility pattern as NavigationDrawer. */
   transition: visibility 0s linear max(var(--md-sys-motion-duration-medium4), var(--md-sys-motion-spring-default-effects-duration));
@@ -23,6 +31,24 @@
   visibility: visible;
   pointer-events: auto;
   transition-delay: 0s;
+}
+
+/* Standard: lives in the layout — fills its nearest positioned ancestor (the
+   "scaffold"), sits above the content without a scrim, and lets the page
+   behind it stay interactive (Compose BottomSheetScaffold). Clipped so the
+   off-screen part of a partial / hidden sheet adds no scroll overflow. */
+.root[data-variant='standard'] {
+  position: absolute;
+  z-index: auto;
+  overflow: hidden;
+}
+
+.root[data-variant='standard'][data-open] {
+  pointer-events: none;
+}
+
+.root[data-variant='standard'] .sheet {
+  pointer-events: auto;
 }
 
 .scrim {
@@ -61,6 +87,11 @@
 
 .root[data-open] .sheet {
   transform: translateY(0);
+}
+
+/* Partially expanded: show min(container / 2, sheet / 2). */
+.root[data-open][data-detent='partial'] .sheet {
+  transform: translateY(max(50%, 100% - 50cqh));
 }
 
 .dragHandleRow {

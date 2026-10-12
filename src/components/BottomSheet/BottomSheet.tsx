@@ -2,22 +2,31 @@
 
 import {
   forwardRef,
+  useEffect,
   useRef,
   type HTMLAttributes,
+  type KeyboardEvent,
   type MouseEvent,
   type PointerEvent,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
 import type { ModalCloseEvent } from '../../internal/closeReason'
+import { useControllableState } from '../../internal/useControllableState'
 import { assignRefs, useModal } from '../../internal/useModal'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import styles from './BottomSheet.module.css'
 
-/** Drag distance beyond which release dismisses (Compose PositionalThreshold). */
-const DISMISS_DISTANCE_PX = 56
-/** Downward fling velocity beyond which release dismisses (Compose VelocityThreshold). */
-const DISMISS_VELOCITY_PX_S = 125
+/**
+ * Drag distance from the starting detent beyond which release settles at the
+ * neighbouring detent (Compose `BottomSheetDefaults.PositionalThreshold`).
+ */
+const POSITIONAL_THRESHOLD_PX = 56
+/**
+ * Release velocity beyond which the sheet settles at the next detent in the
+ * fling direction (Compose `BottomSheetDefaults.VelocityThreshold`).
+ */
+const VELOCITY_THRESHOLD_PX_S = 125
 /** Velocity samples older than this (relative to the release) are discarded. */
 const VELOCITY_WINDOW_MS = 100
 /**
@@ -29,12 +38,17 @@ const ASSUME_STOPPED_MS = 40
 /** Pointer movement below this is treated as a tap, not a drag. */
 const TAP_SLOP_PX = 5
 
+export type BottomSheetVariant = 'standard' | 'modal'
+
 /**
  * Why the sheet asked to close (ruling B7 vocabulary): Escape, a scrim
- * click, the drag handle activated as a button (`'closeButton'`), or a drag /
- * fling past the threshold (`'drag'`).
+ * click (modal only), the drag handle activated as a button
+ * (`'closeButton'` — only with `skipPartiallyExpanded`), or a drag / fling
+ * past the threshold to the hidden position (`'drag'`).
  */
 export type BottomSheetCloseReason = 'escapeKeyDown' | 'backdropClick' | 'closeButton' | 'drag'
+
+type Detent = 'hidden' | 'partial' | 'expanded'
 
 /**
  * Release velocity (px/s, positive = downward) from the samples, ending at
@@ -56,54 +70,169 @@ function releaseVelocity(samples: Array<{ t: number; y: number }>): number {
   return dt > 0 ? ((last.y - first.y) / dt) * 1000 : 0
 }
 
+/**
+ * Resting translateY (px) of each detent for a sheet of `sheetHeight` in a
+ * container of `fullHeight` — the same anchors as Compose `BottomSheet`
+ * (BottomSheet.kt `draggableAnchors`): Hidden at the sheet height, Expanded
+ * at 0, PartiallyExpanded showing `min(fullHeight / 2, sheetHeight / 2)`
+ * (`calculatePartiallyExpandedOffset`, deterministic flag on). The CSS
+ * `max(50%, 100% - 50cqh)` translate is the same value.
+ */
+function detentOffsets(sheetHeight: number, fullHeight: number, hasPartial: boolean) {
+  const anchors: Array<{ detent: Detent; offset: number }> = [
+    { detent: 'expanded', offset: 0 },
+  ]
+  if (hasPartial) {
+    anchors.push({
+      detent: 'partial',
+      offset: sheetHeight - Math.min(fullHeight / 2, sheetHeight / 2),
+    })
+  }
+  anchors.push({ detent: 'hidden', offset: sheetHeight })
+  return anchors
+}
+
+/**
+ * The detent a release settles at — Compose `AnchoredDraggableState`
+ * target computation: a fling faster than the velocity threshold goes to the
+ * closest detent in its direction; otherwise the sheet moves to the
+ * neighbouring detent only once dragged past the positional threshold.
+ */
+function settleTarget(
+  anchors: Array<{ detent: Detent; offset: number }>,
+  start: Detent,
+  position: number,
+  velocity: number,
+): Detent {
+  const startOffset = anchors.find((a) => a.detent === start)?.offset ?? 0
+  if (position === startOffset) return start
+  const closestInDirection = (down: boolean) => {
+    const candidates = anchors.filter((a) => (down ? a.offset >= position : a.offset <= position))
+    const pool = candidates.length > 0 ? candidates : anchors
+    return pool.reduce((best, a) =>
+      Math.abs(a.offset - position) < Math.abs(best.offset - position) ? a : best,
+    )
+  }
+  if (Math.abs(velocity) >= VELOCITY_THRESHOLD_PX_S) {
+    return closestInDirection(velocity > 0).detent
+  }
+  const neighbor = closestInDirection(position > startOffset)
+  return Math.abs(position - startOffset) <= POSITIONAL_THRESHOLD_PX ? start : neighbor.detent
+}
+
 export interface BottomSheetProps extends HTMLAttributes<HTMLDivElement> {
+  /**
+   * `'modal'` overlays the page with a scrim, traps focus and inerts the
+   * rest of the page (Compose `ModalBottomSheet`). `'standard'` co-exists
+   * with the page — no scrim, no focus trap, no inert, no scroll lock — and
+   * is positioned at the bottom of its nearest positioned ancestor
+   * (Compose `BottomSheet` / `BottomSheetScaffold`). @default 'modal'
+   */
+  variant?: BottomSheetVariant
   /** Whether the sheet is shown. */
   open: boolean
   /**
-   * Called on scrim click, Escape, drag-to-dismiss, or the drag handle, with
-   * the triggering event and the `reason`.
+   * Called on scrim click, Escape, a drag / fling to the hidden position,
+   * or (with `skipPartiallyExpanded`) the drag handle, with the triggering
+   * event and the `reason`.
    */
   onClose?: (event: ModalCloseEvent, reason: BottomSheetCloseReason) => void
+  /**
+   * Whether the open sheet is fully expanded (`true`) or partially expanded
+   * (`false`: half of its height, at most half of the container). Controlled.
+   * Ignored with `skipPartiallyExpanded`.
+   */
+  expanded?: boolean
+  /**
+   * Uncontrolled initial detent. An uncontrolled sheet returns to it each
+   * time it closes, so it reopens partially expanded (Compose
+   * `SheetState.show()`). @default false
+   */
+  defaultExpanded?: boolean
+  /** Called when a drag or the drag handle moves the sheet between detents. */
+  onExpandedChange?: (expanded: boolean) => void
+  /**
+   * Skip the partially-expanded detent: the sheet always opens fully
+   * expanded and the drag handle dismisses it. @default false
+   */
+  skipPartiallyExpanded?: boolean
   /** Show the top drag handle. @default true */
   showDragHandle?: boolean
-  /** Accessible label for the drag handle button. @default 'Close' */
+  /**
+   * Accessible label for the drag handle button.
+   * @default 'Drag handle' ('Close' with `skipPartiallyExpanded`)
+   */
   dragHandleLabel?: string
   children?: ReactNode
 }
 
 /**
- * Material Design 3 Modal bottom sheet.
+ * Material Design 3 bottom sheet (modal or standard).
  *
  * SurfaceContainerLow container, 28dp top corners, elevation 1, max-width
  * 640dp, an OnSurfaceVariant 32×4 drag handle — per Compose SheetBottomTokens.
- * Slides up over a 0.32 Scrim; role="dialog" aria-modal, Escape-to-close.
+ * The modal variant slides up over a 0.32 Scrim (`role="dialog"
+ * aria-modal`); the standard variant is a labelled `region` without a scrim.
+ * Escape closes either (the standard one while focus is inside it).
  *
- * The drag handle is an accessible button (click/Enter dismisses) and the
- * pointer can drag the sheet down: release past 56px, or a downward fling
- * faster than 125px/s, dismisses; otherwise the sheet settles back (Compose
- * ModalBottomSheet thresholds).
+ * Detents (Compose `SheetValue`): the sheet opens partially expanded —
+ * showing `min(container / 2, sheet / 2)` — and expands to its full height.
+ * The drag handle is a button that toggles between the two
+ * (`aria-expanded`); with `skipPartiallyExpanded` it dismisses instead.
+ * Dragging snaps between hidden, partial and expanded: past 56px from the
+ * starting detent, or a fling faster than 125px/s, moves to the next detent
+ * (Compose thresholds); reaching hidden calls `onClose(event, 'drag')`.
  */
 export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
   function BottomSheet(
     {
+      variant = 'modal',
       open,
       onClose,
+      expanded: expandedProp,
+      defaultExpanded = false,
+      onExpandedChange,
+      skipPartiallyExpanded = false,
       showDragHandle = true,
-      dragHandleLabel = 'Close',
+      dragHandleLabel,
       className,
+      onKeyDown,
       children,
       ...rest
     },
     ref,
   ) {
+    const isModal = variant !== 'standard'
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLDivElement | null>(null)
     useModal({
-      active: open,
+      active: isModal && open,
       rootRef,
       surfaceRef,
       onEscape: (event) => onClose?.(event, 'escapeKeyDown'),
     })
+
+    const [expandedState, setExpandedState, isControlled] = useControllableState({
+      value: expandedProp,
+      defaultValue: defaultExpanded,
+      name: 'BottomSheet',
+      state: 'expanded',
+      onChange: onExpandedChange,
+    })
+    const hasPartial = !skipPartiallyExpanded
+    const isExpanded = !hasPartial || expandedState
+
+    // An uncontrolled sheet reopens at its initial detent (Compose `show()`
+    // targets PartiallyExpanded). Reset while closed, where the detent is
+    // not visible (the closed transform wins).
+    const { current: initialExpanded } = useRef(defaultExpanded)
+    const wasOpen = useRef(open)
+    useEffect(() => {
+      if (wasOpen.current && !open && !isControlled && expandedState !== initialExpanded) {
+        setExpandedState(initialExpanded)
+      }
+      wasOpen.current = open
+    }, [open, isControlled, expandedState, initialExpanded, setExpandedState])
 
     // The sheet has no title slot, so default the accessible name (consumer
     // aria props win) — Compose sets a "Bottom Sheet" paneTitle.
@@ -112,13 +241,17 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
       | string
       | undefined
 
-    // --- Drag-to-dismiss -------------------------------------------------
+    // --- Drag between detents ---------------------------------------------
     const drag = useRef<{
       pointerId: number
       startY: number
-      lastDistance: number
+      startDetent: Detent
+      anchors: Array<{ detent: Detent; offset: number }>
+      sheetHeight: number
+      lastDelta: number
       samples: Array<{ t: number; y: number }>
     } | null>(null)
+    const wasDrag = useRef(false)
 
     const setSheetDragStyle = (offset: number | null) => {
       const sheet = surfaceRef.current
@@ -136,25 +269,33 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
       if (!open || (event.pointerType === 'mouse' && event.button !== 0)) return
       // A new gesture starts clean: a stale flag must not swallow its click.
       wasDrag.current = false
+      const sheetHeight = surfaceRef.current?.offsetHeight ?? 0
+      const fullHeight = rootRef.current?.clientHeight ?? 0
       drag.current = {
         pointerId: event.pointerId,
         startY: event.clientY,
-        lastDistance: 0,
+        startDetent: isExpanded ? 'expanded' : 'partial',
+        anchors: detentOffsets(sheetHeight, fullHeight, hasPartial),
+        sheetHeight,
+        lastDelta: 0,
         samples: [{ t: Date.now(), y: event.clientY }],
       }
       event.currentTarget.setPointerCapture?.(event.pointerId)
     }
 
+    const positionFor = (state: NonNullable<typeof drag.current>, delta: number) => {
+      const start = state.anchors.find((a) => a.detent === state.startDetent)?.offset ?? 0
+      return Math.min(state.sheetHeight, Math.max(0, start + delta))
+    }
+
     const onHandlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
       const state = drag.current
       if (!state || event.pointerId !== state.pointerId) return
-      const distance = Math.max(0, event.clientY - state.startY)
-      state.lastDistance = distance
-      const now = Date.now()
-      state.samples.push({ t: now, y: event.clientY })
+      state.lastDelta = event.clientY - state.startY
+      state.samples.push({ t: Date.now(), y: event.clientY })
       // Bound the buffer; the release prunes precisely.
       if (state.samples.length > 20) state.samples.shift()
-      setSheetDragStyle(distance)
+      setSheetDragStyle(positionFor(state, state.lastDelta))
     }
 
     const endDrag = (event: PointerEvent<HTMLButtonElement>, cancelled: boolean) => {
@@ -162,7 +303,7 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
       if (!state || event.pointerId !== state.pointerId) return
       drag.current = null
 
-      setSheetDragStyle(null) // settles back via the sheet's own transition
+      setSheetDragStyle(null) // settles at the resting detent via the CSS transition
       if (cancelled) {
         // No click follows a cancelled pointer, so nothing to suppress.
         wasDrag.current = false
@@ -170,37 +311,62 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
       }
       // Measure up to the release itself: a fling followed by a hold is stale.
       const velocity = releaseVelocity([...state.samples, { t: Date.now(), y: event.clientY }])
-      if (state.lastDistance > DISMISS_DISTANCE_PX || velocity > DISMISS_VELOCITY_PX_S) {
+      const target = settleTarget(
+        state.anchors,
+        state.startDetent,
+        positionFor(state, state.lastDelta),
+        velocity,
+      )
+      if (target === 'hidden') {
         onClose?.(event, 'drag')
+      } else if (target !== state.startDetent) {
+        setExpandedState(target === 'expanded')
       }
       // Remember whether this gesture was a real drag so the trailing click
-      // event (fired after pointerup) doesn't also dismiss.
-      wasDrag.current = state.lastDistance > TAP_SLOP_PX
+      // event (fired after pointerup) doesn't also act.
+      wasDrag.current = Math.abs(state.lastDelta) > TAP_SLOP_PX
     }
-
-    const wasDrag = useRef(false)
 
     const onHandleClick = (event: MouseEvent<HTMLButtonElement>) => {
       if (wasDrag.current) {
         wasDrag.current = false
         return
       }
-      onClose?.(event, 'closeButton')
+      if (hasPartial) setExpandedState(!isExpanded)
+      else onClose?.(event, 'closeButton')
+    }
+
+    // The standard sheet has no modal Escape handler (useModal is off), so it
+    // closes on Escape while focus is inside it.
+    const onSurfaceKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+      onKeyDown?.(event)
+      if (!isModal && open && event.key === 'Escape' && !event.defaultPrevented) {
+        onClose?.(event, 'escapeKeyDown')
+      }
     }
 
     return (
-      <div ref={rootRef} className={styles.root} data-open={open || undefined}>
-        <div
-          className={styles.scrim}
-          aria-hidden="true"
-          onClick={(event) => onClose?.(event, 'backdropClick')}
-        />
+      <div
+        ref={rootRef}
+        className={styles.root}
+        data-variant={variant}
+        data-open={open || undefined}
+        data-detent={isExpanded ? 'expanded' : 'partial'}
+      >
+        {isModal && (
+          <div
+            className={styles.scrim}
+            aria-hidden="true"
+            onClick={(event) => onClose?.(event, 'backdropClick')}
+          />
+        )}
         <div
           ref={(node) => assignRefs(node, surfaceRef, ref)}
-          tabIndex={-1}
+          tabIndex={isModal ? -1 : undefined}
           {...rest}
-          role="dialog"
-          aria-modal="true"
+          onKeyDown={onSurfaceKeyDown}
+          role={isModal ? 'dialog' : 'region'}
+          aria-modal={isModal ? true : undefined}
           aria-label={restLabelledby == null ? (restAriaLabel ?? 'Bottom sheet') : restAriaLabel}
           className={clsx(styles.sheet, className)}
         >
@@ -209,7 +375,8 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
               <button
                 type="button"
                 className={styles.dragHandleButton}
-                aria-label={dragHandleLabel}
+                aria-label={dragHandleLabel ?? (hasPartial ? 'Drag handle' : 'Close')}
+                aria-expanded={hasPartial ? isExpanded : undefined}
                 onClick={onHandleClick}
                 onPointerDown={onHandlePointerDown}
                 onPointerMove={onHandlePointerMove}
