@@ -110,3 +110,104 @@ describe('RadioGroup form reset (#432)', () => {
     expect(b).toBeChecked()
   })
 })
+
+describe('RadioGroup keyboard (#425)', () => {
+  function Three(props: Parameters<typeof RadioGroup>[0] & { disableB?: boolean }) {
+    const { disableB, ...rest } = props
+    return (
+      <RadioGroup aria-label="Options" {...rest}>
+        <Radio value="a" aria-label="A" />
+        <Radio value="b" aria-label="B" disabled={disableB} />
+        <Radio value="c" aria-label="C" />
+      </RadioGroup>
+    )
+  }
+
+  it('wraps from the last radio to the first (ArrowDown) and back (ArrowUp)', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<Three defaultValue="c" onChange={onChange} />)
+    const a = screen.getByRole('radio', { name: 'A' })
+    const c = screen.getByRole('radio', { name: 'C' })
+    c.focus()
+
+    await user.keyboard('{ArrowDown}')
+    expect(a).toBeChecked()
+    expect(a).toHaveFocus()
+    expect(c).not.toBeChecked()
+    expect(onChange).toHaveBeenLastCalledWith(expect.any(Object), 'a')
+
+    await user.keyboard('{ArrowUp}')
+    expect(c).toBeChecked()
+    expect(c).toHaveFocus()
+    expect(a).not.toBeChecked()
+    expect(onChange).toHaveBeenLastCalledWith(expect.any(Object), 'c')
+  })
+
+  it('wraps with ArrowLeft / ArrowRight as well', async () => {
+    const user = userEvent.setup()
+    render(<Three defaultValue="a" />)
+    const a = screen.getByRole('radio', { name: 'A' })
+    const c = screen.getByRole('radio', { name: 'C' })
+    a.focus()
+
+    await user.keyboard('{ArrowLeft}')
+    expect(c).toBeChecked()
+    expect(c).toHaveFocus()
+
+    await user.keyboard('{ArrowRight}')
+    expect(a).toBeChecked()
+    expect(a).toHaveFocus()
+  })
+
+  it('skips a disabled radio in both directions', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<Three defaultValue="a" onChange={onChange} disableB />)
+    const a = screen.getByRole('radio', { name: 'A' })
+    const b = screen.getByRole('radio', { name: 'B' })
+    const c = screen.getByRole('radio', { name: 'C' })
+    a.focus()
+
+    await user.keyboard('{ArrowDown}')
+    expect(c).toBeChecked()
+    expect(c).toHaveFocus()
+    expect(b).not.toBeChecked()
+
+    await user.keyboard('{ArrowUp}')
+    expect(a).toBeChecked()
+    expect(a).toHaveFocus()
+    expect(b).not.toBeChecked()
+    expect(onChange).not.toHaveBeenCalledWith(expect.anything(), 'b')
+  })
+
+  it('is a single tab stop: Tab enters on the checked radio and leaves the group', async () => {
+    const user = userEvent.setup()
+    render(
+      <>
+        <button type="button">Before</button>
+        <Three defaultValue="b" />
+        <button type="button">After</button>
+      </>,
+    )
+    await user.click(screen.getByRole('button', { name: 'Before' }))
+    await user.tab()
+    expect(screen.getByRole('radio', { name: 'B' })).toHaveFocus()
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'After' })).toHaveFocus()
+  })
+
+  it('skips the whole group on Tab when the group is disabled', async () => {
+    const user = userEvent.setup()
+    render(
+      <>
+        <button type="button">Before</button>
+        <Three defaultValue="a" disabled />
+        <button type="button">After</button>
+      </>,
+    )
+    await user.click(screen.getByRole('button', { name: 'Before' }))
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'After' })).toHaveFocus()
+  })
+})

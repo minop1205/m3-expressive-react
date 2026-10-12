@@ -166,6 +166,66 @@ describe('NavigationBar items (#173–#175)', () => {
   })
 })
 
+describe('NavigationBar keyboard (#425)', () => {
+  it('reaches each item with Tab, skipping a disabled item', async () => {
+    const user = userEvent.setup()
+    render(
+      <NavigationBar value="a" aria-label="Main">
+        <NavigationBarItem value="a" icon={Icon} label="Alpha" />
+        <NavigationBarItem value="b" icon={Icon} label="Beta" disabled />
+        <NavigationBarItem value="c" icon={Icon} label="Gamma" />
+      </NavigationBar>,
+    )
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Alpha' })).toHaveFocus()
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Gamma' })).toHaveFocus()
+    await user.tab({ shift: true })
+    expect(screen.getByRole('button', { name: 'Alpha' })).toHaveFocus()
+  })
+
+  it('selects the focused item with Enter and Space (uncontrolled)', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <NavigationBar defaultValue="a" onChange={onChange} aria-label="Main">
+        <NavigationBarItem value="a" icon={Icon} label="Alpha" />
+        <NavigationBarItem value="b" icon={Icon} label="Beta" />
+        <NavigationBarItem value="c" icon={Icon} label="Gamma" />
+      </NavigationBar>,
+    )
+    const beta = screen.getByRole('button', { name: 'Beta' })
+    const gamma = screen.getByRole('button', { name: 'Gamma' })
+
+    beta.focus()
+    await user.keyboard('{Enter}')
+    expect(onChange).toHaveBeenLastCalledWith(expect.any(Object), 'b')
+    expect(beta).toHaveAttribute('aria-current', 'page')
+
+    await user.tab()
+    expect(gamma).toHaveFocus()
+    await user.keyboard(' ')
+    expect(onChange).toHaveBeenLastCalledWith(expect.any(Object), 'c')
+    expect(gamma).toHaveAttribute('aria-current', 'page')
+    expect(beta).not.toHaveAttribute('aria-current')
+  })
+
+  it('does not change selection from the keyboard on a disabled item', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <NavigationBar value="a" onChange={onChange} aria-label="Main">
+        <NavigationBarItem value="a" icon={Icon} label="Alpha" />
+        <NavigationBarItem value="b" icon={Icon} label="Beta" disabled />
+      </NavigationBar>,
+    )
+    const beta = screen.getByRole('button', { name: 'Beta' })
+    beta.focus()
+    await user.keyboard('{Enter} ')
+    expect(onChange).not.toHaveBeenCalled()
+  })
+})
+
 describe('NavigationBarItem accessible-name warning (#421)', () => {
   it('warns once in development when there is no label and no aria-label', () => {
     resetDevWarnings()

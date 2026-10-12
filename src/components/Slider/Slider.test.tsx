@@ -1,5 +1,6 @@
 import { createRef } from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { resetDevWarnings } from '../../internal/devWarning'
@@ -411,5 +412,88 @@ describe('Slider value / geometry (#431)', () => {
     expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 0.3)
     fireEvent.change(input, { target: { value: String(0.1 * 7) } })
     expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 0.7)
+  })
+})
+
+describe('Slider keyboard via userEvent (#425)', () => {
+  // userEvent dispatches the full keydown/keyup sequence on the focused
+  // element, so these exercise the real focus path (Tab) plus the
+  // PageUp/PageDown/Home/End handling. Arrow-key stepping is the native range
+  // input's UA behavior, which jsdom does not implement (see SL4 above).
+
+  it('is reachable with Tab and handles PageUp / PageDown / Home / End', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<Slider aria-label="Vol" defaultValue={40} onChange={onChange} />)
+    await user.tab()
+    const input = screen.getByRole('slider', { name: 'Vol' })
+    expect(input).toHaveFocus()
+
+    await user.keyboard('{PageUp}')
+    expect(input).toHaveValue('50')
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 50)
+
+    await user.keyboard('{PageDown}{PageDown}')
+    expect(input).toHaveValue('30')
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 30)
+
+    await user.keyboard('{End}')
+    expect(input).toHaveValue('100')
+    await user.keyboard('{Home}')
+    expect(input).toHaveValue('0')
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 0)
+  })
+
+  it('updates aria-valuetext from keyboard changes', async () => {
+    const user = userEvent.setup()
+    render(<Slider aria-label="Pct" defaultValue={40} valueLabelFormat={(v) => `${v}%`} />)
+    const input = screen.getByRole('slider', { name: 'Pct' })
+    input.focus()
+    await user.keyboard('{PageUp}')
+    expect(input).toHaveAttribute('aria-valuetext', '50%')
+  })
+
+  it('tabs between range thumbs and moves each independently', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<Slider aria-label="Price" defaultValue={[20, 60]} onChange={onChange} />)
+    const [start, end] = screen.getAllByRole('slider')
+
+    await user.tab()
+    expect(start).toHaveFocus()
+    await user.keyboard('{PageUp}')
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), [30, 60])
+
+    await user.tab()
+    expect(end).toHaveFocus()
+    await user.keyboard('{PageDown}')
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), [30, 50])
+
+    // Home on the end thumb stops at the start thumb (no crossing).
+    await user.keyboard('{Home}')
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), [30, 30])
+  })
+
+  it('keeps a controlled slider at its value while reporting key changes', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<Slider aria-label="Vol" value={40} onChange={onChange} />)
+    const input = screen.getByRole('slider', { name: 'Vol' })
+    input.focus()
+    await user.keyboard('{PageUp}')
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 50)
+    expect(input).toHaveValue('40')
+  })
+
+  it('is skipped by Tab when disabled', async () => {
+    const user = userEvent.setup()
+    render(
+      <>
+        <Slider aria-label="Off" defaultValue={20} disabled />
+        <button type="button">After</button>
+      </>,
+    )
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'After' })).toHaveFocus()
   })
 })
