@@ -248,7 +248,9 @@ function observeMove(element: Element, onMove: () => void): () => void {
  * of the anchor or the popup (ResizeObserver) and layout shifts that move the
  * anchor (IntersectionObserver). While the anchor is entirely outside the
  * viewport the popup is hidden (`visibility: hidden`, so it also leaves the
- * accessibility tree) but stays open, returning when the anchor scrolls back.
+ * accessibility tree) but stays open, returning when the anchor scrolls back;
+ * when it holds focus it is only made transparent and inert to the pointer
+ * (`opacity: 0`, `pointer-events: none`), so focus is not dropped to `<body>`.
  * Returns the side actually used, for `data-*` styling hooks.
  */
 export function usePopupPosition({
@@ -302,8 +304,23 @@ export function usePopupPosition({
       // floating with no visible trigger: hide it (it stays open, so it
       // reappears in place once the anchor scrolls back) rather than close
       // it, which would surprise a controlled consumer mid-scroll.
-      popup.style.visibility = isAnchorOutsideViewport(anchor, viewport) ? 'hidden' : ''
+      const anchorHidden = isAnchorOutsideViewport(anchor, viewport)
+      // With focus inside, `visibility: hidden` would make the browser blur
+      // the focused element (focus fixup), dropping focus to <body> — and
+      // the components' close-on-focus-out handlers would then dismiss the
+      // popup for good. Keep it focusable but invisible instead.
+      const keepFocus = anchorHidden && popup.contains(document.activeElement)
+      popup.style.visibility = anchorHidden && !keepFocus ? 'hidden' : ''
+      setFocusKeepingHide(keepFocus)
       setResolvedSide(position.side)
+    }
+
+    let focusKeepingHide = false
+    const setFocusKeepingHide = (hide: boolean) => {
+      if (hide === focusKeepingHide) return
+      focusKeepingHide = hide
+      popup.style.opacity = hide ? '0' : ''
+      popup.style.pointerEvents = hide ? 'none' : ''
     }
 
     update()
@@ -322,6 +339,7 @@ export function usePopupPosition({
       stopMoveObserver()
       // Hand visibility back to the component's CSS (e.g. its close motion).
       popup.style.visibility = ''
+      setFocusKeepingHide(false)
     }
   }, [open, anchorRef, popupRef, side, align, gap, margin, rtl, avoidCollisions, matchAnchorWidth])
 

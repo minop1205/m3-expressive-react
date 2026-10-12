@@ -1,5 +1,5 @@
 import { createRef, useState } from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
@@ -134,5 +134,90 @@ describe('NavigationDrawer accessible name', () => {
       </NavigationDrawer>,
     )
     expect(screen.getByRole('complementary')).toHaveAccessibleName('Mail folders')
+  })
+})
+
+describe('NavigationDrawer modal surface element (#429)', () => {
+  it('renders the modal dialog as a div, not an aside, and passes axe', async () => {
+    const { container } = render(
+      <NavigationDrawer variant="modal" open value="a" onChange={() => {}}>
+        <NavigationDrawerItem value="a" icon={Icon} label="Inbox" />
+      </NavigationDrawer>,
+    )
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.tagName).toBe('DIV')
+    expect(container.querySelector('aside')).toBeNull()
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('keeps the standard variant an aside landmark', () => {
+    render(
+      <NavigationDrawer value="a" onChange={() => {}}>
+        <NavigationDrawerItem value="a" icon={Icon} label="Inbox" />
+      </NavigationDrawer>,
+    )
+    expect(screen.getByRole('complementary').tagName).toBe('ASIDE')
+  })
+})
+
+describe('NavigationDrawer uncontrolled selection (#421)', () => {
+  it('selects defaultValue and updates on click, still firing onChange', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <NavigationDrawer defaultValue="a" onChange={onChange}>
+        <NavigationDrawerItem value="a" icon={Icon} label="Alpha" />
+        <NavigationDrawerItem value="b" icon={Icon} label="Beta" />
+      </NavigationDrawer>,
+    )
+    expect(screen.getByRole('button', { name: /Alpha/ })).toHaveAttribute('aria-current', 'page')
+    await user.click(screen.getByRole('button', { name: /Beta/ }))
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'b')
+    expect(screen.getByRole('button', { name: /Beta/ })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: /Alpha/ })).not.toHaveAttribute('aria-current')
+  })
+
+  it('works with no value at all (nothing selected until clicked)', async () => {
+    const user = userEvent.setup()
+    render(
+      <NavigationDrawer>
+        <NavigationDrawerItem value="a" icon={Icon} label="Alpha" />
+      </NavigationDrawer>,
+    )
+    const alpha = screen.getByRole('button', { name: /Alpha/ })
+    expect(alpha).not.toHaveAttribute('aria-current')
+    await user.click(alpha)
+    expect(alpha).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('a controlled value wins over clicks', async () => {
+    const user = userEvent.setup()
+    render(
+      <NavigationDrawer value="a" onChange={() => {}}>
+        <NavigationDrawerItem value="a" icon={Icon} label="Alpha" />
+        <NavigationDrawerItem value="b" icon={Icon} label="Beta" />
+      </NavigationDrawer>,
+    )
+    await user.click(screen.getByRole('button', { name: /Beta/ }))
+    expect(screen.getByRole('button', { name: /Alpha/ })).toHaveAttribute('aria-current', 'page')
+  })
+})
+
+describe('NavigationDrawer onClose reason (#407)', () => {
+  it('passes escapeKeyDown and backdropClick', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const { container } = render(
+      <NavigationDrawer variant="modal" open onClose={onClose}>
+        <NavigationDrawerItem value="a" icon={Icon} label="Alpha" />
+      </NavigationDrawer>,
+    )
+    await user.keyboard('{Escape}')
+    expect(onClose).toHaveBeenLastCalledWith(expect.any(KeyboardEvent), 'escapeKeyDown')
+    fireEvent.click(container.querySelector('[class*="scrim"]')!)
+    expect(onClose).toHaveBeenLastCalledWith(
+      expect.objectContaining({ type: 'click' }),
+      'backdropClick',
+    )
   })
 })

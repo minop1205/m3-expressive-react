@@ -10,6 +10,7 @@ import {
 import clsx from 'clsx'
 import { IconButton } from '../IconButton/IconButton'
 import { Divider } from '../Divider/Divider'
+import type { ModalCloseEvent } from '../../internal/closeReason'
 import { assignRefs, useModal } from '../../internal/useModal'
 import styles from './SideSheet.module.css'
 
@@ -28,6 +29,12 @@ const BackIcon = (
   </svg>
 )
 
+/**
+ * Why the sheet asked to close (ruling B7 vocabulary). `'escapeKeyDown'` and
+ * `'backdropClick'` only occur on the modal variant.
+ */
+export type SideSheetCloseReason = 'escapeKeyDown' | 'backdropClick' | 'closeButton'
+
 export interface SideSheetProps extends HTMLAttributes<HTMLDivElement> {
   /** Standard (inline) or modal (overlay + scrim). @default 'standard' */
   variant?: SideSheetVariant
@@ -38,8 +45,11 @@ export interface SideSheetProps extends HTMLAttributes<HTMLDivElement> {
   anchor?: SideSheetAnchor
   /** Whether the sheet is shown. @default true */
   open?: boolean
-  /** Called on close-button click, scrim click, or Escape. */
-  onClose?: () => void
+  /**
+   * Called on close-button click, scrim click, or Escape, with the
+   * triggering event and the `reason`.
+   */
+  onClose?: (event: ModalCloseEvent, reason: SideSheetCloseReason) => void
   /** Title shown in the header. */
   headline?: ReactNode
   /** Show a leading back button (modal). @default false */
@@ -96,7 +106,7 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
       active: variant === 'modal' && open,
       rootRef,
       surfaceRef,
-      onEscape: () => onClose?.(),
+      onEscape: (event) => onClose?.(event, 'escapeKeyDown'),
     })
 
     // Wire the visible headline as the sheet's accessible name; consumer aria
@@ -148,7 +158,7 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
                 variant="standard"
                 icon={CloseIcon}
                 aria-label={closeLabel}
-                onClick={onClose}
+                onClick={(event) => onClose?.(event, 'closeButton')}
                 className={styles.headerButton}
               />
             )}
@@ -175,7 +185,11 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
         data-open={open || undefined}
         data-anchor={anchor}
       >
-        <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
+        <div
+          className={styles.scrim}
+          aria-hidden="true"
+          onClick={(event) => onClose?.(event, 'backdropClick')}
+        />
         {panel}
       </div>
     )

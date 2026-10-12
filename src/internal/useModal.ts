@@ -88,6 +88,30 @@ const applied = new Set<Element>()
 // one closes.
 let scrollLockCount = 0
 let previousBodyOverflow = ''
+let previousBodyPaddingInlineEnd = ''
+
+/**
+ * Hide body overflow, padding the inline end by the classic scrollbar's
+ * width so the page doesn't shift sideways when the scrollbar disappears
+ * (overlay scrollbars measure 0 and add nothing).
+ */
+function lockBodyScroll() {
+  const { body, documentElement } = document
+  const scrollbarWidth = (document.defaultView?.innerWidth ?? 0) - documentElement.clientWidth
+  previousBodyOverflow = body.style.overflow
+  previousBodyPaddingInlineEnd = body.style.paddingInlineEnd
+  if (scrollbarWidth > 0) {
+    const view = document.defaultView
+    const current = view ? parseFloat(view.getComputedStyle(body).paddingInlineEnd) || 0 : 0
+    body.style.paddingInlineEnd = `${current + scrollbarWidth}px`
+  }
+  body.style.overflow = 'hidden'
+}
+
+function unlockBodyScroll() {
+  document.body.style.overflow = previousBodyOverflow
+  document.body.style.paddingInlineEnd = previousBodyPaddingInlineEnd
+}
 
 const isExempt = (el: Element) => el.hasAttribute(MODAL_EXEMPT_ATTRIBUTE)
 
@@ -286,7 +310,8 @@ export interface UseModalOptions {
  * 4. makes the rest of the page `inert` while open (except
  *    `[data-md-modal-exempt]` layers),
  * 5. calls `onEscape` on Escape, and
- * 6. locks body scroll.
+ * 6. locks body scroll, padding the body's inline end by the scrollbar
+ *    width so the page doesn't shift.
  *
  * Open modals form a module-level stack: only the topmost one applies inert,
  * owns the Tab wrap and reacts to Escape. When it closes, the inert state is
@@ -313,10 +338,7 @@ export function useModal({ active, rootRef, surfaceRef, onEscape }: UseModalOpti
         ? document.activeElement
         : null
 
-    if (scrollLockCount === 0) {
-      previousBodyOverflow = document.body.style.overflow
-      document.body.style.overflow = 'hidden'
-    }
+    if (scrollLockCount === 0) lockBodyScroll()
     scrollLockCount += 1
 
     const entry: ModalEntry = {
@@ -336,9 +358,7 @@ export function useModal({ active, rootRef, surfaceRef, onEscape }: UseModalOpti
 
     return () => {
       scrollLockCount -= 1
-      if (scrollLockCount === 0) {
-        document.body.style.overflow = previousBodyOverflow
-      }
+      if (scrollLockCount === 0) unlockBodyScroll()
       remove(entry)
     }
     // rootRef/surfaceRef are stable ref objects.

@@ -5,6 +5,7 @@ import {
   forwardRef,
   useContext,
   useRef,
+  useState,
   type ButtonHTMLAttributes,
   type HTMLAttributes,
   type MouseEvent,
@@ -12,10 +13,14 @@ import {
 } from 'react'
 import clsx from 'clsx'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import type { ModalCloseEvent } from '../../internal/closeReason'
 import { assignRefs, useModal } from '../../internal/useModal'
 import styles from './NavigationDrawer.module.css'
 
 export type NavigationDrawerVariant = 'standard' | 'modal'
+
+/** Why the modal drawer asked to close (ruling B7 vocabulary): Escape or a scrim click. */
+export type NavigationDrawerCloseReason = 'escapeKeyDown' | 'backdropClick'
 
 interface DrawerContextValue {
   value?: string
@@ -30,10 +35,15 @@ export interface NavigationDrawerProps
   variant?: NavigationDrawerVariant
   /** Modal open state. */
   open?: boolean
-  /** Called when the modal scrim is clicked or Escape is pressed. */
-  onClose?: () => void
-  /** Selected destination value (shared with items). */
+  /**
+   * Called when the modal scrim is clicked or Escape is pressed, with the
+   * triggering event and the `reason`.
+   */
+  onClose?: (event: ModalCloseEvent, reason: NavigationDrawerCloseReason) => void
+  /** Controlled selected destination value (shared with items). */
   value?: string
+  /** Uncontrolled initial destination value. */
+  defaultValue?: string
   /** Fires with the triggering event and the newly selected destination value. */
   onChange?: (event: MouseEvent<HTMLButtonElement>, value: string) => void
   children?: ReactNode
@@ -55,6 +65,7 @@ export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
       open = false,
       onClose,
       value,
+      defaultValue,
       onChange,
       className,
       children,
@@ -62,24 +73,35 @@ export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
     },
     ref,
   ) {
+    const isControlled = value !== undefined
+    const [uncontrolled, setUncontrolled] = useState(defaultValue)
+    const current = isControlled ? value : uncontrolled
+    const handleChange = (event: MouseEvent<HTMLButtonElement>, v: string) => {
+      if (!isControlled) setUncontrolled(v)
+      onChange?.(event, v)
+    }
+    const context: DrawerContextValue = { value: current, onChange: handleChange }
+
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLElement | null>(null)
     useModal({
       active: variant === 'modal' && open,
       rootRef,
       surfaceRef,
-      onEscape: () => onClose?.(),
+      onEscape: (event) => onClose?.(event, 'escapeKeyDown'),
     })
 
     // Default the accessible name for both the modal dialog and the standard
-    // <aside> landmark (Compose sets a "Navigation Menu" paneTitle).
+    // <aside> landmark (Compose sets a "Navigation Menu" paneTitle). The modal
+    // surface is a <div>: `role="dialog"` is not allowed on <aside> (#429).
     const restAriaLabel = (rest as Record<string, unknown>)['aria-label'] as string | undefined
     const restLabelledby = (rest as Record<string, unknown>)['aria-labelledby'] as
       | string
       | undefined
 
+    const Panel = variant === 'modal' ? 'div' : 'aside'
     const panel = (
-      <aside
+      <Panel
         ref={(node) => assignRefs(node, surfaceRef, ref)}
         tabIndex={variant === 'modal' ? -1 : undefined}
         {...rest}
@@ -90,17 +112,21 @@ export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
         aria-label={restLabelledby == null ? (restAriaLabel ?? 'Navigation') : restAriaLabel}
       >
         {children}
-      </aside>
+      </Panel>
     )
 
     if (variant !== 'modal') {
-      return <DrawerContext.Provider value={{ value, onChange }}>{panel}</DrawerContext.Provider>
+      return <DrawerContext.Provider value={context}>{panel}</DrawerContext.Provider>
     }
 
     return (
-      <DrawerContext.Provider value={{ value, onChange }}>
+      <DrawerContext.Provider value={context}>
         <div ref={rootRef} className={styles.modalRoot} data-open={open || undefined}>
-          <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
+          <div
+            className={styles.scrim}
+            aria-hidden="true"
+            onClick={(event) => onClose?.(event, 'backdropClick')}
+          />
           {panel}
         </div>
       </DrawerContext.Provider>
