@@ -19,6 +19,7 @@ import clsx from 'clsx'
 import { SearchIcon } from '../../internal/icons'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { usePopupPosition } from '../../internal/usePopupPosition'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './SearchBar.module.css'
 
 export interface SearchBarProps
@@ -152,16 +153,23 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
     },
     forwardedRef,
   ) {
-    const isControlled = value !== undefined
-    const [internal, setInternal] = useState(defaultValue ?? '')
-    const current = isControlled ? value : internal
+    const [current, setInternal, isControlled] = useControllableState({
+      value,
+      defaultValue: defaultValue ?? '',
+      name: 'SearchBar',
+      state: 'value',
+    })
 
     const hasView = children != null
-    const openControlled = controlledOpen !== undefined
-    const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
+    const [storedOpen, setUncontrolledOpen, openControlled] = useControllableState({
+      value: controlledOpen,
+      defaultValue: defaultOpen,
+      name: 'SearchBar',
+      state: 'open',
+    })
     // A disabled bar never shows its view (its input can't take focus or
     // keys to close it again).
-    const open = hasView && !disabled && (openControlled ? controlledOpen : uncontrolledOpen)
+    const open = hasView && !disabled && storedOpen
     const wrapperRef = useRef<HTMLDivElement>(null)
     const inputElRef = useRef<HTMLInputElement | null>(null)
     const viewRef = useRef<HTMLDivElement>(null)

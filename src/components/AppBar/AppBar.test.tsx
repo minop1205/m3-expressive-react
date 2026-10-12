@@ -356,7 +356,10 @@ describe('TopAppBar variant="search"', () => {
         title="Products"
         navigationIcon={<button aria-label="Menu">m</button>}
         actions={<button aria-label="Account">a</button>}
-        searchBar={field({ endIcon: <button aria-label="Voice search">v</button> })}
+        searchBar={field({
+          open: false,
+          endIcon: <button aria-label="Voice search">v</button>,
+        })}
       />,
     )
     expect(await axe(container)).toHaveNoViolations()
