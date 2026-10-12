@@ -56,6 +56,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B29 | #267 | Divider を既定で装飾扱いに | **既定 decorative(AT から隠す)+ `decorative={false}` で意味付き区切り** | a11y のみ | 決定(2026-09-30・推奨どおり) |
 | B30 | #393 | Search app bar | **`TopAppBar variant="search"` + `searchBar` スロット(SearchBar を合成)、`titleAlignment` で中央揃え、`title` は visually hidden の h1** | なし(追加) | 決定(2026-10-07・#393 の API 案どおり) |
 | B37 | #439 | TextField のラベル位置(上置き・常時縮小) | **`labelPlacement?: 'floating' \| 'above'`(既定 `'floating'`)+ `shrinkLabel?: boolean`、DatePickerField も同名で素通し** | なし(追加) | 決定(2026-10-13・#439 の API 案どおり) |
+| B32 | #441 | PullToRefresh(新規) | **自身がスクロールコンテナになる `<PullToRefresh refreshing onRefresh indicator disabled threshold>`、touch + pointer、reduced motion はフェードのみ、`aria-busy` + polite live region** | なし(追加) | 決定(2026-10-13・#441 の API 案をもとに確定) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -1059,6 +1060,71 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 - 既定(`'floating'`、`shrinkLabel` なし)の DOM・CSS は不変(既存ストーリーはピクセル同一)
 
 **影響**: 非破壊(追加 prop のみ)。VRT: `LabelAbove` / `ShrinkLabel` ストーリー追加。対象: TextField, DatePickerField。
+## ジェスチャー
+
+### B32: PullToRefresh(新規コンポーネント)
+
+- **Issue**: #441
+- **状態**: 決定(2026-10-13・#441 の API 案をもとに実装時に確定)
+- **背景**: m3 loading-indicator overview は「Used for pull-to-refresh interactions」「Loading indicators are used in the
+  pull-to-refresh behavior」とし、本ライブラリの LoadingIndicator(contained・determinate)はそのために存在するが、
+  pull-to-refresh 本体がなかった。Compose は `PullToRefreshBox(isRefreshing, onRefresh, state, indicator, enabled,
+  threshold, content)` + `Modifier.pullToRefresh`(nested scroll で子のスクロールの余りを受け取る)と、
+  `PullToRefreshDefaults.Indicator`(円形矢印)/ `LoadingIndicator`(Expressive・`ContainedLoadingIndicator`)の 2 種。
+  数値は docs/specs/pull-to-refresh.md。
+
+**選択肢**
+
+- **(a) 自身がスクロールコンテナになる `<PullToRefresh>`**(採用)
+  ```tsx
+  <PullToRefresh refreshing={loading} onRefresh={reload} style={{ height: 480 }}>
+    <List>{items}</List>
+  </PullToRefresh>
+  ```
+  - 利点: `scrollTop === 0` の判定対象が一意(ルート)。`ref` / `onScroll` / `className` がそのままスクロール要素に付く。
+    インジケーターをルート内の sticky アンカーに置けるので、Compose と同じく上端でクリップされ、スクロールしても動かない
+  - 欠点: 高さ(または flex / grid のトラック)を利用者が与える必要がある。ページ全体(`window`)のスクロールは対象外
+- **(b) スクロール可能な子を包むラッパー(子の scroll 要素を探す)**
+  - 利点: 既存のスクロール要素をそのまま使える。欠点: 「どれがスクロール要素か」を推測するか `scrollRef` を受ける必要があり、
+    インジケーターの配置(子の外側の overlay)もレイアウトに依存する
+- **(c) `usePullToRefresh()` フックのみ** — 柔軟だが見た目(インジケーター)を利用者が組む必要があり、他コンポーネントと揃わない
+
+**決定**: **(a)**。ただし子孫に入れ子のスクロール要素がある場合も考慮し、ジェスチャー開始時にポインター位置の要素から
+ルートまでの**すべての**スクロール要素が上端にあるときだけ引っ張りを開始する(入れ子のリストでも誤発火しない)。
+
+API:
+
+| prop | 型 / 既定 | 内容 |
+|---|---|---|
+| `refreshing` | `boolean`(省略可) | Compose `isRefreshing`。controlled。省略時は `onRefresh` が返す Promise の解決まで refreshing(uncontrolled — A4) |
+| `onRefresh` | `() => void \| Promise<unknown>` | しきい値を超えて離したときに呼ぶ |
+| `indicator` | `'loading' \| 'circular'` / `'loading'` | `loading` = `PullToRefreshDefaults.LoadingIndicator`(48dp・contained・Level0)、`circular` = `Indicator`(40dp・surfaceContainerHigh・Level2・矢印 → スピナー)。既定は Expressive 側(B2 と同じ考え方) |
+| `disabled` | `boolean` / `false` | Compose `enabled = false`。進行中の refreshing 表示は残す |
+| `threshold` | `number` / `80` | px。Compose `PositionalThreshold` 80dp。指の移動量 × 0.5(`DragMultiplier`)がこれを**超えた**ら発火 |
+| `refreshingLabel` | `string` / `'Refreshing'` | live region の文言(B1: prop ごとのラベル) |
+
+挙動:
+
+- 入力は touch(非 passive の `touchmove` で、引っ張り中はネイティブのスクロール / オーバースクロールを止める)と
+  mouse / pen(Pointer Events + pointer capture)。8px の touch slop(SwipeToDismiss と同じ)を超えて下向きに動いたら開始、
+  上向き・横向きならスクロールに譲る。実際に引っ張った後のクリックは子に届けない
+- インジケーターの位置と進捗は Compose の式そのまま: `distanceFraction` = しきい値までは線形、超えると
+  `t − t²/4`(t ≤ 2)の張力、最大 2。位置は `distanceFraction × 80 − 高さ`(`IndicatorMaxDistance` は threshold を
+  変えても 80 固定 — Compose と同じ)
+- 引っ張り中は determinate(loading: 円 → SoftBurst のモーフ、しきい値超えで `−(p−1)×180°` 回転 / circular: 矢印付きの円弧、
+  しきい値未満は alpha 0.3)、refreshing 中は indeterminate。両者は DefaultEffects でクロスフェード
+- 戻り / しきい値への移動は Compose `Animatable.animateTo` 既定の `spring()`(バウンスなし・MotionScheme キーではない)
+  なので duration / easing トークン(`duration-medium1` + `easing-standard`)。クロスフェードと alpha は DefaultEffects
+- **reduced motion(B3)**: インジケーターは指に追従して動かない。しきい値位置に固定し、引っ張り量に応じて不透明度だけ
+  上げる(フェードのみ)。refreshing 中もその位置に表示。進捗の形の変化(determinate)は残すが、しきい値超えの回転はしない
+- **アクセシビリティ**: ジェスチャーはキーボードから届かない。ルートに refreshing 中 `aria-busy="true"`、ルートの**外**
+  (busy 領域の外)に `role="status"` の visually hidden な live region を置き `refreshingLabel` を読む。インジケーター自体は
+  `aria-hidden`(読み上げは live region に一本化)。**アプリは必ず見えるリフレッシュ操作(ボタン等)も用意する**こと
+  (JSDoc・サイトに明記)。スタイル用に `data-indicator` / `data-refreshing` / `data-pulling` / `data-disabled` と
+  `--md-pull-to-refresh-progress` を出す(B20 の SwipeToDismiss と同じ方式)
+
+**影響**: 非破壊(新規コンポーネント・新しい subpath `m3-expressive-react/PullToRefresh`)。VRT: `Components/PullToRefresh` の
+Default / Refreshing / Circular を追加。
 
 ---
 
