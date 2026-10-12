@@ -86,6 +86,14 @@ export interface ToolbarProps extends Omit<HTMLAttributes<HTMLDivElement>, 'hidd
   scrollBehavior?: ToolbarScrollBehavior
   /** The scroll container observed by `scrollBehavior`. @default window */
   scrollTarget?: ScrollTarget
+  /**
+   * Floating: removes the container shadow. m3 toolbars guidelines: "The
+   * elevation on floating toolbars can be removed if on a visually distinct
+   * background" — keep it when the toolbar floats over content (the Fab
+   * `disableElevation` prop). A docked toolbar has no elevation either way.
+   * @default false
+   */
+  disableElevation?: boolean
 }
 
 // Compose FloatingToolbarDefaults.ScrollDistanceThreshold.
@@ -130,6 +138,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
     hidden: hiddenProp,
     scrollBehavior,
     scrollTarget,
+    disableElevation = false,
     onKeyDown,
     ...rest
   },
@@ -296,6 +305,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
       data-exit-direction={exiting ? exitDirection : undefined}
       data-hidden={hiddenProp == null ? undefined : String(hiddenProp)}
       data-settling={settling || undefined}
+      data-disable-elevation={(floating && disableElevation) || undefined}
       className={clsx(styles.toolbar, className)}
       onKeyDown={(event) => {
         onKeyDown?.(event)

@@ -43,6 +43,86 @@ describe('NavigationDrawer', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
+  describe('dismissible (B41)', () => {
+    function Dismissible({ onClose }: { onClose?: () => void }) {
+      const [open, setOpen] = useState(false)
+      return (
+        <div>
+          <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+            Menu
+          </button>
+          <NavigationDrawer
+            variant="dismissible"
+            open={open}
+            onClose={() => {
+              onClose?.()
+              setOpen(false)
+            }}
+            defaultValue="b"
+          >
+            <NavigationDrawerItem value="a" icon={Icon} label="Alpha" />
+            <NavigationDrawerItem value="b" icon={Icon} label="Beta" />
+          </NavigationDrawer>
+        </div>
+      )
+    }
+
+    it('is an inline landmark without a scrim, inert while closed', () => {
+      const { container } = render(<Dismissible />)
+      const drawer = screen.getByRole('complementary', { hidden: true })
+      expect(drawer).toHaveAttribute('data-variant', 'dismissible')
+      expect(drawer).not.toHaveAttribute('data-open')
+      expect(drawer).toHaveAttribute('inert')
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      // Rendered in place: the panel is the drawer root, with no overlay / scrim wrapper.
+      expect(drawer.parentElement).toBe(container.firstElementChild)
+      expect(container.querySelector('[class*="scrim"]')).toBeNull()
+    })
+
+    it('opens with focus on the selected item and Escape closes back to the opener', async () => {
+      const user = userEvent.setup()
+      const onClose = vi.fn()
+      render(<Dismissible onClose={onClose} />)
+      const menu = screen.getByRole('button', { name: 'Menu' })
+      await user.click(menu)
+      const drawer = screen.getByRole('complementary')
+      expect(drawer).toHaveAttribute('data-open')
+      expect(drawer).not.toHaveAttribute('inert')
+      expect(screen.getByRole('button', { name: 'Beta' })).toHaveFocus()
+      await user.keyboard('{Escape}')
+      expect(onClose).toHaveBeenCalledTimes(1)
+      expect(drawer).toHaveAttribute('inert')
+      expect(menu).toHaveFocus()
+    })
+
+    it('ignores Escape while closed or when focus is outside', async () => {
+      const user = userEvent.setup()
+      const onClose = vi.fn()
+      render(<Dismissible onClose={onClose} />)
+      const menu = screen.getByRole('button', { name: 'Menu' })
+      menu.focus()
+      await user.keyboard('{Escape}')
+      expect(onClose).not.toHaveBeenCalled()
+    })
+
+    it('does not move focus when it mounts open', () => {
+      render(
+        <NavigationDrawer variant="dismissible" open defaultValue="a">
+          <NavigationDrawerItem value="a" icon={Icon} label="Alpha" />
+        </NavigationDrawer>,
+      )
+      expect(document.body).toHaveFocus()
+    })
+
+    it('has no axe violations (open and closed)', async () => {
+      const user = userEvent.setup()
+      const { container } = render(<Dismissible />)
+      expect(await axe(container)).toHaveNoViolations()
+      await user.click(screen.getByRole('button', { name: 'Menu' }))
+      expect(await axe(container)).toHaveNoViolations()
+    })
+  })
+
   it('forwards a ref', () => {
     const ref = createRef<HTMLElement>()
     render(

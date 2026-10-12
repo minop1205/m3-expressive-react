@@ -4,9 +4,10 @@
  * items above it. Per m3.material.io / Compose FloatingActionButtonMenu:
  * items are fully-rounded 56dp pills (medium-button specs) with no elevation,
  * container/on-container of the chosen color set, 4dp apart and 8dp above the
- * close button, aligned to the trailing edge (logical — mirrored in RTL). The
+ * close button, aligned to the trailing edge by default (`data-alignment`:
+ * start / center; logical — mirrored in RTL). The
  * FAB morphs into a 56dp close button (20dp icon) pinned to the top-trailing
- * corner of its footprint. Items reveal from the trailing edge (width + fade),
+ * corner of its footprint. Items reveal from the aligned edge (width + fade),
  * bottom first; closing hides the top first. 16dp screen margins are the
  * caller's responsibility.
  */
@@ -76,6 +77,30 @@
   pointer-events: auto;
 }
 
+/* horizontalAlignment (Compose FloatingActionButtonMenu): `end` is the
+   default above; `start` aligns the items to the FAB's leading edge, `center`
+   centers them over it. */
+.root[data-alignment='start'] {
+  align-items: flex-start;
+}
+
+.root[data-alignment='start'] .list {
+  inset-inline-end: auto;
+  inset-inline-start: 0;
+  align-items: flex-start;
+}
+
+.root[data-alignment='center'] {
+  align-items: center;
+}
+
+.root[data-alignment='center'] .list {
+  inset-inline: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+}
+
 /* Item enter / exit (Compose FloatingActionButtonMenuItem): the pill's width
    grows from the trailing edge on FastSpatial (content stays end-aligned, so
    it is revealed, not squashed) while it fades in on FastEffects. The clip
@@ -101,6 +126,28 @@
     calc(-1 * var(--_clip-bleed)) calc(100% + var(--_clip-bleed)) calc(-1 * var(--_clip-bleed))
       calc(-1 * var(--_clip-bleed)) round var(--_clip-round)
   );
+}
+
+/* Closed reveal edge per alignment — `start` grows from the leading edge
+   (the mirror of `end`), `center` from the middle. `:where()` keeps these
+   below the open rule's specificity. */
+.root[data-alignment='start'] .itemSlot {
+  clip-path: inset(
+    calc(-1 * var(--_clip-bleed)) calc(100% + var(--_clip-bleed)) calc(-1 * var(--_clip-bleed))
+      calc(-1 * var(--_clip-bleed)) round var(--_clip-round)
+  );
+}
+
+:where([dir='rtl']) .root[data-alignment='start'] .itemSlot {
+  clip-path: inset(
+    calc(-1 * var(--_clip-bleed)) calc(-1 * var(--_clip-bleed)) calc(-1 * var(--_clip-bleed))
+      calc(100% + var(--_clip-bleed)) round var(--_clip-round)
+  );
+}
+
+.root[data-alignment='center'] .itemSlot {
+  clip-path: inset(calc(-1 * var(--_clip-bleed)) 50% calc(-1 * var(--_clip-bleed)) 50% round
+        var(--_clip-round));
 }
 
 .list[data-open] .itemSlot {
@@ -262,6 +309,7 @@
 @media (prefers-reduced-motion: reduce) {
   .itemSlot,
   [dir='rtl'] .itemSlot,
+  .root[data-alignment] .itemSlot,
   .list[data-open] .itemSlot {
     clip-path: none;
     transition: opacity var(--md-sys-motion-spring-fast-effects-duration)
