@@ -43,7 +43,7 @@ export type BottomSheetVariant = 'standard' | 'modal'
 /**
  * Why the sheet asked to close (ruling B7 vocabulary): Escape, a scrim
  * click (modal only), the drag handle activated as a button
- * (`'closeButton'` — only with `skipPartiallyExpanded`), or a drag / fling
+ * (`'closeButton'` — not with `skipPartiallyExpanded={false}`), or a drag / fling
  * past the threshold to the hidden position (`'drag'`).
  */
 export type BottomSheetCloseReason = 'escapeKeyDown' | 'backdropClick' | 'closeButton' | 'drag'
@@ -133,14 +133,14 @@ export interface BottomSheetProps extends HTMLAttributes<HTMLDivElement> {
   open: boolean
   /**
    * Called on scrim click, Escape, a drag / fling to the hidden position,
-   * or (with `skipPartiallyExpanded`) the drag handle, with the triggering
+   * or the drag handle (unless partially expanding is enabled), with the triggering
    * event and the `reason`.
    */
   onClose?: (event: ModalCloseEvent, reason: BottomSheetCloseReason) => void
   /**
    * Whether the open sheet is fully expanded (`true`) or partially expanded
    * (`false`: half of its height, at most half of the container). Controlled.
-   * Ignored with `skipPartiallyExpanded`.
+   * Only used with `skipPartiallyExpanded={false}`.
    */
   expanded?: boolean
   /**
@@ -153,14 +153,17 @@ export interface BottomSheetProps extends HTMLAttributes<HTMLDivElement> {
   onExpandedChange?: (expanded: boolean) => void
   /**
    * Skip the partially-expanded detent: the sheet always opens fully
-   * expanded and the drag handle dismisses it. @default false
+   * expanded and the drag handle dismisses it. Pass `false` to opt in to
+   * Compose's current behavior — open partially expanded, with the handle
+   * toggling partial / expanded (ruling B35: the default may flip in v2).
+   * @default true
    */
   skipPartiallyExpanded?: boolean
   /** Show the top drag handle. @default true */
   showDragHandle?: boolean
   /**
    * Accessible label for the drag handle button.
-   * @default 'Drag handle' ('Close' with `skipPartiallyExpanded`)
+   * @default 'Close' ('Drag handle' with `skipPartiallyExpanded={false}`)
    */
   dragHandleLabel?: string
   children?: ReactNode
@@ -175,10 +178,11 @@ export interface BottomSheetProps extends HTMLAttributes<HTMLDivElement> {
  * aria-modal`); the standard variant is a labelled `region` without a scrim.
  * Escape closes either (the standard one while focus is inside it).
  *
- * Detents (Compose `SheetValue`): the sheet opens partially expanded —
- * showing `min(container / 2, sheet / 2)` — and expands to its full height.
- * The drag handle is a button that toggles between the two
- * (`aria-expanded`); with `skipPartiallyExpanded` it dismisses instead.
+ * By default the sheet opens at full height and the drag handle is a close
+ * button. With `skipPartiallyExpanded={false}` (Compose `SheetValue`
+ * detents) it opens partially expanded — showing
+ * `min(container / 2, sheet / 2)` — and the handle toggles partial /
+ * expanded (`aria-expanded`).
  * Dragging snaps between hidden, partial and expanded: past 56px from the
  * starting detent, or a fling faster than 125px/s, moves to the next detent
  * (Compose thresholds); reaching hidden calls `onClose(event, 'drag')`.
@@ -192,7 +196,7 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
       expanded: expandedProp,
       defaultExpanded = false,
       onExpandedChange,
-      skipPartiallyExpanded = false,
+      skipPartiallyExpanded = true,
       showDragHandle = true,
       dragHandleLabel,
       className,

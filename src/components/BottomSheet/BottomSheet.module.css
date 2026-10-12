@@ -19,12 +19,6 @@
   justify-content: center;
   visibility: hidden;
   pointer-events: none;
-  /* Size container: `cqh` in the partial-detent translate is the container
-     (viewport / scaffold) height. */
-  container-type: size;
-  /* Clip the off-screen part of a partially expanded / hidden sheet: it
-     adds no scroll overflow (standard) and never paints past the edge. */
-  overflow: hidden;
   /* Stay visible until the exit motion has played (#433), then hide —
      the same delayed-visibility pattern as NavigationDrawer. */
   transition: visibility 0s linear max(var(--md-sys-motion-duration-medium4), var(--md-sys-motion-spring-default-effects-duration));
@@ -34,6 +28,17 @@
   visibility: visible;
   pointer-events: auto;
   transition-delay: 0s;
+}
+
+/* Partial detent (opt-in) and standard sheets: a size container, so `cqh`
+   in the partial-detent translate is the container (viewport / scaffold)
+   height; clipped, so the off-screen part of the sheet adds no scroll
+   overflow and never paints past the edge. Scoped so the default
+   full-height modal sheet renders exactly as before. */
+.root[data-detent='partial'],
+.root[data-variant='standard'] {
+  container-type: size;
+  overflow: hidden;
 }
 
 /* Standard: lives in the layout — fills its nearest positioned ancestor (the

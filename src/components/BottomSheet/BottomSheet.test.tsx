@@ -84,7 +84,7 @@ describe('BottomSheet modal behavior (useModal)', () => {
     render(<SheetHarness />)
     const trigger = screen.getByRole('button', { name: 'Open sheet' })
     await user.click(trigger)
-    expect(screen.getByRole('button', { name: 'Drag handle' })).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus()
     await user.keyboard('{Escape}')
     expect(trigger).toHaveFocus()
   })
@@ -93,10 +93,10 @@ describe('BottomSheet modal behavior (useModal)', () => {
     const user = userEvent.setup()
     render(<SheetHarness />)
     await user.click(screen.getByRole('button', { name: 'Open sheet' }))
-    await user.tab() // Drag handle -> First
+    await user.tab() // Close (handle) -> First
     await user.tab() // -> Last
-    await user.tab() // wraps -> Drag handle
-    expect(screen.getByRole('button', { name: 'Drag handle' })).toHaveFocus()
+    await user.tab() // wraps -> Close
+    expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus()
   })
 
   it('locks scroll and inerts the background while open', async () => {
@@ -146,11 +146,11 @@ function stubSizes(sheetHeight = 400, fullHeight = 800) {
 }
 
 describe('BottomSheet drag handle', () => {
-  it('is an accessible button that dismisses on click (skipPartiallyExpanded)', async () => {
+  it('is an accessible button that dismisses on click', async () => {
     const user = userEvent.setup()
     const onClose = vi.fn()
     render(
-      <BottomSheet open onClose={onClose} skipPartiallyExpanded>
+      <BottomSheet open onClose={onClose}>
         Body
       </BottomSheet>,
     )
@@ -159,11 +159,11 @@ describe('BottomSheet drag handle', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  it('dismisses via keyboard on the handle (skipPartiallyExpanded)', async () => {
+  it('dismisses via keyboard on the handle', async () => {
     const user = userEvent.setup()
     const onClose = vi.fn()
     render(
-      <BottomSheet open onClose={onClose} skipPartiallyExpanded>
+      <BottomSheet open onClose={onClose}>
         Body
       </BottomSheet>,
     )
@@ -179,7 +179,7 @@ describe('BottomSheet drag handle', () => {
         Body
       </BottomSheet>,
     )
-    const handle = screen.getByRole('button', { name: 'Drag handle' })
+    const handle = screen.getByRole('button', { name: 'Close' })
     stubSizes()
     firePointer(handle, 'pointerdown', { pointerId: 1, clientY: 300 })
     firePointer(handle, 'pointermove', { pointerId: 1, clientY: 400 })
@@ -197,7 +197,7 @@ describe('BottomSheet drag handle', () => {
         Body
       </BottomSheet>,
     )
-    const handle = screen.getByRole('button', { name: 'Drag handle' })
+    const handle = screen.getByRole('button', { name: 'Close' })
     const sheet = stubSizes()
     firePointer(handle, 'pointerdown', { pointerId: 1, clientY: 300 })
     firePointer(handle, 'pointermove', { pointerId: 1, clientY: 320 })
@@ -225,7 +225,7 @@ describe('BottomSheet drag handle', () => {
         Body
       </BottomSheet>,
     )
-    const handle = screen.getByRole('button', { name: 'Drag handle' })
+    const handle = screen.getByRole('button', { name: 'Close' })
     stubSizes()
     const { clock, restore } = mockClock()
     firePointer(handle, 'pointerdown', { pointerId: 1, clientY: 300 })
@@ -246,7 +246,7 @@ describe('BottomSheet drag handle', () => {
         Body
       </BottomSheet>,
     )
-    const handle = screen.getByRole('button', { name: 'Drag handle' })
+    const handle = screen.getByRole('button', { name: 'Close' })
     stubSizes()
     const { clock, restore } = mockClock()
     firePointer(handle, 'pointerdown', { pointerId: 1, clientY: 300 })
@@ -262,7 +262,7 @@ describe('BottomSheet drag handle', () => {
     const user = userEvent.setup()
     const onClose = vi.fn()
     render(
-      <BottomSheet open onClose={onClose} skipPartiallyExpanded>
+      <BottomSheet open onClose={onClose}>
         Body
       </BottomSheet>,
     )
@@ -281,7 +281,7 @@ describe('BottomSheet drag handle', () => {
   it('a new pointerdown clears a leftover drag flag', () => {
     const onClose = vi.fn()
     render(
-      <BottomSheet open onClose={onClose} skipPartiallyExpanded>
+      <BottomSheet open onClose={onClose}>
         Body
       </BottomSheet>,
     )
@@ -304,7 +304,7 @@ describe('BottomSheet onClose reason (#407)', () => {
     const user = userEvent.setup()
     const onClose = vi.fn()
     const { container } = render(
-      <BottomSheet open onClose={onClose} skipPartiallyExpanded>
+      <BottomSheet open onClose={onClose}>
         Body
       </BottomSheet>,
     )
@@ -324,7 +324,7 @@ describe('BottomSheet detents (#437)', () => {
     const user = userEvent.setup()
     const onExpandedChange = vi.fn()
     render(
-      <BottomSheet open onExpandedChange={onExpandedChange}>
+      <BottomSheet open skipPartiallyExpanded={false} onExpandedChange={onExpandedChange}>
         Body
       </BottomSheet>,
     )
@@ -347,7 +347,7 @@ describe('BottomSheet detents (#437)', () => {
     const user = userEvent.setup()
     const onExpandedChange = vi.fn()
     const { rerender } = render(
-      <BottomSheet open expanded={false} onExpandedChange={onExpandedChange}>
+      <BottomSheet open skipPartiallyExpanded={false} expanded={false} onExpandedChange={onExpandedChange}>
         Body
       </BottomSheet>,
     )
@@ -356,16 +356,16 @@ describe('BottomSheet detents (#437)', () => {
     expect(onExpandedChange).toHaveBeenCalledWith(true)
     expect(handle).toHaveAttribute('aria-expanded', 'false')
     rerender(
-      <BottomSheet open expanded onExpandedChange={onExpandedChange}>
+      <BottomSheet open skipPartiallyExpanded={false} expanded onExpandedChange={onExpandedChange}>
         Body
       </BottomSheet>,
     )
     expect(handle).toHaveAttribute('aria-expanded', 'true')
   })
 
-  it('skipPartiallyExpanded always opens expanded, without aria-expanded', () => {
+  it('by default (skipPartiallyExpanded) always opens expanded, without aria-expanded', () => {
     render(
-      <BottomSheet open skipPartiallyExpanded defaultExpanded={false}>
+      <BottomSheet open defaultExpanded={false}>
         Body
       </BottomSheet>,
     )
@@ -376,12 +376,12 @@ describe('BottomSheet detents (#437)', () => {
 
   it('an uncontrolled sheet reopens at its initial detent', async () => {
     const user = userEvent.setup()
-    const { rerender } = render(<BottomSheet open>Body</BottomSheet>)
+    const { rerender } = render(<BottomSheet open skipPartiallyExpanded={false}>Body</BottomSheet>)
     await user.click(screen.getByRole('button', { name: 'Drag handle' }))
     const sheet = screen.getByRole('dialog')
     expect(rootOf(sheet)).toHaveAttribute('data-detent', 'expanded')
-    rerender(<BottomSheet open={false}>Body</BottomSheet>)
-    rerender(<BottomSheet open>Body</BottomSheet>)
+    rerender(<BottomSheet open={false} skipPartiallyExpanded={false}>Body</BottomSheet>)
+    rerender(<BottomSheet open skipPartiallyExpanded={false}>Body</BottomSheet>)
     expect(rootOf(sheet)).toHaveAttribute('data-detent', 'partial')
   })
 
@@ -398,7 +398,7 @@ describe('BottomSheet detents (#437)', () => {
   it('drags up from partial to expanded, and down from expanded to partial', () => {
     const onClose = vi.fn()
     render(
-      <BottomSheet open onClose={onClose}>
+      <BottomSheet open skipPartiallyExpanded={false} onClose={onClose}>
         Body
       </BottomSheet>,
     )
@@ -414,7 +414,7 @@ describe('BottomSheet detents (#437)', () => {
   it('a slow drag from expanded past the partial detent dismisses', () => {
     const onClose = vi.fn()
     render(
-      <BottomSheet open defaultExpanded onClose={onClose}>
+      <BottomSheet open skipPartiallyExpanded={false} defaultExpanded onClose={onClose}>
         Body
       </BottomSheet>,
     )
@@ -426,7 +426,7 @@ describe('BottomSheet detents (#437)', () => {
   it('a downward fling from expanded settles at partial, not hidden', () => {
     const onClose = vi.fn()
     render(
-      <BottomSheet open defaultExpanded onClose={onClose}>
+      <BottomSheet open skipPartiallyExpanded={false} defaultExpanded onClose={onClose}>
         Body
       </BottomSheet>,
     )
@@ -446,7 +446,7 @@ describe('BottomSheet detents (#437)', () => {
 
   it('has no axe violations when expanded', async () => {
     const { container } = render(
-      <BottomSheet open defaultExpanded aria-label="Options">
+      <BottomSheet open skipPartiallyExpanded={false} defaultExpanded aria-label="Options">
         <p>Content</p>
       </BottomSheet>,
     )
@@ -454,11 +454,17 @@ describe('BottomSheet detents (#437)', () => {
   })
 })
 
-function StandardHarness({ onClose }: { onClose?: () => void }) {
+function StandardHarness({ onClose, partial }: { onClose?: () => void; partial?: boolean }) {
   return (
     <div style={{ position: 'relative', height: 600 }}>
       <button>Page action</button>
-      <BottomSheet variant="standard" open onClose={onClose} aria-label="Now playing">
+      <BottomSheet
+        variant="standard"
+        open
+        onClose={onClose}
+        skipPartiallyExpanded={!partial}
+        aria-label="Now playing"
+      >
         <button>Play</button>
       </BottomSheet>
     </div>
@@ -506,7 +512,7 @@ describe('BottomSheet variant="standard" (#437)', () => {
 
   it('has detents too', async () => {
     const user = userEvent.setup()
-    render(<StandardHarness />)
+    render(<StandardHarness partial />)
     const handle = screen.getByRole('button', { name: 'Drag handle' })
     await user.click(handle)
     expect(handle).toHaveAttribute('aria-expanded', 'true')

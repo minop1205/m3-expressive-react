@@ -14,7 +14,6 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** Opens partially expanded: half the sheet, at most half the viewport. */
 export const Default: Story = {
   render: () => {
     const [open, setOpen] = useState(true)
@@ -55,9 +54,30 @@ function PlaceList() {
 }
 
 /**
- * Starts fully expanded (`defaultExpanded`). The drag handle toggles between
- * expanded and partially expanded; dragging snaps between the detents.
+ * Opt-in detents (`skipPartiallyExpanded={false}`): opens partially expanded —
+ * half the sheet, at most half the viewport. The drag handle toggles between
+ * partially expanded and expanded; dragging snaps between the detents.
  */
+export const PartiallyExpanded: Story = {
+  render: () => {
+    const [open, setOpen] = useState(true)
+    return (
+      <div style={{ padding: 24 }}>
+        <Button onClick={() => setOpen(true)}>Open sheet</Button>
+        <BottomSheet
+          open={open}
+          onClose={() => setOpen(false)}
+          skipPartiallyExpanded={false}
+          aria-label="Places"
+        >
+          <PlaceList />
+        </BottomSheet>
+      </div>
+    )
+  },
+}
+
+/** Opt-in detents, starting fully expanded (`defaultExpanded`). */
 export const Expanded: Story = {
   render: () => {
     const [open, setOpen] = useState(true)
@@ -67,6 +87,7 @@ export const Expanded: Story = {
         <BottomSheet
           open={open}
           onClose={() => setOpen(false)}
+          skipPartiallyExpanded={false}
           defaultExpanded
           aria-label="Places"
         >
@@ -91,28 +112,9 @@ export const ControlledDetent: Story = {
         <BottomSheet
           open={open}
           onClose={() => setOpen(false)}
+          skipPartiallyExpanded={false}
           expanded={expanded}
           onExpandedChange={setExpanded}
-          aria-label="Places"
-        >
-          <PlaceList />
-        </BottomSheet>
-      </div>
-    )
-  },
-}
-
-/** `skipPartiallyExpanded`: opens at full height; the handle dismisses. */
-export const SkipPartiallyExpanded: Story = {
-  render: () => {
-    const [open, setOpen] = useState(true)
-    return (
-      <div style={{ padding: 24 }}>
-        <Button onClick={() => setOpen(true)}>Open sheet</Button>
-        <BottomSheet
-          open={open}
-          onClose={() => setOpen(false)}
-          skipPartiallyExpanded
           aria-label="Places"
         >
           <PlaceList />
@@ -125,7 +127,8 @@ export const SkipPartiallyExpanded: Story = {
 /**
  * `variant="standard"`: no scrim, no focus trap — the page stays usable.
  * The sheet fills the bottom of its nearest positioned ancestor (here the
- * viewport-high container), like Compose `BottomSheetScaffold`.
+ * viewport-high container), like Compose `BottomSheetScaffold`. Shown with
+ * the opt-in partial detent, as a persistent sheet that peeks.
  */
 export const Standard: Story = {
   render: () => {
@@ -140,6 +143,7 @@ export const Standard: Story = {
           variant="standard"
           open={open}
           onClose={() => setOpen(false)}
+          skipPartiallyExpanded={false}
           aria-label="Places"
         >
           <PlaceList />

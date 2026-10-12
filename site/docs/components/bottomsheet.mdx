@@ -78,7 +78,13 @@ export function StandardSheetDemo() {
           {open ? 'Hide sheet' : 'Show sheet'}
         </Button>
       </div>
-      <BottomSheet variant="standard" open={open} onClose={() => setOpen(false)} aria-label="Places">
+      <BottomSheet
+        variant="standard"
+        open={open}
+        onClose={() => setOpen(false)}
+        skipPartiallyExpanded={false}
+        aria-label="Places"
+      >
         <List aria-label="Places">
           {places.map((place) => (
             <ListItem key={place} headline={place} supportingText="San Francisco, CA" />
@@ -107,45 +113,45 @@ const [open, setOpen] = useState(false)
 
 ## Partially expanded and expanded
 
-A sheet opens **partially expanded**: it shows half of its own height, at
-most half of the screen (Compose's current `SheetValue.PartiallyExpanded`).
-The drag handle toggles between partially expanded and **expanded** (full
-height) — with a pointer, <kbd>Enter</kbd> or <kbd>Space</kbd> — and
-dragging snaps between hidden, partial and expanded. Start expanded with
-`defaultExpanded`, or control the detent with `expanded` /
-`onExpandedChange`. An uncontrolled sheet reopens at its initial detent.
+By default a sheet opens at full height and the drag handle dismisses it
+(`skipPartiallyExpanded` defaults to `true`). Pass
+`skipPartiallyExpanded={false}` to opt in to Compose's current detents: the
+sheet opens **partially expanded**, showing half of its own height, at most
+half of the screen (`SheetValue.PartiallyExpanded`). The drag handle then
+toggles between partially expanded and **expanded** (full height) — with a
+pointer, <kbd>Enter</kbd> or <kbd>Space</kbd> — and dragging snaps between
+hidden, partial and expanded. Start expanded with `defaultExpanded`, or
+control the detent with `expanded` / `onExpandedChange`. An uncontrolled
+sheet reopens at its initial detent.
 
 <Demo>
-  <BottomSheetDemo label="Partially expanded" long />
-  <BottomSheetDemo label="Expanded" long defaultExpanded />
+  <BottomSheetDemo label="Partially expanded" long skipPartiallyExpanded={false} />
+  <BottomSheetDemo label="Expanded" long skipPartiallyExpanded={false} defaultExpanded />
 </Demo>
 
 ```tsx
 const [expanded, setExpanded] = useState(false)
 
-<BottomSheet open={open} onClose={close} expanded={expanded} onExpandedChange={setExpanded}>
+<BottomSheet
+  open={open}
+  onClose={close}
+  skipPartiallyExpanded={false}
+  expanded={expanded}
+  onExpandedChange={setExpanded}
+>
   …
 </BottomSheet>
 ```
 
-`skipPartiallyExpanded` drops the partial detent: the sheet always opens at
-full height and the drag handle dismisses it.
-
-<Demo>
-  <BottomSheetDemo label="Skip partially expanded" long skipPartiallyExpanded />
-</Demo>
-
-```tsx
-<BottomSheet open={open} onClose={close} skipPartiallyExpanded>
-  …
-</BottomSheet>
-```
+Opening partially expanded is Compose's default; it may become this
+library's default in v2.
 
 ## Dragging
 
 Drag the handle with a pointer. Releasing more than 56px from the starting
 detent, or flinging faster than 125px/s, moves the sheet to the next detent
-in that direction (Compose thresholds); otherwise it settles back. Reaching
+in that direction (Compose thresholds); otherwise it settles back. Without
+the partial detent, that means a drag either dismisses or settles back. Reaching
 the hidden position calls `onClose(event, 'drag')`. Hide the drag handle
 with `showDragHandle={false}` — the sheet can still be closed by the scrim
 and <kbd>Escape</kbd>.
@@ -168,7 +174,7 @@ details: no scrim, no focus trap, nothing is made `inert`, and body scroll
 is not locked. It fills the bottom of its nearest positioned ancestor
 (Compose `BottomSheetScaffold`), so place it inside a `position: relative`
 container — or a `position: fixed` one to pin it to the viewport. It has
-the same detents and drag behavior.
+the same detents and drag behavior; the demo opts in to the partial detent.
 
 <Demo>
   <StandardSheetDemo />
@@ -177,7 +183,13 @@ the same detents and drag behavior.
 ```tsx
 <div style={{ position: 'relative', height: 360 }}>
   <MapView />
-  <BottomSheet variant="standard" open={open} onClose={close} aria-label="Places">
+  <BottomSheet
+    variant="standard"
+    open={open}
+    onClose={close}
+    skipPartiallyExpanded={false}
+    aria-label="Places"
+  >
     …
   </BottomSheet>
 </div>
@@ -192,10 +204,10 @@ the same detents and drag behavior.
   rest of the page is `inert`, and body scroll is locked; on close, focus
   returns to the element that opened it. A standard sheet does none of
   this, and closes on <kbd>Escape</kbd> only while focus is inside it.
-- The drag handle is a real button with `aria-expanded`: it toggles
-  partially expanded / expanded (default label "Drag handle"). With
-  `skipPartiallyExpanded` it dismisses instead (default label "Close").
-  Relabel it with `dragHandleLabel`.
+- The drag handle is a real button. By default it dismisses the sheet
+  (default label "Close"); with `skipPartiallyExpanded={false}` it carries
+  `aria-expanded` and toggles partially expanded / expanded (default label
+  "Drag handle"). Relabel it with `dragHandleLabel`.
 - Dragging is a pointer-only enhancement: every detent and dismissal is
   also reachable from the keyboard.
 - With reduced motion, the sheet moves between detents instantly.
