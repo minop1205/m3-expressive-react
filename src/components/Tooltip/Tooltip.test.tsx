@@ -443,6 +443,152 @@ describe('Tooltip', () => {
     expect(rich).toHaveAttribute('data-placement', 'bottom')
   })
 
+  describe('placement (B38)', () => {
+    // Viewport 800×600, tooltip 120×40, anchor 40×40 at (x, y).
+    function mockLayout(x: number, y: number) {
+      vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(800)
+      vi.spyOn(document.documentElement, 'clientHeight', 'get').mockReturnValue(600)
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(120)
+      vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(40)
+      vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue(
+        DOMRect.fromRect({ x, y, width: 40, height: 40 }),
+      )
+    }
+    const popup = () => document.querySelector<HTMLElement>('[data-variant]')!
+
+    it.each([
+      ['start', 'left', 300 - 4 - 120],
+      ['end', 'right', 340 + 4],
+      ['left', 'left', 300 - 4 - 120],
+      ['right', 'right', 340 + 4],
+    ] as const)('places %s beside the trigger, vertically centered', (placement, side, left) => {
+      mockLayout(300, 300)
+      render(
+        <Tooltip text="Hint" placement={placement} open>
+          <button>T</button>
+        </Tooltip>,
+      )
+      expect(popup()).toHaveAttribute('data-placement', side)
+      expect(popup().style.left).toBe(`${left}px`)
+      expect(popup().style.top).toBe('300px')
+    })
+
+    it('mirrors start / end in RTL but keeps left / right physical', () => {
+      mockLayout(300, 300)
+      render(
+        <div dir="rtl" style={{ direction: 'rtl' }}>
+          <Tooltip text="A" placement="start" open>
+            <button>A</button>
+          </Tooltip>
+          <Tooltip text="B" placement="left" open>
+            <button>B</button>
+          </Tooltip>
+        </div>,
+      )
+      const [start, left] = document.querySelectorAll('[data-variant]')
+      expect(start).toHaveAttribute('data-placement', 'right')
+      expect(left).toHaveAttribute('data-placement', 'left')
+    })
+
+    it('flips a side placement when there is no room', () => {
+      mockLayout(20, 300)
+      render(
+        <Tooltip text="Hint" placement="left" open>
+          <button>T</button>
+        </Tooltip>,
+      )
+      expect(popup()).toHaveAttribute('data-placement', 'right')
+      expect(popup().style.left).toBe('64px')
+    })
+
+    it('puts a rich tooltip at the bottom-end corner by default', () => {
+      mockLayout(300, 300)
+      render(
+        <Tooltip variant="rich" text="Rich" open>
+          <button>T</button>
+        </Tooltip>,
+      )
+      expect(popup()).toHaveAttribute('data-placement', 'bottom')
+      // Start-aligned with the trigger, so it extends toward the end edge.
+      expect(popup().style.left).toBe('300px')
+      expect(popup().style.top).toBe('344px')
+    })
+
+    it('moves a rich tooltip to the other corners near the viewport edges', () => {
+      // Bottom-right of the viewport: above, end-aligned (top-start corner).
+      mockLayout(740, 540)
+      render(
+        <Tooltip variant="rich" text="Rich" open>
+          <button>T</button>
+        </Tooltip>,
+      )
+      expect(popup()).toHaveAttribute('data-placement', 'top')
+      expect(popup().style.left).toBe(`${780 - 120}px`)
+      expect(popup().style.top).toBe(`${540 - 4 - 40}px`)
+    })
+
+    it('mirrors the rich corner in RTL', () => {
+      mockLayout(300, 300)
+      render(
+        <div style={{ direction: 'rtl' }}>
+          <Tooltip variant="rich" text="Rich" open>
+            <button>T</button>
+          </Tooltip>
+        </div>,
+      )
+      // Aligned to the trigger's right (start) edge, extending left.
+      expect(popup().style.left).toBe(`${340 - 120}px`)
+    })
+
+    it('centers a rich tooltip with an explicit top / bottom placement', () => {
+      mockLayout(300, 300)
+      render(
+        <Tooltip variant="rich" text="Rich" placement="bottom" open>
+          <button>T</button>
+        </Tooltip>,
+      )
+      expect(popup().style.left).toBe(`${320 - 60}px`)
+    })
+
+    it('draws a caret toward the trigger and keeps the tip 4dp away', () => {
+      mockLayout(300, 300)
+      render(
+        <Tooltip text="Hint" caret open>
+          <button>T</button>
+        </Tooltip>,
+      )
+      expect(popup()).toHaveAttribute('data-caret')
+      // 4dp gap + 8dp caret above the trigger.
+      expect(popup().style.top).toBe(`${300 - 12 - 40}px`)
+      expect(popup().style.getPropertyValue('--_popup-anchor-x')).toBe('60px')
+    })
+
+    it('has no caret by default', () => {
+      mockLayout(300, 300)
+      render(
+        <Tooltip text="Hint" open>
+          <button>T</button>
+        </Tooltip>,
+      )
+      expect(popup()).not.toHaveAttribute('data-caret')
+      expect(popup().style.getPropertyValue('--_popup-anchor-x')).toBe('')
+    })
+
+    it('has no axe violations with side placements and a caret', async () => {
+      const { container } = render(
+        <div>
+          <Tooltip text="Plain" placement="end" caret open>
+            <button aria-label="Favorite">★</button>
+          </Tooltip>
+          <Tooltip variant="rich" subhead="Title" text="Body" caret open>
+            <button>Rich</button>
+          </Tooltip>
+        </div>,
+      )
+      expect(await axe(container)).toHaveNoViolations()
+    })
+  })
+
   it('supports controlled open', async () => {
     const user = setupFake()
     const onOpenChange = vi.fn()
