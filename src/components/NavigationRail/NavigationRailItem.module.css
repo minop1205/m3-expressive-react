@@ -54,7 +54,7 @@
   --_icon-top: calc(10px + 6px * var(--_t, 0));
 }
 
-.item:dir(rtl) {
+[dir='rtl'] .item {
   --_dir: -1;
 }
 
@@ -110,7 +110,7 @@
       var(--md-sys-motion-spring-default-spatial-easing);
 }
 
-.item:dir(rtl) .shape::before {
+[dir='rtl'] .item .shape::before {
   transform-origin: calc(100% - 28px) 50%;
 }
 

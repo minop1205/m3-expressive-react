@@ -201,7 +201,6 @@
   border-radius: var(--md-sys-shape-corner-full);
   background-color: var(--md-sys-color-primary);
   pointer-events: none;
-  transition: transform 100ms var(--md-sys-motion-easing-standard);
 }
 
 .slider[data-orientation='horizontal'] .thumb {
@@ -278,7 +277,10 @@
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 100ms var(--md-sys-motion-easing-standard);
+  /* Show / hide fade on FastEffects (Compose has no value-label motion; an
+     opacity change is an effects animation). */
+  transition: opacity var(--md-sys-motion-spring-fast-effects-duration)
+    var(--md-sys-motion-spring-fast-effects-easing);
 }
 
 .slider[data-orientation='horizontal'] .valueLabel {

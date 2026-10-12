@@ -93,6 +93,10 @@
   --_effects-easing: var(--md-sys-motion-spring-fast-effects-easing);
   --_show-duration: var(--md-sys-motion-spring-slow-effects-duration);
   --_show-easing: var(--md-sys-motion-spring-slow-effects-easing);
+  /* Show hold: lets the label clear the input line before the content /
+     placeholder fades in. material-web's 67ms (no token or Compose
+     counterpart; documented exception, docs/md3-token-reference.md §5). */
+  --_show-delay: 67ms;
 
   position: relative;
   display: inline-flex;
@@ -134,7 +138,9 @@
   background-color: var(--_hover-state-layer-color);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 150ms;
+  /* Hover state layer: same tween as the Ripple primitive's hover layer. */
+  transition: opacity var(--md-sys-motion-duration-short3)
+    var(--md-sys-motion-easing-standard);
 }
 
 .filled:not(.disabled):hover .stateLayer {
@@ -435,7 +441,7 @@
 .populated .content {
   opacity: 1;
   /* Short hold so the label clears the input line first (material-web). */
-  transition: opacity var(--_show-duration) var(--_show-easing) 67ms;
+  transition: opacity var(--_show-duration) var(--_show-easing) var(--_show-delay);
 }
 
 .disabled .content {
@@ -491,7 +497,7 @@
 .noLabel .input::placeholder,
 .focused .input::placeholder {
   opacity: 1;
-  transition: opacity var(--_show-duration) var(--_show-easing) 67ms;
+  transition: opacity var(--_show-duration) var(--_show-easing) var(--_show-delay);
 }
 
 /* Autofill detection (#432): Chrome's page-load autofill fires no input

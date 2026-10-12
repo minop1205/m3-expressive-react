@@ -32,7 +32,7 @@
 .modalRoot {
   position: fixed;
   inset: 0;
-  z-index: 24; /* match the other modal overlays */
+  z-index: var(--md-sys-z-modal);
   display: flex;
   visibility: hidden;
   pointer-events: none;

@@ -62,7 +62,7 @@
 }
 
 .wrapper[data-open] {
-  z-index: 20;
+  z-index: var(--md-sys-z-search);
   transition-delay: 0s;
 }
 
