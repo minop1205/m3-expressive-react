@@ -1,6 +1,8 @@
 export {
   SegmentedButton,
   type SegmentedButtonProps,
+  type SegmentedButtonSingleSelectProps,
+  type SegmentedButtonMultiSelectProps,
   type SegmentedButtonOption,
   // Deprecated aliases — removed in v2.
   SegmentedButtons,

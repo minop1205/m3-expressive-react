@@ -51,7 +51,7 @@ export const SingleSelect: Story = {
         aria-label="View"
         options={days}
         value={value}
-        onChange={(_event, v) => setValue(v as string)}
+        onChange={(_event, v) => setValue(v)}
       />
     )
   },
@@ -70,7 +70,7 @@ export const MultiSelect: Story = {
           { value: 'u', label: 'Underline' },
         ]}
         value={value}
-        onChange={(_event, v) => setValue(v as string[])}
+        onChange={(_event, v) => setValue(v)}
       />
     )
   },
@@ -101,7 +101,7 @@ export const IconAndLabel: Story = {
           { value: 'm', label: 'Month', icon: <CalendarMonthIcon /> },
         ]}
         value={value}
-        onChange={(_event, v) => setValue(v as string)}
+        onChange={(_event, v) => setValue(v)}
       />
     )
   },
@@ -123,7 +123,7 @@ export const IconOnly: Story = {
           { value: 'car', icon: <CarIcon />, ariaLabel: 'Driving' },
         ]}
         value={value}
-        onChange={(_event, v) => setValue(v as string)}
+        onChange={(_event, v) => setValue(v)}
       />
     )
   },
@@ -142,7 +142,7 @@ export const DisabledSegment: Story = {
           { value: 'm', label: 'Month' },
         ]}
         value={value}
-        onChange={(_event, v) => setValue(v as string)}
+        onChange={(_event, v) => setValue(v)}
       />
     )
   },
@@ -158,7 +158,7 @@ export const RightToLeft: Story = {
           aria-label="View"
           options={days}
           value={value}
-          onChange={(_event, v) => setValue(v as string)}
+          onChange={(_event, v) => setValue(v)}
         />
       </div>
     )

@@ -199,10 +199,12 @@ option's `disabled`.
 ## Accessibility
 
 - Single select renders a `radiogroup` of `radio`s (`aria-checked`) with
-  **one** Tab stop: arrow keys move focus, <kbd>Space</kbd> /
-  <kbd>Enter</kbd> select.
+  **one** Tab stop: arrow keys (and <kbd>Home</kbd> / <kbd>End</kbd>) move
+  focus and select, as in a native radio group; <kbd>Space</kbd> /
+  <kbd>Enter</kbd> also select. Activating the selected segment again does
+  not fire `onChange`.
 - Multi select renders a `group` of toggle buttons (`aria-pressed`); each
-  segment is a Tab stop, and arrow keys also move focus.
+  segment is a Tab stop, and arrow keys also move focus (without toggling).
 - Name the group with `aria-label` / `aria-labelledby`, and give icon-only
   segments an `ariaLabel` describing the option.
 
