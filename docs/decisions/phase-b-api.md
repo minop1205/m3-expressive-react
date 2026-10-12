@@ -55,6 +55,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B28 | #265 | Badge のラベルと非表示時の扱い | **visually-hidden の既定英語ラベル + `label` で上書き、`role="status"` 廃止、非表示時は AT からも隠す** | a11y のみ | 決定(2026-09-30・推奨どおり) |
 | B29 | #267 | Divider を既定で装飾扱いに | **既定 decorative(AT から隠す)+ `decorative={false}` で意味付き区切り** | a11y のみ | 決定(2026-09-30・推奨どおり) |
 | B30 | #393 | Search app bar | **`TopAppBar variant="search"` + `searchBar` スロット(SearchBar を合成)、`titleAlignment` で中央揃え、`title` は visually hidden の h1** | なし(追加) | 決定(2026-10-07・#393 の API 案どおり) |
+| B37 | #439 | TextField のラベル位置(上置き・常時縮小) | **`labelPlacement?: 'floating' \| 'above'`(既定 `'floating'`)+ `shrinkLabel?: boolean`、DatePickerField も同名で素通し** | なし(追加) | 決定(2026-10-13・#439 の API 案どおり) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -1008,6 +1009,56 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 意図が伝わるため。MenuDivider(`role="menu"` 内の separator)は対象外で現状維持。
 
 **影響**: a11y ツリーのみ(区切りが読まれなくなる)。VRT なし。対象: Divider(SideSheet の `showDivider` 等の内部利用も含む)。
+
+---
+
+## 入力系
+
+### B37: TextField のラベル位置(上置き・常時縮小)
+
+- **Issue**: #439
+- **状態**: 決定(2026-10-13・#439 の API 案どおり。実装時に補足事項を確定)
+- **背景**: TextField はフローティングラベルしかない。Compose は `TextFieldLabelPosition`(TextFieldDefaults.kt:2241)で
+  `Inside(isAlwaysMinimized, …)`(:2301、filled の既定 — TextField.kt:212)・`Cutout(isAlwaysMinimized, …)`(:2346、
+  outlined の既定 — OutlinedTextField.kt:160)・`Above(alignment)`(:2384)を持つ(`Attached` は deprecated)。
+  textfield 監査の「機能追加の候補」に挙がっていた。
+
+**選択肢**
+
+- **(a) `labelPlacement?: 'floating' | 'above'` + `shrinkLabel?: boolean`**(issue 案)
+  ```tsx
+  <TextField label="Email" labelPlacement="above" placeholder="you@example.com" />
+  <TextField label="Amount" shrinkLabel prefixText="$" />
+  ```
+  - 利点: `labelPlacement` は HeroUI(旧 NextUI)Input と同じ Web 慣習の語、`shrink` は MUI `InputLabel shrink` と同じ語。
+    `Inside` / `Cutout` は variant で決まるため `'floating'` 1 語にまとめられ、Compose の区別を利用者に見せずに済む
+  - 欠点: `above` と `shrinkLabel` の組み合わせは意味を持たない(下記のとおり無視)
+- **(b) 1 つの prop に 3 値**(`labelPlacement: 'floating' | 'shrunk' | 'above'`)
+  - 利点: 無意味な組み合わせが型で出ない。欠点: 「位置」と「縮小するか」という別軸を 1 語に混ぜ、Compose の
+    `isAlwaysMinimized`(Inside / Cutout 共通のフラグ)とも対応がずれる
+- **(c) Compose 流のオブジェクト**(`labelPosition={{ type: 'inside', alwaysMinimized: true }}`)— API 方針に反する
+
+**決定**: **(a)**。補足:
+
+- `labelPlacement="above"`(Compose `Above`): ラベルはコンテナの外の上に、常に縮小状態(`showExpandedLabel` = false、
+  TextFieldImpl.kt:1962)。書体は bodySmall に完全に補間(`lerp(bodyLarge, bodySmall, 1)`、:1951 — 太さ・字間も
+  body-small)、余白は start / end / bottom 4dp(`AboveLabelHorizontalPadding` / `AboveLabelBottomPadding`、:424・
+  :2237–2240)、最小行高 16dp(`MinFocusedLabelLineHeight`)。y = 0・コンテナ全幅で start 揃え(アイコン分は
+  ずらさない、:1154–1162)、コンテナはその下(:1136)。コンテナは**ラベルなしと同じレイアウト**
+  (`contentPaddingWithoutLabel` = 16dp 四方、TextFieldDefaults.kt:476 / :1374)で、**outlined の notch は描かない**。
+  placeholder / prefix / suffix は空・非フォーカスでも表示(:2068 / :2083)。ラベルは引き続き `<label htmlFor>`
+  (クリックで入力へフォーカス、`required` の `*` は aria-hidden)。色は従来のラベルと同じ状態別トークン
+  (focus = primary、error、disabled 38%)。`alignment` は公開しない(start 固定 — 必要になれば別途)
+- `shrinkLabel`(Compose `Inside` / `Cutout(isAlwaysMinimized = true)`): フローティングラベルを常に縮小位置に置き、
+  outlined は notch を常に開く。placeholder / prefix / suffix は空・非フォーカスでも表示。`label` がないとき、
+  および `labelPlacement="above"` のときは効果なし(above は常に縮小)
+- RTL: 上置きラベルは論理プロパティ(`padding-inline` / `text-align: start`)のみで追加ルール不要。RTL ルールが要る
+  場合は `[dir='rtl']`(#428 の方針、`:dir()` は Lightning CSS で `dir` 属性を無視するため使わない)
+- DatePickerField は TextField(outlined)を包むので、**同名の `labelPlacement` / `shrinkLabel` を素通し**する
+  (フォーム内で他のフィールドと揃えるため)。ポップアップはルート基準なので上置きラベルでも位置は変わらない
+- 既定(`'floating'`、`shrinkLabel` なし)の DOM・CSS は不変(既存ストーリーはピクセル同一)
+
+**影響**: 非破壊(追加 prop のみ)。VRT: `LabelAbove` / `ShrinkLabel` ストーリー追加。対象: TextField, DatePickerField。
 
 ---
 
