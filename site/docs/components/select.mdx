@@ -1,0 +1,215 @@
+---
+title: Select
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Select, Option, Button } from 'm3-expressive-react'
+import CommuteIcon from '@material-symbols/svg-400/outlined/commute.svg'
+import FlightIcon from '@material-symbols/svg-400/outlined/flight.svg'
+import CarIcon from '@material-symbols/svg-400/outlined/directions_car.svg'
+import TrainIcon from '@material-symbols/svg-400/outlined/train.svg'
+import BikeIcon from '@material-symbols/svg-400/outlined/directions_bike.svg'
+
+# Select
+
+The MD3 exposed dropdown menu: a text field that opens a list of options to
+pick one value from. The field looks exactly like a
+[TextField](/components/textfield) (filled or outlined). The list opens in the
+top layer below the field, flips above it when there is no room, and is
+exactly as wide as the field.
+
+## Variants
+
+<Demo>
+  <Select variant="filled" label="Filled" defaultValue="banana">
+    <Option value="apple">Apple</Option>
+    <Option value="banana">Banana</Option>
+    <Option value="cherry">Cherry</Option>
+  </Select>
+  <Select variant="outlined" label="Outlined" defaultValue="banana">
+    <Option value="apple">Apple</Option>
+    <Option value="banana">Banana</Option>
+    <Option value="cherry">Cherry</Option>
+  </Select>
+</Demo>
+
+```tsx
+<Select variant="outlined" label="Fruit" defaultValue="banana">
+  <Option value="apple">Apple</Option>
+  <Option value="banana">Banana</Option>
+  <Option value="cherry">Cherry</Option>
+</Select>
+```
+
+Each `Option` has a string `value`. Its children are the label, and the field
+shows that label once the option is selected. The selected option is shown
+with the tertiary-container colors and a check mark.
+
+## Controlled value
+
+`value` + `onChange(event, value)` control the selection. `onChange` fires
+only when the user picks a different option. Use `defaultValue` for an
+uncontrolled Select. `''` means nothing is selected; `placeholder` is shown
+then, once the label has floated.
+
+export function ControlledDemo() {
+  const [size, setSize] = useState('')
+  return (
+    <>
+      <Select
+        label="Size"
+        placeholder="Choose a size"
+        value={size}
+        onChange={(event, value) => setSize(value)}
+      >
+        <Option value="s">Small</Option>
+        <Option value="m">Medium</Option>
+        <Option value="l">Large</Option>
+        <Option value="xl" disabled>Extra large (sold out)</Option>
+      </Select>
+      <span>Value: {size === '' ? '—' : size}</span>
+    </>
+  )
+}
+
+<Demo>
+  <ControlledDemo />
+</Demo>
+
+```tsx
+const [size, setSize] = useState('')
+
+<Select label="Size" placeholder="Choose a size" value={size} onChange={(event, value) => setSize(value)}>
+  <Option value="s">Small</Option>
+  <Option value="m">Medium</Option>
+  <Option value="xl" disabled>Extra large (sold out)</Option>
+</Select>
+```
+
+`disabled` options are shown but can't be picked, and keyboard navigation
+skips them. The open state can be controlled too, with `open` /
+`defaultOpen` / `onOpenChange`.
+
+## Icons
+
+`startIcon` on the Select puts a decorative icon at the start of the field.
+`startIcon` on an `Option` puts one at the start of the option; the check
+mark replaces it while that option is selected.
+
+<Demo>
+  <Select label="Travel mode" startIcon={<CommuteIcon />} defaultValue="train">
+    <Option value="flight" startIcon={<FlightIcon />}>Flight</Option>
+    <Option value="car" startIcon={<CarIcon />}>Car</Option>
+    <Option value="train" startIcon={<TrainIcon />}>Train</Option>
+    <Option value="bike" startIcon={<BikeIcon />}>Bike</Option>
+  </Select>
+</Demo>
+
+```tsx
+<Select label="Travel mode" startIcon={<CommuteIcon />} defaultValue="train">
+  <Option value="flight" startIcon={<FlightIcon />}>Flight</Option>
+  <Option value="train" startIcon={<TrainIcon />}>Train</Option>
+</Select>
+```
+
+## Supporting text, error & states
+
+<Demo>
+  <Select label="Country" supportingText="Used for shipping">
+    <Option value="jp">Japan</Option>
+    <Option value="us">United States</Option>
+  </Select>
+  <Select label="Country" required error errorText="Choose a country">
+    <Option value="jp">Japan</Option>
+    <Option value="us">United States</Option>
+  </Select>
+  <Select label="Country" disabled defaultValue="jp">
+    <Option value="jp">Japan</Option>
+    <Option value="us">United States</Option>
+  </Select>
+</Demo>
+
+`error` switches to the error colors and sets `aria-invalid`. `errorText`
+replaces `supportingText` while in error and is announced (`role="alert"`).
+`fullWidth` stretches the field, and with it the list, to the container's
+width.
+
+## Forms
+
+The value is carried by a visually hidden native `<input>`. With `name` it is
+submitted with its `<form>` (or with the form that `form="id"` points to).
+`required` takes part in native validation, and a form reset puts an
+uncontrolled Select back to its `defaultValue`. A `disabled` Select is not
+submitted. `inputRef` gives you that native input.
+
+export function FormDemo() {
+  const [submitted, setSubmitted] = useState('—')
+  return (
+    <form
+      style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}
+      onSubmit={(event) => {
+        event.preventDefault()
+        setSubmitted(new FormData(event.currentTarget).get('plan') || '(empty)')
+      }}
+    >
+      <Select label="Plan" name="plan" required defaultValue="pro">
+        <Option value="free">Free</Option>
+        <Option value="pro">Pro</Option>
+        <Option value="team">Team</Option>
+      </Select>
+      <Button type="submit">Submit</Button>
+      <Button type="reset" variant="outlined">Reset</Button>
+      <span>Submitted: {submitted}</span>
+    </form>
+  )
+}
+
+<Demo>
+  <FormDemo />
+</Demo>
+
+```tsx
+<form onSubmit={handleSubmit}>
+  <Select label="Plan" name="plan" required defaultValue="pro">
+    <Option value="free">Free</Option>
+    <Option value="pro">Pro</Option>
+  </Select>
+  <Button type="submit">Submit</Button>
+  <Button type="reset" variant="outlined">Reset</Button>
+</form>
+```
+
+## Accessibility
+
+Follows the WAI-ARIA APG
+[select-only combobox](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-select-only/)
+pattern:
+
+- The field is a focusable `role="combobox"` named by the `label` (or by
+  `aria-label` / `aria-labelledby`), with `aria-expanded`, `aria-controls`,
+  and `aria-describedby` pointing at the supporting text. The popup is a
+  `role="listbox"` of `option`s with `aria-selected`.
+- Focus stays on the combobox while the list is open. The active option is
+  exposed through `aria-activedescendant` and shown with a focus ring.
+- Closed: <kbd>↓</kbd> / <kbd>↑</kbd> / <kbd>Enter</kbd> / <kbd>Space</kbd>
+  open on the selected option, <kbd>Home</kbd> / <kbd>End</kbd> open on the
+  first / last option, and typing opens on the first option that matches.
+- Open: <kbd>↓</kbd> / <kbd>↑</kbd> move (without wrapping),
+  <kbd>Home</kbd> / <kbd>End</kbd> / <kbd>PageUp</kbd> / <kbd>PageDown</kbd>
+  jump, and typing moves by typeahead. <kbd>Enter</kbd> / <kbd>Space</kbd>
+  select and close, and <kbd>Tab</kbd> selects and moves on.
+  <kbd>Escape</kbd> closes without selecting.
+- Disabled options are announced (`aria-disabled`) but skipped by the
+  keyboard.
+
+## Props
+
+### Select
+
+<PropsTable component="Select" />
+
+### Option
+
+<PropsTable component="Option" />

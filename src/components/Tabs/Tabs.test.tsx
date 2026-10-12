@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
+import { Badge } from '../Badge/Badge'
 import { Tab, Tabs } from './Tabs'
 
 function Example({
@@ -306,5 +307,146 @@ describe('Tabs uncontrolled mode', () => {
     await user.click(screen.getByRole('tab', { name: 'Two' }))
     expect(screen.getByRole('tab', { name: 'Two' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: 'One' })).toHaveAttribute('aria-selected', 'false')
+  })
+})
+
+describe('Tab iconPosition and badge (#443)', () => {
+  const Icon = <svg data-testid="icon" />
+
+  /**
+   * Fakes layout: tabs are 200 wide; a measured content box is 80 (icon +
+   * label), 24 (icon) or 40 (label); a badge is 30; everything else 0.
+   */
+  function fakeLayout() {
+    return vi
+      .spyOn(Element.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: Element) {
+        let width = 0
+        if (this.getAttribute('role') === 'tab') width = 200
+        else if (this.hasAttribute('data-tab-content')) {
+          const hasIcon = this.querySelector('svg') !== null
+          const hasLabel = this.textContent?.includes('Alpha') === true
+          width = hasIcon && hasLabel ? 80 : hasIcon ? 24 : 40
+        } else if (this.matches('[data-size]') || this.querySelector('[data-size]')) width = 30
+        return { x: 0, y: 0, left: 0, top: 0, right: width, bottom: 0, width, height: 0, toJSON() {} }
+      })
+  }
+
+  const indicatorWidth = (container: HTMLElement) =>
+    container.querySelector<HTMLElement>('[role="tablist"] > span[aria-hidden="true"]')!.style.width
+
+  it('defaults to a stacked icon (top)', () => {
+    render(
+      <Tabs value="a" aria-label="S">
+        <Tab value="a" label="Alpha" icon={Icon} />
+      </Tabs>,
+    )
+    const tab = screen.getByRole('tab', { name: 'Alpha' })
+    expect(tab).toHaveAttribute('data-with-icon', 'true')
+    expect(tab).not.toHaveAttribute('data-icon-position')
+    expect(tab.querySelectorAll('[data-tab-content]')).toHaveLength(2)
+  })
+
+  it('iconPosition="start" groups the icon and label into one content box', () => {
+    render(
+      <Tabs value="a" aria-label="S">
+        <Tab value="a" label="Alpha" icon={Icon} iconPosition="start" />
+      </Tabs>,
+    )
+    const tab = screen.getByRole('tab', { name: 'Alpha' })
+    expect(tab).toHaveAttribute('data-icon-position', 'start')
+    const content = tab.querySelectorAll('[data-tab-content]')
+    expect(content).toHaveLength(1)
+    expect(content[0]).toContainElement(screen.getByTestId('icon'))
+    expect(content[0]).toHaveTextContent('Alpha')
+  })
+
+  it('sizes the primary indicator to the content box, never to the badge', () => {
+    const spy = fakeLayout()
+    try {
+      const leading = render(
+        <Tabs value="a" aria-label="S">
+          <Tab value="a" label="Alpha" icon={Icon} iconPosition="start" badge={<Badge value={3} />} />
+        </Tabs>,
+      )
+      expect(indicatorWidth(leading.container)).toBe('80px')
+      leading.unmount()
+      const textOnly = render(
+        <Tabs value="a" aria-label="S">
+          <Tab value="a" label="Alpha" badge={<Badge value={3} />} />
+        </Tabs>,
+      )
+      expect(indicatorWidth(textOnly.container)).toBe('40px')
+      textOnly.unmount()
+      const stacked = render(
+        <Tabs value="a" aria-label="S">
+          <Tab value="a" label="Alpha" icon={Icon} badge={<Badge value={3} />} />
+        </Tabs>,
+      )
+      expect(indicatorWidth(stacked.container)).toBe('40px')
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
+  // Browsers compute "Inbox 3 new notifications"; jsdom trims the hidden
+  // suffix's leading space, hence the optional space (as NavigationBar).
+  it('places the badge on the icon and reads it after the label', () => {
+    render(
+      <Tabs value="a" aria-label="S">
+        <Tab value="a" label="Inbox" icon={Icon} badge={<Badge value={3} />} />
+      </Tabs>,
+    )
+    const tab = screen.getByRole('tab', { name: /^Inbox ?3 new notifications$/ })
+    const icon = screen.getByTestId('icon').parentElement!
+    // The painted badge lives in the (decorative) icon box.
+    expect(icon).toHaveAttribute('aria-hidden', 'true')
+    expect(icon.querySelector('[data-size="large"]')).toHaveTextContent('3')
+    expect(tab.querySelectorAll('[data-tab-content]')).toHaveLength(2)
+  })
+
+  it('places the badge after the label of a text-only tab, outside the measured content', () => {
+    render(
+      <Tabs value="a" aria-label="S">
+        <Tab value="a" label="Inbox" badge={<Badge size="small" />} />
+      </Tabs>,
+    )
+    const tab = screen.getByRole('tab', { name: /^Inbox ?New notification$/ })
+    const content = tab.querySelectorAll('[data-tab-content]')
+    expect(content).toHaveLength(1)
+    expect(content[0]).toHaveTextContent(/^Inbox$/)
+    const dot = tab.querySelector('[data-size="small"]')!
+    expect(dot.closest('[aria-hidden="true"]')).not.toBeNull()
+  })
+
+  it('uses the Badge label override and drops hidden badges from the name', () => {
+    const { rerender } = render(
+      <Tabs value="a" aria-label="S">
+        <Tab value="a" label="Inbox" icon={Icon} badge={<Badge value={1200} label="Lots unread" />} />
+        <Tab value="b" label="Spam" badge={<Badge value={2} visible={false} />} />
+        <Tab value="c" label="Sent" badge={<Badge value={1} />} />
+      </Tabs>,
+    )
+    expect(screen.getByRole('tab', { name: /^Inbox ?Lots unread$/ })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Spam' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: /^Sent ?1 new notification$/ })).toBeInTheDocument()
+    rerender(
+      <Tabs value="a" aria-label="S">
+        <Tab value="a" label="Inbox" icon={Icon} badge={<Badge value={1200} />} />
+      </Tabs>,
+    )
+    expect(screen.getByRole('tab', { name: /^Inbox ?999\+ new notifications$/ })).toBeInTheDocument()
+  })
+
+  it('has no axe violations with leading icons and badges', async () => {
+    const { container } = render(
+      <Tabs value="a" aria-label="S">
+        <Tab value="a" label="Inbox" icon={Icon} iconPosition="start" badge={<Badge value={3} />} />
+        <Tab value="b" label="Spam" icon={Icon} badge={<Badge size="small" />} />
+        <Tab value="c" label="Sent" badge={<Badge value={12} />} />
+        <Tab value="d" label="Drafts" badge={<Badge value={1} />} disabled />
+      </Tabs>,
+    )
+    expect(await axe(container)).toHaveNoViolations()
   })
 })
