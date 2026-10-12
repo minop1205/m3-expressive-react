@@ -73,6 +73,28 @@ secondary-container・アイテム余白 12+16/24 = Compose 実装値と一致)/
    AT 向けアクション)
 4. **SS1 / ND1+ND2+ND3 → 各 1 Issue**: 小さな CSS 修正
 
+## BottomSheet の standard variant と detent(#437・裁定 B35、2026-10-13 追記)
+
+監査時点(2026-07-19)は modal・単一の高さのみが前提だった。#437 で standard variant と detent を追加した。公開 API の裁定は
+`docs/decisions/phase-b-api.md` の **B35**。
+
+| 項目 | m3.material.io(#437 の引用) | Compose androidx-main | 裁定 |
+|---|---|---|---|
+| variant | 「Two variants: standard and modal」、standard は主 UI と同時に操作できる | `ModalBottomSheet` / 非モーダル `BottomSheet`(BottomSheet.kt)/ `BottomSheetScaffold`(BottomSheetScaffold.kt:116、スクリムなし) | `variant="standard" \| "modal"`、既定 modal。standard はスクリム・トラップ・inert・スクロールロックなし、`role="region"`、最も近い position 指定祖先の下端に absolute 配置(scaffold 相当) |
+| detent | 「preset positions from full-screen height to preview」「collapsed and expanded」 | `SheetValue.Hidden / PartiallyExpanded / Expanded`、`skipPartiallyExpanded` | `expanded` / `defaultExpanded` / `onExpandedChange` + `skipPartiallyExpanded`(**v1 の既定は `true`** = 従来どおり全展開のみ。detent は `skipPartiallyExpanded={false}` で opt-in) |
+| 部分展開の高さ | 数値規定なし | `min(fullHeight / 2, sheetHeight / 2)`(BottomSheet.kt:427-440)— `isBottomSheetPartiallyExpandedDeterministicEnabled` 既定 true(ComposeMaterial3Flags.kt:114)。旧挙動(false)は画面 50% 位置 + シートが画面の半分以下なら部分展開を除外 | **Compose 現行既定に従う**。CSS `translateY(max(50%, 100% - 50cqh))`(ルートが size container)。**フラグに `TODO: b/512076811` が残っており未確定** — 非推奨の `rememberModalBottomSheetState`(ModalBottomSheet.kt:251)/ `rememberStandardBottomSheetState`(BottomSheetScaffold.kt:238)は旧挙動を固定。変更されたら再裁定 |
+| 開いたときの detent | — | `show()` は PartiallyExpanded を優先(SheetDefaults.kt:283-289) | **v1 は互換のため全展開が既定**(v2 まで既定の挙動を変えない方針)。opt-in 時は Compose どおり部分展開で開く。既定の切替は v2 候補。uncontrolled は閉じるたびに初期 detent へ戻る |
+| ドラッグ | — | 3 アンカー、`PositionalThreshold` 56dp / `VelocityThreshold` 125dp/s(SheetDefaults.kt)、AnchoredDraggable の判定 | 同じ判定を JS で実装(閾値は CSS px)。hidden 到達で `onClose(event, 'drag')` |
+| ハンドルのクリック | — | `BottomSheet`: Partial → Expanded、Expanded → 閉じる(BottomSheet.kt:366-370)。`BottomSheetScaffold`(skipHiddenState): Expanded → Partial(BottomSheetScaffold.kt:393-405) | **partial ↔ expanded のトグル**(`aria-expanded`、既定ラベル "Drag handle")= Scaffold 側の挙動(opt-in 時)。閉じる操作は Escape / スクリム / ドラッグにあるため。既定(`skipPartiallyExpanded` = true)では従来どおり閉じる(`'closeButton'`、"Close") |
+| Escape / back | — | back は `settleToDismiss`: Expanded(部分展開あり)→ Partial、それ以外 → 閉じる | **modal の Escape は常に閉じる**(APG modal dialog を優先)。standard はフォーカスが内側にあるときのみ閉じる |
+| モーション | — | `BottomSheet` は show / detent に DefaultSpatial、hide に FastEffects | 既存のスライド(`BottomSheetAnimationSpec` 相当の tween、docs/md3-token-reference.md §5 の例外)を detent 間にもそのまま使う。spring 化は別途 |
+| reduced motion | — | — | B3 どおり detent 間の移動は即時(`transition: none`)。JS 駆動のモーションなし |
+
+**記録のみ**: Compose `BottomSheetScaffold` の部分展開は `sheetPeekHeight`(既定 56dp)基準で、非モーダル `BottomSheet` の
+「半分」基準と異なる。本ライブラリは standard / modal で同じ detent モデル(`BottomSheet` 基準)に統一し、peek 高さの
+指定は要望が出たら非破壊で追加する。m3 の「At full-screen height, standard bottom sheets contain a collapse icon in an app
+bar」は利用者側の合成(TopAppBar + IconButton で `onExpandedChange(false)`)で実現でき、組み込みは見送る。
+
 ## スキルへのフィードバック
 
 - 共通テーマを持つコンポーネント群は**一括監査+統合レポート**が有効(横断欠落が1つの発見として

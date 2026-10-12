@@ -1,8 +1,13 @@
 /**
- * MD3 Modal bottom sheet. Values from androidx.compose.material3
+ * MD3 bottom sheet (modal + standard). Values from androidx.compose.material3
  * SheetBottomTokens: SurfaceContainerLow container, CornerExtraLargeTop (28dp),
  * elevation Level1, max-width 640dp; drag handle OnSurfaceVariant 32×4 pill with
- * 22dp vertical padding; Scrim @ 0.32.
+ * 22dp vertical padding; modal Scrim @ 0.32.
+ *
+ * Detents (ruling B35): the root is a size container, so the partially
+ * expanded translate `max(50%, 100% - 50cqh)` shows
+ * `min(container / 2, sheet / 2)` of the sheet — Compose
+ * `calculatePartiallyExpandedOffset` with the deterministic flag on.
  */
 
 .root {
@@ -23,6 +28,33 @@
   visibility: visible;
   pointer-events: auto;
   transition-delay: 0s;
+}
+
+/* Partial detent (opt-in) and standard sheets: a size container, so `cqh`
+   in the partial-detent translate is the container (viewport / scaffold)
+   height; clipped, so the off-screen part of the sheet adds no scroll
+   overflow and never paints past the edge. Scoped so the default
+   full-height modal sheet renders exactly as before. */
+.root[data-detent='partial'],
+.root[data-variant='standard'] {
+  container-type: size;
+  overflow: hidden;
+}
+
+/* Standard: lives in the layout — fills its nearest positioned ancestor (the
+   "scaffold"), sits above the content without a scrim, and lets the page
+   behind it stay interactive (Compose BottomSheetScaffold). */
+.root[data-variant='standard'] {
+  position: absolute;
+  z-index: auto;
+}
+
+.root[data-variant='standard'][data-open] {
+  pointer-events: none;
+}
+
+.root[data-variant='standard'] .sheet {
+  pointer-events: auto;
 }
 
 .scrim {
@@ -61,6 +93,11 @@
 
 .root[data-open] .sheet {
   transform: translateY(0);
+}
+
+/* Partially expanded: show min(container / 2, sheet / 2). */
+.root[data-open][data-detent='partial'] .sheet {
+  transform: translateY(max(50%, 100% - 50cqh));
 }
 
 .dragHandleRow {
