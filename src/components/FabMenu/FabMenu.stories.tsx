@@ -106,3 +106,48 @@ export const RightToLeft: Story = {
     </div>
   ),
 }
+
+/**
+ * `horizontalAlignment` (Compose FloatingActionButtonMenu): items aligned to
+ * the FAB's start (a bottom-leading FAB), centered over it, or to its end
+ * (the default).
+ */
+export const HorizontalAlignment: Story = {
+  render: () => (
+    <div style={{ display: 'flex', gap: 24 }}>
+      {(['start', 'center', 'end'] as const).map((alignment) => (
+        <div
+          key={alignment}
+          style={{
+            width: 220,
+            height: 420,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent:
+              alignment === 'start' ? 'flex-start' : alignment === 'center' ? 'center' : 'flex-end',
+          }}
+        >
+          <FabMenu
+            icon={plus}
+            ariaLabel={`Create (${alignment})`}
+            horizontalAlignment={alignment}
+            defaultOpen
+          >
+            {items}
+          </FabMenu>
+        </div>
+      ))}
+    </div>
+  ),
+}
+
+/** RTL + `horizontalAlignment="start"`: the items align to the (right) leading edge. */
+export const RightToLeftStart: Story = {
+  render: () => (
+    <div dir="rtl" style={{ height: 420, width: 240, display: 'flex', alignItems: 'flex-end' }}>
+      <FabMenu icon={plus} ariaLabel="Create" horizontalAlignment="start" defaultOpen>
+        {items}
+      </FabMenu>
+    </div>
+  ),
+}

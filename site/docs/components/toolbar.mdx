@@ -68,6 +68,30 @@ only).
 </Toolbar>
 ```
 
+### Without elevation
+
+`disableElevation` removes the floating toolbar's shadow. Per MD3, do this only
+when the toolbar sits on a visually distinct background; keep the elevation
+when it floats over content.
+
+<Demo>
+  <div
+    style={{
+      padding: 24,
+      borderRadius: 16,
+      backgroundColor: 'var(--md-sys-color-surface-container-highest)',
+    }}
+  >
+    <Toolbar variant="floating" disableElevation aria-label="Formatting">
+      {formatting}
+    </Toolbar>
+  </div>
+</Demo>
+
+```tsx
+<Toolbar variant="floating" disableElevation aria-label="Formatting">…</Toolbar>
+```
+
 ## Color
 
 `color="vibrant"` switches to the primary-container scheme for higher

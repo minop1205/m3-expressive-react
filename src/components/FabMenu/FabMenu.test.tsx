@@ -167,6 +167,26 @@ describe('FabMenu', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 
+  it('applies horizontalAlignment, defaulting to end (B41)', () => {
+    const { container, rerender } = render(<Example />)
+    const root = container.firstElementChild as HTMLElement
+    // `end` is the default and keeps the original markup.
+    expect(root).not.toHaveAttribute('data-alignment')
+    rerender(<Example horizontalAlignment="end" />)
+    expect(root).not.toHaveAttribute('data-alignment')
+    rerender(<Example horizontalAlignment="start" />)
+    expect(root).toHaveAttribute('data-alignment', 'start')
+    rerender(<Example horizontalAlignment="center" />)
+    expect(root).toHaveAttribute('data-alignment', 'center')
+  })
+
+  it('has no axe violations (open, start / center aligned)', async () => {
+    const { container, rerender } = render(<Example defaultOpen horizontalAlignment="start" />)
+    expect(await axe(container)).toHaveNoViolations()
+    rerender(<Example defaultOpen horizontalAlignment="center" />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
   describe('focus and keyboard', () => {
     function Page(props: Partial<React.ComponentProps<typeof FabMenu>> = {}) {
       return (
