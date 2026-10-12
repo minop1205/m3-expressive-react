@@ -14,7 +14,7 @@ import {
   type Ref,
 } from 'react'
 import clsx from 'clsx'
-import { TextField } from '../TextField'
+import { TextField, type TextFieldLabelPlacement } from '../TextField'
 import { IconButton } from '../IconButton'
 import { Calendar, type CalendarView } from './Calendar'
 import { CalendarIcon } from '../../internal/icons'
@@ -52,6 +52,18 @@ export interface DatePickerFieldProps
   onChange?: (date: Date | null) => void
   /** Field label. @default 'Date' */
   label?: string
+  /**
+   * Label position, as TextField `labelPlacement`: `'floating'` (in the
+   * outlined border's notch) or `'above'` the field.
+   * @default 'floating'
+   */
+  labelPlacement?: TextFieldLabelPlacement
+  /**
+   * Keep the floating label minimized while the field is empty, as
+   * TextField `shrinkLabel`.
+   * @default false
+   */
+  shrinkLabel?: boolean
   /** Earliest selectable date. */
   min?: Date
   /** Latest selectable date. */
@@ -135,6 +147,8 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
       defaultValue,
       onChange,
       label = 'Date',
+      labelPlacement,
+      shrinkLabel,
       min,
       max,
       locale = 'en-US',
@@ -288,6 +302,8 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
         <TextField
           variant="outlined"
           label={label}
+          labelPlacement={labelPlacement}
+          shrinkLabel={shrinkLabel}
           value={text}
           name={name}
           inputRef={setInputRef}

@@ -258,6 +258,7 @@ Issue: AB1 → #233、AB2 → #234、AB3 → #235(TopAppBar と BottomAppBar の
 
 ### 見送り(記録のみ)
 
-- **full-screen 検索ビュー**(compact の Compose 既定)— SearchBar 側の未実装機能(searchbar 監査の軽微欄)のまま
+- **full-screen 検索ビュー**(compact の Compose 既定)— ~~SearchBar 側の未実装機能(searchbar 監査の軽微欄)のまま~~ →
+  #442 で SearchBar `layout="fullscreen"` として実装(裁定 [B39](../decisions/phase-b-api.md#b39-searchbar-の-full-screen-レイアウトlayoutfullscreen))。ストーリー `SearchFullScreenOpen`
 - **展開時に nav / actions を slide out**(Compose sample の `AnimatedVisibility`)— sample の演出で API ではないため対象外
 - **Avatar 部品** — ライブラリにない。actions / `endIcon` に任意のフォーカス可能要素を置ける

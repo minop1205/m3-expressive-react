@@ -58,6 +58,8 @@ import {
   SearchBar,
   SegmentedButton,
   SegmentedButtons,
+  Select,
+  Option,
   SideSheet,
   Slider,
   Snackbar,
@@ -219,6 +221,15 @@ const cases: Record<string, ReactElement> = {
     </ChipSet>
   ),
   TextField: <TextField label="Label" />,
+  Select: (
+    <Select open label="Label" name="field" defaultValue="a">
+      <Option value="a">A</Option>
+      <Option value="b" disabled>
+        B
+      </Option>
+    </Select>
+  ),
+  Option: <Option value="a">A</Option>,
   Badge: <Badge />,
   Snackbar: <Snackbar message="Saved" />,
   SnackbarProvider: (
@@ -279,6 +290,17 @@ describe('server rendering', () => {
 
   it.each(Object.entries(cases))('%s renders without warnings', (_, element) => {
     expect(renderToString(element)).not.toBe('')
+    expect(error).not.toHaveBeenCalled()
+    expect(warn).not.toHaveBeenCalled()
+  })
+
+  it('SearchBar layout="fullscreen" renders without warnings (#442)', () => {
+    const html = renderToString(
+      <SearchBar layout="fullscreen" open placeholder="Search">
+        <ListItem headline="Suggestion" />
+      </SearchBar>,
+    )
+    expect(html).toContain('role="dialog"')
     expect(error).not.toHaveBeenCalled()
     expect(warn).not.toHaveBeenCalled()
   })

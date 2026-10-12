@@ -1,10 +1,10 @@
 import { createRef } from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { IconButton } from '../IconButton'
-import { SearchBar } from './SearchBar'
+import { SearchBar, type SearchBarProps } from './SearchBar'
 
 describe('SearchBar', () => {
   it('renders a search landmark with a searchbox', () => {
@@ -510,6 +510,165 @@ describe('SearchBar', () => {
       expect(input).toHaveAttribute('aria-expanded', 'true')
       fireEvent.pointerDown(screen.getByRole('button', { name: 'Outside' }))
       expect(input).toHaveAttribute('aria-expanded', 'false')
+    })
+  })
+
+  describe('layout="fullscreen" (#442)', () => {
+    const renderFull = (props: Partial<SearchBarProps> = {}) =>
+      render(
+        <>
+          <button type="button">Before</button>
+          <SearchBar aria-label="Search" layout="fullscreen" {...props}>
+            <button type="button">One</button>
+            <button type="button">Two</button>
+          </SearchBar>
+          <button type="button">After</button>
+        </>,
+      )
+    const barInput = () => screen.getAllByRole('combobox')[0]
+    const dialog = () => document.querySelector<HTMLElement>('[role="dialog"]')!
+    const viewInput = () => within(dialog()).getByRole('combobox')
+
+    it('opens a modal view on a press, focusing its field', async () => {
+      const user = userEvent.setup()
+      const onOpenChange = vi.fn()
+      renderFull({ onOpenChange })
+      expect(barInput()).toHaveAttribute('aria-haspopup', 'dialog')
+      expect(barInput()).toHaveAttribute('aria-expanded', 'false')
+      await user.click(barInput())
+      expect(onOpenChange).toHaveBeenLastCalledWith(true)
+      expect(barInput()).toHaveAttribute('aria-expanded', 'true')
+      expect(dialog()).toHaveAttribute('aria-modal', 'true')
+      expect(barInput()).toHaveAttribute('aria-controls', dialog().id)
+      expect(viewInput()).toHaveFocus()
+      expect(within(dialog()).getByRole('button', { name: 'Back' })).toBeInTheDocument()
+      // The rest of the page is inert while the view is open.
+      expect(screen.getByRole('button', { name: 'After' }).closest('[inert]')).not.toBeNull()
+      expect(screen.getByRole('search').querySelector(':scope > [data-open]')).toBe(
+        dialog().parentElement,
+      )
+    })
+
+    it('does not open on Tab focus alone; typing or ArrowDown opens it', async () => {
+      const user = userEvent.setup()
+      const onChange = vi.fn()
+      renderFull({ onChange })
+      screen.getByRole('button', { name: 'Before' }).focus()
+      await user.tab()
+      expect(barInput()).toHaveFocus()
+      expect(barInput()).toHaveAttribute('aria-expanded', 'false')
+      await user.keyboard('a')
+      expect(barInput()).toHaveAttribute('aria-expanded', 'true')
+      expect(viewInput()).toHaveValue('a')
+      await user.keyboard('b')
+      expect(onChange).toHaveBeenLastCalledWith(expect.any(Object), 'ab')
+      expect(barInput()).toHaveValue('ab')
+    })
+
+    it('collapses on Escape and returns focus to the bar without reopening', async () => {
+      const user = userEvent.setup()
+      renderFull({ defaultValue: 'cats' })
+      barInput().focus()
+      await user.keyboard('{ArrowDown}')
+      expect(viewInput()).toHaveFocus()
+      await user.keyboard('{Escape}')
+      expect(barInput()).toHaveAttribute('aria-expanded', 'false')
+      expect(barInput()).toHaveFocus()
+      // Escape collapses only — the query is kept.
+      expect(barInput()).toHaveValue('cats')
+      expect(screen.getByRole('button', { name: 'After' }).closest('[inert]')).toBeNull()
+    })
+
+    it('collapses on the back button and returns focus to the bar', async () => {
+      const user = userEvent.setup()
+      renderFull()
+      await user.click(barInput())
+      await user.click(within(dialog()).getByRole('button', { name: 'Back' }))
+      expect(barInput()).toHaveAttribute('aria-expanded', 'false')
+      expect(barInput()).toHaveFocus()
+    })
+
+    it('collapses on Escape from a result', async () => {
+      const user = userEvent.setup()
+      renderFull()
+      await user.click(barInput())
+      await user.keyboard('{ArrowDown}')
+      expect(screen.getByRole('button', { name: 'One' })).toHaveFocus()
+      await user.keyboard('{ArrowDown}')
+      expect(screen.getByRole('button', { name: 'Two' })).toHaveFocus()
+      await user.keyboard('{Escape}')
+      expect(barInput()).toHaveAttribute('aria-expanded', 'false')
+      expect(barInput()).toHaveFocus()
+    })
+
+    it('traps Tab inside the view', async () => {
+      const user = userEvent.setup()
+      renderFull()
+      await user.click(barInput())
+      const back = within(dialog()).getByRole('button', { name: 'Back' })
+      await user.tab()
+      expect(screen.getByRole('button', { name: 'One' })).toHaveFocus()
+      await user.tab()
+      expect(screen.getByRole('button', { name: 'Two' })).toHaveFocus()
+      await user.tab()
+      expect(back).toHaveFocus()
+      await user.tab({ shift: true })
+      expect(screen.getByRole('button', { name: 'Two' })).toHaveFocus()
+    })
+
+    it('starts the expand at the bar rect', async () => {
+      const user = userEvent.setup()
+      renderFull()
+      const bar = barInput().parentElement as HTMLElement
+      vi.spyOn(bar, 'getBoundingClientRect').mockReturnValue({
+        top: 20, bottom: 76, left: 16, right: 496, width: 480, height: 56,
+      } as DOMRect)
+      await user.click(barInput())
+      const overlay = dialog().parentElement as HTMLElement
+      expect(overlay.style.getPropertyValue('--_collapsed-top')).toBe('20px')
+      expect(overlay.style.getPropertyValue('--_collapsed-left')).toBe('16px')
+      expect(overlay.style.getPropertyValue('--_collapsed-width')).toBe('480px')
+    })
+
+    it('fires onSearch on Enter in the view field and localizes the back button', async () => {
+      const user = userEvent.setup()
+      const onSearch = vi.fn()
+      renderFull({ defaultValue: 'dogs', onSearch, backLabel: 'Zurück' })
+      await user.click(barInput())
+      await user.keyboard('{Enter}')
+      expect(onSearch).toHaveBeenCalledWith('dogs')
+      expect(within(dialog()).getByRole('button', { name: 'Zurück' })).toBeInTheDocument()
+    })
+
+    it('supports controlled open', async () => {
+      const user = userEvent.setup()
+      const onOpenChange = vi.fn()
+      const { rerender } = render(
+        <SearchBar aria-label="Search" layout="fullscreen" open onOpenChange={onOpenChange}>
+          <button type="button">One</button>
+        </SearchBar>,
+      )
+      await waitFor(() => expect(viewInput()).toHaveFocus())
+      await user.keyboard('{Escape}')
+      expect(onOpenChange).toHaveBeenLastCalledWith(false)
+      rerender(
+        <SearchBar aria-label="Search" layout="fullscreen" open={false} onOpenChange={onOpenChange}>
+          <button type="button">One</button>
+        </SearchBar>,
+      )
+      // Opened without a trigger: focus still lands on the bar.
+      expect(barInput()).toHaveFocus()
+      expect(barInput()).toHaveAttribute('aria-expanded', 'false')
+    })
+
+    it('has no axe violations with the full-screen view open', async () => {
+      const { container } = renderFull({ defaultOpen: true })
+      expect(await axe(container)).toHaveNoViolations()
+    })
+
+    it('has no axe violations with the full-screen view closed', async () => {
+      const { container } = renderFull()
+      expect(await axe(container)).toHaveNoViolations()
     })
   })
 })
