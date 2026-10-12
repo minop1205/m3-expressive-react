@@ -46,7 +46,11 @@ export default defineConfig({
       fileName: moduleFileName,
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      // clsx is a dual CJS/ESM runtime dependency, so consumers resolve
+      // their own copy (#411). @material/material-color-utilities is
+      // ESM-only and stays bundled (dist/vendor) so require() keeps working;
+      // its Apache-2.0 notice ships in THIRD_PARTY_NOTICES.md.
+      external: ['react', 'react-dom', 'react/jsx-runtime', 'clsx'],
       // Client modules start with 'use client' (React Server Components,
       // #409). preserveModules keeps the directive at the top of each emitted
       // module, so the bundler's "module-level directive" notice is noise.
