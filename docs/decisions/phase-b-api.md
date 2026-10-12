@@ -350,6 +350,20 @@ VRT: 新ストーリー(アクション付き・モーダル)でベースライ�
 
 **影響**: なし(B6・B9 の設計指針)。
 
+**追補(2026-10-12・#407)— モーダルオーバーレイの `onClose(event, reason)`**: Dialog / BottomSheet / SideSheet /
+NavigationDrawer / モーダル NavigationRail の `onClose` に、B7 の語彙で `(event, reason)` を渡す(MUI Modal の
+`onClose(event, reason)` と同じ形)。引数を足すだけなので非破壊 — `() => setOpen(false)` はそのまま動く。
+
+- 語彙: `'escapeKeyDown'`(Escape — `useModal` の `onEscape` が受けたネイティブ `KeyboardEvent` をそのまま渡す)/
+  `'backdropClick'`(scrim クリック)/ `'closeButton'`(組み込みの閉じる操作)/ `'drag'`(BottomSheet のドラッグ・フリングで閉じた)。
+  `'escapeKeyDown'` / `'backdropClick'` はピッカー(`DatePickerCloseReason` / `TimePickerCloseReason`)・Snackbar と同じ綴り
+- 型: `event` は `SyntheticEvent | Event`。各コンポーネントは出し得る理由だけに絞った型を公開する —
+  `DialogCloseReason` = escapeKeyDown / backdropClick / closeButton(full-screen の閉じるボタン)、
+  `BottomSheetCloseReason` = 4 つすべて(ドラッグハンドルをボタンとして押した場合は `'closeButton'`)、
+  `SideSheetCloseReason` = escapeKeyDown / backdropClick / closeButton、
+  `NavigationDrawerCloseReason` / `NavigationRailCloseReason` = escapeKeyDown / backdropClick
+- ピッカーの `onClose(reason)`(値ファースト、A8)は今回変えない。新しい理由を足すときはこの語彙に追記する
+
 ### B8: TimePicker の 24 時間制
 
 - **Issue**: #169(TP9)

@@ -1,5 +1,5 @@
 import { createRef, useState } from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
@@ -152,5 +152,63 @@ describe('Dialog accessible name', () => {
   it('prefers a consumer aria-label over the fallback', () => {
     render(<Dialog open aria-label="Settings">Body</Dialog>)
     expect(screen.getByRole('dialog')).toHaveAccessibleName('Settings')
+  })
+})
+
+describe('Dialog full-screen close button (#423)', () => {
+  it('is a standard IconButton (ripple + focus ring) labelled by closeLabel', () => {
+    render(
+      <Dialog open fullScreen title="Settings" closeLabel="閉じる">
+        Body
+      </Dialog>,
+    )
+    const close = screen.getByRole('button', { name: '閉じる' })
+    expect(close).toHaveAttribute('data-variant', 'standard')
+    expect(close).toHaveAttribute('type', 'button')
+    expect(close.querySelector('svg')).not.toBeNull()
+  })
+})
+
+describe('Dialog onClose reason (#407)', () => {
+  it('passes the event and escapeKeyDown / backdropClick', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const { container } = render(
+      <Dialog open onClose={onClose} title="T">
+        Body
+      </Dialog>,
+    )
+    await user.keyboard('{Escape}')
+    expect(onClose).toHaveBeenLastCalledWith(expect.any(KeyboardEvent), 'escapeKeyDown')
+    fireEvent.click(container.querySelector('[aria-hidden="true"]') as Element)
+    expect(onClose).toHaveBeenLastCalledWith(
+      expect.objectContaining({ type: 'click' }),
+      'backdropClick',
+    )
+  })
+
+  it('passes closeButton from the full-screen close button', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    render(
+      <Dialog open fullScreen onClose={onClose} title="T">
+        Body
+      </Dialog>,
+    )
+    await user.click(screen.getByRole('button', { name: 'Close' }))
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(onClose).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'click' }), 'closeButton')
+  })
+
+  it('still accepts a zero-argument handler (non-breaking)', async () => {
+    const user = userEvent.setup()
+    let closed = false
+    render(
+      <Dialog open onClose={() => (closed = true)} title="T">
+        Body
+      </Dialog>,
+    )
+    await user.keyboard('{Escape}')
+    expect(closed).toBe(true)
   })
 })
