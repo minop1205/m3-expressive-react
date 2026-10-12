@@ -129,7 +129,9 @@ const [value, setValue] = useState('flights')
 - **Manual activation** (WAI-ARIA APG): <kbd>←</kbd> / <kbd>→</kbd>
   (mirrored in RTL), <kbd>Home</kbd> and <kbd>End</kbd> move focus only;
   <kbd>Space</kbd> / <kbd>Enter</kbd> select the focused tab and fire
-  `onChange`. Arrow keys never fire `onChange`.
+  `onChange`. Arrow keys never fire `onChange`, and neither does activating
+  the already-selected tab or a tab whose `onClick` called
+  `event.preventDefault()`.
 - Roving tabindex: <kbd>Tab</kbd> enters the list on the selected tab and
   leaves it in one step.
 

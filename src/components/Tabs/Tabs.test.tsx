@@ -106,6 +106,32 @@ describe('Tabs', () => {
     expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'c')
   })
 
+  it('does not fire onChange when the selected tab is clicked again', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<Example value="a" onChange={onChange} />)
+    await user.click(screen.getByRole('tab', { name: 'Alpha' }))
+    screen.getByRole('tab', { name: 'Alpha' }).focus()
+    await user.keyboard('{Enter} ')
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('does not select when the tab onClick calls preventDefault()', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const onClick = vi.fn((event: React.MouseEvent) => event.preventDefault())
+    render(
+      <Tabs defaultValue="a" onChange={onChange} aria-label="Sections">
+        <Tab value="a" label="Alpha" />
+        <Tab value="b" label="Beta" onClick={onClick} />
+      </Tabs>,
+    )
+    await user.click(screen.getByRole('tab', { name: 'Beta' }))
+    expect(onClick).toHaveBeenCalledTimes(1)
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.getByRole('tab', { name: 'Alpha' })).toHaveAttribute('aria-selected', 'true')
+  })
+
   it('arrow keys move focus without selecting (manual activation)', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
