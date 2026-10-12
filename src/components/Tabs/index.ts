@@ -4,6 +4,7 @@ export {
   type TabsProps,
   type TabProps,
   type TabsVariant,
+  type TabIconPosition,
 } from './Tabs'
 
 // Default export for the `m3-expressive-react/Tabs` subpath import.
