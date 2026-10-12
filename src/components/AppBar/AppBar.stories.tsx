@@ -362,6 +362,39 @@ export const SearchViewOpen: Story = {
   ),
 }
 
+/**
+ * `layout="fullscreen"` on the embedded SearchBar (Compose AppBarWithSearch +
+ * ExpandedFullScreenContainedSearchBar): selecting the field expands a modal
+ * view over the viewport (open initially here); Back / Escape collapses it.
+ */
+export const SearchFullScreenOpen: Story = {
+  render: () => (
+    <div style={{ minHeight: 400 }}>
+      <TopAppBar
+        variant="search"
+        title="Products"
+        navigationIcon={nav}
+        actions={<Avatar />}
+        searchBar={
+          <SearchBar
+            placeholder="Search product"
+            aria-label="Product search"
+            startIcon={false}
+            layout="fullscreen"
+            defaultOpen
+          >
+            <List>
+              <ListItem headline="Recent: Headphones" onClick={() => {}} />
+              <ListItem headline="Recent: Keyboards" onClick={() => {}} />
+              <ListItem headline="Recent: Monitors" onClick={() => {}} />
+            </List>
+          </SearchBar>
+        }
+      />
+    </div>
+  ),
+}
+
 function SearchScrollDemo() {
   const scrollRef = useRef<HTMLDivElement>(null)
   return (
