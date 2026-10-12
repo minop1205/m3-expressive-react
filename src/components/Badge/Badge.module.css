@@ -117,7 +117,7 @@
   transform-origin: left center;
 }
 
-.large:dir(rtl) {
+[dir='rtl'] .large {
   transform-origin: right center;
 }
 

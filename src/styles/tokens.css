@@ -192,6 +192,19 @@
   --md-sys-motion-duration-extra-long2: 800ms;
   --md-sys-motion-duration-extra-long3: 900ms;
   --md-sys-motion-duration-extra-long4: 1000ms;
+
+  /* ----------------------------------------------------------------------- */
+  /* Overlay stacking (z-index). Library scale, not an MD3 / Compose token:  */
+  /* it matters where an overlay is not in the Popover top layer (the inline */
+  /* modals, the docked SearchBar, the no-Popover fallback). Higher wins:    */
+  /* tooltip < search < popup < modal < snackbar. See                        */
+  /* docs/md3-token-reference.md §8.                                         */
+  /* ----------------------------------------------------------------------- */
+  --md-sys-z-tooltip: 10;
+  --md-sys-z-search: 20;
+  --md-sys-z-popup: 22;
+  --md-sys-z-modal: 24;
+  --md-sys-z-snackbar: 30;
 }
 
 /* ------------------------------------------------------------------------- */
