@@ -196,7 +196,7 @@ RTL は右ドラッグで前進して右端に snap、矢印キー / フォー�
 |---|---|---|---|
 | container padding(左右 / 上下) | 16 / 8(full-screen 0 / 0、uncontained は leading 16) | 0(サンプル 16 / —) | 16 / 8 ✓ |
 | item 間隔 | 8(full-screen 16) | 0(サンプル 8) | 8 ✓ |
-| large item 幅 | Dynamic, or user-set(最大幅を指定) | `preferredItemWidth`(必須)を可用幅にフィット | `itemWidth` 固定 260(hero 320)、フィットなし ✗ CR1 |
+| large item 幅 | Dynamic, or user-set(最大幅を指定) | `preferredItemWidth`(必須)を可用幅にフィット(上限ではなく目標値 — androidx `98c93887a0` で `maxItemWidth` から改名。B41 で JSDoc に反映) | `itemWidth` 固定 260(hero 320)、フィットなし ✗ CR1 |
 | medium item 幅 | Dynamic | `(L + S) / 2`(±10% flex) | **なし ✗ CR1** |
 | small item 幅 | 40–56 | `(L / 3).coerceIn(40, 56)` | **なし ✗ CR1** |
 | 縮んだ item の高さ | 同じ(寸法図) | 同じ(主軸のみ mask) | **scale で縮む(200 → 164)✗ CR1** |

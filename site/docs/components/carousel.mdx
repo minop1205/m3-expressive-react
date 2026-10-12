@@ -38,8 +38,10 @@ export const Frame = ({ children }) => (
 ## Multi-browse
 
 The default layout: one or more large items followed by medium and small
-(40–56dp) items, snapping to the start. `itemWidth` is the preferred large
-width; the actual size is fitted to the container.
+(40–56dp) items, snapping to the start. `itemWidth` is a target large width,
+not a cap: the carousel resizes small, then medium, then large items so a
+whole number of items fills the container, so the rendered width can be
+larger or smaller. At the end of the list the large item slides to the end.
 
 <Demo>
   <Frame>
@@ -91,7 +93,8 @@ freely, without snapping.
 ## Hero
 
 A large, centered item with a small item on each side, snapping to the
-center (the first and last items align to the start and end).
+center (the first and last items align to the start and end). With fewer
+than three items it cannot center and stays start-aligned.
 
 <Demo>
   <Frame>

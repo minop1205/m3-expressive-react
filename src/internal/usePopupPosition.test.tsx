@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   computePopupPosition,
   resolvePopupSide,
+  RESIZE_HIDE_DELAY_MS,
   usePopupPosition,
   type UsePopupPositionOptions,
 } from './usePopupPosition'
@@ -313,6 +314,100 @@ describe('usePopupPosition', () => {
     window.dispatchEvent(new Event('scroll'))
     expect(popup.style.visibility).toBe('hidden')
     expect(popup.style.opacity).toBe('')
+  })
+
+  describe('transient viewport resizes', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    function setupResizable(focusInside: boolean) {
+      vi.useFakeTimers()
+      function ResizeHarness() {
+        const anchorRef = useRef<HTMLButtonElement>(null)
+        const popupRef = useRef<HTMLDivElement>(null)
+        usePopupPosition({ open: true, side: 'bottom', margin: 8, anchorRef, popupRef })
+        return (
+          <>
+            <button ref={anchorRef}>anchor</button>
+            <div ref={popupRef} data-testid="popup">
+              <button>inside</button>
+            </div>
+          </>
+        )
+      }
+      const viewport = { width: 1200, height: 800 }
+      let anchor = anchorAt(550, 40, 100, 40)
+      vi.spyOn(document.documentElement, 'clientWidth', 'get').mockImplementation(
+        () => viewport.width,
+      )
+      vi.spyOn(document.documentElement, 'clientHeight', 'get').mockImplementation(
+        () => viewport.height,
+      )
+      vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(112)
+      vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(260)
+      vi.spyOn(HTMLButtonElement.prototype, 'getBoundingClientRect').mockImplementation(
+        () => anchor as DOMRect,
+      )
+      const utils = render(<ResizeHarness />)
+      if (focusInside) utils.getByText('inside').focus()
+      const resize = (width: number, height: number) => {
+        viewport.width = width
+        viewport.height = height
+        window.dispatchEvent(new Event('resize'))
+      }
+      const moveAnchor = (top: number) => {
+        anchor = anchorAt(550, top, 100, 40)
+      }
+      return { ...utils, popup: utils.getByTestId('popup'), resize, moveAnchor }
+    }
+
+    const snapshot = (popup: HTMLElement) => popup.getAttribute('style')
+
+    it.each([
+      ['with focus inside', true],
+      ['without focus inside', false],
+    ])(
+      'leaves the popup untouched through a 1×1 viewport blip (full-page screenshot) %s',
+      (_, focusInside) => {
+        const { popup, resize } = setupResizable(focusInside)
+        const before = snapshot(popup)
+        expect(popup.style.top).toBe('84px')
+
+        // Chrome's full-page capture: 1×1, then the full page, then back.
+        resize(1, 1)
+        expect(snapshot(popup)).toBe(before)
+        resize(1200, 880)
+        resize(1200, 800)
+        vi.advanceTimersByTime(1000)
+        // Never hidden, faded or re-clamped: no style write at all, so no
+        // opacity transition restarts under the capture.
+        expect(snapshot(popup)).toBe(before)
+        expect(popup.style.opacity).toBe('')
+        expect(popup.style.visibility).toBe('')
+      },
+    )
+
+    it('hides the popup once a resize keeps the anchor out of view', () => {
+      const { popup, resize } = setupResizable(false)
+      resize(1200, 30)
+      expect(popup.style.visibility).toBe('')
+      vi.advanceTimersByTime(RESIZE_HIDE_DELAY_MS - 1)
+      expect(popup.style.visibility).toBe('')
+      vi.advanceTimersByTime(1)
+      expect(popup.style.visibility).toBe('hidden')
+
+      // And it comes back as soon as the anchor is in view again.
+      resize(1200, 800)
+      expect(popup.style.visibility).toBe('')
+    })
+
+    it('still hides at once when a scroll moves the anchor out of view', () => {
+      const { popup, moveAnchor } = setupResizable(false)
+      moveAnchor(-300)
+      window.dispatchEvent(new Event('scroll'))
+      expect(popup.style.visibility).toBe('hidden')
+    })
   })
 
   it('clears the hidden state when the popup closes (#430)', () => {

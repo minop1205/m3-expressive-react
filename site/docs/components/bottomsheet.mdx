@@ -9,11 +9,23 @@ import { BottomSheet, Button, List, ListItem } from 'm3-expressive-react'
 
 # BottomSheet
 
-MD3 modal bottom sheet: slides up from the bottom edge over a scrim, with
-28dp top corners and a drag handle. Scrim click, <kbd>Escape</kbd>, the
-drag handle, or dragging the sheet down dismisses it.
+MD3 bottom sheet: slides up from the bottom edge with 28dp top corners and
+a drag handle. The default `modal` sheet sits over a scrim; scrim click,
+<kbd>Escape</kbd>, or dragging the sheet down dismisses it. The `standard`
+variant has no scrim and leaves the rest of the page usable.
 
-export function BottomSheetDemo({ label = 'Open bottom sheet', showDragHandle }) {
+export const places = [
+  'Golden Gate Park',
+  'Ferry Building',
+  'Coit Tower',
+  'Lands End',
+  'Mission Dolores',
+  'Twin Peaks',
+  'Alcatraz Island',
+  'Palace of Fine Arts',
+]
+
+export function BottomSheetDemo({ label = 'Open bottom sheet', showDragHandle, long, ...props }) {
   const [open, setOpen] = useState(false)
   return (
     <>
@@ -27,15 +39,59 @@ export function BottomSheetDemo({ label = 'Open bottom sheet', showDragHandle })
           onClose={() => setOpen(false)}
           showDragHandle={showDragHandle}
           aria-label="Share"
+          {...props}
         >
-          <List aria-label="Share options">
-            <ListItem headline="Copy link" onClick={() => setOpen(false)} />
-            <ListItem headline="Send by email" onClick={() => setOpen(false)} />
-            <ListItem headline="Share to contacts" onClick={() => setOpen(false)} />
-          </List>
+          {long ? (
+            <List aria-label="Places">
+              {places.map((place) => (
+                <ListItem key={place} headline={place} supportingText="San Francisco, CA" />
+              ))}
+            </List>
+          ) : (
+            <List aria-label="Share options">
+              <ListItem headline="Copy link" onClick={() => setOpen(false)} />
+              <ListItem headline="Send by email" onClick={() => setOpen(false)} />
+              <ListItem headline="Share to contacts" onClick={() => setOpen(false)} />
+            </List>
+          )}
         </BottomSheet>
       </div>
     </>
+  )
+}
+
+export function StandardSheetDemo() {
+  const [open, setOpen] = useState(true)
+  return (
+    <div
+      style={{
+        position: 'relative',
+        height: 360,
+        width: '100%',
+        overflow: 'hidden',
+        borderRadius: 12,
+        background: 'var(--md-sys-color-surface)',
+      }}
+    >
+      <div style={{ padding: 16 }}>
+        <Button variant="tonal" onClick={() => setOpen((o) => !o)}>
+          {open ? 'Hide sheet' : 'Show sheet'}
+        </Button>
+      </div>
+      <BottomSheet
+        variant="standard"
+        open={open}
+        onClose={() => setOpen(false)}
+        skipPartiallyExpanded={false}
+        aria-label="Places"
+      >
+        <List aria-label="Places">
+          {places.map((place) => (
+            <ListItem key={place} headline={place} supportingText="San Francisco, CA" />
+          ))}
+        </List>
+      </BottomSheet>
+    </div>
   )
 }
 
@@ -55,13 +111,50 @@ const [open, setOpen] = useState(false)
 </BottomSheet>
 ```
 
-## Dragging to dismiss
+## Partially expanded and expanded
 
-Drag the sheet down with a pointer: releasing it past 56px, or flinging it
-down faster than 125px/s, dismisses it (Compose `ModalBottomSheet`
-thresholds); otherwise it settles back. Hide the drag handle with
-`showDragHandle={false}` — the sheet can still be closed by the scrim and
-<kbd>Escape</kbd>.
+By default a sheet opens at full height and the drag handle dismisses it
+(`skipPartiallyExpanded` defaults to `true`). Pass
+`skipPartiallyExpanded={false}` to opt in to Compose's current detents: the
+sheet opens **partially expanded**, showing half of its own height, at most
+half of the screen (`SheetValue.PartiallyExpanded`). The drag handle then
+toggles between partially expanded and **expanded** (full height) — with a
+pointer, <kbd>Enter</kbd> or <kbd>Space</kbd> — and dragging snaps between
+hidden, partial and expanded. Start expanded with `defaultExpanded`, or
+control the detent with `expanded` / `onExpandedChange`. An uncontrolled
+sheet reopens at its initial detent.
+
+<Demo>
+  <BottomSheetDemo label="Partially expanded" long skipPartiallyExpanded={false} />
+  <BottomSheetDemo label="Expanded" long skipPartiallyExpanded={false} defaultExpanded />
+</Demo>
+
+```tsx
+const [expanded, setExpanded] = useState(false)
+
+<BottomSheet
+  open={open}
+  onClose={close}
+  skipPartiallyExpanded={false}
+  expanded={expanded}
+  onExpandedChange={setExpanded}
+>
+  …
+</BottomSheet>
+```
+
+Opening partially expanded is Compose's default; it may become this
+library's default in v2.
+
+## Dragging
+
+Drag the handle with a pointer. Releasing more than 56px from the starting
+detent, or flinging faster than 125px/s, moves the sheet to the next detent
+in that direction (Compose thresholds); otherwise it settles back. Without
+the partial detent, that means a drag either dismisses or settles back. Reaching
+the hidden position calls `onClose(event, 'drag')`. Hide the drag handle
+with `showDragHandle={false}` — the sheet can still be closed by the scrim
+and <kbd>Escape</kbd>.
 
 <Demo>
   <BottomSheetDemo label="With drag handle" />
@@ -74,17 +167,50 @@ thresholds); otherwise it settles back. Hide the drag handle with
 </BottomSheet>
 ```
 
+## Standard
+
+`variant="standard"` co-exists with the page, like an audio player or map
+details: no scrim, no focus trap, nothing is made `inert`, and body scroll
+is not locked. It fills the bottom of its nearest positioned ancestor
+(Compose `BottomSheetScaffold`), so place it inside a `position: relative`
+container — or a `position: fixed` one to pin it to the viewport. It has
+the same detents and drag behavior; the demo opts in to the partial detent.
+
+<Demo>
+  <StandardSheetDemo />
+</Demo>
+
+```tsx
+<div style={{ position: 'relative', height: 360 }}>
+  <MapView />
+  <BottomSheet
+    variant="standard"
+    open={open}
+    onClose={close}
+    skipPartiallyExpanded={false}
+    aria-label="Places"
+  >
+    …
+  </BottomSheet>
+</div>
+```
+
 ## Accessibility
 
-- The sheet is a `role="dialog"` with `aria-modal`. Name it with
-  `aria-label` or `aria-labelledby` (default name: "Bottom sheet").
-- While open, focus moves into the sheet and is trapped there, the rest of
-  the page is `inert`, and body scroll is locked; on close, focus returns
-  to the element that opened it.
-- The drag handle is a real button (Enter / click dismisses); relabel it
-  with `dragHandleLabel` (default "Close").
-- Dragging is a pointer-only enhancement: every dismissal path also works
-  from the keyboard.
+- The modal sheet is a `role="dialog"` with `aria-modal`; the standard sheet
+  is a `role="region"` landmark. Name either with `aria-label` or
+  `aria-labelledby` (default name: "Bottom sheet").
+- While a modal sheet is open, focus moves into it and is trapped there, the
+  rest of the page is `inert`, and body scroll is locked; on close, focus
+  returns to the element that opened it. A standard sheet does none of
+  this, and closes on <kbd>Escape</kbd> only while focus is inside it.
+- The drag handle is a real button. By default it dismisses the sheet
+  (default label "Close"); with `skipPartiallyExpanded={false}` it carries
+  `aria-expanded` and toggles partially expanded / expanded (default label
+  "Drag handle"). Relabel it with `dragHandleLabel`.
+- Dragging is a pointer-only enhancement: every detent and dismissal is
+  also reachable from the keyboard.
+- With reduced motion, the sheet moves between detents instantly.
 
 ## Props
 

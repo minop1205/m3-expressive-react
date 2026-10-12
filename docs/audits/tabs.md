@@ -66,6 +66,8 @@ TB6a/TB6b/TB6c → #138、TB7 → #139、TB8a/TB8b → #140、TB9a/TB9b → #141
 - **Compose にあって実装にないもの**(機能追加の候補、今回は対象外): `LeadingIconTab`(インラインアイコン、
   アイコンとテキストの間 8dp — site 寸法表にもある)、タブ内バッジ(site: テキストとバッジの間 4dp、
   積み上げアイコンへの重なり 6dp。Compose `badgeBounds`)
+  → **実装済み(#443、Phase B B40)**: `Tab iconPosition="start"`(48dp・8dp)と `badge`(`<Badge>` を渡す。
+  アイコン上は Badge の BadgedBox オフセット、テキストのみはラベルの 4dp 後ろ)。詳細は `docs/decisions/phase-b-api.md` B40
 - **アイコンとラベルの縦位置**: 実装は `gap: 2px` で中央寄せ。Compose は「ラベルのベースラインが下端から 17dp、
   アイコン下端からベースラインまで 20sp」。TB1(64dp)の修正時に合わせて確認する
 - **Expressive の MotionScheme**: Compose の Tabs は MotionScheme の値をそのまま使う(standard 0.9/700、
@@ -103,7 +105,7 @@ TB6a/TB6b/TB6c → #138、TB7 → #139、TB8a/TB8b → #140、TB9a/TB9b → #141
 | primary indicator 高さ / シェイプ | 3 / 3,3,0,0 | 3 / 四隅 3 | 3 / 上角 3 ✓ |
 | primary indicator 幅 | 最小 24(本文: 左右 2dp inset) | ラベル幅、最小 24、中央 | **タブ幅 − 32 ✗(TB3)** |
 | secondary indicator | 2、タブ全幅 | 3、タブ全幅 | **3 ✗(TB4)** / 全幅 ✓ |
-| インラインアイコンとテキストの間 | 8 | 8(`LeadingIconTab`) | —(未実装、軽微欄) |
+| インラインアイコンとテキストの間 | 8 | 8(`LeadingIconTab`) | 8 ✓(`iconPosition="start"`、#443) |
 
 ### カラー(light)
 

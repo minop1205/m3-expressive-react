@@ -27,6 +27,14 @@ import styles from './TextField.module.css'
 
 export type TextFieldVariant = 'filled' | 'outlined'
 
+/**
+ * Where the label sits: `'floating'` — inside the container, resting in the
+ * input line and minimizing on focus / value (outlined: cutting into the
+ * border); `'above'` — always minimized, above the container (Compose
+ * `TextFieldLabelPosition.Above`).
+ */
+export type TextFieldLabelPlacement = 'floating' | 'above'
+
 export interface TextFieldProps
   extends Omit<
     HTMLAttributes<HTMLDivElement>,
@@ -34,8 +42,25 @@ export interface TextFieldProps
   > {
   /** Container style. @default 'filled' */
   variant?: TextFieldVariant
-  /** Floating label; rendered with a trailing `*` when `required`. */
+  /** Field label; rendered with a trailing `*` when `required`. */
   label?: string
+  /**
+   * Label position. `'floating'` keeps the label inside the container (it
+   * rests in the input line and minimizes on focus or value; the outlined
+   * variant notches the border). `'above'` draws it minimized above the
+   * container — no notch — and the field lays out like a label-less one
+   * (Compose `TextFieldLabelPosition.Above`).
+   * @default 'floating'
+   */
+  labelPlacement?: TextFieldLabelPlacement
+  /**
+   * Keep the floating label minimized even while the field is empty and
+   * unfocused, so the placeholder and prefix / suffix show alongside it
+   * (Compose `Inside` / `Cutout(isAlwaysMinimized = true)`; MUI's `shrink`).
+   * No effect with `labelPlacement="above"`, which is always minimized.
+   * @default false
+   */
+  shrinkLabel?: boolean
   /** Helper line below the field. Replaced by `errorText` while in error. */
   supportingText?: string
   /** Shown instead of `supportingText` (with `role="alert"`) when `error` is set. */
@@ -115,7 +140,8 @@ const defaultCounterLabel = (length: number, maxLength: number) =>
  *
  * A single-line `<input>` — or auto-growing `<textarea>` with `multiline` —
  * wrapped in the MD3 field anatomy: floating label (outlined variant notches
- * the border), start/end icons, prefix/suffix text, and a supporting
+ * the border; `shrinkLabel` keeps it minimized, `labelPlacement="above"`
+ * moves it above the container), start/end icons, prefix/suffix text, and a supporting
  * line that holds helper text, the error message, and the `maxLength`
  * counter. Value follows the standard controlled (`value` + `onChange`) or
  * uncontrolled (`defaultValue`) input pattern; clicking anywhere on the
@@ -132,6 +158,8 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
     {
       variant = 'filled',
       label,
+      labelPlacement = 'floating',
+      shrinkLabel = false,
       supportingText,
       errorText,
       error = false,
@@ -348,6 +376,12 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
       </>
     ) : undefined
 
+    // `above`: the label leaves the container, which then lays out exactly
+    // like a label-less field (Compose `contentPaddingWithoutLabel`, no
+    // notch).
+    const labelAbove = labelText !== undefined && labelPlacement === 'above'
+    const fieldLabel = labelAbove ? undefined : labelText
+
     const controlProps = {
       ref: setRefs,
       id: inputId,
@@ -403,11 +437,18 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
           disabled && styles.disabled,
           startIcon && styles.hasLeadingIcon,
           endIcon && styles.hasTrailingIcon,
-          !label && styles.noLabel,
+          !fieldLabel && styles.noLabel,
+          fieldLabel && shrinkLabel && styles.shrinkLabel,
           className,
         )}
         onClick={handleContainerClick}
       >
+        {labelAbove && (
+          <label className={styles.aboveLabel} htmlFor={inputId}>
+            {labelText}
+          </label>
+        )}
+
         <div className={styles.field}>
           {/* Filled background */}
           {variant === 'filled' && (
@@ -423,8 +464,8 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
             <div className={styles.outline} aria-hidden="true">
               <div className={styles.outlineStart} />
               <div className={styles.outlineNotch}>
-                {labelText && (
-                  <span className={styles.outlineLabel}>{labelText}</span>
+                {fieldLabel && (
+                  <span className={styles.outlineLabel}>{fieldLabel}</span>
                 )}
               </div>
               <div className={styles.outlineEnd} />
@@ -439,9 +480,9 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
           {/* Middle section: label + content */}
           <div className={styles.middle}>
             {/* Label (positioned absolutely within middle) */}
-            {labelText && (
+            {fieldLabel && (
               <label className={styles.label} htmlFor={inputId}>
-                {labelText}
+                {fieldLabel}
               </label>
             )}
 
