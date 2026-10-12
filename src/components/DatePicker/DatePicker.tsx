@@ -26,6 +26,7 @@ import {
   startOfDay,
   type DateInputError,
 } from './dateUtils'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './DatePicker.module.css'
 
 /** `[start, end]` — either may be null while selecting. */
@@ -211,11 +212,13 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
     ref,
   ) {
     const titleId = useId()
-    const isControlled = value !== undefined
-    const [internal, setInternal] = useState<Date | DateRange | null>(
-      defaultValue ?? (range ? [null, null] : null),
-    )
-    const currentValue = isControlled ? value ?? null : internal
+    const [stored, setInternal, isControlled] = useControllableState<Date | DateRange | null>({
+      value,
+      defaultValue: defaultValue ?? (range ? [null, null] : null),
+      name: 'DatePicker',
+      state: 'value',
+    })
+    const currentValue = stored ?? null
 
     const [internalMode, setInternalMode] = useState<DatePickerMode>(defaultMode)
     const mode = modeProp ?? internalMode

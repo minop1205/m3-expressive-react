@@ -8,7 +8,6 @@ import {
   useEffect,
   useId,
   useRef,
-  useState,
   type ButtonHTMLAttributes,
   type KeyboardEvent,
   type MouseEvent,
@@ -34,6 +33,7 @@ import {
   innermostTrigger,
   type TriggerProps,
 } from '../../internal/triggerSlot'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './Menu.module.css'
 
 interface MenuContextValue {
@@ -126,9 +126,12 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
   const { [FORWARDED_TRIGGER_PROPS]: forwarded, ...rest } = restProps as typeof restProps & {
     [FORWARDED_TRIGGER_PROPS]?: TriggerProps
   }
-  const [uncontrolled, setUncontrolled] = useState(defaultOpen)
-  const isControlled = controlledOpen !== undefined
-  const open = isControlled ? controlledOpen : uncontrolled
+  const [open, setUncontrolled, isControlled] = useControllableState({
+    value: controlledOpen,
+    defaultValue: defaultOpen,
+    name: 'Menu',
+    state: 'open',
+  })
   const wrapperRef = useRef<HTMLSpanElement>(null)
   const menuRef = useRef<HTMLDivElement | null>(null)
   // Where to move focus once the menu opens ('last' for ArrowUp on the trigger).

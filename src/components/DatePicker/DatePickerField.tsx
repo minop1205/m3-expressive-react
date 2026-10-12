@@ -31,6 +31,7 @@ import {
   type DateInputError,
 } from './dateUtils'
 import pickerStyles from './DatePicker.module.css'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './DatePickerField.module.css'
 
 export type { DateInputError } from './dateUtils'
@@ -161,9 +162,13 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
     ref,
   ) {
     const popupId = useId()
-    const isControlled = value !== undefined
-    const [internal, setInternal] = useState<Date | null>(defaultValue ?? null)
-    const current = isControlled ? value ?? null : internal
+    const [stored, setInternal, isControlled] = useControllableState<Date | null>({
+      value,
+      defaultValue: defaultValue ?? null,
+      name: 'DatePickerField',
+      state: 'value',
+    })
+    const current = stored ?? null
     const [open, setOpen] = useState(false)
     const [error, setError] = useState<DateInputError | null>(null)
     const wrapRef = useRef<HTMLDivElement | null>(null)

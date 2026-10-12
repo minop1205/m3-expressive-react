@@ -6,7 +6,6 @@ import {
   useEffect,
   useId,
   useRef,
-  useState,
   type FocusEvent,
   type HTMLAttributes,
   type MouseEvent,
@@ -25,6 +24,7 @@ import {
   findTriggerElement,
   type TriggerProps,
 } from '../../internal/triggerSlot'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './Tooltip.module.css'
 
 export type TooltipVariant = 'plain' | 'rich'
@@ -151,9 +151,12 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
   const wrapperRef = useRef<HTMLSpanElement | null>(null)
   const popupRef = useRef<HTMLDivElement | null>(null)
 
-  const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
-  const isControlled = open !== undefined
-  const isOpen = isControlled ? open : uncontrolledOpen
+  const [isOpen, setUncontrolledOpen, isControlled] = useControllableState({
+    value: open,
+    defaultValue: defaultOpen,
+    name: 'Tooltip',
+    state: 'open',
+  })
 
   const isRich = variant === 'rich'
   const hasSubhead = isRich && subhead != null

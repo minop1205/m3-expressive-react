@@ -5,12 +5,12 @@ import {
   forwardRef,
   useId,
   useRef,
-  useState,
   type ChangeEvent,
   type HTMLAttributes,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
+import { useControllableState } from '../../internal/useControllableState'
 
 export interface RadioGroupContextValue {
   name: string
@@ -62,9 +62,12 @@ export const RadioGroup = forwardRef<HTMLDivElement, RadioGroupProps>(
   ) {
     const autoName = useId()
     const name = nameProp ?? autoName
-    const isControlled = controlledValue !== undefined
-    const [uncontrolled, setUncontrolled] = useState(defaultValue)
-    const value = isControlled ? controlledValue : uncontrolled
+    const [value, setUncontrolled, isControlled] = useControllableState({
+      value: controlledValue,
+      defaultValue,
+      name: 'RadioGroup',
+      state: 'value',
+    })
     // The native reset restores each radio's initial checkedness, i.e. the
     // group's initial default — not a later `defaultValue` prop.
     const initialDefaultRef = useRef(defaultValue)

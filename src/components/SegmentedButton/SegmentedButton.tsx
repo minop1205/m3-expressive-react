@@ -12,6 +12,7 @@ import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { CheckIcon } from '../../internal/icons'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './SegmentedButton.module.css'
 
 /** One segment of a {@link SegmentedButton} group. */
@@ -133,17 +134,18 @@ export const SegmentedButton = forwardRef<HTMLDivElement, SegmentedButtonProps>(
       defaultValue?: SelectionValue
       onChange?: (event: MouseEvent<HTMLButtonElement>, value: SelectionValue) => void
     }
-    const isControlled = value !== undefined
-    const [uncontrolled, setUncontrolled] = useState<SelectionValue>(
-      () => defaultValue ?? (multiSelect ? [] : ''),
-    )
+    const [current, setUncontrolled, isControlled] = useControllableState<SelectionValue>({
+      value,
+      defaultValue: defaultValue ?? (multiSelect ? [] : ''),
+      name: 'SegmentedButton',
+      state: 'value',
+    })
     // Roving tab stop (single-select): the last focused segment. Until the
     // user focuses one, the first enabled segment is the stop regardless of
     // the selection (m3 accessibility: "the first segment will be focused
     // regardless of selection state").
     const [focusedValue, setFocusedValue] = useState<string | null>(null)
 
-    const current = isControlled ? value : uncontrolled
     const selectedValues = Array.isArray(current) ? current : [current]
     const isSelected = (v: string) => selectedValues.includes(v)
     const isOptionDisabled = (option: SegmentedButtonOption) =>

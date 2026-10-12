@@ -4,7 +4,6 @@ import {
   forwardRef,
   useCallback,
   useRef,
-  useState,
   type ChangeEvent,
   type InputHTMLAttributes,
   type KeyboardEvent,
@@ -14,6 +13,7 @@ import {
 import clsx from 'clsx'
 import { assignRef } from '../../internal/assignRef'
 import { syncCheckedToDefault, useFormReset } from '../../internal/useFormReset'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './Switch.module.css'
 
 export interface SwitchProps
@@ -62,9 +62,12 @@ export const Switch = forwardRef<HTMLSpanElement, SwitchProps>(
     },
     forwardedRef,
   ) {
-    const isControlled = selected !== undefined
-    const [internalSelected, setInternalSelected] = useState(defaultSelected)
-    const isSelected = isControlled ? selected : internalSelected
+    const [isSelected, setInternalSelected, isControlled] = useControllableState({
+      value: selected,
+      defaultValue: defaultSelected,
+      name: 'Switch',
+      state: 'selected',
+    })
 
     const internalInputRef = useRef<HTMLInputElement | null>(null)
     const setInputRef = useCallback(
