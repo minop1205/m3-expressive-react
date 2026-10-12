@@ -273,6 +273,13 @@
     "description": "Unused without a selection model (kept for HTMLAttributes compatibility).\nUncontrolled initial selected item value.\nUncontrolled initial selected item values."
    },
    {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disable every `Button` / `IconButton` in the group (MUI\n`ToggleButtonGroup` parity); an item's own `disabled` still applies."
+   },
+   {
     "name": "onChange",
     "type": "ChangeEventHandler<HTMLDivElement, Element> | ((event: SyntheticEvent<Element, Event>, value: string | null) => void) | ((event: SyntheticEvent<...>, value: string[]) => void)",
     "required": false,
@@ -533,7 +540,7 @@
     "type": "boolean",
     "required": false,
     "defaultValue": "false",
-    "description": "Error state."
+    "description": "Error state. Also sets `aria-invalid` on the native input."
    },
    {
     "name": "indeterminate",
@@ -663,11 +670,18 @@
     "required": false,
     "defaultValue": null,
     "description": "The chips. They may be wrapped in other elements (e.g. a Tooltip)."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disable every chip in the set; a chip's own `disabled` still applies."
    }
   ]
  },
  "Calendar": {
-  "description": "The month view shared by the modal `DatePicker` and the docked\n`DatePickerField`: navigation header, weekday header and a 6×7 day grid,\nswapped for the year (and, docked, month) selection menus.\n\nGrid semantics follow the APG date picker dialog and m3 accessibility:\n`role=\"grid\"` named by the month, `columnheader`s with the full weekday\nname, and day `gridcell`s (native buttons) named with the full date plus\nCompose's range/today prefixes, `aria-selected` on the selection and\n`aria-current=\"date\"` on today. The grid is a single Tab stop with a roving\ntabindex (selected → today → 1st); arrows move by day / week, PageUp/Down by\nmonth, Shift+PageUp/Down by year, Home/End to the first/last day of the\nmonth (m3 key table), and Enter/Space select.\n\nNavigation is bounded by min/max (else Compose's 1900–2100 year range):\narrows, years and months that cannot show a selectable day are disabled.",
+  "description": "The month view shared by the modal `DatePicker` and the docked\n`DatePickerField`: navigation header, weekday header and a 6×7 day grid,\nswapped for the year (and, docked, month) selection menus.\n\nGrid semantics follow the APG date picker dialog and m3 accessibility:\n`role=\"grid\"` named by the month, `columnheader`s with the full weekday\nname, and day `gridcell`s (native buttons) named with the full date plus\nCompose's range/today prefixes, `aria-selected` on the selection and\n`aria-current=\"date\"` on today. The grid is a single Tab stop with a roving\ntabindex (selected → today → 1st); arrows move by day / week, PageUp/Down by\nmonth, Shift+PageUp/Down by year, Home/End to the first/last day of the\nmonth (m3 key table), and Enter/Space select.\n\nNavigation is bounded by min/max (else Compose's 1900–2100 year range):\narrows, years and months that cannot show a selectable day are disabled,\nand keyboard focus is clamped into that range.",
   "props": [
    {
     "name": "autoFocus",
@@ -745,6 +759,13 @@
     "required": true,
     "defaultValue": null,
     "description": "Range endpoints (range mode)."
+   },
+   {
+    "name": "referenceDate",
+    "type": "Date",
+    "required": false,
+    "defaultValue": null,
+    "description": "Day marked as today; defaults to the client's current date."
    },
    {
     "name": "selected",
@@ -875,7 +896,7 @@
     "type": "(() => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Cancel, Escape or a scrim click: the value reverts to what it was when\nthe picker opened (or was last accepted) — reported through `onChange`\nwhen it can be expressed (a date, or a range) — and this fires."
+    "description": "Cancel, Escape or a scrim click: the value reverts to what it was when\nthe picker opened (or was last accepted, or last set from outside) — reported through `onChange`\nwhen it can be expressed (a date, or a range) — and this fires."
    },
    {
     "name": "onChange",
@@ -918,6 +939,13 @@
     "required": false,
     "defaultValue": "false",
     "description": "Select a start/end range instead of a single date."
+   },
+   {
+    "name": "referenceDate",
+    "type": "Date",
+    "required": false,
+    "defaultValue": null,
+    "description": "The date treated as \"today\": it opens the calendar on its month when no\ndate is selected and receives the today marker. Defaults to the client's\ncurrent date. With server rendering, pass the same date on the server and\nthe client (e.g. computed once in the user's time zone) so the initially\nvisible month hydrates identically; without it the today marker appears\nonly after hydration."
    },
    {
     "name": "selectYearLabel",
@@ -1016,6 +1044,20 @@
     "description": "Error message for rejected typed text. Defaults to Compose's English\nstrings: \"Date does not match expected pattern: MM/DD/YYYY\" / \"Date not\nallowed\"."
    },
    {
+    "name": "inputProps",
+    "type": "InputHTMLAttributes<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Extra attributes for the inner text field's native `<input>` (e.g.\n`autoFocus`, `aria-*`). Same precedence as TextField `inputProps`: the\nfield's own wiring wins; an `onKeyDown` runs before the Enter-to-commit\nhandler."
+   },
+   {
+    "name": "inputRef",
+    "type": "Ref<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Ref to the inner text field's native `<input>` (the forwarded `ref`\npoints at the root) — e.g. for React Hook Form `register`."
+   },
+   {
     "name": "label",
     "type": "string",
     "required": false,
@@ -1042,6 +1084,13 @@
     "required": false,
     "defaultValue": null,
     "description": "Earliest selectable date."
+   },
+   {
+    "name": "name",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Native input `name` (the typed date text is what a form submits)."
    },
    {
     "name": "nextMonthLabel",
@@ -1084,6 +1133,13 @@
     "required": false,
     "defaultValue": "Previous year",
     "description": "Accessible label of the previous-year button."
+   },
+   {
+    "name": "referenceDate",
+    "type": "Date",
+    "required": false,
+    "defaultValue": null,
+    "description": "The date treated as \"today\": it opens the calendar on its month when no\ndate is selected and receives the today marker. Defaults to the client's\ncurrent date. With server rendering, pass the same date on the server and\nthe client (e.g. computed once in the user's time zone) so the initially\nvisible month hydrates identically; without it the today marker appears\nonly after hydration."
    },
    {
     "name": "selectMonthLabel",
@@ -1271,7 +1327,7 @@
   ]
  },
  "FabMenu": {
-  "description": "Material Design 3 (Expressive) FAB menu.\n\nA FAB (regular / medium / large) that opens into a vertical stack of\nlabelled action items anchored to its top-trailing edge. The FAB morphs into\na 56dp close button pinned to the top-trailing corner of its footprint\n(container primaryContainer → primary, icon onPrimaryContainer → onPrimary)\nand the items reveal from the trailing edge, bottom item first — per\nm3.material.io / Compose FloatingActionButtonMenu. Items use the\ncontainer/on-container roles of the chosen color set (primary / secondary /\ntertiary). Closes on outside click, Escape, or item selection. Items may be\npassed directly or inside Fragments.\n\nKeyboard / focus (m3.material.io a11y + Compose FloatingActionButtonMenu +\nWAI-ARIA APG menu): opening keeps focus on the toggle; Tab / ArrowDown from\nthe open toggle move to the top item (ArrowUp: the bottom one); ArrowUp /\nArrowDown cycle the items with wrap, Home / End jump; Shift+Tab returns to\nthe toggle; Tab closes and leaves the component; Escape and item selection\nclose and return focus to the toggle. While closed the item list is `inert`\nand `aria-hidden`, so hidden items are out of the Tab order and the\naccessibility tree while they still animate out.",
+  "description": "Material Design 3 (Expressive) FAB menu.\n\nA FAB (regular / medium / large) that opens into a vertical stack of\nlabelled action items anchored to its top-trailing edge. The FAB morphs into\na 56dp close button pinned to the top-trailing corner of its footprint\n(container primaryContainer → primary, icon onPrimaryContainer → onPrimary)\nand the items reveal from the trailing edge, bottom item first — per\nm3.material.io / Compose FloatingActionButtonMenu. Items use the\ncontainer/on-container roles of the chosen color set (primary / secondary /\ntertiary). Closes on outside click, Escape, or item selection. Items may be\npassed directly or inside Fragments.\n\nKeyboard / focus (m3.material.io a11y + Compose FloatingActionButtonMenu +\nWAI-ARIA APG menu): opening keeps focus on the toggle; Tab / ArrowDown from\nthe open toggle move to the top item (ArrowUp: the bottom one); ArrowUp /\nArrowDown cycle the items with wrap, Home / End jump, printable characters\nmove focus by typeahead; Shift+Tab returns to the toggle; Tab closes and\nleaves the component; Escape and item selection close and return focus to\nthe toggle. While closed the item list is `inert`\nand `aria-hidden`, so hidden items are out of the Tab order and the\naccessibility tree while they still animate out.",
   "props": [
    {
     "name": "ariaLabel",
@@ -1623,7 +1679,7 @@
   ]
  },
  "Menu": {
-  "description": "Material Design 3 Menu (dropdown).\n\nAnchors a `role=\"menu\"` popup to a trigger. SurfaceContainer container, 4dp\ncorners, elevation 2, 112–280dp wide, 8dp vertical padding — per Compose\nMenuTokens. Closes on outside click, Escape, Tab-out, or item selection.\nThe menu is drawn in the top layer (Popover API) below the trigger — above\nit when it doesn't fit below — and kept inside the viewport, so ancestors'\n`overflow` / `z-index` can't clip it; it follows scrolling and layout shifts.\n\n`variant=\"vertical\"` renders the MD3 Expressive vertical menu (Compose\n`DropdownMenuPopup`/`DropdownMenuGroup`): a transparent popup that stacks\n`MenuGroup` containers (surface-container-low, elevation 2, 2dp gap) with\n44dp items, 20dp icons, positional corner shapes, and a tertiary-based\nselected state with a springy shape morph. `color=\"vibrant\"` switches the\ngroups and items to the tertiary-container based high-emphasis mapping.\n\nKeyboard (WAI-ARIA APG menu-button pattern): Enter/Space/ArrowDown open and\nfocus the first item (ArrowUp: the last); ArrowUp/Down cycle with wrap;\nHome/End jump; printable characters move focus by typeahead; Escape and\nitem activation close and return focus to the trigger. Items use a roving\ntabindex (-1) so the closed/open menu never pollutes the page Tab order;\ndisabled items are focusable but inert (`aria-disabled`).",
+  "description": "Material Design 3 Menu (dropdown).\n\nAnchors a `role=\"menu\"` popup to a trigger. SurfaceContainer container, 4dp\ncorners, elevation 2, 112–280dp wide, 8dp vertical padding — per Compose\nMenuTokens. Closes on outside press, Escape, Tab-out (or any focus move out\nof it), or item selection. The trigger gets `aria-controls`, and the menu\nis named by the trigger (`aria-labelledby`) unless it has its own label.\nThe menu is drawn in the top layer (Popover API) below the trigger — above\nit when it doesn't fit below — and kept inside the viewport, so ancestors'\n`overflow` / `z-index` can't clip it; it follows scrolling and layout shifts.\n\n`variant=\"vertical\"` renders the MD3 Expressive vertical menu (Compose\n`DropdownMenuPopup`/`DropdownMenuGroup`): a transparent popup that stacks\n`MenuGroup` containers (surface-container-low, elevation 2, 2dp gap) with\n44dp items, 20dp icons, positional corner shapes, and a tertiary-based\nselected state with a springy shape morph. `color=\"vibrant\"` switches the\ngroups and items to the tertiary-container based high-emphasis mapping.\n\nKeyboard (WAI-ARIA APG menu-button pattern): Enter/Space/ArrowDown open and\nfocus the first item (ArrowUp: the last); ArrowUp/Down cycle with wrap;\nHome/End jump; printable characters move focus by typeahead; Escape and\nitem activation close and return focus to the trigger. Items use a roving\ntabindex (-1) so the closed/open menu never pollutes the page Tab order;\ndisabled items are focusable but inert (`aria-disabled`).",
   "props": [
    {
     "name": "align",
@@ -2157,7 +2213,7 @@
   ]
  },
  "SearchBar": {
-  "description": "Material Design 3 Search bar (docked field + search view).\n\n56dp SurfaceContainerHigh stadium field (360–720dp wide); OnSurface\nBodyLarge input with a Primary caret, OnSurfaceVariant placeholder, 48dp\nleading / trailing slots — per Compose SearchBarTokens and m3.material.io.\nHover / pressed state layer and a keyboard-only focus ring on the bar.\nProviding `children` (results) turns it into a docked search view in the\nExpressive \"contained\" style: a 12dp results container 2dp under the bar\nover a scrim, opening on focus and closing on Escape / outside click /\nscrim click. The view is drawn in the top layer (Popover API), pinned under\nthe bar at the bar's width, so ancestors' `overflow` / `z-index` can't clip\nit; like Compose's docked view it never flips above the bar.\n\nWith a view, the input is an APG-style `role=\"combobox\"` (`aria-expanded`,\n`aria-controls`, `aria-autocomplete=\"list\"`) and the view's opening is\nannounced via `suggestionsLabel`. Keyboard: ArrowDown opens the view /\nmoves into the results, ArrowUp / ArrowDown / Home / End move between the\nfocusable result items (ArrowUp from the first returns to the input),\nEscape closes the view from anywhere in it and returns focus to the input,\nand moving focus out of the component closes it. While the view is open,\nEscape only closes it (the native `type=\"search\"` clear is suppressed);\nwith the view closed — or without a view — Escape keeps the browser's\nnative behavior (Chromium / Safari clear the query). Enter calls\n`onSearch`, except while an IME composition is in progress.\nA consumer `onKeyDown` that calls `preventDefault()` opts out of the\nbuilt-in key handling for that event.\n\nMUI parity: the forwarded `ref` and any extra props (`{...rest}`) land on\nthe ROOT element (the `role=\"search\"` landmark); input concerns are\ndedicated props (`placeholder`, `name`, `onFocus`, `onKeyDown`, …),\n`inputRef` reaches the native `<input>`, and `inputProps` spreads extra\nattributes on it (the component's own wiring wins).",
+  "description": "Material Design 3 Search bar (docked field + search view).\n\n56dp SurfaceContainerHigh stadium field (360–720dp wide); OnSurface\nBodyLarge input with a Primary caret, OnSurfaceVariant placeholder, 48dp\nleading / trailing slots — per Compose SearchBarTokens and m3.material.io.\nHover / pressed state layer and a keyboard-only focus ring on the bar.\nProviding `children` (results) turns it into a docked search view in the\nExpressive \"contained\" style: a 12dp results container 2dp under the bar\nover a scrim, opening on focus and closing on Escape / outside click /\nscrim click. The view is drawn in the top layer (Popover API), pinned under\nthe bar at the bar's width, so ancestors' `overflow` / `z-index` can't clip\nit; like Compose's docked view it never flips above the bar.\n\nWith a view, the input is an APG-style `role=\"combobox\"` (`aria-expanded`,\n`aria-controls`, `aria-autocomplete=\"list\"`) and the view's opening is\nannounced via `suggestionsLabel`. Keyboard: ArrowDown opens the view /\nmoves into the results, ArrowUp / ArrowDown / Home / End move between the\nfocusable result items (ArrowUp from the first returns to the input),\nEscape closes the view from anywhere in it and returns focus to the input\n(typing, or pressing the focused input, reopens it), and moving focus out of the component closes it. While the view is open,\nEscape only closes it (the native `type=\"search\"` clear is suppressed);\nwith the view closed — or without a view — Escape keeps the browser's\nnative behavior (Chromium / Safari clear the query). Enter calls\n`onSearch`, except while an IME composition is in progress.\nA consumer `onKeyDown` that calls `preventDefault()` opts out of the\nbuilt-in key handling for that event.\n\nMUI parity: the forwarded `ref` and any extra props (`{...rest}`) land on\nthe ROOT element (the `role=\"search\"` landmark); input concerns are\ndedicated props (`placeholder`, `name`, `onFocus`, `onKeyDown`, …),\n`inputRef` reaches the native `<input>`, and `inputProps` spreads extra\nattributes on it (the component's own wiring wins).",
   "props": [
    {
     "name": "children",
@@ -2295,20 +2351,20 @@
   ]
  },
  "SegmentedButton": {
-  "description": "Material Design 3 Segmented Buttons (single- or multi-select).\n\nA 40dp stadium row of equal-width outlined segments (Outline 1dp). Selected\nsegments fill with SecondaryContainer / OnSecondaryContainer and show an\n18dp check in an always-reserved icon slot, so selecting never resizes the\nrow; unselected are transparent with OnSurface content — per Compose\nOutlinedSegmentedButtonTokens / SegmentedButtonContent.\n\nSingle-select is a `radiogroup` (one Tab stop, arrow keys move focus,\nSpace / Enter select); multi-select is a `group` of `aria-pressed` toggle\nbuttons (each a Tab stop; arrow keys also move focus). Name the group with\n`aria-label` / `aria-labelledby`.\n\nIn Material 3 Expressive the segmented button is no longer recommended:\nm3.material.io says connected button groups replace it. Prefer\n`<ButtonGroup variant=\"connected\" selectionMode=\"single\" | \"multiple\">` with\n`Button` / `IconButton` children that carry a `value`. SegmentedButton stays\navailable (Compose still ships it) and is not deprecated.",
+  "description": "Material Design 3 Segmented Buttons (single- or multi-select).\n\nA 40dp stadium row of equal-width outlined segments (Outline 1dp). Selected\nsegments fill with SecondaryContainer / OnSecondaryContainer and show an\n18dp check in an always-reserved icon slot, so selecting never resizes the\nrow; unselected are transparent with OnSurface content — per Compose\nOutlinedSegmentedButtonTokens / SegmentedButtonContent.\n\nSingle-select is a `radiogroup` (one Tab stop; arrow keys move focus and\nselect, as in the WAI-ARIA APG radio group and `ButtonGroup`; Space / Enter\nselect); multi-select is a `group` of `aria-pressed` toggle buttons (each a\nTab stop; arrow keys move focus only). Name the group with `aria-label` /\n`aria-labelledby`.\n\nIn Material 3 Expressive the segmented button is no longer recommended:\nm3.material.io says connected button groups replace it. Prefer\n`<ButtonGroup variant=\"connected\" selectionMode=\"single\" | \"multiple\">` with\n`Button` / `IconButton` children that carry a `value`. SegmentedButton stays\navailable (Compose still ships it) and is not deprecated.",
   "props": [
    {
     "name": "defaultValue",
     "type": "string | string[]",
     "required": false,
-    "defaultValue": null,
-    "description": "Uncontrolled initial selection. Defaults to none (`''`, or `[]` when `multiSelect`)."
+    "defaultValue": "'' (none)\n[]",
+    "description": "Uncontrolled initial selection."
    },
    {
     "name": "disabled",
     "type": "boolean",
     "required": false,
-    "defaultValue": "false",
+    "defaultValue": null,
     "description": "Disable the whole group."
    },
    {
@@ -2316,14 +2372,14 @@
     "type": "boolean",
     "required": false,
     "defaultValue": "false",
-    "description": "Allow selecting multiple segments. Single-select renders a `radiogroup`\nof radios; multi-select renders a `group` of toggle buttons (`aria-pressed`)."
+    "description": "Allow selecting multiple segments. Single-select renders a `radiogroup`\nof radios; multi-select renders a `group` of toggle buttons (`aria-pressed`).\nAllow selecting multiple segments."
    },
    {
     "name": "onChange",
-    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string | string[]) => void)",
+    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string) => void) | ((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string[]) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Fires with the triggering event and the next selection (string, or\nstring[] when `multiSelect`). Keyboard activation (Space / Enter) arrives\nas the native button `click`."
+    "description": "Fires with the triggering event and the newly selected value — on click,\nSpace / Enter (the native button `click`) and arrow-key selection. Not\nfired when the selected segment is activated again.\nFires with the triggering event and the next selected values. Keyboard\nactivation (Space / Enter) arrives as the native button `click`."
    },
    {
     "name": "options",
@@ -2344,7 +2400,7 @@
     "type": "string | string[]",
     "required": false,
     "defaultValue": null,
-    "description": "Controlled selected value (string) — or an array of values when `multiSelect`."
+    "description": "Controlled selected value (`''` = none).\nControlled selected values."
    }
   ]
  },
@@ -2355,14 +2411,14 @@
     "name": "defaultValue",
     "type": "string | string[]",
     "required": false,
-    "defaultValue": null,
-    "description": "Uncontrolled initial selection. Defaults to none (`''`, or `[]` when `multiSelect`)."
+    "defaultValue": "'' (none)\n[]",
+    "description": "Uncontrolled initial selection."
    },
    {
     "name": "disabled",
     "type": "boolean",
     "required": false,
-    "defaultValue": "false",
+    "defaultValue": null,
     "description": "Disable the whole group."
    },
    {
@@ -2370,14 +2426,14 @@
     "type": "boolean",
     "required": false,
     "defaultValue": "false",
-    "description": "Allow selecting multiple segments. Single-select renders a `radiogroup`\nof radios; multi-select renders a `group` of toggle buttons (`aria-pressed`)."
+    "description": "Allow selecting multiple segments. Single-select renders a `radiogroup`\nof radios; multi-select renders a `group` of toggle buttons (`aria-pressed`).\nAllow selecting multiple segments."
    },
    {
     "name": "onChange",
-    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string | string[]) => void)",
+    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string) => void) | ((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string[]) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Fires with the triggering event and the next selection (string, or\nstring[] when `multiSelect`). Keyboard activation (Space / Enter) arrives\nas the native button `click`."
+    "description": "Fires with the triggering event and the newly selected value — on click,\nSpace / Enter (the native button `click`) and arrow-key selection. Not\nfired when the selected segment is activated again.\nFires with the triggering event and the next selected values. Keyboard\nactivation (Space / Enter) arrives as the native button `click`."
    },
    {
     "name": "options",
@@ -2398,12 +2454,12 @@
     "type": "string | string[]",
     "required": false,
     "defaultValue": null,
-    "description": "Controlled selected value (string) — or an array of values when `multiSelect`."
+    "description": "Controlled selected value (`''` = none).\nControlled selected values."
    }
   ]
  },
  "SideSheet": {
-  "description": "Material Design 3 Side sheet (standard or modal).\n\nA 400dp max-width panel anchored to the trailing (or leading) edge. Standard\n= inline Surface panel; modal = SurfaceContainerLow over a 0.32 Scrim with\n`role=\"dialog\" aria-modal` and Escape-to-close — per m3.material.io specs.\nHeader uses 24dp side padding (16dp with a back icon), 12dp gaps, a Title\nLarge headline, and optional back/close IconButtons. Bottom actions are a\n72dp left-aligned bar.",
+  "description": "Material Design 3 Side sheet (standard or modal).\n\nA 400dp max-width panel anchored to the right (or left) edge. Standard\n= inline Surface panel; modal = SurfaceContainerLow over a 0.32 Scrim with\n`role=\"dialog\" aria-modal` and Escape-to-close — per m3.material.io specs.\nHeader uses 24dp side padding (16dp with a back icon), 12dp gaps, a Title\nLarge headline, and optional back/close IconButtons. Bottom actions are a\n72dp left-aligned bar.",
   "props": [
    {
     "name": "actions",
@@ -2417,7 +2473,7 @@
     "type": "\"left\" | \"right\"",
     "required": false,
     "defaultValue": "right",
-    "description": "Edge the sheet is anchored to."
+    "description": "Physical edge the sheet is anchored to; it does not flip in RTL."
    },
    {
     "name": "backLabel",
@@ -2893,7 +2949,7 @@
     "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Fires with the triggering event and the newly selected tab value."
+    "description": "Fires with the triggering event and the newly selected tab value. Not\nfired when the selected tab is activated again, or when the tab's own\n`onClick` called `event.preventDefault()`."
    },
    {
     "name": "scrollable",
@@ -3008,7 +3064,7 @@
     "type": "InputHTMLAttributes<HTMLInputElement> | TextareaHTMLAttributes<HTMLTextAreaElement>",
     "required": false,
     "defaultValue": null,
-    "description": "Extra attributes spread on the native `<input>` (or `<textarea>` when\n`multiline`) — the escape hatch for attributes without a dedicated prop\n(`pattern`, `min`, `max`, `step`, `onKeyDown`, extra `aria-*`, …).\nPrecedence: the component's own wiring always wins over conflicting\n`inputProps` keys — the controlled `value` / `onChange` / `onFocus` /\n`onBlur`, `id`, `className`, and every dedicated input prop the\ncomponent sets (`type`, `name`, `placeholder`, `required`, `readOnly`,\n`autoComplete`, `maxLength`, `rows`, …)."
+    "description": "Extra attributes spread on the native `<input>` (or `<textarea>` when\n`multiline`) — the escape hatch for attributes without a dedicated prop\n(`pattern`, `min`, `max`, `step`, `onKeyDown`, extra `aria-*`, …).\nPrecedence: the component's own wiring always wins over conflicting\n`inputProps` keys — the controlled `value` / `onChange` / `onFocus` /\n`onBlur`, `id`, `className`, and every dedicated input prop the\ncomponent sets (`type`, `name`, `placeholder`, `required`, `readOnly`,\n`autoComplete`, `maxLength`, `rows`, …). Exceptions: `aria-describedby`\nis merged (the field's own ids first), and an `onInput` handler is\ncalled after the component's own."
    },
    {
     "name": "inputRef",

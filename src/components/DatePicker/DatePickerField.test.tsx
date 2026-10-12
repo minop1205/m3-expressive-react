@@ -15,6 +15,16 @@ describe('DatePickerField', () => {
     expect(input).toHaveAccessibleDescription('MM/DD/YYYY')
   })
 
+  it('referenceDate sets the opening month and the today marker', async () => {
+    const user = userEvent.setup()
+    render(<DatePickerField referenceDate={new Date(2030, 2, 17)} />)
+    await user.click(toggle())
+    expect(screen.getByRole('grid', { name: 'March 2030' })).toBeInTheDocument()
+    const cell = screen.getByRole('gridcell', { name: /^Today, / })
+    expect(cell.textContent).toBe('17')
+    expect(cell).toHaveFocus()
+  })
+
   it('states the locale format', () => {
     render(<DatePickerField locale="de-DE" />)
     expect(screen.getByRole('textbox')).toHaveAccessibleDescription('DD.MM.YYYY')

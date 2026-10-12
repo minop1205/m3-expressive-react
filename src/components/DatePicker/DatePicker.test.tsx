@@ -41,6 +41,14 @@ describe('DatePicker', () => {
     expect(cell.textContent).toBe(String(now.getDate()))
   })
 
+  it('referenceDate sets the initial month and the today marker', () => {
+    render(<DatePicker referenceDate={new Date(2030, 2, 17)} />)
+    expect(screen.getByRole('grid', { name: 'March 2030' })).toBeInTheDocument()
+    const cell = screen.getByRole('gridcell', { name: /^Today, / })
+    expect(cell).toHaveAttribute('aria-current', 'date')
+    expect(cell.textContent).toBe('17')
+  })
+
   it('selects a day on click (uncontrolled)', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()

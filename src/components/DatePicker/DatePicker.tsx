@@ -100,6 +100,15 @@ export interface DatePickerProps
   nextMonthLabel?: string
   /** Accessible name of the year picker list. @default 'Select year' */
   selectYearLabel?: string
+  /**
+   * The date treated as "today": it opens the calendar on its month when no
+   * date is selected and receives the today marker. Defaults to the client's
+   * current date. With server rendering, pass the same date on the server and
+   * the client (e.g. computed once in the user's time zone) so the initially
+   * visible month hydrates identically; without it the today marker appears
+   * only after hydration.
+   */
+  referenceDate?: Date
   /** Prefix announced on today's cell. @default 'Today' */
   todayLabel?: string
   /** Range start: cell prefix, headline placeholder and input label. @default 'Start date' */
@@ -186,6 +195,7 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
       nextMonthLabel = 'Next month',
       selectYearLabel = 'Select year',
       todayLabel = 'Today',
+      referenceDate,
       startDateLabel = 'Start date',
       endDateLabel = 'End date',
       inRangeLabel = 'In range',
@@ -224,7 +234,7 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
 
     const anchor = single ?? rStart
     const [view, setView] = useState<CalendarView>(() => {
-      const d = anchor ?? new Date()
+      const d = anchor ?? referenceDate ?? new Date()
       return { year: d.getFullYear(), month: d.getMonth() }
     })
 
@@ -262,7 +272,7 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
     if (prevOpen !== isOpen) {
       setPrevOpen(isOpen)
       if (isOpen) {
-        const d = anchor ?? new Date()
+        const d = anchor ?? referenceDate ?? new Date()
         setView({ year: d.getFullYear(), month: d.getMonth() })
       }
     }
@@ -412,6 +422,7 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
               min={min ?? null}
               max={max ?? null}
               locale={locale}
+              referenceDate={referenceDate}
               view={view}
               onViewChange={setView}
               onSelect={selectDay}
