@@ -4,6 +4,14 @@
 
 ### Added
 
+- **Select** / **Option** (new, `m3-expressive-react/Select`): the MD3
+  non-editable exposed dropdown menu. A filled / outlined text field that
+  opens a listbox as wide as the field, with `value` / `defaultValue` /
+  `onChange(event, value)`, `open` / `defaultOpen` / `onOpenChange`, `name` /
+  `required` / `disabled` / `error`, and form submit / reset through a hidden
+  native input. Keyboard and screen-reader behavior follow the WAI-ARIA APG
+  select-only combobox (#434, ruling B31).
+
 - **PullToRefresh** (new, `m3-expressive-react/PullToRefresh`): Compose
   `PullToRefreshBox` as a scroll container — touch / mouse / pen pull at the
   top with the 0.5 drag resistance and 80px threshold, a determinate
