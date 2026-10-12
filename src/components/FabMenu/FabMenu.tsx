@@ -1,3 +1,5 @@
+'use client'
+
 import {
   Children,
   createContext,
@@ -230,8 +232,12 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
         setOpen(false)
       }
     }
+    // Escape closes only the menu: preventDefault marks it consumed so an
+    // enclosing modal (useModal, which listens after `document`) ignores it.
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') closeMenu()
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      event.preventDefault()
+      closeMenu()
     }
     document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
