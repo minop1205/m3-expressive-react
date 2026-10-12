@@ -3,8 +3,19 @@
  * calendar days (time of day zeroed), matching how the pickers emit values.
  */
 
+/**
+ * Local midnight of `year`-`month`-`day` (overflowing fields roll over like
+ * `new Date`). `setFullYear` keeps the years 0–99 literal — `new Date(y, …)`
+ * would map them to 1900–1999.
+ */
+export function makeDate(year: number, month: number, day: number): Date {
+  const d = new Date(2000, 0, 1)
+  d.setFullYear(year, month, day)
+  return d
+}
+
 export function startOfDay(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+  return makeDate(d.getFullYear(), d.getMonth(), d.getDate())
 }
 
 export function sameDay(a: Date | null | undefined, b: Date | null | undefined): boolean {
@@ -18,7 +29,7 @@ export function sameDay(a: Date | null | undefined, b: Date | null | undefined):
 }
 
 export function daysInMonth(year: number, month: number): number {
-  return new Date(year, month + 1, 0).getDate()
+  return makeDate(year, month + 1, 0).getDate()
 }
 
 /** First day of the week for `locale` as a JS weekday (0 = Sunday). */
@@ -52,12 +63,12 @@ export const CALENDAR_ROWS = 6
  * padding days of the neighbouring months (flagged `outside`).
  */
 export function getMonthGrid(year: number, month: number, firstDayOfWeek: number): MonthCell[][] {
-  const lead = (new Date(year, month, 1).getDay() - firstDayOfWeek + 7) % 7
+  const lead = (makeDate(year, month, 1).getDay() - firstDayOfWeek + 7) % 7
   const rows: MonthCell[][] = []
   for (let r = 0; r < CALENDAR_ROWS; r++) {
     const row: MonthCell[] = []
     for (let c = 0; c < 7; c++) {
-      const date = new Date(year, month, 1 - lead + r * 7 + c)
+      const date = makeDate(year, month, 1 - lead + r * 7 + c)
       row.push({ date, outside: date.getMonth() !== month })
     }
     rows.push(row)
@@ -95,7 +106,11 @@ function getPartOrder(locale: string): DatePart[] {
 
 /** Numeric date text in the locale's order, e.g. `07/04/2024` (en-US). */
 export function formatDateInput(date: Date, locale: string): string {
-  return new Intl.DateTimeFormat(locale, numericOptions).format(date)
+  // Pad the year to 4 digits (years 0–999 format short) so the text parses back.
+  return new Intl.DateTimeFormat(locale, numericOptions)
+    .formatToParts(date)
+    .map((p) => (p.type === 'year' ? p.value.padStart(4, '0') : p.value))
+    .join('')
 }
 
 /**
@@ -134,7 +149,7 @@ export function parseDateInput(text: string, locale: string): Date | null {
   const month = Number(parts.month) - 1
   const day = Number(parts.day)
   if (month < 0 || month > 11 || day < 1 || day > daysInMonth(year, month)) return null
-  return new Date(year, month, day)
+  return makeDate(year, month, day)
 }
 
 /** Whether `date` lies within the optional inclusive `[min, max]` bounds. */
