@@ -18,7 +18,8 @@ import {
 
 MD3 Expressive FAB menu: a FAB that opens into a vertical stack of up to six
 labelled actions. The FAB morphs into a 56dp close button and the items
-reveal from the trailing edge, bottom item first. It closes on outside
+reveal from the trailing edge (or the edge set by `horizontalAlignment`),
+bottom item first. It closes on outside
 click, <kbd>Escape</kbd>, or item selection.
 
 export const items = (
@@ -94,6 +95,39 @@ pinned to the FAB's top-trailing corner.
 
 ```tsx
 <FabMenu icon={<AddIcon />} ariaLabel="Create" size="large" tonal={false}>
+  …
+</FabMenu>
+```
+
+## Horizontal alignment
+
+`horizontalAlignment` aligns the items to the FAB: `end` (default) for a FAB at
+the bottom-trailing corner, `start` for one at the bottom-leading corner, or
+`center` to center them over it. The items reveal from the same edge (from the
+middle for `center`). Like every edge here it is logical, so it mirrors in RTL.
+
+<Demo>
+  <Stage>
+    <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-start' }}>
+      <FabMenu icon={<AddIcon />} ariaLabel="Create (start)" horizontalAlignment="start">
+        {items}
+      </FabMenu>
+    </div>
+    <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+      <FabMenu icon={<AddIcon />} ariaLabel="Create (center)" horizontalAlignment="center">
+        {items}
+      </FabMenu>
+    </div>
+    <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+      <FabMenu icon={<AddIcon />} ariaLabel="Create (end)">
+        {items}
+      </FabMenu>
+    </div>
+  </Stage>
+</Demo>
+
+```tsx
+<FabMenu icon={<AddIcon />} ariaLabel="Create" horizontalAlignment="start">
   …
 </FabMenu>
 ```

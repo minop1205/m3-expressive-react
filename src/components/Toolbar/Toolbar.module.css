@@ -74,6 +74,11 @@
   box-shadow: var(--md-sys-elevation-shadow-level3);
 }
 
+/* `disableElevation` (m3: removable on a visually distinct background). */
+.toolbar[data-variant='floating'][data-disable-elevation] {
+  box-shadow: none;
+}
+
 .toolbar[data-variant='floating'][data-orientation='horizontal'] {
   flex-direction: row;
   min-height: 64px;

@@ -33,6 +33,21 @@ describe('Toolbar', () => {
     expect(bar).toHaveAttribute('aria-orientation', 'vertical')
   })
 
+  it('removes the floating elevation with disableElevation (B41)', async () => {
+    const { container, rerender } = render(
+      <Toolbar variant="floating" disableElevation aria-label="Edit">
+        <IconButton icon={icon} aria-label="Star" />
+      </Toolbar>,
+    )
+    expect(screen.getByRole('toolbar')).toHaveAttribute('data-disable-elevation')
+    expect(await axe(container)).toHaveNoViolations()
+    rerender(<Toolbar variant="floating" aria-label="Edit" />)
+    expect(screen.getByRole('toolbar')).not.toHaveAttribute('data-disable-elevation')
+    // Docked toolbars have no elevation, so the flag is not emitted.
+    rerender(<Toolbar disableElevation aria-label="Edit" />)
+    expect(screen.getByRole('toolbar')).not.toHaveAttribute('data-disable-elevation')
+  })
+
   it('supports the vibrant color scheme', () => {
     render(<Toolbar color="vibrant" aria-label="v" />)
     expect(screen.getByRole('toolbar')).toHaveAttribute('data-color', 'vibrant')

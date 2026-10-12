@@ -30,6 +30,13 @@ export type FabMenuColor = 'primary' | 'secondary' | 'tertiary'
 /** Size of the closed FAB (Fab vocabulary). @default 'regular' */
 export type FabMenuSize = 'regular' | 'medium' | 'large'
 
+/**
+ * Horizontal alignment of the items relative to the FAB (logical — mirrored
+ * in RTL). Compose `FloatingActionButtonMenu(horizontalAlignment)`.
+ * @default 'end'
+ */
+export type FabMenuHorizontalAlignment = 'start' | 'center' | 'end'
+
 const CloseIcon = (
   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
     <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
@@ -111,6 +118,17 @@ export interface FabMenuProps
    * corner of the FAB's footprint. @default 'regular'
    */
   size?: FabMenuSize
+  /**
+   * Horizontal alignment of the items above the FAB (Compose
+   * `horizontalAlignment`): `end` (the default) aligns them to the FAB's
+   * trailing edge for a FAB at the bottom-trailing corner, `start` to its
+   * leading edge for a bottom-leading FAB, `center` centers them over it.
+   * Items reveal from the same edge (from the middle for `center`). The close
+   * button stays pinned to the top-trailing corner of the FAB's footprint
+   * (Compose `ToggleFloatingActionButton` `contentAlignment = TopEnd`).
+   * Logical — mirrored in RTL. @default 'end'
+   */
+  horizontalAlignment?: FabMenuHorizontalAlignment
   /** Controlled open state. */
   open?: boolean
   /** Uncontrolled initial open state. @default false */
@@ -137,10 +155,11 @@ export interface FabMenuProps
  * Material Design 3 (Expressive) FAB menu.
  *
  * A FAB (regular / medium / large) that opens into a vertical stack of
- * labelled action items anchored to its top-trailing edge. The FAB morphs into
+ * labelled action items above it, aligned to its trailing edge by default
+ * (`horizontalAlignment`: `start` / `center` / `end`). The FAB morphs into
  * a 56dp close button pinned to the top-trailing corner of its footprint
  * (container primaryContainer → primary, icon onPrimaryContainer → onPrimary)
- * and the items reveal from the trailing edge, bottom item first — per
+ * and the items reveal from the aligned edge, bottom item first — per
  * m3.material.io / Compose FloatingActionButtonMenu. Items use the
  * container/on-container roles of the chosen color set (primary / secondary /
  * tertiary). Closes on outside click, Escape, or item selection. Items may be
@@ -162,6 +181,7 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
     color = 'primary',
     tonal = true,
     size = 'regular',
+    horizontalAlignment = 'end',
     open: controlledOpen,
     defaultOpen = false,
     onOpenChange,
@@ -294,6 +314,7 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
       data-color={color}
       data-tonal={tonal || undefined}
       data-size={size}
+      data-alignment={horizontalAlignment === 'end' ? undefined : horizontalAlignment}
       data-open={open || undefined}
       className={clsx(styles.root, className)}
     >
