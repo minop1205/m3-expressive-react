@@ -58,6 +58,8 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B38 | #440 | Tooltip の配置拡張・rich の既定位置・caret | **`placement` に `'start' \| 'end' \| 'left' \| 'right'`(論理値は RTL で反転、flip あり)、`placement` 未指定の rich は bottom-end の角 + 4 隅の動的配置、`caret?: boolean`(16×8dp)** | 既定値変更(rich の未指定時の位置) | 決定(2026-10-13・#440 の提案どおり) |
 | B32 | #441 | PullToRefresh(新規) | **自身がスクロールコンテナになる `<PullToRefresh refreshing onRefresh indicator disabled threshold>`、touch + pointer、reduced motion はフェードのみ、`aria-busy` + polite live region** | なし(追加) | 決定(2026-10-13・#441 の API 案をもとに確定) |
 | B39 | #442 | SearchBar の full-screen レイアウト | **`layout="docked" \| "fullscreen"`(既定 docked)、full-screen は Compose `ExpandedFullScreenContainedSearchBar`(contained)、戻るボタンの名前は `backLabel`** | なし(追加) | 決定(2026-10-13・#442 の API 案どおり) |
+| B37 | #439 | TextField のラベル位置(上置き・常時縮小) | **`labelPlacement?: 'floating' \| 'above'`(既定 `'floating'`)+ `shrinkLabel?: boolean`、DatePickerField も同名で素通し** | なし(追加) | 決定(2026-10-13・#439 の API 案どおり) |
+| B41 | #444 | 小さな構成の不足(FabMenu 配置・Toolbar elevation・dismissible drawer・Carousel 幅) | **FabMenu `horizontalAlignment`、Toolbar `disableElevation`、NavigationDrawer `variant="dismissible"`、Carousel `itemWidth` の JSDoc 修正** | なし(追加) | 決定(2026-10-13) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -1129,6 +1131,53 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 
 ---
 
+## 入力系
+
+### B37: TextField のラベル位置(上置き・常時縮小)
+
+- **Issue**: #439
+- **状態**: 決定(2026-10-13・#439 の API 案どおり。実装時に補足事項を確定)
+- **背景**: TextField はフローティングラベルしかない。Compose は `TextFieldLabelPosition`(TextFieldDefaults.kt:2241)で
+  `Inside(isAlwaysMinimized, …)`(:2301、filled の既定 — TextField.kt:212)・`Cutout(isAlwaysMinimized, …)`(:2346、
+  outlined の既定 — OutlinedTextField.kt:160)・`Above(alignment)`(:2384)を持つ(`Attached` は deprecated)。
+  textfield 監査の「機能追加の候補」に挙がっていた。
+
+**選択肢**
+
+- **(a) `labelPlacement?: 'floating' | 'above'` + `shrinkLabel?: boolean`**(issue 案)
+  ```tsx
+  <TextField label="Email" labelPlacement="above" placeholder="you@example.com" />
+  <TextField label="Amount" shrinkLabel prefixText="$" />
+  ```
+  - 利点: `labelPlacement` は HeroUI(旧 NextUI)Input と同じ Web 慣習の語、`shrink` は MUI `InputLabel shrink` と同じ語。
+    `Inside` / `Cutout` は variant で決まるため `'floating'` 1 語にまとめられ、Compose の区別を利用者に見せずに済む
+  - 欠点: `above` と `shrinkLabel` の組み合わせは意味を持たない(下記のとおり無視)
+- **(b) 1 つの prop に 3 値**(`labelPlacement: 'floating' | 'shrunk' | 'above'`)
+  - 利点: 無意味な組み合わせが型で出ない。欠点: 「位置」と「縮小するか」という別軸を 1 語に混ぜ、Compose の
+    `isAlwaysMinimized`(Inside / Cutout 共通のフラグ)とも対応がずれる
+- **(c) Compose 流のオブジェクト**(`labelPosition={{ type: 'inside', alwaysMinimized: true }}`)— API 方針に反する
+
+**決定**: **(a)**。補足:
+
+- `labelPlacement="above"`(Compose `Above`): ラベルはコンテナの外の上に、常に縮小状態(`showExpandedLabel` = false、
+  TextFieldImpl.kt:1962)。書体は bodySmall に完全に補間(`lerp(bodyLarge, bodySmall, 1)`、:1951 — 太さ・字間も
+  body-small)、余白は start / end / bottom 4dp(`AboveLabelHorizontalPadding` / `AboveLabelBottomPadding`、:424・
+  :2237–2240)、最小行高 16dp(`MinFocusedLabelLineHeight`)。y = 0・コンテナ全幅で start 揃え(アイコン分は
+  ずらさない、:1154–1162)、コンテナはその下(:1136)。コンテナは**ラベルなしと同じレイアウト**
+  (`contentPaddingWithoutLabel` = 16dp 四方、TextFieldDefaults.kt:476 / :1374)で、**outlined の notch は描かない**。
+  placeholder / prefix / suffix は空・非フォーカスでも表示(:2068 / :2083)。ラベルは引き続き `<label htmlFor>`
+  (クリックで入力へフォーカス、`required` の `*` は aria-hidden)。色は従来のラベルと同じ状態別トークン
+  (focus = primary、error、disabled 38%)。`alignment` は公開しない(start 固定 — 必要になれば別途)
+- `shrinkLabel`(Compose `Inside` / `Cutout(isAlwaysMinimized = true)`): フローティングラベルを常に縮小位置に置き、
+  outlined は notch を常に開く。placeholder / prefix / suffix は空・非フォーカスでも表示。`label` がないとき、
+  および `labelPlacement="above"` のときは効果なし(above は常に縮小)
+- RTL: 上置きラベルは論理プロパティ(`padding-inline` / `text-align: start`)のみで追加ルール不要。RTL ルールが要る
+  場合は `[dir='rtl']`(#428 の方針、`:dir()` は Lightning CSS で `dir` 属性を無視するため使わない)
+- DatePickerField は TextField(outlined)を包むので、**同名の `labelPlacement` / `shrinkLabel` を素通し**する
+  (フォーム内で他のフィールドと揃えるため)。ポップアップはルート基準なので上置きラベルでも位置は変わらない
+- 既定(`'floating'`、`shrinkLabel` なし)の DOM・CSS は不変(既存ストーリーはピクセル同一)
+
+**影響**: 非破壊(追加 prop のみ)。VRT: `LabelAbove` / `ShrinkLabel` ストーリー追加。対象: TextField, DatePickerField。
 ## ジェスチャー
 
 ### B32: PullToRefresh(新規コンポーネント)
@@ -1194,6 +1243,63 @@ API:
 
 **影響**: 非破壊(新規コンポーネント・新しい subpath `m3-expressive-react/PullToRefresh`)。VRT: `Components/PullToRefresh` の
 Default / Refreshing / Circular を追加。
+
+---
+
+## 2026-10 スイープの小さな構成追加
+
+### B41: FabMenu の配置・Toolbar の elevation・dismissible drawer・Carousel の幅(#444 の小項目)
+
+- **Issue**: #444(トラッキング。TimePicker のホイール / vibrant / 横向き、ScrollField、TextField tonal / secure、
+  VerticalDragHandle は別途。#444 は開いたまま)
+- **状態**: 決定(2026-10-13)
+- **背景**: 2026-10-09 の m3.material.io / Compose androidx-main スイープで見つかった、優先度の低い構成の不足のうち
+  小さな 4 件。いずれも既存 API の語彙で足せる。
+
+**決定**
+
+1. **FabMenu `horizontalAlignment?: 'start' | 'center' | 'end'`(既定 `'end'`、既存の見た目は不変)**
+   - Compose `FloatingActionButtonMenu(horizontalAlignment: Alignment.Horizontal = Alignment.End)`
+     (FloatingActionButtonMenu.kt:120)。項目列とボタンを同じ alignment で置き(:181 / :186)、各項目も列内で
+     揃え(:299)、項目の幅リビールも同じ端を基準にする(:390 — `End` は trailing 端から、`Start` は leading 端から、
+     `CenterHorizontally` は中央から開く)
+   - prop 名は Compose と同じ。値は Web の論理方向(`start` / `end`、RTL で鏡映)。`'end'` のときは `data-alignment`
+     を出さず、既存の DOM / CSS をそのまま使う(既存ストーリーはピクセル不変)
+   - close ボタンは alignment に関係なく FAB の footprint の上端 trailing 角に固定する。Compose の
+     `ToggleFloatingActionButton(contentAlignment = Alignment.TopEnd)`(:450)は menu の alignment と独立した引数で、
+     既定は TopEnd のため。これを変える prop は足さない(必要になったら別途)
+2. **Toolbar `disableElevation?: boolean`(既定 false、floating のみ有効)**
+   - m3 toolbars guidelines「The elevation on floating toolbars can be removed if on a visually distinct background」。
+     Fab の `disableElevation` と同名(前例あり)。docked はもともと影がないので、`data-disable-elevation` は floating
+     のときだけ出す
+   - toolbar 監査(docs/audits/toolbar.md 軽微欄)の「`style` / `className` で外せるので prop は不要」は本裁定で
+     superseded(監査側に相互参照を追記)
+3. **NavigationDrawer `variant="dismissible"`**(Compose `DismissibleNavigationDrawer`、NavigationDrawer.kt:489)
+   - 現行の構造に素直に収まるので実装した。standard と同じインラインの `<aside>`(Surface —
+     `DismissibleDrawerSheet` の既定 `DrawerDefaults.standardContainerColor`、:737)を `open` で出し入れする。
+     scrim・focus trap・`useModal` なし
+   - Compose は content を drawer の offset 分だけずらす(:581 `contentX = sheet.width + offset`)。Web では閉じた
+     drawer を負の `margin-inline-start`(自身の幅)で inline-start 側へ逃がし、flex / grid の隣の兄弟が空いた幅を
+     使う — content は覆われず押される。利用側は drawer と content を横並びの行に置く(`overflow: hidden` 推奨)。
+     content の子に drawer を取る API(Compose の `content` スロット)は足さない — standard / modal と同じく
+     drawer はパネルだけを描く
+   - モーション: 開き DefaultSpatial・閉じ FastEffects(:501–502、modal と同じ)。reduced motion は即時(B3 —
+     閉じは spatial な性質を effects トークンで動かすので CSS で無効化)
+   - フォーカス: 開いたら選択中(なければ先頭)の項目へ(Compose :513 `focusRequester.requestFocus()`)。
+     マウント時点で開いているときは動かさない。Escape(drawer 内にフォーカスがあるとき、Compose :548)で
+     `onClose(event, 'escapeKeyDown')`。閉じた drawer は `inert`(Compose は閉じた sheet を配置しない、:584–588)。
+     フォーカスを持ったまま閉じたら、開く前にフォーカスがあった要素へ返す
+   - `open` は modal と同じく controlled のみ(既定 false)。トグル側の `aria-expanded` / `aria-controls` は JSDoc と
+     docs で案内する
+4. **Carousel `itemWidth` の JSDoc**: 上限ではなく**目標値**であることを明記(Compose は androidx `98c93887a0` で
+   `maxItemWidth` → `preferredItemWidth` に改名。carousel/Carousel.kt:85–90 multi-browse、:241–248 hero)。末尾では
+   最後の項目が end に揃うよう配置がずれること(:224–232)、hero は 3 項目未満だと中央揃えにできず start 揃えのまま
+   (carousel/Keylines.kt:229 `isCentered && itemCount >= 3`、Carousel.kt:234)も書いた。prop 名は変えない(`itemWidth`
+   のまま — 型の破壊を避ける。挙動は既に Compose どおり)。m3 の寸法表の「最大幅を指定」は改名前の記述と見なす
+
+**影響**: 非破壊(prop と variant 値の追加・JSDoc のみ)。既定値は不変、既存ストーリーはピクセル不変。VRT: FabMenu
+`HorizontalAlignment` / `RightToLeftStart`、Toolbar `FloatingWithoutElevation`、NavigationDrawer `Dismissible` を追加。
+対象: FabMenu、Toolbar、NavigationDrawer、Carousel。
 
 ---
 

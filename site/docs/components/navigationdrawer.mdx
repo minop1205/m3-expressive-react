@@ -14,8 +14,8 @@ import DeleteIcon from '@material-symbols/svg-400/outlined/delete.svg'
 # NavigationDrawer
 
 MD3 navigation drawer: a 360dp panel of full-pill destinations, either
-**standard** (in the layout, beside the content) or **modal** (an overlay
-with a scrim).
+**standard** (in the layout, beside the content), **dismissible** (beside the
+content, toggled open and closed), or **modal** (an overlay with a scrim).
 
 export const items = (
   <>
@@ -54,6 +54,37 @@ export function StandardDemo() {
         {items}
       </NavigationDrawer>
       <div style={{ flex: 1, padding: 24, minWidth: 0 }}>Selected: {value}</div>
+    </Frame>
+  )
+}
+
+export function DismissibleDemo() {
+  const [open, setOpen] = useState(true)
+  const [value, setValue] = useState('inbox')
+  return (
+    <Frame>
+      <NavigationDrawer
+        id="docs-dismissible-drawer"
+        variant="dismissible"
+        aria-label="Mail"
+        open={open}
+        onClose={() => setOpen(false)}
+        value={value}
+        onChange={(_event, v) => setValue(v)}
+      >
+        {items}
+      </NavigationDrawer>
+      <div style={{ flex: 1, padding: 24, minWidth: 0 }}>
+        <Button
+          variant="outlined"
+          aria-expanded={open}
+          aria-controls="docs-dismissible-drawer"
+          onClick={() => setOpen((o) => !o)}
+        >
+          {open ? 'Close drawer' : 'Open drawer'}
+        </Button>
+        <p>Selected: {value}</p>
+      </div>
     </Frame>
   )
 }
@@ -106,6 +137,41 @@ const [value, setValue] = useState('inbox')
 
 `badge` renders trailing text on the item (e.g. an unread count).
 
+## Dismissible
+
+`variant="dismissible"` is a standard drawer that `open` slides in and out. It
+has no scrim, and the page stays interactive. Place it as the first child of a
+flex (or grid) row beside the content, so the content is pushed aside instead
+of covered. Give the row `overflow: hidden` to clip the sliding panel. Opening
+moves focus to the selected item, and <kbd>Escape</kbd> inside the drawer
+calls `onClose`.
+
+<Demo>
+  <DismissibleDemo />
+</Demo>
+
+```tsx
+const [open, setOpen] = useState(true)
+
+<div style={{ display: 'flex', overflow: 'hidden' }}>
+  <NavigationDrawer
+    id="drawer"
+    variant="dismissible"
+    open={open}
+    onClose={() => setOpen(false)}
+    value={value}
+    onChange={(event, next) => setValue(next)}
+  >
+    …
+  </NavigationDrawer>
+  <main style={{ flex: 1, minWidth: 0 }}>
+    <Button aria-expanded={open} aria-controls="drawer" onClick={() => setOpen(!open)}>
+      Menu
+    </Button>
+  </main>
+</div>
+```
+
 ## Modal
 
 `variant="modal"` overlays the page with a 0.32 scrim while `open`. The scrim
@@ -138,6 +204,10 @@ const [open, setOpen] = useState(false)
 - Renders an `<aside>` (complementary landmark) labelled "Navigation" by
   default — pass your own `aria-label` / `aria-labelledby`. Items are native
   `<button>`s; the active one carries `aria-current="page"`.
+- A closed dismissible drawer is `inert`, so it leaves the Tab order and the
+  accessibility tree. Opening it moves focus to the selected item (or the
+  first one). Closing it while focus is inside returns focus to the element
+  that had it before. Give the toggle `aria-expanded` and `aria-controls`.
 - The open modal drawer is a `dialog` with `aria-modal`: focus moves inside
   and is trapped, the rest of the page is inert, <kbd>Escape</kbd> closes
   it, and focus returns to the opener on close.
