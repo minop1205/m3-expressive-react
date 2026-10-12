@@ -1,3 +1,5 @@
+'use client'
+
 import {
   Children,
   cloneElement,
@@ -221,7 +223,10 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
   useEffect(() => {
     if (!isOpen) return
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key !== 'Escape') return
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      // Consumed: an enclosing modal (useModal) ignores a prevented Escape,
+      // so one press dismisses only the tooltip.
+      event.preventDefault()
       const focusInPopup = popupRef.current?.contains(document.activeElement) ?? false
       escapeDismissed.current = focusWithin.current
       close()
