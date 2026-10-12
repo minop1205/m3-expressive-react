@@ -415,7 +415,10 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
       tabIndex={ctx.tabStop === value ? 0 : -1}
       disabled={disabled}
       data-selected={selected || undefined}
-      data-with-icon={hasIcon || undefined}
+      // The 64dp stacked height applies only with both an icon and a label
+      // (Compose TabBaselineLayout: LargeTabHeight vs SmallTabHeight, #484);
+      // an icon-only tab stays 48dp.
+      data-with-icon={(hasIcon && hasLabel) || undefined}
       data-icon-position={leading ? 'start' : undefined}
       className={clsx(styles.tab, className)}
       onFocus={(event) => {

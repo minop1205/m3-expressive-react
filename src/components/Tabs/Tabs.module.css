@@ -78,6 +78,7 @@
 }
 
 .tab[data-with-icon] {
+  /* Icon stacked above a label (LargeTabHeight); set only when both exist. */
   min-height: 64px;
 }
 
