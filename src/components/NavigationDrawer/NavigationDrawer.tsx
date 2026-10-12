@@ -7,19 +7,24 @@ import {
   useRef,
   type ButtonHTMLAttributes,
   type HTMLAttributes,
+  type KeyboardEvent,
   type MouseEvent,
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import type { ModalCloseEvent } from '../../internal/closeReason'
 import { assignRefs, useModal } from '../../internal/useModal'
 import { useControllableState } from '../../internal/useControllableState'
 import styles from './NavigationDrawer.module.css'
 
-export type NavigationDrawerVariant = 'standard' | 'modal'
+export type NavigationDrawerVariant = 'standard' | 'modal' | 'dismissible'
 
-/** Why the modal drawer asked to close (ruling B7 vocabulary): Escape or a scrim click. */
+/**
+ * Why the drawer asked to close (ruling B7 vocabulary): Escape (modal /
+ * dismissible) or a scrim click (modal).
+ */
 export type NavigationDrawerCloseReason = 'escapeKeyDown' | 'backdropClick'
 
 interface DrawerContextValue {
@@ -31,13 +36,21 @@ const DrawerContext = createContext<DrawerContextValue>({})
 
 export interface NavigationDrawerProps
   extends Omit<HTMLAttributes<HTMLElement>, 'onChange'> {
-  /** Standard (inline) or modal (overlay + scrim). @default 'standard' */
+  /**
+   * - `standard` — always visible, inline beside the content;
+   * - `modal` — an overlay with a scrim (`open` / `onClose`);
+   * - `dismissible` — inline like `standard`, but `open` slides it in and out,
+   *   pushing the content beside it; no scrim, the page stays interactive
+   *   (Compose `DismissibleNavigationDrawer`).
+   * @default 'standard'
+   */
   variant?: NavigationDrawerVariant
-  /** Modal open state. */
+  /** Open state of a `modal` / `dismissible` drawer (controlled). @default false */
   open?: boolean
   /**
-   * Called when the modal scrim is clicked or Escape is pressed, with the
-   * triggering event and the `reason`.
+   * Called with the triggering event and the `reason` when the drawer asks to
+   * close: Escape (`modal`, and `dismissible` while focus is inside it) or a
+   * scrim click (`modal`).
    */
   onClose?: (event: ModalCloseEvent, reason: NavigationDrawerCloseReason) => void
   /** Controlled selected destination value (shared with items). */
@@ -57,6 +70,17 @@ export interface NavigationDrawerProps
  * SecondaryContainer / OnSecondaryContainer, inactive transparent /
  * OnSurfaceVariant, LabelLarge — per Compose NavigationDrawerTokens. Modal adds
  * a 0.32 Scrim, Escape-to-close, and `role="dialog" aria-modal`.
+ *
+ * `dismissible` (Compose `DismissibleNavigationDrawer`) is the standard
+ * Surface panel toggled by `open`: it opens on DefaultSpatial and closes on
+ * FastEffects by sliding its inline-start margin, so place it as the first
+ * child of a flex (or grid) row next to the content — the content is pushed
+ * aside rather than covered (give the row `overflow: hidden` so the sliding
+ * panel stays clipped). There is no scrim or focus trap. Opening moves focus
+ * to the selected (else first) item, as Compose does; Escape inside the
+ * drawer calls `onClose`; a closed drawer is `inert`, and closing it with
+ * focus inside returns focus to where it was before opening. Pair it with a
+ * menu button carrying `aria-expanded` / `aria-controls`.
  */
 export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
   function NavigationDrawer(
@@ -87,6 +111,46 @@ export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
 
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLElement | null>(null)
+    const dismissible = variant === 'dismissible'
+    const openerRef = useRef<HTMLElement | null>(null)
+    const wasOpen = useRef(open)
+
+    // Dismissible: a closed drawer leaves the Tab order / accessibility tree
+    // (`inert`, set through the DOM — React 18 has no boolean `inert` prop).
+    // Opening moves focus into the drawer (Compose focusRequester); closing
+    // with focus inside hands it back to the element focused before opening.
+    useIsoLayoutEffect(() => {
+      const panel = surfaceRef.current
+      if (!panel) return
+      if (!dismissible) {
+        wasOpen.current = open
+        return
+      }
+      const opening = open && !wasOpen.current
+      const closing = !open && wasOpen.current
+      wasOpen.current = open
+      if (closing && panel.contains(document.activeElement)) {
+        const opener = openerRef.current
+        if (opener?.isConnected && !panel.contains(opener)) opener.focus()
+        else (document.activeElement as HTMLElement | null)?.blur()
+      }
+      panel.toggleAttribute('inert', !open)
+      if (opening) {
+        const active = document.activeElement
+        openerRef.current = active instanceof HTMLElement ? active : null
+        const target =
+          panel.querySelector<HTMLElement>('button[aria-current="page"]:not(:disabled)') ??
+          panel.querySelector<HTMLElement>('button:not(:disabled)')
+        target?.focus()
+      }
+    }, [open, dismissible])
+
+    const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
+      rest.onKeyDown?.(event)
+      if (!dismissible || !open || event.key !== 'Escape' || event.defaultPrevented) return
+      event.preventDefault()
+      onClose?.(event, 'escapeKeyDown')
+    }
     useModal({
       active: variant === 'modal' && open,
       rootRef,
@@ -109,6 +173,8 @@ export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
         tabIndex={variant === 'modal' ? -1 : undefined}
         {...rest}
         data-variant={variant}
+        data-open={dismissible ? open || undefined : undefined}
+        onKeyDown={dismissible ? handleKeyDown : rest.onKeyDown}
         className={clsx(styles.drawer, className)}
         role={variant === 'modal' ? 'dialog' : undefined}
         aria-modal={variant === 'modal' ? true : undefined}

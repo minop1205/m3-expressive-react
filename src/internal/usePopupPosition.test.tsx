@@ -95,6 +95,77 @@ describe('computePopupPosition', () => {
   })
 })
 
+describe('side placements and four-corner alignment (B38)', () => {
+  const popup = { width: 120, height: 40 }
+
+  it('places left / right beside the anchor, vertically centered', () => {
+    const anchor = anchorAt(300, 300)
+    expect(computePopupPosition(anchor, popup, viewport, { side: 'left', gap: 4 })).toEqual({
+      side: 'left',
+      top: 300,
+      left: 300 - 4 - 120,
+    })
+    expect(computePopupPosition(anchor, popup, viewport, { side: 'right', gap: 4 })).toEqual({
+      side: 'right',
+      top: 300,
+      left: 344,
+    })
+  })
+
+  it('maps start / end to left / right, mirrored in RTL', () => {
+    const anchor = anchorAt(300, 300)
+    expect(computePopupPosition(anchor, popup, viewport, { side: 'start' }).side).toBe('left')
+    expect(computePopupPosition(anchor, popup, viewport, { side: 'end' }).side).toBe('right')
+    expect(computePopupPosition(anchor, popup, viewport, { side: 'start', rtl: true }).side).toBe(
+      'right',
+    )
+    expect(computePopupPosition(anchor, popup, viewport, { side: 'end', rtl: true }).side).toBe(
+      'left',
+    )
+  })
+
+  it('flips left / right when the preferred side is too small and clamps vertically', () => {
+    expect(
+      computePopupPosition(anchorAt(20, 300), popup, viewport, { side: 'left', margin: 8 }).side,
+    ).toBe('right')
+    expect(
+      computePopupPosition(anchorAt(740, 300), popup, viewport, { side: 'right', margin: 8 }).side,
+    ).toBe('left')
+    expect(
+      computePopupPosition(anchorAt(300, 0, 40, 20), popup, viewport, { side: 'right', margin: 8 })
+        .top,
+    ).toBe(8)
+  })
+
+  it('flips a start / end alignment with flipAlign, else keeps it and clamps', () => {
+    const nearRight = anchorAt(740, 300)
+    const options = { side: 'bottom', align: 'start', margin: 8 } as const
+    expect(computePopupPosition(nearRight, popup, viewport, options).left).toBe(800 - 120 - 8)
+    expect(
+      computePopupPosition(nearRight, popup, viewport, { ...options, flipAlign: true }).left,
+    ).toBe(780 - 120)
+    // End-aligned near the left edge flips to start-aligned.
+    expect(
+      computePopupPosition(anchorAt(20, 300), popup, viewport, {
+        ...options,
+        align: 'end',
+        flipAlign: true,
+      }).left,
+    ).toBe(20)
+  })
+
+  it('centers when neither alignment fits', () => {
+    const wide = { width: 500, height: 40 }
+    expect(
+      computePopupPosition(anchorAt(380, 300), wide, viewport, {
+        side: 'bottom',
+        align: 'start',
+        flipAlign: true,
+      }).left,
+    ).toBe(400 - 250)
+  })
+})
+
 describe('usePopupPosition', () => {
   type HarnessProps = Omit<UsePopupPositionOptions, 'anchorRef' | 'popupRef'>
 
