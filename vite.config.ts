@@ -88,5 +88,19 @@ export default defineConfig({
     // can hold agent worktrees (full repo copies incl. their node_modules),
     // and the node_modules/dist patterns must match at ANY depth.
     exclude: ['**/node_modules/**', '**/dist/**', 'vrt/**', '.claude/**'],
+    // `npm run test:coverage`. Report-only for now (#425): no thresholds,
+    // so it measures the weak areas without gating CI.
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'html'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.stories.*',
+        'src/**/*.test.*',
+        'src/**/*.d.ts',
+        'src/test/**',
+      ],
+    },
   },
 })
