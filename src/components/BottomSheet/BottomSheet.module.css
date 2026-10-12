@@ -22,6 +22,9 @@
   /* Size container: `cqh` in the partial-detent translate is the container
      (viewport / scaffold) height. */
   container-type: size;
+  /* Clip the off-screen part of a partially expanded / hidden sheet: it
+     adds no scroll overflow (standard) and never paints past the edge. */
+  overflow: hidden;
   /* Stay visible until the exit motion has played (#433), then hide —
      the same delayed-visibility pattern as NavigationDrawer. */
   transition: visibility 0s linear max(var(--md-sys-motion-duration-medium4), var(--md-sys-motion-spring-default-effects-duration));
@@ -35,12 +38,10 @@
 
 /* Standard: lives in the layout — fills its nearest positioned ancestor (the
    "scaffold"), sits above the content without a scrim, and lets the page
-   behind it stay interactive (Compose BottomSheetScaffold). Clipped so the
-   off-screen part of a partial / hidden sheet adds no scroll overflow. */
+   behind it stay interactive (Compose BottomSheetScaffold). */
 .root[data-variant='standard'] {
   position: absolute;
   z-index: auto;
-  overflow: hidden;
 }
 
 .root[data-variant='standard'][data-open] {
