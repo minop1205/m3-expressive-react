@@ -63,6 +63,35 @@ supporting text, character counter, and multiline mode.
 />
 ```
 
+## Label position
+
+By default the label floats: it rests in the input line and minimizes on
+focus or once there is a value (the outlined variant notches its border).
+`labelPlacement="above"` puts the label above the container instead, always
+minimized and with no notch; the placeholder is then visible right away.
+
+<Demo>
+  <TextField labelPlacement="above" label="Filled" placeholder="Placeholder" />
+  <TextField variant="outlined" labelPlacement="above" label="Outlined" placeholder="Placeholder" />
+</Demo>
+
+```tsx
+<TextField variant="outlined" labelPlacement="above" label="Email" placeholder="you@example.com" />
+```
+
+`shrinkLabel` keeps the floating label minimized even while the field is
+empty and unfocused, so the placeholder and prefix / suffix text show
+alongside it.
+
+<Demo>
+  <TextField shrinkLabel label="Filled" placeholder="Placeholder" />
+  <TextField variant="outlined" shrinkLabel label="Amount" prefixText="$" />
+</Demo>
+
+```tsx
+<TextField shrinkLabel label="Search" placeholder="Try “jacket”" />
+```
+
 ## Icons
 
 `startIcon` / `endIcon` place a decorative icon at either end of the field.

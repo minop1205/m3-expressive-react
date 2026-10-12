@@ -349,6 +349,32 @@ describe('TopAppBar variant="search"', () => {
     expect(input).toHaveAttribute('aria-expanded', 'true')
   })
 
+  it('expands a full-screen SearchBar and collapses it back to the field (#442)', async () => {
+    const user = userEvent.setup()
+    const { container } = render(
+      <TopAppBar
+        variant="search"
+        title="Products"
+        navigationIcon={<button aria-label="Menu">m</button>}
+        searchBar={field({
+          layout: 'fullscreen',
+          children: <button type="button">Recent: Headphones</button>,
+        })}
+      />,
+    )
+    const input = screen.getAllByRole('combobox')[0]
+    await user.click(input)
+    expect(input).toHaveAttribute('aria-expanded', 'true')
+    const dialog = container.querySelector<HTMLElement>('[role="dialog"]')!
+    expect(dialog).toContainElement(document.activeElement as HTMLElement)
+    expect(screen.getByRole('button', { name: 'Menu' }).closest('[inert]')).not.toBeNull()
+    expect(await axe(container)).toHaveNoViolations()
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(input).toHaveAttribute('aria-expanded', 'false')
+    expect(input).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Menu' }).closest('[inert]')).toBeNull()
+  })
+
   it('has no axe violations (closed and with the search view open)', async () => {
     const { container, rerender } = render(
       <TopAppBar

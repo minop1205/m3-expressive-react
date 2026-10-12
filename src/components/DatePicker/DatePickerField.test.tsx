@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { DatePickerField } from './DatePickerField'
+import textFieldStyles from '../TextField/TextField.module.css'
 import { getDatePattern, parseDateInput } from './dateUtils'
 
 const toggle = () => screen.getByRole('button', { name: 'Open calendar' })
@@ -330,6 +331,19 @@ describe('DatePickerField', () => {
   it('has no axe violations', async () => {
     const { container } = render(<DatePickerField label="Date" />)
     expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('passes labelPlacement / shrinkLabel through to the text field (B37)', async () => {
+    const { container, rerender } = render(<DatePickerField label="Date" labelPlacement="above" />)
+    const input = screen.getByRole('textbox', { name: 'Date' })
+    const labels = container.querySelectorAll('label')
+    expect(labels).toHaveLength(1)
+    // The above label precedes the field container (outside the outline).
+    expect(labels[0].nextElementSibling?.contains(input)).toBe(true)
+    expect(await axe(container)).toHaveNoViolations()
+
+    rerender(<DatePickerField label="Date" shrinkLabel />)
+    expect(container.querySelector(`.${textFieldStyles.shrinkLabel}`)).not.toBeNull()
   })
 
   it('has no axe violations with the popup open', async () => {

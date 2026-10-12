@@ -107,7 +107,8 @@ Issue: TL1 + TL2 → #240(どちらも `Toolbar.module.css` のレイアウト�
 - **floating の画面端マージン**(horizontal 16dp / vertical 24dp): Compose も `ScreenOffset` を Defaults に置くだけで
   配置は呼び出し側。Web でも利用者が配置 → 現状どおり。JSDoc に書くと親切
 - **floating の elevation を外す手段**: guidelines「If the content beneath the toolbar is visually distinct, elevation can be
-  removed」。`style` / `className` で外せるので prop は不要
+  removed」。`style` / `className` で外せるので prop は不要 — **superseded(2026-10-13)**: Fab の前例に揃えて
+  `disableElevation` を追加(docs/decisions/phase-b-api.md B41)
 - **accessible name**: site は要求しない。APG は toolbar が複数あるとき `aria-label` を推奨。ストーリーは全て付与済み →
   JSDoc で推奨する程度
 - **docked に `orientation="vertical"` を渡したとき**: `data-orientation="vertical"` が付くが CSS / aria は horizontal。

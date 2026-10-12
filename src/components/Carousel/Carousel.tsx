@@ -56,10 +56,22 @@ export interface CarouselProps extends HTMLAttributes<HTMLDivElement> {
    */
   variant?: CarouselVariant
   /**
-   * Preferred (large) item width in px. `multi-browse` / `hero` fit the
-   * actual large size to the container (Compose `preferredItemWidth`);
-   * `uncontained` uses it as-is. @default 260 (`hero`: fills the container
-   * beside its small items)
+   * Preferred (large) item width in px — a **target, not a cap** (Compose
+   * `preferredItemWidth`, renamed from `maxItemWidth`). `multi-browse` /
+   * `hero` pick the arrangement whose large items land closest to it and
+   * resize small (40–56dp), then medium, then large items so a whole number
+   * of items fills the container, so the rendered large width can be wider or
+   * narrower than this value. Large items always stay wider than the small
+   * ones, so values at or below the small-item minimum cannot be honored.
+   * `uncontained` uses it as-is.
+   *
+   * At the end of the list the arrangement shifts so the last item aligns to
+   * the container's end (`multi-browse`: the large item slides to the end;
+   * `hero`: the first / last item aligns to the start / end instead of
+   * centering). A `hero` carousel with fewer than 3 items cannot center and
+   * stays start-aligned (a large item with one small item; a single item is
+   * just large).
+   * @default 260 (`hero`: fills the container beside its small items)
    */
   itemWidth?: number
   /** Item height in px. @default 200 */

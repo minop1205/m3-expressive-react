@@ -9,8 +9,8 @@ import { SearchBar, IconButton, List, ListItem } from 'm3-expressive-react'
 
 # SearchBar
 
-MD3 search bar: a 56dp docked field that, given results as `children`,
-opens a docked search view with suggestions under the bar.
+MD3 search bar: a 56dp field that, given results as `children`,
+opens a search view — docked under the bar, or full-screen (`layout`).
 
 export const ArrowBackIcon = () => (
   <svg viewBox="0 -960 960 960" fill="currentColor" aria-hidden="true">
@@ -115,6 +115,80 @@ The open state follows the usual pattern: `open` + `onOpenChange` for
 controlled, `defaultOpen` for uncontrolled. Likewise the query: `value` +
 `onChange(event, value)`, or `defaultValue`.
 
+## Full-screen layout
+
+`layout="fullscreen"` opens the results in a modal view covering the
+viewport — the layout MD3 recommends on compact (phone) screens; `docked`
+(the default) suits larger ones. Clicking the bar, typing or ArrowDown
+expands it: the field moves to the top with a back button in place of the
+search icon, and the results fill the space below. Focus stays inside the
+view; Escape or the back button collapses it and focus returns to the bar.
+Name the back button with `backLabel` (default `'Back'`). The layout doesn't
+switch by itself — pick it per window size, e.g.
+`layout={isCompact ? 'fullscreen' : 'docked'}` with a
+`matchMedia('(max-width: 599px)')` hook.
+
+export function FullScreenDemo() {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const matches = FRUITS.filter((f) => f.toLowerCase().includes(query.toLowerCase()))
+  return (
+    <div style={{ width: '100%', maxWidth: 480 }}>
+      <SearchBar
+        aria-label="Search fruit"
+        placeholder="Search fruit"
+        layout="fullscreen"
+        value={query}
+        onChange={(event, next) => setQuery(next)}
+        open={open}
+        onOpenChange={setOpen}
+      >
+        <List>
+          {matches.map((fruit) => (
+            <ListItem
+              key={fruit}
+              headline={fruit}
+              onClick={() => {
+                setQuery(fruit)
+                setOpen(false)
+              }}
+            />
+          ))}
+        </List>
+      </SearchBar>
+    </div>
+  )
+}
+
+<Demo>
+  <FullScreenDemo />
+</Demo>
+
+```tsx
+<SearchBar
+  aria-label="Search fruit"
+  layout="fullscreen"
+  value={query}
+  onChange={(event, next) => setQuery(next)}
+  open={open}
+  onOpenChange={setOpen}
+  backLabel="Back"
+>
+  <List>
+    {matches.map((fruit) => (
+      <ListItem key={fruit} headline={fruit} onClick={() => { setQuery(fruit); setOpen(false) }} />
+    ))}
+  </List>
+</SearchBar>
+```
+
+The view uses the Expressive contained style (Compose
+`ExpandedFullScreenContainedSearchBar`): the field keeps its rounded shape on a
+surface-container-low page, with no divider. It is drawn in the top layer,
+so it also works inside a `TopAppBar variant="search"`. `onChange`,
+`onSearch` and `onKeyDown` follow the field you type in; `onFocus`,
+`onBlur` and `inputRef` stay on the bar's input.
+
 ## Leading and trailing slots
 
 `startIcon` replaces the default search glyph and `endIcon` adds a trailing
@@ -166,6 +240,11 @@ a dedicated prop — the component's own wiring wins on conflicts.
 - Opening the view is announced through a polite live region with
   `suggestionsLabel` (default `'Suggestions below'`) — localize it with the
   rest of your strings.
+- Full-screen layout: the bar's input opens a modal `role="dialog"`
+  (`aria-haspopup="dialog"`) and doesn't open on Tab focus alone. Inside it,
+  focus is trapped and the rest of the page is inert; the field is a
+  combobox for the results (same arrow keys as above). Escape or the back
+  button closes it and focus returns to the bar.
 - A consumer `onKeyDown` that calls `preventDefault()` opts out of the
   built-in handling for that key.
 
