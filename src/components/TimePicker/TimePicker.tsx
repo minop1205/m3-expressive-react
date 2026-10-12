@@ -20,6 +20,7 @@ import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { Button } from '../Button'
 import { IconButton } from '../IconButton'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './TimePicker.module.css'
 
 export interface TimeValue {
@@ -286,11 +287,12 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
     },
     ref,
   ) {
-    const isControlled = value !== undefined
-    const [internal, setInternal] = useState<TimeValue>(
-      defaultValue ?? { hour: 12, minute: 0 },
-    )
-    const current = isControlled ? value : internal
+    const [current, setInternal, isControlled] = useControllableState<TimeValue>({
+      value,
+      defaultValue: defaultValue ?? { hour: 12, minute: 0 },
+      name: 'TimePicker',
+      state: 'value',
+    })
     const [activeField, setActiveField] = useState<Field>('hour')
     const idBase = useId()
     const titleId = `${idBase}-title`

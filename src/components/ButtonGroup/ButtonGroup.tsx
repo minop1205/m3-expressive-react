@@ -22,6 +22,7 @@ import {
   type ButtonGroupSelection,
   type ButtonGroupSelectionMode,
 } from './ButtonGroupContext'
+import { useControllableState } from '../../internal/useControllableState'
 
 export type ButtonGroupVariant = 'standard' | 'connected'
 export type ButtonGroupSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
@@ -144,11 +145,17 @@ export const ButtonGroup = forwardRef<HTMLDivElement, ButtonGroupProps>(
     usePressWidth(rootRef, variant === 'standard' && orientation === 'horizontal')
 
     const multiple = selectionMode === 'multiple'
-    const [internal, setInternal] = useState<SelectionValue>(() => {
-      if (selectionMode === 'none' || defaultValue === undefined) return multiple ? [] : null
-      return defaultValue
+    const [current, setInternal] = useControllableState<SelectionValue>({
+      value,
+      defaultValue:
+        selectionMode === 'none' || defaultValue === undefined
+          ? multiple
+            ? []
+            : null
+          : defaultValue,
+      name: 'ButtonGroup',
+      state: 'value',
     })
-    const current: SelectionValue = value !== undefined ? value : internal
 
     // single: the selected (enabled) item holds the tab stop, else the first
     // enabled item. Resolved from the DOM so wrapped children work too.
@@ -185,7 +192,7 @@ export const ButtonGroup = forwardRef<HTMLDivElement, ButtonGroupProps>(
             next = v
           }
           if (next !== current) {
-            if (value === undefined) setInternal(next)
+            setInternal(next)
             onChange?.(event, next)
           }
           return Array.isArray(next) ? next.includes(v) : next === v

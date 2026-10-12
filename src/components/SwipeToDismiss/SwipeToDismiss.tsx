@@ -16,6 +16,7 @@ import {
 import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { ListNavContext, ListParentContext } from '../List/ListContext'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './SwipeToDismiss.module.css'
 
 /**
@@ -181,9 +182,12 @@ export const SwipeToDismiss = forwardRef<HTMLDivElement, SwipeToDismissProps>(
     // ListItem inside is the listbox's option (B17 / B21).
     const listSelection = useContext(ListNavContext)?.selectionMode ?? 'none'
 
-    const [dismissedState, setDismissedState] = useState(defaultDismissed)
-    const controlled = dismissedProp !== undefined
-    const dismissed = controlled ? dismissedProp : dismissedState
+    const [dismissed, setDismissedState, controlled] = useControllableState({
+      value: dismissedProp,
+      defaultValue: defaultDismissed,
+      name: 'SwipeToDismiss',
+      state: 'dismissed',
+    })
 
     /** Logical drag offset while a swipe is active, else null. */
     const [drag, setDrag] = useState<number | null>(null)

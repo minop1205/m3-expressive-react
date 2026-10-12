@@ -5,7 +5,6 @@ import {
   useCallback,
   useEffect,
   useRef,
-  useState,
   type ChangeEvent,
   type InputHTMLAttributes,
   type MutableRefObject,
@@ -13,6 +12,7 @@ import {
 } from 'react'
 import clsx from 'clsx'
 import { syncCheckedToDefault, useFormReset } from '../../internal/useFormReset'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './Checkbox.module.css'
 
 export interface CheckboxProps
@@ -57,9 +57,12 @@ export const Checkbox = forwardRef<HTMLSpanElement, CheckboxProps>(
     },
     forwardedRef,
   ) {
-    const isControlled = checked !== undefined
-    const [internalChecked, setInternalChecked] = useState(defaultChecked)
-    const isChecked = isControlled ? checked : internalChecked
+    const [isChecked, setInternalChecked, isControlled] = useControllableState({
+      value: checked,
+      defaultValue: defaultChecked,
+      name: 'Checkbox',
+      state: 'checked',
+    })
 
     const internalInputRef = useRef<HTMLInputElement | null>(null)
     const setInputRef = useCallback(

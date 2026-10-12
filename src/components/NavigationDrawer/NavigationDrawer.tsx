@@ -5,7 +5,6 @@ import {
   forwardRef,
   useContext,
   useRef,
-  useState,
   type ButtonHTMLAttributes,
   type HTMLAttributes,
   type MouseEvent,
@@ -15,6 +14,7 @@ import clsx from 'clsx'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import type { ModalCloseEvent } from '../../internal/closeReason'
 import { assignRefs, useModal } from '../../internal/useModal'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './NavigationDrawer.module.css'
 
 export type NavigationDrawerVariant = 'standard' | 'modal'
@@ -73,9 +73,12 @@ export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
     },
     ref,
   ) {
-    const isControlled = value !== undefined
-    const [uncontrolled, setUncontrolled] = useState(defaultValue)
-    const current = isControlled ? value : uncontrolled
+    const [current, setUncontrolled, isControlled] = useControllableState({
+      value,
+      defaultValue,
+      name: 'NavigationDrawer',
+      state: 'value',
+    })
     const handleChange = (event: MouseEvent<HTMLButtonElement>, v: string) => {
       if (!isControlled) setUncontrolled(v)
       onChange?.(event, v)

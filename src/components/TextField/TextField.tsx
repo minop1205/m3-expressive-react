@@ -22,6 +22,7 @@ import {
 import clsx from 'clsx'
 import { INTERACTIVE_SELECTOR } from '../../internal/isFromNestedInteractive'
 import { useFormReset } from '../../internal/useFormReset'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './TextField.module.css'
 
 export type TextFieldVariant = 'filled' | 'outlined'
@@ -172,13 +173,16 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
     const suffixId = `${inputId}-suffix`
 
     const [focused, setFocused] = useState(false)
-    const [internalValue, setInternalValue] = useState(defaultValue ?? '')
+    const [currentValue, setInternalValue, isControlled] = useControllableState({
+      value: controlledValue,
+      defaultValue: defaultValue ?? '',
+      name: 'TextField',
+      state: 'value',
+    })
     // Uncontrolled semantics: only the initial `defaultValue` counts. Pinning
     // it keeps a later prop change from rewriting the native default (and
     // the shown value of a not-yet-edited input) behind the state's back.
     const [initialDefaultValue] = useState(defaultValue)
-    const isControlled = controlledValue !== undefined
-    const currentValue = isControlled ? controlledValue : internalValue
     // Content the value doesn't report: partial number input ("-", "1e" —
     // `value` is '' but `validity.badInput` is set) and browser autofill
     // (Chrome's page-load autofill fires no input event, and its preview
@@ -351,7 +355,7 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
       // Uncontrolled stays natively uncontrolled so form.reset() restores
       // `defaultValue` (a React-controlled value would also become the
       // reset default via React's value-attribute syncing).
-      ...(isControlled ? { value: controlledValue } : { defaultValue: initialDefaultValue }),
+      ...(isControlled ? { value: currentValue } : { defaultValue: initialDefaultValue }),
       disabled,
       name,
       placeholder,

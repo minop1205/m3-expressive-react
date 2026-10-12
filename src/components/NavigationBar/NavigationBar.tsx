@@ -13,12 +13,12 @@ import {
   type HTMLAttributes,
   type MouseEvent,
   type ReactNode,
-  useState,
 } from 'react'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { devWarnOnce } from '../../internal/devWarning'
 import { defaultNavBadgeLabel, hasNavBadge } from '../../internal/navBadge'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './NavigationBar.module.css'
 
 export type NavigationItemLayout = 'vertical' | 'horizontal'
@@ -63,9 +63,12 @@ export const NavigationBar = forwardRef<HTMLElement, NavigationBarProps>(
     { value, defaultValue, onChange, itemLayout = 'vertical', className, children, ...rest },
     ref,
   ) {
-    const isControlled = value !== undefined
-    const [uncontrolled, setUncontrolled] = useState(defaultValue ?? '')
-    const current = isControlled ? value : uncontrolled
+    const [current, setUncontrolled, isControlled] = useControllableState({
+      value,
+      defaultValue: defaultValue ?? '',
+      name: 'NavigationBar',
+      state: 'value',
+    })
     const handleChange = (event: MouseEvent<HTMLButtonElement>, v: string) => {
       if (!isControlled) setUncontrolled(v)
       onChange?.(event, v)

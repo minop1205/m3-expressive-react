@@ -83,6 +83,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
   ) {
     const disabled = useGroupDisabled(disabledProp)
     const { isToggle, isSelected, handleClick, a11y } = useButtonToggle({
+      name: 'IconButton',
       value,
       toggle,
       selected,

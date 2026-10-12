@@ -78,6 +78,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 ) {
   const disabled = useGroupDisabled(disabledProp)
   const { isToggle, isSelected, handleClick, a11y } = useButtonToggle({
+    name: 'Button',
     value,
     toggle,
     selected,

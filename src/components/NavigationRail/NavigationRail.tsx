@@ -8,7 +8,6 @@ import {
   type HTMLAttributes,
   type MouseEvent,
   type ReactNode,
-  useState,
 } from 'react'
 import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
@@ -20,6 +19,7 @@ import {
 import { useRailMorph } from './useRailMorph'
 import type { ModalCloseEvent } from '../../internal/closeReason'
 import { useModal } from '../../internal/useModal'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './NavigationRail.module.css'
 
 export type { NavigationRailVariant, NavigationRailArrangement } from './NavigationRailContext'
@@ -154,9 +154,12 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
     // ref is attached on mount — apply once more after they have all run.
     useIsoLayoutEffect(applyExpandedWidth)
 
-    const isControlled = value !== undefined
-    const [uncontrolled, setUncontrolled] = useState(defaultValue ?? '')
-    const current = isControlled ? value : uncontrolled
+    const [current, setUncontrolled, isControlled] = useControllableState({
+      value,
+      defaultValue: defaultValue ?? '',
+      name: 'NavigationRail',
+      state: 'value',
+    })
     const handleChange = (event: MouseEvent<HTMLButtonElement>, v: string) => {
       if (!isControlled) setUncontrolled(v)
       onChange?.(event, v)
