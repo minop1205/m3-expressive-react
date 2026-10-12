@@ -36,7 +36,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B9 | #251 | Snackbar host(キュー・自動消去) | **`SnackbarProvider` + `useSnackbar().show()`(Promise を返す)、`Snackbar` は見た目部品のまま** | なし | 決定(2026-09-30・推奨どおり) |
 | B10 | #253 | 長い action を別行に | **`actionOnNewLine?: boolean`(自動判定なし)** | なし | 決定(2026-09-30・推奨どおり) |
 | B11 | #257 #261 | rich tooltip の操作性と persistent | **action 付き rich は非モーダル `role="dialog"`、`persistent?: boolean` を追加** | a11y ロールのみ | 決定(2026-09-30・推奨どおり) |
-| B12 | #259 | rich tooltip の既定配置 | **rich は `bottom` 既定(plain は `top` のまま)** | 既定値変更(VRT) | 決定(2026-09-30・推奨どおり) |
+| B12 | #259 | rich tooltip の既定配置 | **rich は `bottom` 既定(plain は `top` のまま)** | 既定値変更(VRT) | 決定(2026-09-30・推奨どおり)。rich の既定位置は **B38 で置換** |
 | B13 | #281 | ButtonGroup の選択モデル | **`selectionMode` + `value` / `defaultValue` / `onChange(event, value)` + `selectionRequired`** | なし | 決定(2026-09-30・推奨どおり) |
 | B14 | 横断(SG 軽微欄) | SegmentedButton の存廃 | **維持 + JSDoc / Storybook で ButtonGroup を案内(`@deprecated` は付けない)** | なし | 決定(2026-09-30・推奨どおり) |
 | B15 | #213 | アイコンのみセグメント | **option に `ariaLabel`、アイコンは選択時も残す(check + icon)** | なし(見た目は新ストーリーのみ) | 決定(2026-09-30・推奨どおり) |
@@ -56,6 +56,8 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B29 | #267 | Divider を既定で装飾扱いに | **既定 decorative(AT から隠す)+ `decorative={false}` で意味付き区切り** | a11y のみ | 決定(2026-09-30・推奨どおり) |
 | B30 | #393 | Search app bar | **`TopAppBar variant="search"` + `searchBar` スロット(SearchBar を合成)、`titleAlignment` で中央揃え、`title` は visually hidden の h1** | なし(追加) | 決定(2026-10-07・#393 の API 案どおり) |
 | B39 | #442 | SearchBar の full-screen レイアウト | **`layout="docked" \| "fullscreen"`(既定 docked)、full-screen は Compose `ExpandedFullScreenContainedSearchBar`(contained)、戻るボタンの名前は `backLabel`** | なし(追加) | 決定(2026-10-13・#442 の API 案どおり) |
+| B38 | #440 | Tooltip の配置拡張・rich の既定位置・caret | **`placement` に `'start' \| 'end' \| 'left' \| 'right'`(論理値は RTL で反転、flip あり)、`placement` 未指定の rich は bottom-end の角 + 4 隅の動的配置、`caret?: boolean`(16×8dp)** | 既定値変更(rich の未指定時の位置) | 決定(2026-10-13・#440 の提案どおり) |
+| B32 | #441 | PullToRefresh(新規) | **自身がスクロールコンテナになる `<PullToRefresh refreshing onRefresh indicator disabled threshold>`、touch + pointer、reduced motion はフェードのみ、`aria-busy` + polite live region** | なし(追加) | 決定(2026-10-13・#441 の API 案をもとに確定) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -496,6 +498,63 @@ Persistent ストーリーを追加。対象: Tooltip(TT2 #258 / TT7 #262 と同
 
 **影響**: 既定値の変更(`placement` 未指定の rich が下に出る)。VRT: Rich ストーリーが変わる(#259 の幅修正と同じ PR で
 `update-vrt-baselines`)。対象: Tooltip。
+
+> **B38 で一部置換(2026-10-13)**: `placement` 未指定の rich は「下・中央」ではなく **bottom-end の角**(m3「bottom right
+> of the parent element」)になった。「rich は下が既定」の部分は B38 でも維持。詳細は B38。
+
+### B38: Tooltip の配置拡張(start / end / left / right)・rich の既定位置・caret
+
+- **Issue**: #440
+- **状態**: 決定(2026-10-13・#440 の提案どおり)
+- **背景**: `TooltipPlacement = 'top' | 'bottom'`(中央揃え)のみ。m3 guidelines は「By default, rich tooltips are positioned
+  to the **bottom right** of the parent element. They adjust position to avoid going off screen」「**Four different rich
+  tooltip locations** based on dynamic positioning」。Compose `Tooltip.kt`(androidx-main): `TooltipAnchorPosition`
+  (`:807`)= Above / Below / Left / Right / Start / End、`TooltipPositionProviderImpl`(`:899`)の Left / Right は
+  anchor の横に**縦中央**で置き、はみ出すと反対側へ flip → clamp(`leftPositioning` / `rightPositioning`)、Start / End は
+  `LayoutDirection` で Left / Right に読み替える。非推奨の `rememberRichTooltipPositionProvider`(`:641`)は
+  `x = anchor.left`(start 揃え)→ 右端に当たれば `anchor.right - width`(end 揃え)→ それも左に当たれば中央。
+  `TooltipBox`(`:167`、象限判定 `:186`–`:207`)は popup と anchor の位置から Top Left / Top Right / Bottom Left / Bottom Right の
+  4 象限を判定している。caret は `caretShape: Shape? = null`(`PlainTooltip` `:345` / `RichTooltip` `:430`、既定なし)、
+  `TooltipDefaults.caretSize = DpSize(16.dp, 8.dp)`(`:532`)、`DefaultTooltipCaretShape`(`:1343`)は幅 16・高さ 8 の
+  三角形、`layoutCaret`(`:1193`)は anchor を向く辺に置き、上下配置では x を anchor 中央(`caretX` `:1164`)、
+  左右配置では y を tooltip の縦中央にする。
+
+**選択肢**
+
+- **(a) `placement` に `'start' | 'end' | 'left' | 'right'` を追加、rich の既定は内部の「角」配置、`caret?: boolean`**
+  ```tsx
+  <Tooltip text="Hint" placement="end">…</Tooltip>              // RTL では左
+  <Tooltip variant="rich" subhead="…" text="…">…</Tooltip>      // bottom-end の角、4 隅で動的に移動
+  <Tooltip variant="rich" placement="bottom" …>…</Tooltip>      // 明示すれば従来どおり下・中央
+  <Tooltip text="Hint" caret>…</Tooltip>
+  ```
+- **(b) (a) + `'bottom-end'` などの角の値も公開** — Floating UI 風に 12 値。表現力は増えるが、Compose にない値を公開型に
+  持つことになり、4 隅の自動移動と「優先する角」の意味が衝突する
+- **(c) caret を Compose どおり形(`caretShape`)で受ける** — Web では Shape オブジェクトに相当する慣習がない
+
+**決定**: **(a)**。補足:
+
+- **論理 / 物理**: `start` / `end` は RTL で反転(Compose Start / End)、`left` / `right` は物理のまま。どれも anchor の横に
+  縦中央で置き、入らず反対側の方が広ければ flip、最後に viewport 内へ clamp(上下の B4 と同じ規則)。`data-placement` は
+  実際に使った**物理側**(`top` / `bottom` / `left` / `right`)。
+- **rich の既定(`placement` 未指定)**: 下・**start 揃え**(trigger の start 端に揃え、end 方向へ伸びる = LTR で右下)。下に
+  入らなければ上へ、end 側へはみ出すなら **end 揃え**へ、それも入らなければ中央(非推奨の rich provider と同じ順)→ clamp。
+  結果として 4 隅(bottom-end / bottom-start / top-end / top-start)のいずれかになる。RTL では揃えが反転する。`placement` を
+  明示した rich は中央揃え(従来どおり)。plain の既定 `top`(中央)は変えない。
+- **caret**: `caret?: boolean`(既定 `false` = Compose の `null`)。16×8dp の三角形を container 色で、anchor を向く辺に描き、
+  anchor 中央を指す(位置は共有ヘルパーが `--_popup-anchor-x` / `-y` に書く)。角丸 + caret 幅の半分より内側に収める。
+  **Web 適応**: Compose は caret があっても `SpacingBetweenTooltipAndAnchor`(4dp)のままで、高さ 8dp の caret が anchor に
+  4dp 食い込む。m3 の「distance is 4dp」「Tooltips shouldn't cover the parent element」を優先し、caret 付きは
+  **gap = 4 + 8 = 12px**(caret の先端と anchor の距離が 4dp)。caret は `::after` なので rich の影(elevation level 2)は
+  caret に掛からない(Compose は Surface の shape に caret を合成するので影も付く — 見た目の差は軽微として許容)。
+- **共有ヘルパー**: `usePopupPosition` に `side: 'left' | 'right' | 'start' | 'end'`、`flipAlign`(揃えの flip)、
+  `trackAnchorCenter`(`--_popup-anchor-x/y`)を**オプトイン**で追加。既定値は従来どおりなので Menu / Select / SearchBar /
+  DatePickerField の挙動は変わらない。
+
+**影響**: 追加 prop・追加値は非破壊。`placement` 未指定の rich の位置が「下・中央」から「bottom-end の角」に変わる(既定値
+変更)。VRT: 既存の Rich / Persistent ストーリーは `placement: 'bottom'` を明示して**従来と同一ピクセル**を保ち、新規
+ストーリー(PlacementEnd / PlacementStartRtl / RichDefaultCorner / RichCornerFlip / Caret / RichCaret)を追加。対象: Tooltip、
+`src/internal/usePopupPosition.ts`。
 
 ---
 
@@ -1067,6 +1126,74 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 意図が伝わるため。MenuDivider(`role="menu"` 内の separator)は対象外で現状維持。
 
 **影響**: a11y ツリーのみ(区切りが読まれなくなる)。VRT なし。対象: Divider(SideSheet の `showDivider` 等の内部利用も含む)。
+
+---
+
+## ジェスチャー
+
+### B32: PullToRefresh(新規コンポーネント)
+
+- **Issue**: #441
+- **状態**: 決定(2026-10-13・#441 の API 案をもとに実装時に確定)
+- **背景**: m3 loading-indicator overview は「Used for pull-to-refresh interactions」「Loading indicators are used in the
+  pull-to-refresh behavior」とし、本ライブラリの LoadingIndicator(contained・determinate)はそのために存在するが、
+  pull-to-refresh 本体がなかった。Compose は `PullToRefreshBox(isRefreshing, onRefresh, state, indicator, enabled,
+  threshold, content)` + `Modifier.pullToRefresh`(nested scroll で子のスクロールの余りを受け取る)と、
+  `PullToRefreshDefaults.Indicator`(円形矢印)/ `LoadingIndicator`(Expressive・`ContainedLoadingIndicator`)の 2 種。
+  数値は docs/specs/pull-to-refresh.md。
+
+**選択肢**
+
+- **(a) 自身がスクロールコンテナになる `<PullToRefresh>`**(採用)
+  ```tsx
+  <PullToRefresh refreshing={loading} onRefresh={reload} style={{ height: 480 }}>
+    <List>{items}</List>
+  </PullToRefresh>
+  ```
+  - 利点: `scrollTop === 0` の判定対象が一意(ルート)。`ref` / `onScroll` / `className` がそのままスクロール要素に付く。
+    インジケーターをルート内の sticky アンカーに置けるので、Compose と同じく上端でクリップされ、スクロールしても動かない
+  - 欠点: 高さ(または flex / grid のトラック)を利用者が与える必要がある。ページ全体(`window`)のスクロールは対象外
+- **(b) スクロール可能な子を包むラッパー(子の scroll 要素を探す)**
+  - 利点: 既存のスクロール要素をそのまま使える。欠点: 「どれがスクロール要素か」を推測するか `scrollRef` を受ける必要があり、
+    インジケーターの配置(子の外側の overlay)もレイアウトに依存する
+- **(c) `usePullToRefresh()` フックのみ** — 柔軟だが見た目(インジケーター)を利用者が組む必要があり、他コンポーネントと揃わない
+
+**決定**: **(a)**。ただし子孫に入れ子のスクロール要素がある場合も考慮し、ジェスチャー開始時にポインター位置の要素から
+ルートまでの**すべての**スクロール要素が上端にあるときだけ引っ張りを開始する(入れ子のリストでも誤発火しない)。
+
+API:
+
+| prop | 型 / 既定 | 内容 |
+|---|---|---|
+| `refreshing` | `boolean`(省略可) | Compose `isRefreshing`。controlled。省略時は `onRefresh` が返す Promise の解決まで refreshing(uncontrolled — A4) |
+| `onRefresh` | `() => void \| Promise<unknown>` | しきい値を超えて離したときに呼ぶ |
+| `indicator` | `'loading' \| 'circular'` / `'loading'` | `loading` = `PullToRefreshDefaults.LoadingIndicator`(48dp・contained・Level0)、`circular` = `Indicator`(40dp・surfaceContainerHigh・Level2・矢印 → スピナー)。既定は Expressive 側(B2 と同じ考え方) |
+| `disabled` | `boolean` / `false` | Compose `enabled = false`。進行中の refreshing 表示は残す |
+| `threshold` | `number` / `80` | px。Compose `PositionalThreshold` 80dp。指の移動量 × 0.5(`DragMultiplier`)がこれを**超えた**ら発火 |
+| `refreshingLabel` | `string` / `'Refreshing'` | live region の文言(B1: prop ごとのラベル) |
+
+挙動:
+
+- 入力は touch(非 passive の `touchmove` で、引っ張り中はネイティブのスクロール / オーバースクロールを止める)と
+  mouse / pen(Pointer Events + pointer capture)。8px の touch slop(SwipeToDismiss と同じ)を超えて下向きに動いたら開始、
+  上向き・横向きならスクロールに譲る。実際に引っ張った後のクリックは子に届けない
+- インジケーターの位置と進捗は Compose の式そのまま: `distanceFraction` = しきい値までは線形、超えると
+  `t − t²/4`(t ≤ 2)の張力、最大 2。位置は `distanceFraction × 80 − 高さ`(`IndicatorMaxDistance` は threshold を
+  変えても 80 固定 — Compose と同じ)
+- 引っ張り中は determinate(loading: 円 → SoftBurst のモーフ、しきい値超えで `−(p−1)×180°` 回転 / circular: 矢印付きの円弧、
+  しきい値未満は alpha 0.3)、refreshing 中は indeterminate。両者は DefaultEffects でクロスフェード
+- 戻り / しきい値への移動は Compose `Animatable.animateTo` 既定の `spring()`(バウンスなし・MotionScheme キーではない)
+  なので duration / easing トークン(`duration-medium1` + `easing-standard`)。クロスフェードと alpha は DefaultEffects
+- **reduced motion(B3)**: インジケーターは指に追従して動かない。しきい値位置に固定し、引っ張り量に応じて不透明度だけ
+  上げる(フェードのみ)。refreshing 中もその位置に表示。進捗の形の変化(determinate)は残すが、しきい値超えの回転はしない
+- **アクセシビリティ**: ジェスチャーはキーボードから届かない。ルートに refreshing 中 `aria-busy="true"`、ルートの**外**
+  (busy 領域の外)に `role="status"` の visually hidden な live region を置き `refreshingLabel` を読む。インジケーター自体は
+  `aria-hidden`(読み上げは live region に一本化)。**アプリは必ず見えるリフレッシュ操作(ボタン等)も用意する**こと
+  (JSDoc・サイトに明記)。スタイル用に `data-indicator` / `data-refreshing` / `data-pulling` / `data-disabled` と
+  `--md-pull-to-refresh-progress` を出す(B20 の SwipeToDismiss と同じ方式)
+
+**影響**: 非破壊(新規コンポーネント・新しい subpath `m3-expressive-react/PullToRefresh`)。VRT: `Components/PullToRefresh` の
+Default / Refreshing / Circular を追加。
 
 ---
 

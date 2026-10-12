@@ -4,6 +4,12 @@
 
 ### Added
 
+- **PullToRefresh** (new, `m3-expressive-react/PullToRefresh`): Compose
+  `PullToRefreshBox` as a scroll container — touch / mouse / pen pull at the
+  top with the 0.5 drag resistance and 80px threshold, a determinate
+  indicator while pulling and an indeterminate one while `refreshing`,
+  `indicator="loading" | "circular"`, `aria-busy` + a polite live region,
+  fade-only under reduced motion (ruling B32, #441).
 - **Dialog / BottomSheet / SideSheet / NavigationDrawer / NavigationRail
   (modal)**: `onClose` now receives `(event, reason)` with `reason` one of
   `'escapeKeyDown' | 'backdropClick' | 'closeButton' | 'drag'` as applicable

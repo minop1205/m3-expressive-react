@@ -9,6 +9,9 @@
  * (BodyMedium), 12dp, action row min 36dp in Primary (LabelLarge).
  *
  * Width is the content's own (`max-content`, capped) — never the anchor's.
+ * Placement: top / bottom (centered), start / end / left / right (beside,
+ * vertically centered); rich defaults to the bottom-end corner and moves
+ * among the four corners (ruling B38). Optional caret 16×8dp.
  * Position (`top` / `left`, flip + clamp) is written inline by the shared
  * popup helper (src/internal/usePopupPosition); the popup is a
  * `popover="manual"` element drawn in the top layer.
@@ -163,6 +166,70 @@
   min-height: var(--_action-row-min-height);
   margin-top: 12px;
   color: var(--_action-label-text-color);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Caret (opt-in; Compose caretShape + TooltipDefaults.caretSize 16×8dp)        */
+/* --------------------------------------------------------------------------- */
+/* A triangle in the container color on the edge that faces the trigger,
+   pointing at the trigger's center (`--_popup-anchor-x/y`, written by the
+   popup helper) and kept clear of the rounded corners. */
+.tooltip[data-caret] {
+  --_caret-width: 16px;
+  --_caret-height: 8px;
+  --_caret-inset: calc(var(--_container-shape) + var(--_caret-width) / 2);
+}
+
+.tooltip[data-caret]::after {
+  content: '';
+  position: absolute;
+  background-color: var(--_container-color);
+}
+
+.tooltip[data-caret][data-placement='top']::after,
+.tooltip[data-caret][data-placement='bottom']::after {
+  left: clamp(
+    var(--_caret-inset),
+    var(--_popup-anchor-x, 50%),
+    calc(100% - var(--_caret-inset))
+  );
+  width: var(--_caret-width);
+  height: var(--_caret-height);
+  transform: translateX(-50%);
+}
+
+.tooltip[data-caret][data-placement='left']::after,
+.tooltip[data-caret][data-placement='right']::after {
+  top: clamp(
+    var(--_caret-inset),
+    var(--_popup-anchor-y, 50%),
+    calc(100% - var(--_caret-inset))
+  );
+  width: var(--_caret-height);
+  height: var(--_caret-width);
+  transform: translateY(-50%);
+}
+
+/* Above the trigger: caret on the bottom edge, pointing down. */
+.tooltip[data-caret][data-placement='top']::after {
+  top: 100%;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.tooltip[data-caret][data-placement='bottom']::after {
+  bottom: 100%;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+/* Left of the trigger: caret on the right edge, pointing right. */
+.tooltip[data-caret][data-placement='left']::after {
+  left: 100%;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.tooltip[data-caret][data-placement='right']::after {
+  right: 100%;
+  clip-path: polygon(100% 0, 100% 100%, 0 50%);
 }
 
 /* Reduced motion (Phase B B3): fade only. */

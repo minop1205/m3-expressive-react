@@ -51,6 +51,7 @@ import {
   NavigationDrawerItem,
   NavigationRail,
   NavigationRailItem,
+  PullToRefresh,
   Radio,
   RadioGroup,
   Ripple,
@@ -176,6 +177,7 @@ const cases: Record<string, ReactElement> = {
   ),
   ListItem: <ListItem headline="One" />,
   LoadingIndicator: <LoadingIndicator />,
+  PullToRefresh: <PullToRefresh refreshing>Content</PullToRefresh>,
   Fab: <Fab icon={icon} aria-label="Add" />,
   NavigationBar: (
     <NavigationBar value="a">

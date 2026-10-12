@@ -17,7 +17,10 @@ import { useIsoLayoutEffect } from './useIsoLayoutEffect'
  * Internal — components expose only their own `placement` prop.
  */
 
-export type PopupSide = 'top' | 'bottom'
+/** A physical side of the anchor (the side actually used, after flipping). */
+export type PopupSide = 'top' | 'bottom' | 'left' | 'right'
+/** A preferred side: physical, or logical `start` / `end` (mirrored in RTL). */
+export type PopupPreferredSide = PopupSide | 'start' | 'end'
 export type PopupAlign = 'center' | 'start' | 'end'
 
 export interface PopupAnchorRect {
@@ -35,15 +38,30 @@ export interface PopupSize {
 }
 
 export interface PopupPositionOptions {
-  /** Preferred side of the anchor. */
-  side: PopupSide
-  /** Horizontal alignment to the anchor (start/end mirror in RTL). @default 'center' */
+  /**
+   * Preferred side of the anchor. `left` / `right` (and the logical `start` /
+   * `end`, which mirror in RTL) center the popup vertically on the anchor and
+   * flip horizontally (Compose `TooltipAnchorPosition.Left` / `Right` /
+   * `Start` / `End`).
+   */
+  side: PopupPreferredSide
+  /**
+   * Horizontal alignment to the anchor (start/end mirror in RTL), for the
+   * `top` / `bottom` sides. @default 'center'
+   */
   align?: PopupAlign
+  /**
+   * Also flip a `start` / `end` alignment when the popup would overflow the
+   * viewport edge it grows toward (the deprecated Compose
+   * `rememberRichTooltipPositionProvider`: start → end, else centered) — so the
+   * popup takes one of the anchor's four corners. @default false
+   */
+  flipAlign?: boolean
   /** Gap between the anchor and the popup, px. @default 4 */
   gap?: number
   /** Minimum distance kept from the viewport edges, px. @default 0 */
   margin?: number
-  /** Right-to-left layout (only affects `start` / `end` alignment). @default false */
+  /** Right-to-left layout (only affects `start` / `end` sides and alignment). @default false */
   rtl?: boolean
   /**
    * Flip + clamp into the viewport. `false` pins the popup to the anchor on
@@ -61,6 +79,13 @@ export interface PopupPosition {
   side: PopupSide
 }
 
+/** The physical side for a preferred side (logical `start` / `end` mirror in RTL). */
+export function physicalPopupSide(side: PopupPreferredSide, rtl = false): PopupSide {
+  if (side === 'start') return rtl ? 'right' : 'left'
+  if (side === 'end') return rtl ? 'left' : 'right'
+  return side
+}
+
 /**
  * Flip rule: keep the preferred side unless the popup doesn't fit there **and**
  * the opposite side has more room (so a popup that fits nowhere stays on the
@@ -70,10 +95,10 @@ export function resolvePopupSide(
   anchor: Pick<PopupAnchorRect, 'top' | 'bottom'>,
   popupHeight: number,
   viewportHeight: number,
-  side: PopupSide,
+  side: 'top' | 'bottom',
   gap = 4,
   margin = 0,
-): PopupSide {
+): 'top' | 'bottom' {
   const spaceAbove = anchor.top - margin
   const spaceBelow = viewportHeight - anchor.bottom - margin
   const needed = popupHeight + gap
@@ -81,6 +106,24 @@ export function resolvePopupSide(
     return spaceBelow < needed && spaceAbove > spaceBelow ? 'top' : 'bottom'
   }
   return spaceAbove < needed && spaceBelow > spaceAbove ? 'bottom' : 'top'
+}
+
+/** The horizontal counterpart of {@link resolvePopupSide} for `left` / `right`. */
+export function resolvePopupInlineSide(
+  anchor: Pick<PopupAnchorRect, 'left' | 'right'>,
+  popupWidth: number,
+  viewportWidth: number,
+  side: 'left' | 'right',
+  gap = 4,
+  margin = 0,
+): 'left' | 'right' {
+  const spaceLeft = anchor.left - margin
+  const spaceRight = viewportWidth - anchor.right - margin
+  const needed = popupWidth + gap
+  if (side === 'right') {
+    return spaceRight < needed && spaceLeft > spaceRight ? 'left' : 'right'
+  }
+  return spaceLeft < needed && spaceRight > spaceLeft ? 'right' : 'left'
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -94,14 +137,32 @@ export function computePopupPosition(
   popup: PopupSize,
   viewport: PopupSize,
   {
-    side,
+    side: preferredSide,
     align = 'center',
+    flipAlign = false,
     gap = 4,
     margin = 0,
     rtl = false,
     avoidCollisions = true,
   }: PopupPositionOptions,
 ): PopupPosition {
+  const side = physicalPopupSide(preferredSide, rtl)
+
+  if (side === 'left' || side === 'right') {
+    // Beside the anchor, vertically centered (Compose left/rightPositioning).
+    const resolved = avoidCollisions
+      ? resolvePopupInlineSide(anchor, popup.width, viewport.width, side, gap, margin)
+      : side
+    const left = resolved === 'left' ? anchor.left - gap - popup.width : anchor.right + gap
+    const top = anchor.top + (anchor.height - popup.height) / 2
+    if (!avoidCollisions) return { side: resolved, top, left }
+    return {
+      side: resolved,
+      top: clamp(top, margin, viewport.height - popup.height - margin),
+      left: clamp(left, margin, viewport.width - popup.width - margin),
+    }
+  }
+
   const resolved = avoidCollisions
     ? resolvePopupSide(anchor, popup.height, viewport.height, side, gap, margin)
     : side
@@ -109,9 +170,22 @@ export function computePopupPosition(
 
   let left: number
   const alignStart = (align === 'start') !== rtl
-  if (align === 'center') left = anchor.left + (anchor.width - popup.width) / 2
-  else if (alignStart) left = anchor.left
-  else left = anchor.right - popup.width
+  const centered = anchor.left + (anchor.width - popup.width) / 2
+  const leftAligned = anchor.left
+  const rightAligned = anchor.right - popup.width
+  if (align === 'center') left = centered
+  else if (alignStart) left = leftAligned
+  else left = rightAligned
+
+  if (avoidCollisions && flipAlign && align !== 'center') {
+    // Four-corner positioning: when the popup would run past the viewport
+    // edge it grows toward, align it to the anchor's other edge instead; if
+    // that collides too, center it (then clamp below).
+    const fitsLeftAligned = leftAligned + popup.width <= viewport.width - margin
+    const fitsRightAligned = rightAligned >= margin
+    if (alignStart && !fitsLeftAligned) left = fitsRightAligned ? rightAligned : centered
+    else if (!alignStart && !fitsRightAligned) left = fitsLeftAligned ? leftAligned : centered
+  }
 
   if (!avoidCollisions) return { side: resolved, top, left }
   return {
@@ -182,6 +256,12 @@ export interface UsePopupPositionOptions extends PopupPositionOptions {
   popupRef: RefObject<HTMLElement | null>
   /** Also size the popup to the anchor's width (inline `width`). @default false */
   matchAnchorWidth?: boolean
+  /**
+   * Also write the anchor's center relative to the popup's top-left corner as
+   * `--_popup-anchor-x` / `--_popup-anchor-y` (px), e.g. to point a caret at
+   * the anchor. @default false
+   */
+  trackAnchorCenter?: boolean
 }
 
 /**
@@ -260,13 +340,17 @@ export function usePopupPosition({
   popupRef,
   side,
   align = 'center',
+  flipAlign = false,
   gap = 4,
   margin = 0,
   rtl,
   avoidCollisions = true,
   matchAnchorWidth = false,
+  trackAnchorCenter = false,
 }: UsePopupPositionOptions): PopupSide {
-  const [resolvedSide, setResolvedSide] = useState<PopupSide>(side)
+  const [resolvedSide, setResolvedSide] = useState<PopupSide>(() =>
+    physicalPopupSide(side, rtl ?? false),
+  )
 
   useIsoLayoutEffect(() => {
     const popup = popupRef.current as PopoverElement | null
@@ -290,16 +374,24 @@ export function usePopupPosition({
         anchor,
         { width: popup.offsetWidth, height: popup.offsetHeight },
         viewport,
-        { side, align, gap, margin, rtl: isRtl, avoidCollisions },
+        { side, align, flipAlign, gap, margin, rtl: isRtl, avoidCollisions },
       )
       popup.style.top = `${position.top}px`
       popup.style.left = `${position.left}px`
+      if (trackAnchorCenter) {
+        const x = anchor.left + anchor.width / 2 - position.left
+        const y = anchor.top + anchor.height / 2 - position.top
+        popup.style.setProperty('--_popup-anchor-x', `${x}px`)
+        popup.style.setProperty('--_popup-anchor-y', `${y}px`)
+      }
       // Room between the anchor and the viewport edge on the side used, for
       // popups that cap their height to it (CSS `var(--_popup-available-height)`).
       const available =
         position.side === 'bottom'
           ? viewport.height - anchor.bottom - gap - margin
-          : anchor.top - gap - margin
+          : position.side === 'top'
+            ? anchor.top - gap - margin
+            : viewport.height - 2 * margin
       popup.style.setProperty('--_popup-available-height', `${Math.max(0, Math.floor(available))}px`)
       // An anchor scrolled fully out of view would leave a clamped popup
       // floating with no visible trigger: hide it (it stays open, so it
@@ -342,7 +434,20 @@ export function usePopupPosition({
       popup.style.visibility = ''
       setFocusKeepingHide(false)
     }
-  }, [open, anchorRef, popupRef, side, align, gap, margin, rtl, avoidCollisions, matchAnchorWidth])
+  }, [
+    open,
+    anchorRef,
+    popupRef,
+    side,
+    align,
+    flipAlign,
+    gap,
+    margin,
+    rtl,
+    avoidCollisions,
+    matchAnchorWidth,
+    trackAnchorCenter,
+  ])
 
   // Leave the top layer on unmount (a still-open popover would linger there
   // only until removal, but hiding keeps the Popover API state consistent).
