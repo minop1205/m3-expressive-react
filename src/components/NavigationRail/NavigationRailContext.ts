@@ -1,3 +1,5 @@
+'use client'
+
 import { createContext, type MouseEvent } from 'react'
 
 export type NavigationRailVariant = 'collapsed' | 'expanded'

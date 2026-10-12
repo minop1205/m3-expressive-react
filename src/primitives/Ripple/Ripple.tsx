@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import clsx from 'clsx'
 import { isFromNestedInteractive } from '../../internal/isFromNestedInteractive'
