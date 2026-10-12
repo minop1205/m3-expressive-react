@@ -84,8 +84,10 @@ TT5 → #260、TT6 → #261、TT7 → #262、TT8 → #263
   plain / rich 共通で `Above` が既定(非推奨の rich provider は start 端揃え)。実装は variant に関係なく `placement='top'` が既定。
   site 優先なら rich の既定は下(中央 — desktop の記述と TT4 の clamp で足りる)。**VRT の Rich ストーリーは既に `placement="bottom"`**。
   既定値の変更は API の既定を変えるので TT3 + TT4 の issue で判断事項として挙げた
+  → B12 で「下・中央」に決定、**B38(#440)で bottom-end の角 + 4 隅の動的配置に置換**(site「bottom right」「Four different
+  rich tooltip locations」)
 - **placement の種類**: Compose は Above / Below / Left / Right / Start / End。site は上 / 下(app bar 内は下)しか語らない。
-  `'start' | 'end'` 追加は需要次第
+  `'start' | 'end'` 追加は需要次第 → **B38(#440)で `'start' | 'end' | 'left' | 'right'` を追加**
 - **anchor との距離 8dp**: site「If there's no visual boundary, like with text baselines, the distance is 8dp」。Compose は `spacing`
   引数(既定 4)。テキストの trigger 向けに距離の上書き手段(CSS 変数 `--_spacing` 等)を用意する程度でよい
 - **app bar 内では下に出す**: site の記述。自動判定はせず `placement="bottom"` を使う旨を JSDoc で示す
@@ -102,6 +104,7 @@ TT5 → #260、TT6 → #261、TT7 → #262、TT8 → #263
 - **focus で開いた tooltip の自動消去(Compose は 1500ms で閉じる)**: WCAG 1.4.13 の persistent(dismiss / blur まで残る)に
   反するので Web では採らない(裁定参照)
 - **caret**: Compose は opt-in(16×8dp、`TooltipDefaults.caretShape()`)。site は触れない。需要が出たら追加
+  → **B38(#440)で `caret?: boolean` を追加**(caret 付きは gap 12px — 裁定 B38 の Web 適応)
 - **component token 名**: CSS が `--_container-color` 等の private token を使わず system token を直書き(CLAUDE.md の CSS 規約)。
   TT3 / TT5 の書き換え時に `--_*` へ寄せる
 - **ストーリーのカバレッジ**: 画面端、RTL、長文、action 2つ、persistent、hover / focus の遷移がない。各修正 PR で足すこと
