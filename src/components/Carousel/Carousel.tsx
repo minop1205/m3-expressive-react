@@ -9,7 +9,6 @@ import {
   useContext,
   useEffect,
   useId,
-  useLayoutEffect,
   useRef,
   useState,
   type AnchorHTMLAttributes,
@@ -22,6 +21,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { INTERACTIVE_SELECTOR } from '../../internal/isFromNestedInteractive'
@@ -149,11 +149,9 @@ function flingDistance(velocity: number): number {
 }
 
 function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(
-    () =>
-      typeof window !== 'undefined' &&
-      !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
-  )
+  // Starts `false` on both server and client so hydration matches (#410);
+  // the effect below picks up the real preference after mount.
+  const [reduced, setReduced] = useState(false)
   useEffect(() => {
     const mql = window.matchMedia?.('(prefers-reduced-motion: reduce)')
     if (!mql) return
@@ -164,8 +162,6 @@ function usePrefersReducedMotion(): boolean {
   }, [])
   return reduced
 }
-
-const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
 function setRef<T>(ref: Ref<T> | undefined, node: T | null) {
   if (typeof ref === 'function') ref(node)

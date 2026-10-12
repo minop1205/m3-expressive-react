@@ -4,13 +4,13 @@ import {
   forwardRef,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   type HTMLAttributes,
   type MouseEvent,
   type ReactNode,
   useState,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import {
   RailContext,
@@ -140,7 +140,7 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
     )
     // Items report in their layout effects, which run before this element's
     // ref is attached on mount — apply once more after they have all run.
-    useLayoutEffect(applyExpandedWidth)
+    useIsoLayoutEffect(applyExpandedWidth)
 
     const isControlled = value !== undefined
     const [uncontrolled, setUncontrolled] = useState(defaultValue ?? '')

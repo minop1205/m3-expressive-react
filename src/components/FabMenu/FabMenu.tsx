@@ -8,7 +8,6 @@ import {
   isValidElement,
   useContext,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type ButtonHTMLAttributes,
@@ -18,6 +17,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
@@ -216,7 +216,7 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
   // the hidden items' semantics). `inert` is set through the DOM because React
   // 18 has no boolean `inert` prop. If the menu closes (e.g. controlled) while
   // an item holds focus, move it to the toggle instead of dropping it.
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const list = listRef.current
     if (!list) return
     list.toggleAttribute('inert', !open)

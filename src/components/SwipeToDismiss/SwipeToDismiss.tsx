@@ -5,7 +5,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -14,6 +13,7 @@ import {
   type PointerEvent,
   type ReactNode,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { ListNavContext, ListParentContext } from '../List/ListContext'
 import styles from './SwipeToDismiss.module.css'
@@ -223,7 +223,7 @@ export const SwipeToDismiss = forwardRef<HTMLDivElement, SwipeToDismissProps>(
     }
 
     // Resolve the physical sign of a programmatic / initial dismiss.
-    useLayoutEffect(() => {
+    useIsoLayoutEffect(() => {
       if (dismissed != null) {
         const next = isRtl()
         if (next !== rtl) setRtl(next)

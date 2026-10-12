@@ -6,7 +6,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
   useRef,
   type ButtonHTMLAttributes,
   type FocusEvent,
@@ -16,6 +15,7 @@ import {
   type ReactNode,
   useState,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
@@ -227,11 +227,11 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
     [current],
   )
 
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     layoutIndicator('auto')
   })
 
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const list = listRef.current
     if (!list) return
     const enabled = Array.from(
