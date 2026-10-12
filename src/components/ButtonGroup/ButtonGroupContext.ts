@@ -22,6 +22,14 @@ export interface ButtonGroupSelection {
 
 export const ButtonGroupSelectionContext = createContext<ButtonGroupSelection | null>(null)
 
+/** Group-level `disabled` from a wrapping `ButtonGroup` (#421). */
+export const ButtonGroupDisabledContext = createContext(false)
+
+/** An item is disabled when it, or its wrapping `ButtonGroup`, is disabled. */
+export function useGroupDisabled(disabled: boolean): boolean {
+  return useContext(ButtonGroupDisabledContext) || disabled
+}
+
 interface ToggleOptions {
   value: string | number | readonly string[] | undefined
   toggle: boolean

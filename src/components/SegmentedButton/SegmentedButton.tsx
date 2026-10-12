@@ -36,31 +36,59 @@ export interface SegmentedButtonOption {
   disabled?: boolean
 }
 
-export interface SegmentedButtonProps
-  extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange'> {
+interface SegmentedButtonBaseProps
+  extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange' | 'defaultValue'> {
   /** The segments. */
   options: SegmentedButtonOption[]
-  /** Controlled selected value (string) — or an array of values when `multiSelect`. */
-  value?: string | string[]
-  /** Uncontrolled initial selection. Defaults to none (`''`, or `[]` when `multiSelect`). */
-  defaultValue?: string | string[]
-  /**
-   * Fires with the triggering event and the next selection (string, or
-   * string[] when `multiSelect`). Keyboard activation (Space / Enter) arrives
-   * as the native button `click`.
-   */
-  onChange?: (event: MouseEvent<HTMLButtonElement>, value: string | string[]) => void
-  /**
-   * Allow selecting multiple segments. Single-select renders a `radiogroup`
-   * of radios; multi-select renders a `group` of toggle buttons (`aria-pressed`).
-   * @default false
-   */
-  multiSelect?: boolean
   /** Disable the whole group. */
   disabled?: boolean
   /** Show a check icon on selected segments. @default true */
   showSelectedCheck?: boolean
 }
+
+/**
+ * Single select (the default): a `radiogroup` of radios. Re-activating the
+ * selected segment does not fire `onChange`.
+ */
+export interface SegmentedButtonSingleSelectProps extends SegmentedButtonBaseProps {
+  /**
+   * Allow selecting multiple segments. Single-select renders a `radiogroup`
+   * of radios; multi-select renders a `group` of toggle buttons (`aria-pressed`).
+   * @default false
+   */
+  multiSelect?: false
+  /** Controlled selected value (`''` = none). */
+  value?: string
+  /** Uncontrolled initial selection. @default '' (none) */
+  defaultValue?: string
+  /**
+   * Fires with the triggering event and the newly selected value — on click,
+   * Space / Enter (the native button `click`) and arrow-key selection. Not
+   * fired when the selected segment is activated again.
+   */
+  onChange?: (event: MouseEvent<HTMLButtonElement>, value: string) => void
+}
+
+/** Multi select: a `group` of `aria-pressed` toggle buttons. */
+export interface SegmentedButtonMultiSelectProps extends SegmentedButtonBaseProps {
+  /** Allow selecting multiple segments. */
+  multiSelect: true
+  /** Controlled selected values. */
+  value?: string[]
+  /** Uncontrolled initial selection. @default [] */
+  defaultValue?: string[]
+  /**
+   * Fires with the triggering event and the next selected values. Keyboard
+   * activation (Space / Enter) arrives as the native button `click`.
+   */
+  onChange?: (event: MouseEvent<HTMLButtonElement>, value: string[]) => void
+}
+
+export type SegmentedButtonProps =
+  | SegmentedButtonSingleSelectProps
+  | SegmentedButtonMultiSelectProps
+
+type SelectionValue = string | string[]
 
 const NEXT_KEYS = ['ArrowRight', 'ArrowDown']
 const PREV_KEYS = ['ArrowLeft', 'ArrowUp']
@@ -74,10 +102,11 @@ const PREV_KEYS = ['ArrowLeft', 'ArrowUp']
  * row; unselected are transparent with OnSurface content — per Compose
  * OutlinedSegmentedButtonTokens / SegmentedButtonContent.
  *
- * Single-select is a `radiogroup` (one Tab stop, arrow keys move focus,
- * Space / Enter select); multi-select is a `group` of `aria-pressed` toggle
- * buttons (each a Tab stop; arrow keys also move focus). Name the group with
- * `aria-label` / `aria-labelledby`.
+ * Single-select is a `radiogroup` (one Tab stop; arrow keys move focus and
+ * select, as in the WAI-ARIA APG radio group and `ButtonGroup`; Space / Enter
+ * select); multi-select is a `group` of `aria-pressed` toggle buttons (each a
+ * Tab stop; arrow keys move focus only). Name the group with `aria-label` /
+ * `aria-labelledby`.
  *
  * In Material 3 Expressive the segmented button is no longer recommended:
  * m3.material.io says connected button groups replace it. Prefer
@@ -86,8 +115,8 @@ const PREV_KEYS = ['ArrowLeft', 'ArrowUp']
  * available (Compose still ships it) and is not deprecated.
  */
 export const SegmentedButton = forwardRef<HTMLDivElement, SegmentedButtonProps>(
-  function SegmentedButton(
-    {
+  function SegmentedButton(props, ref) {
+    const {
       options,
       value,
       defaultValue,
@@ -98,11 +127,14 @@ export const SegmentedButton = forwardRef<HTMLDivElement, SegmentedButtonProps>(
       className,
       onKeyDown,
       ...rest
-    },
-    ref,
-  ) {
+    } = props as SegmentedButtonBaseProps & {
+      multiSelect?: boolean
+      value?: SelectionValue
+      defaultValue?: SelectionValue
+      onChange?: (event: MouseEvent<HTMLButtonElement>, value: SelectionValue) => void
+    }
     const isControlled = value !== undefined
-    const [uncontrolled, setUncontrolled] = useState<string | string[]>(
+    const [uncontrolled, setUncontrolled] = useState<SelectionValue>(
       () => defaultValue ?? (multiSelect ? [] : ''),
     )
     // Roving tab stop (single-select): the last focused segment. Until the
@@ -122,7 +154,7 @@ export const SegmentedButton = forwardRef<HTMLDivElement, SegmentedButtonProps>(
       enabledOptions.find((o) => o.value === focusedValue)?.value ??
       enabledOptions[0]?.value
 
-    const emit = (event: MouseEvent<HTMLButtonElement>, next: string | string[]) => {
+    const emit = (event: MouseEvent<HTMLButtonElement>, next: SelectionValue) => {
       if (!isControlled) setUncontrolled(next)
       onChange?.(event, next)
     }
@@ -133,7 +165,9 @@ export const SegmentedButton = forwardRef<HTMLDivElement, SegmentedButtonProps>(
         if (set.has(v)) set.delete(v)
         else set.add(v)
         emit(event, [...set])
-      } else {
+      } else if (current !== v) {
+        // Radio semantics: re-activating the selected segment keeps it and
+        // is not a change (ButtonGroup / List / MUI / Compose).
         emit(event, v)
       }
     }
@@ -165,14 +199,20 @@ export const SegmentedButton = forwardRef<HTMLDivElement, SegmentedButtonProps>(
         nextIndex = (index + (forwards ? 1 : -1) + segments.length) % segments.length
       }
       event.preventDefault()
-      segments[nextIndex].focus()
+      const next = segments[nextIndex]
+      if (next === segments[index]) return
+      next.focus()
+      // Single-select follows the APG radio group: moving focus also selects
+      // (a native click, so onChange fires as for a mouse click) — the same
+      // as ButtonGroup selectionMode="single" (docs/audits/segmentedbutton.md).
+      if (!multiSelect && next.getAttribute('aria-checked') !== 'true') next.click()
     }
 
     return (
       <div
         ref={ref}
-        {...rest}
         role={multiSelect ? 'group' : 'radiogroup'}
+        {...rest}
         onKeyDown={handleKeyDown}
         className={clsx(styles.group, className)}
       >

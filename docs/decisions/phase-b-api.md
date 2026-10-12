@@ -1011,6 +1011,22 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 
 ---
 
+## Phase A 裁定への追補
+
+### A10 追補: 選択コントロールの `style` はルートへ(2026-10-12・#421)
+
+- **Issue**: #421
+- **状態**: 決定(2026-10-12)
+- **背景**: A10 は Checkbox / Radio / Switch の `{...rest}` の着地先を native `<input>` のまま残した(name / value のフォーム
+  配線のため)。`className` はルートに付くが、`style` は裁定されておらず `rest` 経由で visually hidden の `<input>` に
+  落ちていた(`style={{ marginLeft: 13 }}` が input に付き、見た目に効かない)。Slider・TextField・SearchBar は両方ルート。
+- **決定**: **`style` は `className` と一緒にルート要素に付ける**。それ以外の `{...rest}`(`name` / `value` / `aria-*` /
+  イベント等)は A10 どおり input のまま。あわせて Checkbox の `error` は input に `aria-invalid="true"` を出す
+  (明示の `aria-invalid` が優先)。
+- **影響**: 非破壊(input に付いていた `style` は見た目に効いていなかった)。VRT なし。対象: Checkbox・Radio・Switch。
+
+---
+
 ## 本書で扱わなかった判断候補(次回以降)
 
 監査の軽微欄で「API 判断」とされたが Issue 化されていないもの。必要になった時点で別途提案する。

@@ -25,7 +25,7 @@ export interface CheckboxProps
   indeterminate?: boolean
   /** Fires with the native event and the next checked state on toggle. */
   onChange?: (event: ChangeEvent<HTMLInputElement>, checked: boolean) => void
-  /** Error state. @default false */
+  /** Error state. Also sets `aria-invalid` on the native input. @default false */
   error?: boolean
   /** Ref to the native `<input>` element (the forwarded `ref` points at the root). */
   inputRef?: Ref<HTMLInputElement>
@@ -51,6 +51,7 @@ export const Checkbox = forwardRef<HTMLSpanElement, CheckboxProps>(
       error = false,
       disabled = false,
       className,
+      style,
       inputRef,
       ...rest
     },
@@ -121,10 +122,12 @@ export const Checkbox = forwardRef<HTMLSpanElement, CheckboxProps>(
           error && styles.error,
           className,
         )}
+        style={style}
         data-prev-state={prevState}
       >
         <input
           ref={setInputRef}
+          aria-invalid={error ? true : undefined}
           {...rest}
           type="checkbox"
           className={styles.input}

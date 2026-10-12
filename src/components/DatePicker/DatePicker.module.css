@@ -363,6 +363,11 @@
   letter-spacing: var(--md-sys-typescale-body-large-tracking);
 }
 
+/* Generated content, not a text node: decorative (see Calendar.tsx). */
+.outsideDay::after {
+  content: attr(data-day);
+}
+
 /*
  * Day cell: a 48dp button (the touch target) holding a 40dp round indicator.
  * The range band is the button's ::before, painted *inside* the cell under
@@ -527,7 +532,7 @@
 .modalRoot {
   position: fixed;
   inset: 0;
-  z-index: 24;
+  z-index: var(--md-sys-z-modal);
   display: flex;
   align-items: center;
   justify-content: center;

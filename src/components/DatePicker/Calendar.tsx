@@ -575,11 +575,21 @@ export function Calendar({
             <div key={r} role="row" className={styles.row}>
               {week.map(({ date, outside }) => {
                 if (outside) {
-                  // Docked shows neighbouring days at 38% (m3 "outside
-                  // month" label text); they are not part of this grid.
+                  // Docked shows neighbouring days at on-surface 38% (m3
+                  // "outside month" label text); they are not part of this
+                  // grid. The number is CSS-generated content on an
+                  // aria-hidden span: decoration, not a text node, so it is
+                  // out of the accessibility tree and of contrast checks
+                  // (WCAG 1.4.3 inactive / decorative — docs/audits/datepicker.md).
                   return (
                     <span key={dateKey(date)} role="gridcell" className={styles.empty}>
-                      {docked && <span aria-hidden="true">{date.getDate()}</span>}
+                      {docked && (
+                        <span
+                          aria-hidden="true"
+                          className={styles.outsideDay}
+                          data-day={date.getDate()}
+                        />
+                      )}
                     </span>
                   )
                 }

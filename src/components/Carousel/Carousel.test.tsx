@@ -462,3 +462,20 @@ describe('Carousel mouse drag (#374)', () => {
     release(100)
   })
 })
+
+describe('Carousel role override (#421)', () => {
+  it('defaults to role="group" and lets a consumer role override it', () => {
+    const { rerender } = render(
+      <Carousel aria-label="Photos">
+        <CarouselItem>One</CarouselItem>
+      </Carousel>,
+    )
+    expect(screen.getByRole('group', { name: 'Photos' })).toBeInTheDocument()
+    rerender(
+      <Carousel aria-label="Photos" role="region">
+        <CarouselItem>One</CarouselItem>
+      </Carousel>,
+    )
+    expect(screen.getByRole('region', { name: 'Photos' })).toBeInTheDocument()
+  })
+})

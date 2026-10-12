@@ -9,7 +9,7 @@ import {
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
-import { useButtonToggle } from '../ButtonGroup/ButtonGroupContext'
+import { useButtonToggle, useGroupDisabled } from '../ButtonGroup/ButtonGroupContext'
 import styles from './Button.module.css'
 
 export type ButtonVariant = 'elevated' | 'filled' | 'tonal' | 'outlined' | 'text'
@@ -66,7 +66,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     defaultSelected = false,
     onChange,
     onClick,
-    disabled = false,
+    disabled: disabledProp = false,
     type = 'button',
     value,
     tabIndex,
@@ -76,6 +76,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   },
   ref,
 ) {
+  const disabled = useGroupDisabled(disabledProp)
   const { isToggle, isSelected, handleClick, a11y } = useButtonToggle({
     value,
     toggle,

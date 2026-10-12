@@ -150,6 +150,30 @@ describe('usePopupPosition', () => {
     expect(popup.style.getPropertyValue('--_popup-available-height')).toBe('58px')
   })
 
+  it('hides the popup while its anchor is fully outside the viewport (#430)', () => {
+    // Anchor scrolled 300px above the viewport: clamping alone would leave the
+    // popup floating at the top edge with no visible trigger.
+    const { getByTestId } = setup({ open: true, side: 'bottom', margin: 8 }, anchorAt(100, -300, 200, 40))
+    const popup = getByTestId('popup')
+    expect(popup.style.visibility).toBe('hidden')
+  })
+
+  it('keeps the popup visible while the anchor is (partly) in the viewport (#430)', () => {
+    const { getByTestId } = setup({ open: true, side: 'bottom', margin: 8 }, anchorAt(100, -20, 200, 40))
+    expect(getByTestId('popup').style.visibility).toBe('')
+  })
+
+  it('clears the hidden state when the popup closes (#430)', () => {
+    const { getByTestId, rerender } = setup(
+      { open: true, side: 'bottom' },
+      anchorAt(100, 700, 200, 40),
+    )
+    const popup = getByTestId('popup')
+    expect(popup.style.visibility).toBe('hidden')
+    rerender(<Harness open={false} side="bottom" />)
+    expect(popup.style.visibility).toBe('')
+  })
+
   it('does nothing while closed', () => {
     const { getByTestId } = setup({ open: false, side: 'bottom' })
     expect(getByTestId('popup').style.top).toBe('')

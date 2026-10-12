@@ -55,6 +55,7 @@ export const Switch = forwardRef<HTMLSpanElement, SwitchProps>(
       icons = false,
       disabled = false,
       className,
+      style,
       onKeyDown,
       inputRef,
       ...rest
@@ -120,6 +121,7 @@ export const Switch = forwardRef<HTMLSpanElement, SwitchProps>(
           disabled && styles.disabled,
           className,
         )}
+        style={style}
       >
         <input
           ref={setInputRef}

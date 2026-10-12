@@ -208,3 +208,14 @@ describe('Radio form reset (#432)', () => {
     expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'b')
   })
 })
+
+describe('Radio API consistency (#421)', () => {
+  it('puts style on the root together with className (A10 addendum)', () => {
+    render(<Radio aria-label="One" className="custom" style={{ marginLeft: 13 }} />)
+    const input = screen.getByRole('radio')
+    const root = input.parentElement as HTMLElement
+    expect(root).toHaveClass('custom')
+    expect(root.style.marginLeft).toBe('13px')
+    expect(input.style.marginLeft).toBe('')
+  })
+})

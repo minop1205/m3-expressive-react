@@ -5,6 +5,8 @@ import { TextField } from './TextField'
 import SearchIcon from '@material-symbols/svg-400/outlined/search.svg?react'
 import ClearIcon from '@material-symbols/svg-400/outlined/close.svg?react'
 import VisibilityIcon from '@material-symbols/svg-400/outlined/visibility.svg?react'
+import VisibilityOffIcon from '@material-symbols/svg-400/outlined/visibility_off.svg?react'
+import { IconButton } from '../IconButton'
 
 const meta = {
   title: 'Components/TextField',
@@ -135,21 +137,12 @@ export const Password: Story = {
         {...args}
         type={visible ? 'text' : 'password'}
         endIcon={
-          <button
-            type="button"
-            onClick={() => setVisible((v) => !v)}
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer',
-              color: 'inherit',
-              display: 'flex',
-            }}
+          <IconButton
+            variant="standard"
+            icon={visible ? <VisibilityOffIcon /> : <VisibilityIcon />}
             aria-label={visible ? 'Hide password' : 'Show password'}
-          >
-            {<VisibilityIcon />}
-          </button>
+            onClick={() => setVisible((v) => !v)}
+          />
         }
       />
     )

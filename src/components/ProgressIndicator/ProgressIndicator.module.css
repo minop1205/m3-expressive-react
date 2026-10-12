@@ -105,7 +105,7 @@
 
 /* The wave paths are computed from the physical left edge; mirror them in
    RTL (Compose draws the wavy linear indicator rotated 180° in RTL). */
-.linear:dir(rtl) .linearWavySvg {
+[dir='rtl'] .linear .linearWavySvg {
   transform: scaleX(-1);
 }
 

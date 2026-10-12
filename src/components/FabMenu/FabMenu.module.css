@@ -96,7 +96,7 @@
 }
 
 /* RTL: the trailing edge is the left one. */
-.itemSlot:dir(rtl) {
+[dir='rtl'] .itemSlot {
   clip-path: inset(
     calc(-1 * var(--_clip-bleed)) calc(100% + var(--_clip-bleed)) calc(-1 * var(--_clip-bleed))
       calc(-1 * var(--_clip-bleed)) round var(--_clip-round)
@@ -261,7 +261,7 @@
 /* Reduced motion (B3): state changes are instant; items only fade. */
 @media (prefers-reduced-motion: reduce) {
   .itemSlot,
-  .itemSlot:dir(rtl),
+  [dir='rtl'] .itemSlot,
   .list[data-open] .itemSlot {
     clip-path: none;
     transition: opacity var(--md-sys-motion-spring-fast-effects-duration)

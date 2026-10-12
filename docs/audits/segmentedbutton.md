@@ -80,8 +80,8 @@ Issue: SG1 → #210、SG2 → #211、SG3 → #212、SG4 → #213、SG5 → #214�
 - **複数選択のロールとキー操作**: site は「checkbox のように振る舞う」「role は Checkbox」、Compose は
   `toggleable`(Role 指定なし)・行に `selectableGroup` なし。実装の `aria-pressed` トグルボタンは状態を正しく
   伝え axe も通過する(Chip / IconButton と同じ判断)→ **維持**。矢印キー移動は site の本文(Arrow keys)と
-  図のキャプション(「Use Tab to navigate through segments」)が矛盾 → SG1 の修正時に複数選択も矢印 +
-  単一 Tab ストップ(APG Toolbar パターン)へ揃えるかを判断
+  図のキャプション(「Use Tab to navigate through segments」)が矛盾 → 実装は各セグメントを Tab ストップにしたまま
+  矢印キーでも移動(選択はしない)。#422 で確認し維持(下記「追記: #422」)
 - **Density**: site「密度を1段下げるごとに高さ −4dp」、Compose `ButtonDefaults.MinHeight` は精密ポインタ環境で 36dp。
   ライブラリに密度の仕組みがなく、既定 40dp は一致 → 対象外
 - **外側の角丸**: `20px` 固定。CLAUDE.md の規約は `calc(var(--_height) / 2)`。見た目は同じ(高さ 40 固定)なので
@@ -90,9 +90,9 @@ Issue: SG1 → #210、SG2 → #211、SG3 → #212、SG4 → #213、SG5 → #214�
   Compose も `spacedBy(-1dp)` で同じ重ね方 → 維持
 - **z-index**: Compose は押下・フォーカス中と選択(係数 5)で前面化、実装は選択 1 / `:focus-visible` 2。押下時の
   前面化はないが枠線は全状態で同色のため見た目の差なし → 維持
-- **単一選択の解除**: 選択中セグメントのクリックは同じ値で `onChange` を再発火(解除不可)。site guidelines は
-  単一選択を「選択必須」と読める一方、a11y は「select or unselect」と書く。Compose は利用者任せ → 維持。
-  同値での再発火を抑止するかは SG1 の修正時に判断
+- **単一選択の解除**: 選択中セグメントのクリックは解除しない。site guidelines は
+  単一選択を「選択必須」と読める一方、a11y は「select or unselect」と書く。Compose は利用者任せ → 解除不可を維持。
+  同値での `onChange` 再発火は **#422 で抑止**(下記「追記: #422」)
 - **グループのラベル**: `role="group"`(SG1 後は `radiogroup`)に `aria-label` を必須にしていない。ストーリー・JSDoc
   で `aria-label` の指定を案内するとよい
 - **2〜5 セグメント**: site の推奨。実装は制限なし(利用者の責務)→ 維持
@@ -113,10 +113,34 @@ Issue: SG1 → #210、SG2 → #211、SG3 → #212、SG4 → #213、SG5 → #214�
 | 初期フォーカス | 「選択状態にかかわらず先頭セグメント」(LTR は左端、RTL は右端) | 記載なし(Compose のフォーカス順は先頭から) | APG ラジオグループ(選択中の項目へ)とは異なるが、優先順位どおり **site** を採用(SG1) |
 | 複数選択のロール | Checkbox | `toggleable`(Role なし) | `aria-pressed` のトグルボタンを維持(軽微欄) |
 | 複数選択のキー操作 | 本文は矢印キー、図のキャプションは Tab | 行に `selectableGroup` なし | site 内部で矛盾 → SG1 の修正時に判断(軽微欄) |
+| 単一選択の矢印キー | 「Arrow keys = コンポーネント内を移動」(選択するかは記載なし) | `selectable` + `selectableGroup`(キー操作の規定なし) | **矢印で移動 + 選択**(APG radio group、`ButtonGroup selectionMode="single"` と同じ)— #422 で裁定(下記追記) |
 | セグメント幅 | container 幅 / セグメント数 | `weight(1f)` + `IntrinsicSize.Min`(最も広いセグメントに揃える) | 両者同義 → **等分**、行の幅は最大セグメント × 数(SG2) |
 | チェックマークの置換 | アイコン + ラベルのときアイコンをチェックに置換 | icon スロット既定 = チェックのみ(アイコンを置く場所は呼び出し側が選ぶ) | site → アイコンのみのセグメントではアイコンを残す(SG4) |
 | 最小高さ | 40dp(密度で −4dp / 段) | 40dp、精密ポインタ環境で 36dp | 既定 **40dp**(現実装のまま、密度は対象外) |
 | 枠線色 | outline | トークン・Defaults とも Outline | 一致 → **outline**(現実装のまま) |
+
+## 追記: #422 の裁定(2026-10-12)
+
+選択系コンポーネント間の挙動の不一致(#422)を修正した際の決定。SG1 の「矢印キーで移動」を以下で上書きする。
+
+- **単一選択の矢印キーは選択する**: segments は `role="radio"` であり、WAI-ARIA APG の radio group は
+  矢印キーでフォーカスを移すと同時にそのラジオを選択する。site のキー表は「Arrow keys = コンポーネント内を移動」
+  としか書かず、選択の有無を規定していない(Compose にもキー操作の規定はない)ため、ロールに合わせて APG に従う。
+  Expressive で後継とされる `ButtonGroup selectionMode="single"`(B13)も矢印で選択するので、両者の挙動が揃う。
+  ロールを `radio` 以外へ変える案(矢印 = 移動のみを保てる)は、site a11y の「Radiogroup」と Compose
+  `Role.RadioButton` に反するため不採用。Home / End も ButtonGroup と同じく移動 + 選択。選択はネイティブ
+  `click()` で起こすので、`onChange` はクリックと同じ経路・同じイベント型で届く。移動先が既に選択中
+  (または有効なセグメントが1つだけ)なら発火しない
+- **初期 Tab ストップは変更なし**: site「選択状態にかかわらず先頭セグメント」を維持(上記裁定)。矢印で選択する
+  ため、一度操作した後はフォーカス位置 = 選択位置になる
+- **複数選択の矢印キーは移動のみ**: 各セグメントが Tab ストップの `aria-pressed` トグルのまま。矢印で選択は
+  しない(チェックボックス相当なので APG でも矢印による選択はない)
+- **同値での `onChange` 抑止**: 単一選択で選択中のセグメントを再度押しても `onChange` を発火しない
+  (ButtonGroup / List / MUI `ToggleButtonGroup` の exclusive 選択 / Compose と同じ)
+- **型**: `multiSelect` で判別される props 型(`SegmentedButtonSingleSelectProps` /
+  `SegmentedButtonMultiSelectProps`)にし、`onChange` の値を単一 `string` / 複数 `string[]` に絞り込む。
+  単一選択の「未選択」は互換性のため `''` のまま(ButtonGroup / List の `null` へ揃えるのは v2 で再判断)
+- **`role` の上書き**: 既定の `role` を `{...rest}` より前に置き、利用者の `role` が勝つ(B13 の ButtonGroup と同じ。#421)
 
 ## 詳細対照表
 

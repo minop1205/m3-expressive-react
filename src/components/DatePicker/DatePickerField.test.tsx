@@ -242,7 +242,10 @@ describe('DatePickerField', () => {
     // July 2024 starts on a Monday: 30 June fills the first cell.
     const firstWeek = within(screen.getByRole('grid')).getAllByRole('row')[1]
     const first = within(firstWeek).getAllByRole('gridcell')[0]
-    expect(first).toHaveTextContent('30')
+    // The number is decorative CSS generated content (no text node).
+    expect(first.querySelector('[data-day]')).toHaveAttribute('data-day', '30')
+    expect(first.querySelector('[data-day]')).toHaveAttribute('aria-hidden', 'true')
+    expect(first.textContent).toBe('')
     expect(first.tagName).toBe('SPAN')
     expect(first).not.toHaveAccessibleName()
   })
@@ -350,5 +353,38 @@ describe('date input parsing', () => {
       expect(parseDateInput(text, 'en-US')).toBeNull()
     }
     expect(parseDateInput('2/29/2024', 'en-US')).toEqual(new Date(2024, 1, 29))
+  })
+})
+
+describe('DatePickerField input pass-through (#421)', () => {
+  it('forwards inputRef, name and inputProps to the inner input', () => {
+    const inputRef = createRef<HTMLInputElement>()
+    const rootRef = createRef<HTMLDivElement>()
+    render(
+      <DatePickerField
+        ref={rootRef}
+        inputRef={inputRef}
+        name="start"
+        inputProps={{ 'aria-describedby': 'extra', autoComplete: 'off' }}
+      />,
+    )
+    const input = screen.getByRole('textbox', { name: 'Date' })
+    expect(inputRef.current).toBe(input)
+    expect(rootRef.current).not.toBe(input)
+    expect(input).toHaveAttribute('name', 'start')
+    expect(input).toHaveAttribute('autocomplete', 'off')
+    expect(input.getAttribute('aria-describedby')).toContain('extra')
+  })
+
+  it('calls inputProps.onKeyDown and still commits on Enter', async () => {
+    const user = userEvent.setup()
+    const onKeyDown = vi.fn()
+    const onChange = vi.fn()
+    render(<DatePickerField onChange={onChange} inputProps={{ onKeyDown }} />)
+    const input = screen.getByRole('textbox', { name: 'Date' })
+    await user.type(input, '01/15/2026{Enter}')
+    expect(onKeyDown).toHaveBeenCalled()
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect((onChange.mock.calls[0][0] as Date).getDate()).toBe(15)
   })
 })

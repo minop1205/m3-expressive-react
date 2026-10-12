@@ -15,7 +15,7 @@ import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { CheckIcon, CloseIcon } from '../../internal/icons'
-import { ChipSetContext } from './ChipSetContext'
+import { ChipSetContext, ChipSetDisabledContext } from './ChipSetContext'
 import styles from './Chip.module.css'
 
 export type ChipVariant = 'assist' | 'filter' | 'input' | 'suggestion'
@@ -108,7 +108,7 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
       onRemove,
       getRemoveLabel = defaultGetRemoveLabel,
       showSelectedIcon = true,
-      disabled = false,
+      disabled: disabledProp = false,
       dragged = false,
       className,
       onClick,
@@ -116,6 +116,8 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
     },
     forwardedRef,
   ) {
+    const disabled = useContext(ChipSetDisabledContext) || disabledProp
+
     // Input chips opt into selection so existing (v1.0) input chips do not
     // start toggling on click.
     const isSelectable =

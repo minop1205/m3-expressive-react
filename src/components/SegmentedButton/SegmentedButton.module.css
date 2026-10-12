@@ -147,7 +147,7 @@
   transform-origin: 0 100%;
 }
 
-.check:dir(rtl) {
+[dir='rtl'] .check {
   transform-origin: 100% 100%;
 }
 

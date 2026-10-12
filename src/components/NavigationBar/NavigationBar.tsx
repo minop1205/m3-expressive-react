@@ -7,6 +7,7 @@ import {
   isValidElement,
   useCallback,
   useContext,
+  useEffect,
   useRef,
   type ButtonHTMLAttributes,
   type HTMLAttributes,
@@ -16,6 +17,7 @@ import {
 } from 'react'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
+import { devWarnOnce } from '../../internal/devWarning'
 import { defaultNavBadgeLabel, hasNavBadge } from '../../internal/navBadge'
 import styles from './NavigationBar.module.css'
 
@@ -143,6 +145,15 @@ export const NavigationBarItem = forwardRef<HTMLButtonElement, NavigationBarItem
       },
       [ref],
     )
+    const hasName = label != null || rest['aria-label'] != null || rest['aria-labelledby'] != null
+    useEffect(() => {
+      if (!hasName) {
+        devWarnOnce(
+          'NavigationBarItem without a `label` needs an `aria-label` (or `aria-labelledby`) — ' +
+            'otherwise the destination has no accessible name.',
+        )
+      }
+    }, [hasName])
     if (!ctx) throw new Error('NavigationBarItem must be used within <NavigationBar>')
     const selected = ctx.value === value
     const horizontal = ctx.layout === 'horizontal'
