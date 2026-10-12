@@ -2,7 +2,23 @@
 
 ## Unreleased
 
+### Added
+
+- **ButtonGroup** / **ChipSet**: group-level `disabled` that disables every
+  item (#421).
+- **DatePickerField**: `inputRef`, `inputProps` and `name`, passed to the
+  inner text field's `<input>` (form `name`, `autoFocus`, React Hook Form
+  `register`) (#421).
+
 ### Fixed
+
+- **Checkbox** / **Radio** / **Switch**: `style` now goes to the root
+  together with `className`, instead of the visually hidden `<input>` (#421).
+- **Checkbox** `error` sets `aria-invalid` on the input (#421).
+- **Carousel**: a consumer `role` now overrides the default `role="group"`
+  (#421).
+- **NavigationBarItem**: development warning when an item has neither a
+  `label` nor an `aria-label` (no accessible name) (#421).
 
 - **Package**: the root entry's types now resolve per condition
   (`import` → `index.d.ts`, `require` → `index.d.cts`), so CommonJS
