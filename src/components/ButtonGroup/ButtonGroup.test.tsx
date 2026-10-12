@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { Button } from '../Button'
 import { IconButton } from '../IconButton'
+import { Tooltip } from '../Tooltip'
 import { ButtonGroup } from './ButtonGroup'
 import { pressedWidths } from './usePressWidth'
 
@@ -116,6 +117,107 @@ describe('ButtonGroup', () => {
       )
       // Middle item: +15% (7.5 from each side), group width unchanged.
       expect(widths).toEqual(['92.5px', '115px', '92.5px'])
+    } finally {
+      HTMLElement.prototype.animate = original
+      rect.mockRestore()
+    }
+  })
+
+  it('gives Tooltip-wrapped buttons the connected shape and 48dp min-width (#418)', () => {
+    render(
+      <ButtonGroup variant="connected" aria-label="Alignment">
+        <Tooltip text="Align left">
+          <IconButton icon={<span>L</span>} aria-label="Left" />
+        </Tooltip>
+        <Tooltip text="Center">
+          <IconButton icon={<span>C</span>} aria-label="Center" />
+        </Tooltip>
+        <Tooltip text="Align right">
+          <IconButton icon={<span>R</span>} aria-label="Right" />
+        </Tooltip>
+      </ButtonGroup>,
+    )
+    const [left, center, right] = ['Left', 'Center', 'Right'].map((name) =>
+      getComputedStyle(screen.getByRole('button', { name })),
+    )
+    for (const style of [left, center, right]) {
+      expect(style.minWidth).toBe('48px')
+      expect(style.borderStartStartRadius).toBe('var(--_connected-ss)')
+    }
+    // Outer corners round, inner corners take the size token.
+    const ss = (s: CSSStyleDeclaration) => s.getPropertyValue('--_connected-ss').trim()
+    const se = (s: CSSStyleDeclaration) => s.getPropertyValue('--_connected-se').trim()
+    expect(ss(left)).toBe('var(--_connected-outer)')
+    expect(se(left)).toBe('var(--_connected-inner)')
+    expect(ss(center)).toBe('var(--_connected-inner)')
+    expect(se(center)).toBe('var(--_connected-inner)')
+    expect(ss(right)).toBe('var(--_connected-inner)')
+    expect(se(right)).toBe('var(--_connected-outer)')
+  })
+
+  it('widens a Tooltip-wrapped pressed button and narrows its neighbours (#418)', () => {
+    const animate = vi.fn(() => ({ cancel: vi.fn(), reverse: vi.fn() }) as unknown as Animation)
+    const original = HTMLElement.prototype.animate
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ width: 100 } as DOMRect)
+    HTMLElement.prototype.animate = animate as unknown as typeof original
+    try {
+      const pad = { paddingInlineStart: '16px' }
+      render(
+        <ButtonGroup>
+          {['One', 'Two', 'Three'].map((name) => (
+            <Tooltip key={name} text={name}>
+              <Button style={pad}>{name}</Button>
+            </Tooltip>
+          ))}
+        </ButtonGroup>,
+      )
+      fireEvent.pointerDown(screen.getByRole('button', { name: 'Two' }), { button: 0 })
+      const calls = animate.mock.calls as unknown as [Keyframe[]][]
+      expect(calls.map((call) => call[0][1].width)).toEqual(['92.5px', '115px', '92.5px'])
+      const targets = (animate.mock.contexts as HTMLElement[]).map((el) => el.textContent)
+      expect(targets).toEqual(['One', 'Two', 'Three'])
+    } finally {
+      HTMLElement.prototype.animate = original
+      rect.mockRestore()
+    }
+  })
+
+  it('widens on a keyboard press (Space / Enter) and releases on key up', () => {
+    const anims: { reverse: ReturnType<typeof vi.fn> }[] = []
+    const animate = vi.fn(() => {
+      const anim = { cancel: vi.fn(), reverse: vi.fn() }
+      anims.push(anim)
+      return anim as unknown as Animation
+    })
+    const original = HTMLElement.prototype.animate
+    const rect = vi
+      .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ width: 100 } as DOMRect)
+    HTMLElement.prototype.animate = animate as unknown as typeof original
+    try {
+      const pad = { paddingInlineStart: '16px' }
+      render(
+        <ButtonGroup>
+          <Button style={pad}>One</Button>
+          <Button style={pad}>Two</Button>
+          <Button style={pad}>Three</Button>
+        </ButtonGroup>,
+      )
+      const two = screen.getByRole('button', { name: 'Two' })
+      fireEvent.keyDown(two, { key: ' ' })
+      expect(animate).toHaveBeenCalledTimes(3)
+      // Auto-repeat does not restart the press.
+      fireEvent.keyDown(two, { key: ' ', repeat: true })
+      expect(animate).toHaveBeenCalledTimes(3)
+      fireEvent.keyUp(two, { key: ' ' })
+      expect(anims.every((a) => a.reverse.mock.calls.length === 1)).toBe(true)
+
+      fireEvent.keyDown(two, { key: 'Enter' })
+      expect(animate).toHaveBeenCalledTimes(6)
+      fireEvent.keyDown(two, { key: 'a' })
+      expect(animate).toHaveBeenCalledTimes(6)
     } finally {
       HTMLElement.prototype.animate = original
       rect.mockRestore()
