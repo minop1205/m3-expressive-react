@@ -61,3 +61,21 @@ describe('ThemeProvider motionScheme', () => {
     )
   })
 })
+
+describe('ThemeProvider color-scheme (#424)', () => {
+  it('sets the CSS color-scheme to match the mode', () => {
+    const { container, rerender } = render(<ThemeProvider mode="dark">x</ThemeProvider>)
+    expect((container.firstElementChild as HTMLElement).style.colorScheme).toBe('dark')
+    rerender(<ThemeProvider mode="light">x</ThemeProvider>)
+    expect((container.firstElementChild as HTMLElement).style.colorScheme).toBe('light')
+  })
+
+  it('lets a consumer style override it', () => {
+    const { container } = render(
+      <ThemeProvider mode="dark" style={{ colorScheme: 'normal' }}>
+        x
+      </ThemeProvider>,
+    )
+    expect((container.firstElementChild as HTMLElement).style.colorScheme).toBe('normal')
+  })
+})

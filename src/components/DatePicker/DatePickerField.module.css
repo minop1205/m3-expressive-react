@@ -40,3 +40,11 @@
 .field > .popup {
   max-width: calc(100vw - 16px);
 }
+
+/* High contrast (forced colors): the popup's fill and shadow are dropped, so
+   restore the picker surface outline that the reset above removes. */
+@media (forced-colors: active) {
+  .field > .popup {
+    outline: 1px solid CanvasText;
+  }
+}

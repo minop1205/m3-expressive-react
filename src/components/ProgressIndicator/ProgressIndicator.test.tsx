@@ -330,3 +330,17 @@ describe('circular indeterminate motion (Compose constants)', () => {
     expect(layer?.getAttribute('style')).toMatch(/rotate\(/)
   })
 })
+
+describe('non-finite values (#423)', () => {
+  it('never renders aria-valuenow="NaN"', () => {
+    render(
+      <>
+        <LinearProgressIndicator value={Number.NaN} aria-label="Linear" />
+        <CircularProgressIndicator value={Number.POSITIVE_INFINITY} aria-label="Circular" />
+      </>,
+    )
+    expect(screen.getByRole('progressbar', { name: 'Linear' })).toHaveAttribute('aria-valuenow', '0')
+    expect(screen.getByRole('progressbar', { name: 'Circular' })).toHaveAttribute('aria-valuenow', '0')
+  })
+})
+

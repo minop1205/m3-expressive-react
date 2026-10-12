@@ -248,6 +248,35 @@
   border: 0;
 }
 
+/* High contrast (forced colors): the active-indicator pill and the badges are
+   background fills, which forced colors replaces with Canvas. Repaint the
+   selected pill in Highlight (its icon / inline label in HighlightText, opted
+   out of the forced palette so the text backplate does not hide it), the
+   badges in CanvasText, and disabled content in GrayText. */
+@media (forced-colors: active) {
+  .item[data-selected] .indicator::before {
+    background-color: Highlight;
+  }
+
+  .item[data-selected] .icon,
+  .bar[data-layout='horizontal'] .item[data-selected] .label {
+    forced-color-adjust: none;
+    color: HighlightText;
+  }
+
+  .badge,
+  .badgeDot {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+    color: Canvas;
+  }
+
+  .item:disabled .icon,
+  .item:disabled .label {
+    color: GrayText;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .indicator::before {
     transition: none;

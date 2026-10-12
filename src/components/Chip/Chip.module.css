@@ -450,13 +450,29 @@
     color: GrayText;
   }
 
-  .selected::before {
+  /* Elevated and selected chips drop the outline in normal mode; forced
+     colors drops their shadow / fill too, so restore a 1px edge. */
+  .elevated .outline,
+  .selected .outline {
+    border-width: 1px;
+  }
+
+  .selected:not(.disabled)::before {
     background-color: Highlight;
   }
 
-  .selected .label,
-  .selected .leadingIcon,
-  .selected .trailingAction {
+  .selected:not(.disabled) .outline {
+    border-color: Highlight;
+  }
+
+  /* The label is text, so forced colors paints a Canvas backplate behind it —
+     HighlightText on that backplate is invisible. The chip paints its own
+     system colors here, so opt the content out of the forced palette. */
+  .chip.selected:not(.disabled) .label,
+  .chip.selected:not(.disabled) .leadingIcon,
+  .chip.selected:not(.disabled) .avatar,
+  .chip.selected:not(.disabled) .trailingAction {
+    forced-color-adjust: none;
     color: HighlightText;
   }
 }

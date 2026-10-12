@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react'
 import { Button } from '../Button'
 import { IconButton } from '../IconButton'
+import { Tooltip } from '../Tooltip'
 import { ButtonGroup } from './ButtonGroup'
 
 const meta = {
@@ -40,6 +41,39 @@ export const WithIconButtons: Story = {
       <IconButton variant="tonal" icon={<span aria-hidden="true">≡</span>} aria-label="Center" />
       <IconButton variant="tonal" icon={<span aria-hidden="true">⯈</span>} aria-label="Right" />
     </ButtonGroup>
+  ),
+}
+
+/**
+ * IconButtons wrapped in a Tooltip (one wrapper span deep) keep the connected
+ * shape, the 48dp min-width and the standard press-widen.
+ */
+export const WithTooltips: Story = {
+  render: () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, alignItems: 'center' }}>
+      <ButtonGroup variant="connected" aria-label="Alignment">
+        <Tooltip text="Align left">
+          <IconButton variant="tonal" icon={<span aria-hidden="true">⯇</span>} aria-label="Left" />
+        </Tooltip>
+        <Tooltip text="Center">
+          <IconButton variant="tonal" icon={<span aria-hidden="true">≡</span>} aria-label="Center" />
+        </Tooltip>
+        <Tooltip text="Align right">
+          <IconButton variant="tonal" icon={<span aria-hidden="true">⯈</span>} aria-label="Right" />
+        </Tooltip>
+      </ButtonGroup>
+      <ButtonGroup aria-label="Media">
+        <Tooltip text="Previous">
+          <IconButton variant="filled" icon={<span aria-hidden="true">⏮</span>} aria-label="Previous" />
+        </Tooltip>
+        <Tooltip text="Play">
+          <IconButton variant="filled" icon={<span aria-hidden="true">⏵</span>} aria-label="Play" />
+        </Tooltip>
+        <Tooltip text="Next">
+          <IconButton variant="filled" icon={<span aria-hidden="true">⏭</span>} aria-label="Next" />
+        </Tooltip>
+      </ButtonGroup>
+    </div>
   ),
 }
 
