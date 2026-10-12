@@ -194,4 +194,107 @@ describe('BottomSheet drag handle', () => {
     expect(onClose).not.toHaveBeenCalled()
     nowSpy.mockRestore()
   })
+
+  /** A settable Date.now (React itself also reads the clock per event). */
+  function mockClock() {
+    const clock = { now: 0 }
+    const spy = vi.spyOn(Date, 'now').mockImplementation(() => clock.now)
+    return { clock, restore: () => spy.mockRestore() }
+  }
+
+  it('dismisses on a fresh short fling (#433)', () => {
+    // down @0, move 30px @32, release @40: ~750px/s at release.
+    const onClose = vi.fn()
+    render(
+      <BottomSheet open onClose={onClose}>
+        Body
+      </BottomSheet>,
+    )
+    const handle = screen.getByRole('button', { name: 'Close' })
+    const { clock, restore } = mockClock()
+    firePointer(handle, 'pointerdown', { pointerId: 1, clientY: 300 })
+    clock.now = 32
+    firePointer(handle, 'pointermove', { pointerId: 1, clientY: 330 })
+    clock.now = 40
+    firePointer(handle, 'pointerup', { pointerId: 1, clientY: 330 })
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(onClose.mock.calls[0][1]).toBe('drag')
+    restore()
+  })
+
+  it('ignores a stale fling: flick, hold still, then release (#433)', () => {
+    // Same 30px flick in 32ms, but the release comes 1s later.
+    const onClose = vi.fn()
+    render(
+      <BottomSheet open onClose={onClose}>
+        Body
+      </BottomSheet>,
+    )
+    const handle = screen.getByRole('button', { name: 'Close' })
+    const { clock, restore } = mockClock()
+    firePointer(handle, 'pointerdown', { pointerId: 1, clientY: 300 })
+    clock.now = 32
+    firePointer(handle, 'pointermove', { pointerId: 1, clientY: 330 })
+    clock.now = 1032
+    firePointer(handle, 'pointerup', { pointerId: 1, clientY: 330 })
+    expect(onClose).not.toHaveBeenCalled()
+    restore()
+  })
+
+  it('pointercancel after a drag does not swallow the next activation (#433)', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    render(
+      <BottomSheet open onClose={onClose}>
+        Body
+      </BottomSheet>,
+    )
+    const handle = screen.getByRole('button', { name: 'Close' })
+    firePointer(handle, 'pointerdown', { pointerId: 1, clientY: 300 })
+    firePointer(handle, 'pointermove', { pointerId: 1, clientY: 400 })
+    firePointer(handle, 'pointercancel', { pointerId: 1, clientY: 400 })
+    expect(onClose).not.toHaveBeenCalled()
+    handle.focus()
+    await user.keyboard('{Enter}')
+    expect(onClose).toHaveBeenCalledTimes(1)
+    expect(onClose.mock.calls[0][1]).toBe('closeButton')
+  })
+
+  it('a new pointerdown clears a leftover drag flag', () => {
+    const onClose = vi.fn()
+    render(
+      <BottomSheet open onClose={onClose}>
+        Body
+      </BottomSheet>,
+    )
+    const handle = screen.getByRole('button', { name: 'Close' })
+    // A drag whose trailing click never arrives (e.g. released off the handle).
+    firePointer(handle, 'pointerdown', { pointerId: 1, clientY: 300 })
+    firePointer(handle, 'pointermove', { pointerId: 1, clientY: 320 })
+    firePointer(handle, 'pointerup', { pointerId: 1, clientY: 320 })
+    onClose.mockClear()
+    // A later tap: down + up in place, then its click.
+    firePointer(handle, 'pointerdown', { pointerId: 2, clientY: 300 })
+    firePointer(handle, 'pointerup', { pointerId: 2, clientY: 300 })
+    fireEvent.click(handle)
+    expect(onClose).toHaveBeenCalledWith(expect.anything(), 'closeButton')
+  })
+})
+
+describe('BottomSheet onClose reason (#407)', () => {
+  it('reports escapeKeyDown, backdropClick and closeButton', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const { container } = render(
+      <BottomSheet open onClose={onClose}>
+        Body
+      </BottomSheet>,
+    )
+    await user.keyboard('{Escape}')
+    expect(onClose).toHaveBeenLastCalledWith(expect.any(KeyboardEvent), 'escapeKeyDown')
+    fireEvent.click(container.querySelector('[aria-hidden="true"]') as Element)
+    expect(onClose).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'click' }), 'backdropClick')
+    await user.click(screen.getByRole('button', { name: 'Close' }))
+    expect(onClose).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'click' }), 'closeButton')
+  })
 })
