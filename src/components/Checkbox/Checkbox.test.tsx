@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createRef } from 'react'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'vitest-axe'
 import { Checkbox } from './Checkbox'
@@ -225,5 +225,57 @@ describe('Checkbox indeterminate interaction', () => {
     await user.click(input)
     expect(input.indeterminate).toBe(true)
     expect(input).toHaveAttribute('aria-checked', 'mixed')
+  })
+})
+
+describe('Checkbox form reset (#432)', () => {
+  it('restores the uncontrolled default on form.reset() and keeps onChange firing', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const { container } = render(
+      <form>
+        <Checkbox aria-label="Toggle" name="c" defaultChecked onChange={onChange} />
+      </form>,
+    )
+    const form = container.querySelector('form')!
+    const input = screen.getByRole('checkbox')
+    const root = input.parentElement!
+
+    await user.click(input)
+    expect(input).not.toBeChecked()
+    expect(root).toHaveClass(styles.unchecked)
+
+    act(() => form.reset())
+    expect(input).toBeChecked()
+    expect(root).toHaveClass(styles.checked)
+    expect(new FormData(form).get('c')).toBe('on')
+
+    onChange.mockClear()
+    await user.click(input)
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), false)
+    expect(input).not.toBeChecked()
+    expect(root).toHaveClass(styles.unchecked)
+  })
+
+  it('follows the form attribute and removes its listener on unmount', async () => {
+    const user = userEvent.setup()
+    const { container, unmount } = render(
+      <>
+        <form id="f" />
+        <Checkbox aria-label="Toggle" form="f" />
+      </>,
+    )
+    const form = container.querySelector('form')!
+    const removeSpy = vi.spyOn(form, 'removeEventListener')
+    const input = screen.getByRole('checkbox')
+
+    await user.click(input)
+    expect(input).toBeChecked()
+    act(() => form.reset())
+    expect(input).not.toBeChecked()
+    expect(input.parentElement).toHaveClass(styles.unchecked)
+
+    unmount()
+    expect(removeSpy).toHaveBeenCalledWith('reset', expect.any(Function))
   })
 })

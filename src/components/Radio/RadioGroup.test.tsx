@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
@@ -72,5 +72,41 @@ describe('RadioGroup', () => {
   it('has no axe violations', async () => {
     const { container } = render(<Group defaultValue="a" />)
     expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('RadioGroup form reset (#432)', () => {
+  it('restores the uncontrolled default on form.reset() and keeps onChange firing', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const tree = (label = 'Fruit') => (
+      <form>
+        <RadioGroup aria-label={label} name="fruit" defaultValue="a" onChange={onChange}>
+          <Radio value="a" aria-label="A" />
+          <Radio value="b" aria-label="B" />
+        </RadioGroup>
+      </form>
+    )
+    const { container, rerender } = render(tree())
+    const form = container.querySelector('form')!
+    const a = screen.getByRole('radio', { name: 'A' })
+    const b = screen.getByRole('radio', { name: 'B' })
+
+    await user.click(b)
+    expect(b).toBeChecked()
+    act(() => form.reset())
+    expect(a).toBeChecked()
+    expect(b).not.toBeChecked()
+    expect(new FormData(form).get('fruit')).toBe('a')
+
+    // The group state followed the reset: a re-render keeps "a" selected.
+    rerender(tree('Fruits'))
+    expect(a).toBeChecked()
+    expect(b).not.toBeChecked()
+
+    onChange.mockClear()
+    await user.click(b)
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'b')
+    expect(b).toBeChecked()
   })
 })
