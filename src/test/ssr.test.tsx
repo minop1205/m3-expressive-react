@@ -282,6 +282,17 @@ describe('server rendering', () => {
     expect(error).not.toHaveBeenCalled()
     expect(warn).not.toHaveBeenCalled()
   })
+
+  it('SearchBar layout="fullscreen" renders without warnings (#442)', () => {
+    const html = renderToString(
+      <SearchBar layout="fullscreen" open placeholder="Search">
+        <ListItem headline="Suggestion" />
+      </SearchBar>,
+    )
+    expect(html).toContain('role="dialog"')
+    expect(error).not.toHaveBeenCalled()
+    expect(warn).not.toHaveBeenCalled()
+  })
 })
 
 describe('useLayoutEffect guard', () => {

@@ -19,6 +19,20 @@
   --_label-text-populated-size: var(--md-sys-typescale-body-small-size);
   --_label-text-populated-line-height: var(--md-sys-typescale-body-small-line-height);
 
+  /* Label above the container (labelPlacement="above"): Compose lerps the
+     label style fully to bodySmall (TextFieldImpl DecoratedLabel), pads it
+     4dp start / end / bottom (AboveLabelHorizontalPadding /
+     AboveLabelBottomPadding) and gives it a 16dp minimum line
+     (MinFocusedLabelLineHeight). */
+  --_above-label-text-font: var(--md-sys-typescale-body-small-font);
+  --_above-label-text-size: var(--md-sys-typescale-body-small-size);
+  --_above-label-text-line-height: var(--md-sys-typescale-body-small-line-height);
+  --_above-label-text-weight: var(--md-sys-typescale-body-small-weight);
+  --_above-label-text-tracking: var(--md-sys-typescale-body-small-tracking);
+  --_above-label-horizontal-space: 4px;
+  --_above-label-bottom-space: 4px;
+  --_above-label-min-height: 16px;
+
   /* Spacing */
   --_top-space: 16px;                 /* no-label: vertically centers 24px content in 56px */
   --_bottom-space: 16px;
@@ -261,7 +275,9 @@
 .outlined.focused .outlineNotch::before,
 .outlined.focused .outlineNotch::after,
 .outlined.populated .outlineNotch::before,
-.outlined.populated .outlineNotch::after {
+.outlined.populated .outlineNotch::after,
+.outlined.shrinkLabel .outlineNotch::before,
+.outlined.shrinkLabel .outlineNotch::after {
   transform: scaleX(0);
 }
 
@@ -376,7 +392,8 @@
 
 /* Filled floating: label at top of container (8px from top) */
 .filled.focused .label,
-.filled.populated .label {
+.filled.populated .label,
+.filled.shrinkLabel .label {
   top: var(--_with-label-top-space);
   font-size: var(--_label-text-populated-size);
   line-height: var(--_label-text-populated-line-height);
@@ -385,7 +402,8 @@
 /* Outlined floating: label centered on top border of field */
 /* Field top = 0. Label (16px tall) centered at 0 → top = -8px */
 .outlined.focused .label,
-.outlined.populated .label {
+.outlined.populated .label,
+.outlined.shrinkLabel .label {
   top: calc(-1 * var(--_label-text-populated-line-height) / 2);
   inset-inline-start: var(--_leading-space);
   font-size: var(--_label-text-populated-size);
@@ -394,15 +412,40 @@
 
 /* With leading icon: floating label must stay at the no-icon position (16px from field edge) */
 .outlined.hasLeadingIcon.focused .label,
-.outlined.hasLeadingIcon.populated .label {
+.outlined.hasLeadingIcon.populated .label,
+.outlined.hasLeadingIcon.shrinkLabel .label {
   inset-inline-start: calc(
     var(--_leading-space) - var(--_with-leading-icon-leading-space) - var(--_icon-size) - var(--_icon-input-space)
   );
 }
 
 /* Focused label color */
-.focused:not(.error) .label {
+.focused:not(.error) .label,
+.focused:not(.error) .aboveLabel {
   color: var(--_focus-label-text-color);
+}
+
+/* Label above the container (Compose TextFieldLabelPosition.Above): placed
+   at y = 0, start-aligned across the full width (not inset by the icons),
+   always minimized; the container below lays out like a label-less field.
+   Logical padding / text alignment, so RTL needs no extra rule. */
+.aboveLabel {
+  display: block;
+  box-sizing: border-box;
+  min-height: calc(var(--_above-label-min-height) + var(--_above-label-bottom-space));
+  padding-inline: var(--_above-label-horizontal-space);
+  padding-bottom: var(--_above-label-bottom-space);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: start;
+  font-family: var(--_above-label-text-font);
+  font-size: var(--_above-label-text-size);
+  line-height: var(--_above-label-text-line-height);
+  font-weight: var(--_above-label-text-weight);
+  letter-spacing: var(--_above-label-text-tracking);
+  color: var(--_label-text-color);
+  transition: color var(--_effects-duration) var(--_effects-easing);
 }
 
 /* =========================================================================== */
@@ -437,6 +480,7 @@
 }
 
 .noLabel .content,
+.shrinkLabel .content,
 .focused .content,
 .populated .content {
   opacity: 1;
@@ -495,6 +539,7 @@
 }
 
 .noLabel .input::placeholder,
+.shrinkLabel .input::placeholder,
 .focused .input::placeholder {
   opacity: 1;
   transition: opacity var(--_show-duration) var(--_show-easing) var(--_show-delay);
@@ -694,6 +739,7 @@ textarea.input {
 }
 
 .disabled .label,
+.disabled .aboveLabel,
 .disabled .content,
 .disabled .input::placeholder,
 .disabled .leadingIcon,
@@ -730,6 +776,7 @@ textarea.input {
   }
 
   .disabled .label,
+  .disabled .aboveLabel,
   .disabled .content,
   .disabled .input,
   .disabled .input::placeholder,

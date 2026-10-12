@@ -235,16 +235,29 @@ function supportsPopover(el: PopoverElement) {
  * server markup stays stable and environments that style `[popover]` without
  * implementing it (e.g. jsdom) don't hide the popup for good.
  */
-function showInTopLayer(el: PopoverElement) {
+export function showInTopLayer(el: PopoverElement) {
   if (!supportsPopover(el) || !el.isConnected) return
   if (!el.hasAttribute('popover')) el.setAttribute('popover', 'manual')
   if (!isPopoverOpen(el)) el.showPopover!()
 }
 
-function hideFromTopLayer(el: PopoverElement) {
+/** Leave the top layer (no-op when not shown there). */
+export function hideFromTopLayer(el: PopoverElement) {
   if (typeof el.hidePopover !== 'function' || !isPopoverOpen(el)) return
   el.hidePopover()
 }
+
+/**
+ * How long a window resize must keep the anchor outside the viewport before
+ * the popup is hidden, ms. A resize alone rarely moves an anchor out of view
+ * for real (scrolling does, and hides at once); transient resizes do — e.g.
+ * a browser briefly shrinking the viewport to measure or capture the page
+ * (a Playwright full-page screenshot in Chrome passes through a 1×1
+ * viewport). Hiding and re-showing on such a blip would flash the popup for
+ * nothing — and, with focus inside, restart the component's opacity
+ * transition (see the focus-keeping hide below).
+ */
+export const RESIZE_HIDE_DELAY_MS = 150
 
 export interface UsePopupPositionOptions extends PopupPositionOptions {
   /** Whether the popup is shown (positions are only tracked while open). */
@@ -331,6 +344,9 @@ function observeMove(element: Element, onMove: () => void): () => void {
  * accessibility tree) but stays open, returning when the anchor scrolls back;
  * when it holds focus it is only made transparent and inert to the pointer
  * (`opacity: 0`, `pointer-events: none`), so focus is not dropped to `<body>`.
+ * When a viewport resize (rather than a scroll) takes the anchor out of view,
+ * the popup is left as is for `RESIZE_HIDE_DELAY_MS` and only hidden if the
+ * anchor is still out of view then.
  * Returns the side actually used, for `data-*` styling hooks.
  */
 export function usePopupPosition({
@@ -359,16 +375,44 @@ export function usePopupPosition({
     }
     showInTopLayer(popup)
 
-    const update = () => {
+    // Viewport size and anchor-hidden state of the last applied update, and
+    // the pending re-check of a resize that left the anchor out of view.
+    let applied: { width: number; height: number; anchorHidden: boolean } | null = null
+    let resizeCheck: ReturnType<typeof setTimeout> | undefined
+    const cancelResizeCheck = () => {
+      clearTimeout(resizeCheck)
+      resizeCheck = undefined
+    }
+
+    const update = (settled = false) => {
       const anchorEl = anchorRef.current
       if (!anchorEl) return
       const anchor = anchorEl.getBoundingClientRect()
-      if (matchAnchorWidth) popup.style.width = `${anchor.width}px`
-      const isRtl = rtl ?? getComputedStyle(anchorEl).direction === 'rtl'
       const viewport = {
         width: document.documentElement.clientWidth || window.innerWidth,
         height: document.documentElement.clientHeight || window.innerHeight,
       }
+      const anchorHidden = isAnchorOutsideViewport(anchor, viewport)
+      // A viewport resize that takes a shown popup's anchor out of view may
+      // be transient (RESIZE_HIDE_DELAY_MS) — whichever listener reports it
+      // (resize event, or the observers reacting to the new viewport): leave
+      // the popup untouched (no hide, no re-clamp into the shrunken viewport)
+      // and re-check once the viewport has had time to settle. An update in
+      // a viewport where the anchor is visible again cancels the re-check.
+      const resized =
+        applied !== null &&
+        (applied.width !== viewport.width || applied.height !== viewport.height)
+      if (!settled && resized && anchorHidden && applied?.anchorHidden === false) {
+        resizeCheck ??= setTimeout(() => {
+          resizeCheck = undefined
+          update(true)
+        }, RESIZE_HIDE_DELAY_MS)
+        return
+      }
+      cancelResizeCheck()
+      applied = { ...viewport, anchorHidden }
+      if (matchAnchorWidth) popup.style.width = `${anchor.width}px`
+      const isRtl = rtl ?? getComputedStyle(anchorEl).direction === 'rtl'
       const position = computePopupPosition(
         anchor,
         { width: popup.offsetWidth, height: popup.offsetHeight },
@@ -396,7 +440,6 @@ export function usePopupPosition({
       // floating with no visible trigger: hide it (it stays open, so it
       // reappears in place once the anchor scrolls back) rather than close
       // it, which would surprise a controlled consumer mid-scroll.
-      const anchorHidden = isAnchorOutsideViewport(anchor, viewport)
       // With focus inside, `visibility: hidden` would make the browser blur
       // the focused element (focus fixup), dropping focus to <body> — and
       // the components' close-on-focus-out handlers would then dismiss the
@@ -416,19 +459,21 @@ export function usePopupPosition({
     }
 
     update()
-    window.addEventListener('resize', update)
-    window.addEventListener('scroll', update, true)
+    const onChange = () => update()
+    window.addEventListener('resize', onChange)
+    window.addEventListener('scroll', onChange, true)
     const observer =
-      typeof ResizeObserver === 'function' ? new ResizeObserver(() => update()) : null
+      typeof ResizeObserver === 'function' ? new ResizeObserver(onChange) : null
     observer?.observe(popup)
     const anchorEl = anchorRef.current
     if (anchorEl) observer?.observe(anchorEl)
-    const stopMoveObserver = anchorEl ? observeMove(anchorEl, update) : () => {}
+    const stopMoveObserver = anchorEl ? observeMove(anchorEl, onChange) : () => {}
     return () => {
-      window.removeEventListener('resize', update)
-      window.removeEventListener('scroll', update, true)
+      window.removeEventListener('resize', onChange)
+      window.removeEventListener('scroll', onChange, true)
       observer?.disconnect()
       stopMoveObserver()
+      cancelResizeCheck()
       // Hand visibility back to the component's CSS (e.g. its close motion).
       popup.style.visibility = ''
       setFocusKeepingHide(false)
