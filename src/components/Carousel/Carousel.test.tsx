@@ -1,5 +1,5 @@
-import { createRef } from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { createRef, useEffect, useState } from 'react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
@@ -252,6 +252,28 @@ describe('CarouselItem interaction (#247)', () => {
     expect(screen.getByRole('group', { name: 'Albums' })).not.toHaveAttribute('tabindex')
   })
 
+  it('re-evaluates container focusability when item content changes (#416)', async () => {
+    function Toggle() {
+      const [on, setOn] = useState(false)
+      useEffect(() => {
+        const t = window.setTimeout(() => setOn(true), 0)
+        return () => window.clearTimeout(t)
+      }, [])
+      return on ? <button type="button">Play</button> : <span>Paused</span>
+    }
+    render(
+      <Carousel aria-label="Media">
+        <CarouselItem>
+          <Toggle />
+        </CarouselItem>
+      </Carousel>,
+    )
+    const carousel = screen.getByRole('group', { name: 'Media' })
+    expect(carousel).toHaveAttribute('tabindex', '0')
+    await screen.findByRole('button', { name: 'Play' })
+    await waitFor(() => expect(carousel).not.toHaveAttribute('tabindex'))
+  })
+
   it('places initial Tab focus on the first item', async () => {
     const user = userEvent.setup()
     render(<Interactive />)
@@ -350,8 +372,14 @@ describe('Carousel mouse drag (#374)', () => {
 
   const press = (el: Element, x: number, pointerType = 'mouse') =>
     fireEvent.pointerDown(el, { pointerId: 1, pointerType, button: 0, clientX: x, clientY: 10 })
-  const move = (x: number) =>
-    fireEvent.pointerMove(document.body, { pointerId: 1, pointerType: 'mouse', clientX: x, clientY: 10 })
+  const move = (x: number, buttons = 1) =>
+    fireEvent.pointerMove(document.body, {
+      pointerId: 1,
+      pointerType: 'mouse',
+      buttons,
+      clientX: x,
+      clientY: 10,
+    })
   const release = (x: number) =>
     fireEvent.pointerUp(document.body, { pointerId: 1, pointerType: 'mouse', clientX: x, clientY: 10 })
 
@@ -390,6 +418,40 @@ describe('Carousel mouse drag (#374)', () => {
     move(100)
     expect(carousel).not.toHaveAttribute('data-dragging')
     release(100)
+  })
+
+  it('drops a stale drag when a move arrives with no button down (#416)', () => {
+    const { carousel } = setup()
+    press(screen.getByRole('button', { name: 'Two' }), 200)
+    move(170)
+    expect(carousel).toHaveAttribute('data-dragging')
+    const scrolled = carousel.scrollLeft
+    // The release happened outside the window: the next move has no button.
+    move(120, 0)
+    expect(carousel).not.toHaveAttribute('data-dragging')
+    move(60)
+    expect(carousel).not.toHaveAttribute('data-dragging')
+    expect(carousel.scrollLeft).toBe(scrolled)
+  })
+
+  it('lays out re-keyed items of the same count (#416)', () => {
+    stub('scrollWidth', 1600)
+    stub('clientWidth', 400)
+    const items = (prefix: string) =>
+      [1, 2, 3, 4, 5].map((n) => (
+        <CarouselItem key={`${prefix}${n}`}>{`${prefix}${n}`}</CarouselItem>
+      ))
+    const { rerender } = render(<Carousel aria-label="Results">{items('a')}</Carousel>)
+    rerender(<Carousel aria-label="Results">{items('b')}</Carousel>)
+    const carousel = screen.getByRole('group', { name: 'Results' })
+    const slots = Array.from(carousel.querySelectorAll<HTMLElement>('[data-carousel-slot]'))
+    expect(slots).toHaveLength(5)
+    expect(slots[0]).toHaveTextContent('b1')
+    for (const slot of slots) {
+      expect(slot.style.getPropertyValue('scroll-margin-inline-start')).not.toBe('')
+      const clip = slot.querySelector<HTMLElement>('[data-carousel-clip="end"]')
+      expect(clip?.style.transform).not.toBe('')
+    }
   })
 
   it('leaves touch and pen to native scrolling', () => {
