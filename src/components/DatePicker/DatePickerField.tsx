@@ -2,19 +2,23 @@
 
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useId,
   useRef,
   useState,
   type FocusEvent,
   type HTMLAttributes,
+  type InputHTMLAttributes,
   type KeyboardEvent,
+  type Ref,
 } from 'react'
 import clsx from 'clsx'
 import { TextField } from '../TextField'
 import { IconButton } from '../IconButton'
 import { Calendar, type CalendarView } from './Calendar'
 import { CalendarIcon } from '../../internal/icons'
+import { assignRef } from '../../internal/assignRef'
 import { assignRefs } from '../../internal/useModal'
 import { usePopupPosition } from '../../internal/usePopupPosition'
 import {
@@ -84,6 +88,18 @@ export interface DatePickerFieldProps
   selectYearLabel?: string
   /** Prefix announced on today's cell. @default 'Today' */
   todayLabel?: string
+  /** Native input `name` (the typed date text is what a form submits). */
+  name?: string
+  /** Ref to the inner text field's native `<input>` (the forwarded `ref`
+   * points at the root) — e.g. for React Hook Form `register`. */
+  inputRef?: Ref<HTMLInputElement>
+  /**
+   * Extra attributes for the inner text field's native `<input>` (e.g.
+   * `autoFocus`, `aria-*`). Same precedence as TextField `inputProps`: the
+   * field's own wiring wins; an `onKeyDown` runs before the Enter-to-commit
+   * handler.
+   */
+  inputProps?: InputHTMLAttributes<HTMLInputElement>
 }
 
 /**
@@ -125,6 +141,9 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
       selectMonthLabel = 'Select month',
       selectYearLabel = 'Select year',
       todayLabel = 'Today',
+      name,
+      inputRef,
+      inputProps,
       onKeyDown,
       onBlur,
       ...rest
@@ -141,6 +160,11 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
     const toggleRef = useRef<HTMLButtonElement>(null)
     const popupRef = useRef<HTMLDivElement>(null)
     const pattern = getDatePattern(locale)
+    const setInputRef = useCallback(
+      (node: HTMLInputElement | HTMLTextAreaElement | null) =>
+        assignRef(inputRef, node as HTMLInputElement | null),
+      [inputRef],
+    )
 
     const [text, setText] = useState(current ? formatDateInput(current, locale) : '')
     const [view, setView] = useState<CalendarView>(() => {
@@ -250,6 +274,8 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
           variant="outlined"
           label={label}
           value={text}
+          name={name}
+          inputRef={setInputRef}
           disabled={disabled}
           supportingText={supportingText ?? pattern}
           error={showError}
@@ -260,7 +286,9 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
           }}
           onBlur={commitText}
           inputProps={{
+            ...inputProps,
             onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => {
+              inputProps?.onKeyDown?.(event)
               if (event.key === 'Enter') commitText()
             },
           }}

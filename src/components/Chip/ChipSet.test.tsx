@@ -194,3 +194,34 @@ describe('ChipSet (#189)', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 })
+
+describe('ChipSet group-level disabled (#421)', () => {
+  it('disables every chip in the set', () => {
+    render(
+      <ChipSet aria-label="Filters" disabled>
+        <Chip variant="filter" label="One" />
+        <Chip variant="assist" label="Two" />
+      </ChipSet>,
+    )
+    expect(screen.getByRole('button', { name: 'One' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Two' })).toBeDisabled()
+  })
+
+  it('leaves chips enabled by default', () => {
+    render(
+      <ChipSet aria-label="Filters">
+        <Chip variant="filter" label="One" />
+      </ChipSet>,
+    )
+    expect(screen.getByRole('button', { name: 'One' })).toBeEnabled()
+  })
+
+  it('has no axe violations when disabled', async () => {
+    const { container } = render(
+      <ChipSet aria-label="Filters" disabled>
+        <Chip variant="filter" label="One" />
+      </ChipSet>,
+    )
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})

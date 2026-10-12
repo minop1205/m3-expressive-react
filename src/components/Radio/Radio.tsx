@@ -52,6 +52,7 @@ export const Radio = forwardRef<HTMLSpanElement, RadioProps>(
       value,
       name,
       className,
+      style,
       inputRef,
       ...rest
     },
@@ -101,6 +102,7 @@ export const Radio = forwardRef<HTMLSpanElement, RadioProps>(
       <span
         ref={forwardedRef}
         className={clsx(styles.radio, disabled && styles.disabled, className)}
+        style={style}
       >
         <input
           ref={setInputRef}

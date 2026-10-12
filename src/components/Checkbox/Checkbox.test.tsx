@@ -279,3 +279,26 @@ describe('Checkbox form reset (#432)', () => {
     expect(removeSpy).toHaveBeenCalledWith('reset', expect.any(Function))
   })
 })
+
+describe('Checkbox API consistency (#421)', () => {
+  it('puts style on the root together with className (A10 addendum)', () => {
+    render(<Checkbox aria-label="Agree" className="custom" style={{ marginLeft: 13 }} />)
+    const input = screen.getByRole('checkbox')
+    const root = input.parentElement as HTMLElement
+    expect(root).toHaveClass('custom')
+    expect(root.style.marginLeft).toBe('13px')
+    expect(input.style.marginLeft).toBe('')
+  })
+
+  it('sets aria-invalid when error', () => {
+    const { rerender } = render(<Checkbox aria-label="Agree" error />)
+    expect(screen.getByRole('checkbox')).toHaveAttribute('aria-invalid', 'true')
+    rerender(<Checkbox aria-label="Agree" />)
+    expect(screen.getByRole('checkbox')).not.toHaveAttribute('aria-invalid')
+  })
+
+  it('lets an explicit aria-invalid override error', () => {
+    render(<Checkbox aria-label="Agree" error aria-invalid={false} />)
+    expect(screen.getByRole('checkbox')).toHaveAttribute('aria-invalid', 'false')
+  })
+})

@@ -11,13 +11,16 @@ import {
   type ReactNode,
 } from 'react'
 import clsx from 'clsx'
-import { ChipSetContext } from './ChipSetContext'
+import { ChipSetContext, ChipSetDisabledContext } from './ChipSetContext'
 import chipStyles from './Chip.module.css'
 import styles from './ChipSet.module.css'
 
 export interface ChipSetProps extends HTMLAttributes<HTMLDivElement> {
   /** The chips. They may be wrapped in other elements (e.g. a Tooltip). */
   children?: ReactNode
+  /** Disable every chip in the set; a chip's own `disabled` still applies.
+   * @default false */
+  disabled?: boolean
 }
 
 function primaryOf(chip: Element): HTMLButtonElement | null {
@@ -45,7 +48,7 @@ function trailingOf(chip: Element): HTMLButtonElement | null {
  * accessible name with `aria-label` / `aria-labelledby`.
  */
 export const ChipSet = forwardRef<HTMLDivElement, ChipSetProps>(function ChipSet(
-  { className, children, onKeyDown, onFocus, onBlur, ...rest },
+  { className, children, disabled = false, onKeyDown, onFocus, onBlur, ...rest },
   forwardedRef,
 ) {
   const rootRef = useRef<HTMLDivElement | null>(null)
@@ -167,17 +170,19 @@ export const ChipSet = forwardRef<HTMLDivElement, ChipSetProps>(function ChipSet
 
   return (
     <ChipSetContext.Provider value={rootRef}>
-      <div
-        ref={setRootRef}
-        role="toolbar"
-        {...rest}
-        className={clsx(styles.chipSet, className)}
-        onKeyDown={handleKeyDown}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-      >
-        {children}
-      </div>
+      <ChipSetDisabledContext.Provider value={disabled}>
+        <div
+          ref={setRootRef}
+          role="toolbar"
+          {...rest}
+          className={clsx(styles.chipSet, className)}
+          onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+        >
+          {children}
+        </div>
+      </ChipSetDisabledContext.Provider>
     </ChipSetContext.Provider>
   )
 })

@@ -759,8 +759,9 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
         scrollerRef.current = node
         setRef(ref, node)
       }}
-      {...rest}
+      // Default role first so a consumer `role` can override it (B13 pattern).
       role="group"
+      {...rest}
       aria-roledescription={roleDescriptionLabel}
       data-carousel=""
       data-variant={variant}

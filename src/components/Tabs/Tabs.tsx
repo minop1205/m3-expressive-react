@@ -54,7 +54,11 @@ export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChang
   value?: string
   /** Uncontrolled initial tab value. */
   defaultValue?: string
-  /** Fires with the triggering event and the newly selected tab value. */
+  /**
+   * Fires with the triggering event and the newly selected tab value. Not
+   * fired when the selected tab is activated again, or when the tab's own
+   * `onClick` called `event.preventDefault()`.
+   */
   onChange?: (event: MouseEvent<HTMLButtonElement>, value: string) => void
   /** Indicator style. @default 'primary' */
   variant?: TabsVariant
@@ -145,6 +149,8 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
   }, [])
   const [fallbackStop, setFallbackStop] = useState<string | null>(null)
   const handleChange = (event: MouseEvent<HTMLButtonElement>, v: string) => {
+    // Re-selecting the selected tab is a no-op (MUI / Compose).
+    if (v === current) return
     if (!isControlled) setUncontrolled(v)
     onChange?.(event, v)
   }
@@ -341,6 +347,8 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
       }}
       onClick={(event) => {
         onClick?.(event)
+        // A consumer onClick can veto the selection with preventDefault().
+        if (event.defaultPrevented) return
         ctx.onChange(event, value)
       }}
     >
