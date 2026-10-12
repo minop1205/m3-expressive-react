@@ -173,9 +173,8 @@ const drawer = (variant: 'standard' | 'modal') => (
 suite('NavigationDrawer', [['standard', () => drawer('standard')]])
 
 describe('NavigationDrawer axe across variants (modal)', () => {
-  // TODO(#429): the modal drawer sets role="dialog" on <aside>, which axe
-  // flags as aria-allowed-role. Un-skip once #429 lands.
-  it.skip('modal', async () => {
+  // The modal surface is a <div role="dialog"> since #468 (#429).
+  it('modal', async () => {
     await expectNoViolations(drawer('modal'))
   })
 })
