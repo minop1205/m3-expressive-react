@@ -116,8 +116,8 @@
   /* Any -> Off: hold, then vanish — Compose snap(delayMillis = 100).
      Never a reverse animation. */
   transition:
-    opacity 1ms linear 100ms,
-    transform 1ms linear 100ms;
+    opacity 1ms linear var(--md-sys-motion-duration-short2),
+    transform 1ms linear var(--md-sys-motion-duration-short2);
 }
 
 .checked .background,
@@ -140,14 +140,14 @@
   stroke: var(--md-sys-color-on-primary);
   fill: none;
   /* Only gates visibility — the path draw (below) is the reveal. */
-  transition: opacity 50ms linear;
+  transition: opacity var(--md-sys-motion-duration-short1) var(--md-sys-motion-easing-linear);
 }
 
 .unchecked .mark {
   opacity: 0;
   /* Any -> Off: hold the outgoing shape, then vanish — Compose
      snap(delayMillis = 100). Never a reverse draw. */
-  transition: opacity 1ms linear 100ms;
+  transition: opacity 1ms linear var(--md-sys-motion-duration-short2);
 }
 
 .checked .mark,
@@ -206,7 +206,7 @@
   .checked[data-prev-state='indeterminate'] .mark,
   .indeterminate[data-prev-state='checked'] .mark {
     transition:
-      opacity 50ms linear,
+      opacity var(--md-sys-motion-duration-short1) var(--md-sys-motion-easing-linear),
       d var(--md-sys-motion-spring-default-spatial-duration)
         var(--md-sys-motion-spring-default-spatial-easing);
   }

@@ -44,7 +44,7 @@
   inset: auto;
   top: 0;
   left: 0;
-  z-index: 22;
+  z-index: var(--md-sys-z-popup);
   display: none;
   flex-direction: column;
   box-sizing: border-box;

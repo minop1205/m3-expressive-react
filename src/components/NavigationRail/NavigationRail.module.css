@@ -59,7 +59,7 @@
 /* --------------------------------------------------------------------------- */
 .modalRoot {
   position: relative;
-  z-index: 24; /* match the other modal overlays */
+  z-index: var(--md-sys-z-modal);
   flex-shrink: 0;
   align-self: stretch;
   /* Keeps the collapsed rail's place in the page; the rail overlaps beyond. */
@@ -120,7 +120,7 @@
     var(--md-sys-motion-spring-default-effects-easing);
 }
 
-.rail[data-modal]:dir(rtl) {
+[dir='rtl'] .rail[data-modal] {
   --_dir: -1;
 }
 

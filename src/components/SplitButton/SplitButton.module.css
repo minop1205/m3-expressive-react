@@ -121,7 +121,7 @@
       var(--md-sys-motion-spring-fast-spatial-easing);
 }
 
-.split:dir(rtl) .chevron {
+[dir='rtl'] .split .chevron {
   translate: calc(-1 * var(--_chevron-offset)) 0;
 }
 
