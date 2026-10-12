@@ -551,6 +551,65 @@
   }
 }
 
+/* --------------------------------------------------------------------------- */
+/* High contrast (forced colors)                                               */
+/* --------------------------------------------------------------------------- */
+/* Forced colors replaces fills with Canvas and drops box-shadows, which took
+   the surface edge, the selected / today day indicators, the range band and
+   the year chips with it. Repaint with system colors: surface outline,
+   Highlight selection (content opted out of the forced palette so the text
+   backplate does not hide HighlightText), a CanvasText ring for today /
+   current year, a Highlight-edged range band, and GrayText for out-of-month
+   and disabled days. The modal scrim paints its own translucent CanvasText. */
+@media (forced-colors: active) {
+  .picker {
+    outline: 1px solid CanvasText;
+  }
+
+  .day[data-selected],
+  .year[data-selected] {
+    --_container-color: Highlight;
+    --_label-text-color: HighlightText;
+  }
+
+  .day[data-selected] > .dayIndicator,
+  .year[data-selected] > .selectionLabel {
+    forced-color-adjust: none;
+  }
+
+  .day[data-today]:not([data-selected]) > .dayIndicator {
+    border: 1px solid CanvasText;
+  }
+
+  .year[data-current]:not([data-selected]) {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+
+  .day[data-in-range]::before,
+  .day[data-range-start]::before,
+  .day[data-range-end]::before {
+    box-sizing: border-box;
+    border-block: 1px solid Highlight;
+  }
+
+  .day[data-disabled],
+  .day[data-today][data-disabled]:not([data-selected]),
+  .grid[data-layout='docked'] .empty {
+    color: GrayText;
+  }
+
+  .year[data-disabled],
+  .menuItem[data-disabled] {
+    color: GrayText;
+  }
+
+  .scrim {
+    forced-color-adjust: none;
+    background-color: color-mix(in srgb, CanvasText 40%, transparent);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .yearGrid,
   .menuList,

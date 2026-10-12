@@ -292,6 +292,45 @@
   --_outline-width: 0px;
 }
 
+/* --------------------------------------------------------------------------- */
+/* High contrast (forced colors)                                               */
+/* --------------------------------------------------------------------------- */
+/* Forced colors replaces the container fill with Canvas, so filled / tonal
+   buttons lose their edge and the toggle-selected state disappears. Reuse the
+   ::after outline (drawn inside the container, no layout change): ButtonText
+   edge for filled / tonal, Highlight fill + HighlightText icon when selected
+   (all variants, standard included), GrayText when disabled. */
+@media (forced-colors: active) {
+  .iconButton[data-variant='filled'],
+  .iconButton[data-variant='tonal'] {
+    --_outline-width: 1px;
+    --_outline-color: ButtonText;
+  }
+
+  .iconButton[data-variant][data-selected='true'] {
+    --_container-color: Highlight;
+    --_icon-color: HighlightText;
+    --_outline-width: 1px;
+    --_outline-color: Highlight;
+  }
+
+  .iconButton[data-variant]:disabled {
+    --_icon-color: GrayText;
+    --_container-color: transparent;
+    --_outline-color: GrayText;
+  }
+
+  .iconButton[data-variant][data-selected='true']:disabled {
+    --_container-color: GrayText;
+    --_icon-color: Canvas;
+  }
+
+  .iconButton[data-variant='outlined']:disabled,
+  .iconButton[data-variant='outlined'][data-selected='true']:disabled {
+    --_outline-width: 1px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .iconButton {
     transition: none;

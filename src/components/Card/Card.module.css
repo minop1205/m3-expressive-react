@@ -178,6 +178,26 @@
   padding: 8px 16px 16px;
 }
 
+/* High contrast (forced colors): filled and elevated cards are defined by a
+   fill / shadow only, both of which forced colors removes. Draw their edge
+   with an inset outline (no layout change); disabled cards use GrayText. */
+@media (forced-colors: active) {
+  .card[data-variant='filled'],
+  .card[data-variant='elevated'] {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+
+  .card[data-disabled] {
+    color: GrayText;
+    outline-color: GrayText;
+  }
+
+  .card[data-disabled][data-variant='outlined'] {
+    border-color: GrayText;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card {
     transition: none;

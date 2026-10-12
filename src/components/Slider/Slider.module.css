@@ -354,6 +354,61 @@
   background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
 }
 
+/* --------------------------------------------------------------------------- */
+/* High contrast (forced colors)                                               */
+/* --------------------------------------------------------------------------- */
+/* Forced colors replaces every background with Canvas, so the track and the
+   handle (pure background fills) would vanish. Repaint them with system
+   colors: active track Highlight, inactive track a CanvasText outline (inset,
+   so it takes no space), handle CanvasText, disabled GrayText. */
+@media (forced-colors: active) {
+  .inactive {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+
+  .active {
+    background-color: Highlight;
+  }
+
+  .thumb,
+  .stop,
+  .tick {
+    background-color: CanvasText;
+  }
+
+  .tick[data-active] {
+    background-color: HighlightText;
+  }
+
+  .insetIcon {
+    color: HighlightText;
+  }
+
+  .valueLabel {
+    outline: 1px solid CanvasText;
+  }
+
+  .slider[data-disabled] .active,
+  .slider[data-disabled] .thumb,
+  .slider[data-disabled] .stop,
+  .slider[data-disabled] .tick {
+    background-color: GrayText;
+  }
+
+  .slider[data-disabled] .tick[data-active] {
+    background-color: Canvas;
+  }
+
+  .slider[data-disabled] .inactive {
+    outline-color: GrayText;
+  }
+
+  .slider[data-disabled] .insetIcon {
+    color: Canvas;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .thumb,
   .valueLabel {

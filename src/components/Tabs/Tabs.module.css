@@ -185,6 +185,37 @@
   height: 2px;
 }
 
+/* High contrast (forced colors): the indicator and the bottom divider are
+   background / box-shadow paints, which forced colors drops. Repaint the
+   indicator in Highlight (4dp, so it stands out from the 1dp divider), draw
+   the divider as a CanvasText line (::before, so it paints under the
+   indicator), and pull the focus ring inward past the indicator so the two
+   no longer overlap (the ring was cut where the indicator sat). */
+@media (forced-colors: active) {
+  .tabs::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 1px;
+    background-color: CanvasText;
+    pointer-events: none;
+  }
+
+  .tabs[data-variant] > .indicator {
+    height: 4px;
+    background-color: Highlight;
+  }
+
+  .tab {
+    --md-focus-ring-offset: -7px;
+  }
+
+  .tab:disabled {
+    color: GrayText;
+  }
+}
+
 /* Reduced motion (B3): state changes are instant. */
 @media (prefers-reduced-motion: reduce) {
   .tab,
