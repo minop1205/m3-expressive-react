@@ -284,3 +284,14 @@ describe('Switch form reset (#432)', () => {
     expect(removeSpy).toHaveBeenCalledWith('reset', expect.any(Function))
   })
 })
+
+describe('Switch API consistency (#421)', () => {
+  it('puts style on the root together with className (A10 addendum)', () => {
+    render(<Switch aria-label="Wi-Fi" className="custom" style={{ marginLeft: 13 }} />)
+    const input = screen.getByRole('switch')
+    const root = input.parentElement as HTMLElement
+    expect(root).toHaveClass('custom')
+    expect(root.style.marginLeft).toBe('13px')
+    expect(input.style.marginLeft).toBe('')
+  })
+})

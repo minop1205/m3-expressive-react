@@ -17,6 +17,7 @@ import styles from './ButtonGroup.module.css'
 import { usePressWidth } from './usePressWidth'
 import { getItems } from './getItems'
 import {
+  ButtonGroupDisabledContext,
   ButtonGroupSelectionContext,
   type ButtonGroupSelection,
   type ButtonGroupSelectionMode,
@@ -37,6 +38,10 @@ interface ButtonGroupBaseProps
   size?: ButtonGroupSize
   /** Layout direction. @default 'horizontal' */
   orientation?: ButtonGroupOrientation
+  /** Disable every `Button` / `IconButton` in the group (MUI
+   * `ToggleButtonGroup` parity); an item's own `disabled` still applies.
+   * @default false */
+  disabled?: boolean
   /** `Button` / `IconButton` children (give them a `value` when the group has
    * a `selectionMode`). */
   children?: ReactNode
@@ -121,6 +126,7 @@ export const ButtonGroup = forwardRef<HTMLDivElement, ButtonGroupProps>(
       defaultValue,
       onChange,
       selectionRequired = false,
+      disabled = false,
       className,
       children,
       onKeyDown,
@@ -257,9 +263,11 @@ export const ButtonGroup = forwardRef<HTMLDivElement, ButtonGroupProps>(
         data-selection-mode={selectionMode === 'none' ? undefined : selectionMode}
         className={clsx(styles.group, className)}
       >
-        <ButtonGroupSelectionContext.Provider value={selection}>
-          {children}
-        </ButtonGroupSelectionContext.Provider>
+        <ButtonGroupDisabledContext.Provider value={disabled}>
+          <ButtonGroupSelectionContext.Provider value={selection}>
+            {children}
+          </ButtonGroupSelectionContext.Provider>
+        </ButtonGroupDisabledContext.Provider>
       </div>
     )
   },

@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
+import { resetDevWarnings } from '../../internal/devWarning'
 import { NavigationBar, NavigationBarItem } from './NavigationBar'
 import rippleStyles from '../../primitives/Ripple/Ripple.module.css'
 
@@ -162,5 +163,34 @@ describe('NavigationBar items (#173–#175)', () => {
       </NavigationBar>,
     )
     expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('NavigationBarItem accessible-name warning (#421)', () => {
+  it('warns once in development when there is no label and no aria-label', () => {
+    resetDevWarnings()
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    render(
+      <NavigationBar value="a" onChange={() => {}}>
+        <NavigationBarItem value="a" icon={Icon} />
+        <NavigationBarItem value="b" icon={Icon} />
+      </NavigationBar>,
+    )
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(warn.mock.calls[0][0]).toContain('aria-label')
+    warn.mockRestore()
+  })
+
+  it('does not warn with a label or an aria-label', () => {
+    resetDevWarnings()
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    render(
+      <NavigationBar value="a" onChange={() => {}}>
+        <NavigationBarItem value="a" icon={Icon} label="Home" />
+        <NavigationBarItem value="b" icon={Icon} aria-label="Search" />
+      </NavigationBar>,
+    )
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
   })
 })

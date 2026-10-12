@@ -7,3 +7,6 @@ import { createContext, type RefObject } from 'react'
  * neighbour to move focus to even when chips are wrapped in other elements.
  */
 export const ChipSetContext = createContext<RefObject<HTMLDivElement | null> | null>(null)
+
+/** Group-level `disabled` from a wrapping `ChipSet` (#421). */
+export const ChipSetDisabledContext = createContext(false)

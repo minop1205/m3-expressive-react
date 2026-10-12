@@ -526,3 +526,50 @@ describe('ButtonGroup selectionMode="multiple"', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 })
+
+describe('ButtonGroup group-level disabled (#421)', () => {
+  it('disables every Button and IconButton in the group', () => {
+    render(
+      <ButtonGroup aria-label="Actions" disabled>
+        <Button>One</Button>
+        <IconButton aria-label="Two" icon={<svg aria-hidden="true" />} />
+      </ButtonGroup>,
+    )
+    expect(screen.getByRole('button', { name: 'One' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Two' })).toBeDisabled()
+  })
+
+  it('blocks selection in a disabled selection group', async () => {
+    const user = userEvent.setup({ pointerEventsCheck: 0 })
+    const onChange = vi.fn()
+    render(
+      <ButtonGroup aria-label="View" selectionMode="single" disabled onChange={onChange}>
+        <Button value="day">Day</Button>
+        <Button value="week">Week</Button>
+      </ButtonGroup>,
+    )
+    await user.click(screen.getByRole('radio', { name: 'Week' }))
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('leaves items enabled by default, and an item keeps its own disabled', () => {
+    render(
+      <ButtonGroup aria-label="Actions">
+        <Button>One</Button>
+        <Button disabled>Two</Button>
+      </ButtonGroup>,
+    )
+    expect(screen.getByRole('button', { name: 'One' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Two' })).toBeDisabled()
+  })
+
+  it('has no axe violations when disabled', async () => {
+    const { container } = render(
+      <ButtonGroup aria-label="Actions" disabled>
+        <Button>One</Button>
+        <Button>Two</Button>
+      </ButtonGroup>,
+    )
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
