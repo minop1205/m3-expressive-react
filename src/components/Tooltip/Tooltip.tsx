@@ -28,7 +28,11 @@ import { useControllableState } from '../../internal/useControllableState'
 import styles from './Tooltip.module.css'
 
 export type TooltipVariant = 'plain' | 'rich'
-export type TooltipPlacement = 'top' | 'bottom'
+/**
+ * Side of the trigger the tooltip prefers. `start` / `end` are logical
+ * (mirrored in RTL); `left` / `right` are physical.
+ */
+export type TooltipPlacement = 'top' | 'bottom' | 'start' | 'end' | 'left' | 'right'
 
 export interface TooltipProps
   extends Omit<HTMLAttributes<HTMLSpanElement>, 'children'> {
@@ -47,12 +51,23 @@ export interface TooltipProps
    */
   action?: ReactNode
   /**
-   * Preferred placement relative to the trigger. The tooltip flips to the
-   * other side when there is no room and is kept inside the viewport.
-   * Inside a top app bar, use `'bottom'`.
-   * @default 'top' for plain, 'bottom' for rich
+   * Preferred placement relative to the trigger: `'top'` / `'bottom'`
+   * (centered on the trigger) or beside it — `'start'` / `'end'` (mirrored
+   * in RTL) or `'left'` / `'right'` (vertically centered). The tooltip flips
+   * to the opposite side when there is no room and is kept inside the
+   * viewport. Inside a top app bar, use `'bottom'`.
+   *
+   * When omitted, a plain tooltip goes above its trigger; a rich tooltip goes
+   * to the trigger's bottom-end corner (below, extending toward the end
+   * edge) and moves to whichever of the four corners keeps it on screen.
+   * @default 'top' for plain, bottom-end corner for rich
    */
   placement?: TooltipPlacement
+  /**
+   * Draw a caret (16×8dp triangle) pointing at the trigger, on the side of
+   * the tooltip that faces it. @default false
+   */
+  caret?: boolean
   /**
    * Persistent rich tooltip: opens and closes on click / tap of the trigger
    * (hover, focus and long-press don't open it) and stays open until the user
@@ -77,6 +92,8 @@ const LONG_PRESS_MS = 500
 const LONG_PRESS_SLOP_PX = 10
 /** Distance between the anchor and the tooltip (Compose SpacingBetweenTooltipAndAnchor). */
 const ANCHOR_GAP_PX = 4
+/** Caret height (Compose TooltipDefaults.caretSize = 16 × 8dp). */
+const CARET_HEIGHT_PX = 8
 /** Minimum distance kept from the viewport edges when clamping. */
 const VIEWPORT_MARGIN_PX = 8
 
@@ -129,6 +146,7 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     subhead,
     action,
     placement,
+    caret = false,
     persistent = false,
     defaultOpen = false,
     open,
@@ -272,13 +290,22 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [suppressed])
 
+  // Rich default (m3 "positioned to the bottom right of the parent element
+  // … four different rich tooltip locations based on dynamic positioning"):
+  // below and start-aligned, so it extends toward the end edge; the side and
+  // the alignment both flip to stay on screen.
+  const richCorner = isRich && placement == null
   const side = usePopupPosition({
     open: isOpen,
     anchorRef: wrapperRef,
     popupRef,
     side: placement ?? (isRich ? 'bottom' : 'top'),
-    gap: ANCHOR_GAP_PX,
+    align: richCorner ? 'start' : 'center',
+    flipAlign: richCorner,
+    // With a caret the tip, not the container, keeps the 4dp distance.
+    gap: caret ? ANCHOR_GAP_PX + CARET_HEIGHT_PX : ANCHOR_GAP_PX,
     margin: VIEWPORT_MARGIN_PX,
+    trackAnchorCenter: caret,
   })
 
   const child = Children.only(children) as ReactElement<Record<string, unknown>>
@@ -477,6 +504,7 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
         data-variant={variant}
         data-placement={side}
         data-has-action={hasAction || undefined}
+        data-caret={caret || undefined}
         data-open={isOpen || undefined}
         className={clsx(styles.tooltip, isOpen && styles.open)}
         onPointerEnter={(event) => {

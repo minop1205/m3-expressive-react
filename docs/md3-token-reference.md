@@ -243,6 +243,7 @@ unaffected.
 | Badge | FastSpatial (scale-in) | DefaultEffects (scale-out†) |
 | Carousel item press shape | — (DefaultEffects, as B5) | — |
 | BottomSheet / SideSheet scrim | — | DefaultEffects |
+| PullToRefresh indicator crossfade, arrow alpha | — | DefaultEffects |
 
 † Shrinking to `scale(0)` uses the critically damped DefaultEffects: an
 expressive overshoot past 0 would render a mirrored dot / badge.
@@ -252,7 +253,8 @@ elevation (`box-shadow`; Compose `ElevationDefaults` tweens), state layers /
 Ripple / FocusRing, Dialog and the DatePicker / TimePicker modal enter
 (platform dialog), BottomSheet / SideSheet slide (`BottomSheetAnimationSpec`
 tween 300ms FastOutSlowIn), SwipeToDismiss settle (`AnchoredDraggableDefaults`
-tween), determinate progress (`ProgressAnimationSpec`, a fixed non-bouncy
+tween), PullToRefresh settle to the threshold / hidden (`Animatable`
+default `spring()`: `duration-medium1` `easing-standard`), determinate progress (`ProgressAnimationSpec`, a fixed non-bouncy
 spring), Switch colors and thumb (web adaptation #373:
 slide 300ms `--md-web-motion-easing-back-out`, press grow `duration-short2`
 linear, release / selection resize `duration-medium1` `easing-standard` —
