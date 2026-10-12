@@ -199,7 +199,9 @@ export function SnackbarProvider({ children, className, style }: SnackbarProvide
   return (
     <SnackbarContext.Provider value={value}>
       {children}
-      <div className={clsx(styles.host, className)} style={style}>
+      {/* Exempt from modal inert: MD3 snackbars sit above dialogs and must
+          stay operable and announced while one is open. */}
+      <div className={clsx(styles.host, className)} style={style} data-md-modal-exempt="">
         {/* Persistent live region: mounted before any message is inserted. */}
         <div role="status" aria-live="polite" className={styles.region}>
           {current != null && (

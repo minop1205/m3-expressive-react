@@ -248,7 +248,8 @@ function SelectionList({ id, label, variant, options, onPick }: SelectionListPro
  * month (m3 key table), and Enter/Space select.
  *
  * Navigation is bounded by min/max (else Compose's 1900–2100 year range):
- * arrows, years and months that cannot show a selectable day are disabled.
+ * arrows, years and months that cannot show a selectable day are disabled,
+ * and keyboard focus is clamped into that range.
  */
 export function Calendar({
   layout = 'modal',
@@ -337,7 +338,19 @@ export function Calendar({
     onViewChange({ year: d.getFullYear(), month: d.getMonth() })
   }
 
-  const moveFocus = (next: Date) => {
+  // Keyboard focus stays within the selectable range: [min, max], else
+  // Compose's fixed 1900–2100 year range (not widened by the view, so paging
+  // can't walk past it). A start date already outside is not pulled back.
+  const keyboardLower = minDay ?? new Date(DEFAULT_FIRST_YEAR, 0, 1)
+  const keyboardUpper = maxDay ?? new Date(DEFAULT_LAST_YEAR, 11, 31)
+  const clampFocus = (next: Date, from: Date) => {
+    const low = from < keyboardLower ? from : keyboardLower
+    const high = from > keyboardUpper ? from : keyboardUpper
+    return next < low ? low : next > high ? high : next
+  }
+
+  const moveFocus = (target: Date, from: Date) => {
+    const next = clampFocus(target, from)
     if (!inView(next)) goTo(next.getFullYear(), next.getMonth())
     setFocusedDate(next)
     pendingFocus.current = true
@@ -386,7 +399,7 @@ export function Calendar({
         return
     }
     event.preventDefault()
-    moveFocus(next)
+    moveFocus(next, date)
   }
 
   const describe = (date: Date) => {

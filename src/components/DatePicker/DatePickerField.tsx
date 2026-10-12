@@ -299,6 +299,10 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
               onViewChange={setView}
               autoFocus
               onSelect={(date) => {
+                // Also when re-picking the current date (no value change to
+                // re-sync from): drop stale typed text and its error.
+                setText(formatDateInput(date, locale))
+                setError(null)
                 commit(date)
                 close(true)
               }}

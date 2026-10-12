@@ -1,6 +1,5 @@
 import {
   forwardRef,
-  useEffect,
   useId,
   useRef,
   type HTMLAttributes,
@@ -88,7 +87,12 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
   ) {
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLDivElement | null>(null)
-    useModal({ active: variant === 'modal' && open, rootRef, surfaceRef })
+    useModal({
+      active: variant === 'modal' && open,
+      rootRef,
+      surfaceRef,
+      onEscape: () => onClose?.(),
+    })
 
     // Wire the visible headline as the sheet's accessible name; consumer aria
     // props win, and a generic fallback covers headline-less sheets.
@@ -97,15 +101,6 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
     const restLabelledby = (rest as Record<string, unknown>)['aria-labelledby'] as
       | string
       | undefined
-
-    useEffect(() => {
-      if (variant !== 'modal' || !open) return
-      const handle = (event: globalThis.KeyboardEvent) => {
-        if (event.key === 'Escape') onClose?.()
-      }
-      document.addEventListener('keydown', handle)
-      return () => document.removeEventListener('keydown', handle)
-    }, [variant, open, onClose])
 
     const hasHeader = showBackButton || headline != null || showCloseButton
 

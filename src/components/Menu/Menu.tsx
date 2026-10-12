@@ -171,8 +171,12 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
         setOpen(false)
       }
     }
+    // Escape closes only the menu: preventDefault marks it consumed so an
+    // enclosing modal (useModal, which listens after `document`) ignores it.
     const onDocKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') closeMenu(true)
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      event.preventDefault()
+      closeMenu(true)
     }
     document.addEventListener('mousedown', onPointerDown)
     document.addEventListener('keydown', onDocKeyDown)

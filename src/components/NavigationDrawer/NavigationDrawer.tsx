@@ -2,7 +2,6 @@ import {
   createContext,
   forwardRef,
   useContext,
-  useEffect,
   useRef,
   type ButtonHTMLAttributes,
   type HTMLAttributes,
@@ -63,7 +62,12 @@ export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
   ) {
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLElement | null>(null)
-    useModal({ active: variant === 'modal' && open, rootRef, surfaceRef })
+    useModal({
+      active: variant === 'modal' && open,
+      rootRef,
+      surfaceRef,
+      onEscape: () => onClose?.(),
+    })
 
     // Default the accessible name for both the modal dialog and the standard
     // <aside> landmark (Compose sets a "Navigation Menu" paneTitle).
@@ -86,16 +90,6 @@ export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
         {children}
       </aside>
     )
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useEffect(() => {
-      if (variant !== 'modal' || !open) return
-      const handle = (event: globalThis.KeyboardEvent) => {
-        if (event.key === 'Escape') onClose?.()
-      }
-      document.addEventListener('keydown', handle)
-      return () => document.removeEventListener('keydown', handle)
-    }, [variant, open, onClose])
 
     if (variant !== 'modal') {
       return <DrawerContext.Provider value={{ value, onChange }}>{panel}</DrawerContext.Provider>

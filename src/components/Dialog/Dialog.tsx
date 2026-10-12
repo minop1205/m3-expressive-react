@@ -1,6 +1,5 @@
 import {
   forwardRef,
-  useEffect,
   useId,
   useRef,
   type HTMLAttributes,
@@ -47,7 +46,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
   const titleId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
   const surfaceRef = useRef<HTMLDivElement | null>(null)
-  useModal({ active: open, rootRef, surfaceRef })
+  useModal({ active: open, rootRef, surfaceRef, onEscape: () => onClose?.() })
 
   // Never ship an unnamed dialog (Compose always sets a paneTitle): the title
   // labels it when present, consumer-supplied aria props win, and a generic
@@ -56,15 +55,6 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
   const restLabelledby = (rest as Record<string, unknown>)['aria-labelledby'] as
     | string
     | undefined
-
-  useEffect(() => {
-    if (!open) return
-    const handle = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') onClose?.()
-    }
-    document.addEventListener('keydown', handle)
-    return () => document.removeEventListener('keydown', handle)
-  }, [open, onClose])
 
   return (
     <div

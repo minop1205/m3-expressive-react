@@ -108,15 +108,7 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
     const open = modal && expanded
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLDivElement>(null)
-    useModal({ active: open, rootRef, surfaceRef })
-    useEffect(() => {
-      if (!open) return
-      const handle = (event: globalThis.KeyboardEvent) => {
-        if (event.key === 'Escape') onClose?.()
-      }
-      document.addEventListener('keydown', handle)
-      return () => document.removeEventListener('keydown', handle)
-    }, [open, onClose])
+    useModal({ active: open, rootRef, surfaceRef, onEscape: () => onClose?.() })
 
     const setRefs = useCallback(
       (node: HTMLElement | null) => {
