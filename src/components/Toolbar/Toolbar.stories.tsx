@@ -51,6 +51,31 @@ export const FloatingVertical: Story = {
   ),
 }
 
+/** `disableElevation` — m3: only on a visually distinct background. */
+export const FloatingWithoutElevation: Story = {
+  render: () => (
+    <div
+      style={{
+        display: 'flex',
+        gap: 16,
+        padding: 24,
+        borderRadius: 16,
+        backgroundColor: 'var(--md-sys-color-surface-container-highest)',
+      }}
+    >
+      <Toolbar variant="floating" disableElevation aria-label="Edit actions">
+        {i('Bold', 'B')}
+        {i('Italic', 'I')}
+        {i('Underline', 'U')}
+      </Toolbar>
+      <Toolbar variant="floating" color="vibrant" disableElevation aria-label="Format actions">
+        {i('Bold', 'B')}
+        {i('Italic', 'I')}
+        {i('Underline', 'U')}
+      </Toolbar>
+    </div>
+  ),
+}
 export const Vibrant: Story = {
   render: () => (
     <Toolbar variant="floating" color="vibrant" aria-label="Edit actions">
