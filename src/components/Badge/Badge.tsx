@@ -1,6 +1,7 @@
 import { forwardRef, type HTMLAttributes, type ReactNode } from 'react'
 import clsx from 'clsx'
 import styles from './Badge.module.css'
+import { badgeDisplayValue, defaultBadgeLabel } from '../../internal/badgeLabel'
 
 export type BadgeSize = 'small' | 'large'
 
@@ -32,13 +33,6 @@ export interface BadgeProps extends HTMLAttributes<HTMLDivElement> {
   children?: ReactNode
 }
 
-function defaultLabel(displayValue: string | undefined) {
-  if (displayValue == null) return 'New notification'
-  return displayValue === '1'
-    ? `${displayValue} new notification`
-    : `${displayValue} new notifications`
-}
-
 export const Badge = forwardRef<HTMLDivElement, BadgeProps>(function Badge(
   {
     value,
@@ -52,12 +46,7 @@ export const Badge = forwardRef<HTMLDivElement, BadgeProps>(function Badge(
   },
   ref,
 ) {
-  const displayValue =
-    size === 'small' || value == null
-      ? undefined
-      : value > max
-        ? `${max}+`
-        : `${value}`
+  const displayValue = badgeDisplayValue({ value, max, size })
 
   const showBadge = size === 'small' || value != null
 
@@ -78,7 +67,7 @@ export const Badge = forwardRef<HTMLDivElement, BadgeProps>(function Badge(
             <span aria-hidden="true">{displayValue}</span>
           )}
           <span className={styles.visuallyHidden}>
-            {label ?? defaultLabel(displayValue)}
+            {label ?? defaultBadgeLabel(displayValue)}
           </span>
         </span>
       )}

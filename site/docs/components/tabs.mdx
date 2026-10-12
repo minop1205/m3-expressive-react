@@ -5,7 +5,7 @@ title: Tabs
 import { useState } from 'react'
 import Demo from '@site/src/components/Demo'
 import PropsTable from '@site/src/components/PropsTable'
-import { Tabs, Tab } from 'm3-expressive-react'
+import { Tabs, Tab, Badge } from 'm3-expressive-react'
 import FlightIcon from '@material-symbols/svg-400/outlined/flight.svg'
 import HotelIcon from '@material-symbols/svg-400/outlined/hotel.svg'
 import ExploreIcon from '@material-symbols/svg-400/outlined/explore.svg'
@@ -57,6 +57,53 @@ use a full-width line.
     </Tabs>
   </div>
 </Demo>
+
+`iconPosition="start"` puts the icon before the label instead (8dp gap,
+48dp tabs — Compose `LeadingIconTab`). The primary indicator then spans the
+icon and the label.
+
+<Demo>
+  <div style={{ width: '100%' }}>
+    <Tabs aria-label="Trip with leading icons" defaultValue="flights">
+      <Tab value="flights" icon={<FlightIcon />} iconPosition="start" label="Flights" />
+      <Tab value="hotels" icon={<HotelIcon />} iconPosition="start" label="Hotels" />
+      <Tab value="explore" icon={<ExploreIcon />} iconPosition="start" label="Explore" />
+    </Tabs>
+  </div>
+</Demo>
+
+```tsx
+<Tab value="flights" icon={<FlightIcon />} iconPosition="start" label="Flights" />
+```
+
+## Badges
+
+`badge` takes a childless [`<Badge>`](./badge.mdx): it sits on the icon (stacked or
+leading), or 4dp after the label on a text-only tab. The badge takes no layout
+space — the label stays centered and the indicator keeps following the label /
+icon. Its text (the Badge `label`, or the default "New notification" /
+"{n} new notifications") is read after the tab label, e.g.
+"Hotels, 3 new notifications".
+
+<Demo>
+  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 24 }}>
+    <Tabs aria-label="Trip with badges" defaultValue="flights">
+      <Tab value="flights" icon={<FlightIcon />} label="Flights" badge={<Badge size="small" />} />
+      <Tab value="hotels" icon={<HotelIcon />} label="Hotels" badge={<Badge value={3} />} />
+      <Tab value="explore" icon={<ExploreIcon />} label="Explore" />
+    </Tabs>
+    <Tabs aria-label="Inbox" variant="secondary" defaultValue="primary">
+      <Tab value="primary" label="Primary" />
+      <Tab value="social" label="Social" badge={<Badge value={12} />} />
+      <Tab value="updates" label="Updates" badge={<Badge size="small" />} />
+    </Tabs>
+  </div>
+</Demo>
+
+```tsx
+<Tab value="hotels" icon={<HotelIcon />} label="Hotels" badge={<Badge value={3} />} />
+<Tab value="social" label="Social" badge={<Badge value={12} label="12 unread" />} />
+```
 
 ## Scrollable
 
@@ -132,6 +179,10 @@ const [value, setValue] = useState('flights')
   `onChange`. Arrow keys never fire `onChange`, and neither does activating
   the already-selected tab or a tab whose `onClick` called
   `event.preventDefault()`.
+- A `badge` is decorative on screen; its text is appended to the tab's
+  accessible name after the label. Localize it with the Badge `label` prop.
+  For an icon-only tab named with `aria-label`, include the badge in that
+  label yourself.
 - Roving tabindex: <kbd>Tab</kbd> enters the list on the selected tab and
   leaves it in one step.
 

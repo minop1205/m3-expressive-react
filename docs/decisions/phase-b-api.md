@@ -56,6 +56,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B29 | #267 | Divider を既定で装飾扱いに | **既定 decorative(AT から隠す)+ `decorative={false}` で意味付き区切り** | a11y のみ | 決定(2026-09-30・推奨どおり) |
 | B30 | #393 | Search app bar | **`TopAppBar variant="search"` + `searchBar` スロット(SearchBar を合成)、`titleAlignment` で中央揃え、`title` は visually hidden の h1** | なし(追加) | 決定(2026-10-07・#393 の API 案どおり) |
 | B32 | #441 | PullToRefresh(新規) | **自身がスクロールコンテナになる `<PullToRefresh refreshing onRefresh indicator disabled threshold>`、touch + pointer、reduced motion はフェードのみ、`aria-busy` + polite live region** | なし(追加) | 決定(2026-10-13・#441 の API 案をもとに確定) |
+| B40 | #443 | Tabs のインラインアイコンとバッジ | **`Tab iconPosition="top" \| "start"`(MUI 名、既定 `'top'`)+ `badge={<Badge …/>}`(アイコン上 / テキストのみはラベルの後ろ、読み上げはラベルの後)** | なし(追加) | 決定(2026-10-13・#443 の API 案どおり) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -1093,6 +1094,56 @@ Default / Refreshing / Circular を追加。
   イベント等)は A10 どおり input のまま。あわせて Checkbox の `error` は input に `aria-invalid="true"` を出す
   (明示の `aria-invalid` が優先)。
 - **影響**: 非破壊(input に付いていた `style` は見た目に効いていなかった)。VRT なし。対象: Checkbox・Radio・Switch。
+
+---
+
+## Tabs
+
+### B40: Tabs のインラインアイコン(leading icon)とバッジ
+
+- **Issue**: #443(docs/audits/tabs.md の機能候補)
+- **状態**: 決定(2026-10-13・#443 の API 案どおり。実装時に補足事項を確定)
+- **背景**: Tab はアイコンをラベルの上に積む形(64dp)しかなく、バッジのスロットもない。Compose には
+  `LeadingIconTab`(Tab.kt:152 — `Row` で `.height(SmallTabHeight)`(:172)= `PrimaryNavigationTabTokens.ContainerHeight` 48dp(:417-418)、
+  `.padding(horizontal = HorizontalTextPadding)` 16dp(:423)、アイコンとテキストの間 `TextDistanceFromLeadingIcon` 8dp(:187・:441)
+  — androidx-main)があり、テキスト / アイコンの Tab は `Modifier.badgeBounds()`(Tab.kt:110、Badge.kt:223-238)で
+  タブの上端・終端を BadgedBox の配置の限界(ruler)として渡す。BadgedBox は anchor の大きさだけを報告し、バッジは
+  レイアウト幅を取らない(Badge.kt:96-128。dot = `BadgeOffset` 6dp、数字 = 12dp 内側 / 14dp 下 — :206-218)。
+  m3 tabs anatomy「Badge (optional)」、寸法表「テキストとバッジの間 4dp」。
+
+**選択肢**
+
+- アイコン位置
+  - **(a) `iconPosition?: 'top' | 'start'`**(MUI `Tab iconPosition` と同名。MUI の `bottom` / `end` は m3 / Compose にないので持たない)
+  - (b) `variant="leading-icon"` — `variant` は Tabs 側の primary / secondary と紛らわしい
+  - (c) 別コンポーネント `LeadingIconTab`(Compose 流)— 1 コンポーネント方針に反する
+- バッジ
+  - **(d) `badge?: ReactElement<BadgeProps>`**(`<Badge>` 要素をそのまま渡す。値・`max`・`size`・`visible`・`label` は Badge の API)
+  - (e) NavigationBar と同じ `badge?: ReactNode` + `badgeLabel`(内容を Tab が描く)— Badge の `max` / `visible` / アニメーションを
+    二重に持つことになる
+
+**決定**: **(a) + (d)**。補足:
+
+- `iconPosition="start"`: 高さ 48dp(`data-with-icon` の 64dp を上書き)、アイコンとラベルの間 8dp。アイコン + 間 + ラベルを
+  1 つのコンテンツ箱にまとめ、primary indicator はその幅に合わせる(Compose `matchContentSize` が `LeadingIconTab` の Row 全体を測るのと同じ)。
+  既定 `'top'` は従来どおり(DOM・見た目とも変化なし)
+- バッジの配置:
+  - アイコンあり(top / start とも): 子なしの Badge の anchor をアイコンの上端・終端の角に置き、Badge 自身の BadgedBox オフセット
+    (dot は角の内側、数字は 12dp 内側 / 下端がアイコン上端 + 14dp)をそのまま使う。ほかのコンポーネントのバッジと同じ位置
+  - テキストのみ: ラベルの **4dp 後ろ、ラベルの縦中央**(m3 寸法表)。
+  - どちらも**レイアウト幅を取らない**(BadgedBox と同じ)ので、ラベルはタブ中央のまま、indicator はラベル / アイコンの幅のまま
+    (`[data-tab-content]` にバッジを含めない)。テキストのみのバッジはラベルの右に張り出す — ラベルが省略表示になるほど
+    狭いタブでは 16dp の padding を越えうる(Compose の `badgeBounds` 相当の押し戻しはしない。実用幅では起きない)
+  - m3 寸法表の「積み上げアイコンへの重なり 6dp」は dot の `BadgeOffset` 6dp と一致。数字バッジは Compose BadgedBox
+    (12dp / 14dp)に従う(Badge コンポーネントの既存の裁定のまま)
+- アクセシビリティ: 描画されたバッジは AT から隠し、その文言(Badge の `label`、既定は B28 の "New notification" /
+  "{n} new notifications"、`visible={false}` なら無し)を**ラベルの後ろ**に visually-hidden で足す → 名前は
+  「Inbox 3 new notifications」(m3 badges/accessibility、NavigationBar #175 と同じ)。文言は Badge と共通の内部ヘルパー
+  (`src/internal/badgeLabel.ts`)で求め、Badge の表示と食い違わない。`aria-label` で名前を付けたアイコンのみのタブでは
+  内容からの名前が使われないので、バッジの内容も `aria-label` に含める(ドキュメントに記載)
+
+**影響**: 非破壊(prop の追加のみ。既存ストーリーは DOM・CSS とも不変)。VRT: `Components/Tabs` の LeadingIcons /
+WithBadges を追加。対象: Tab(Badge は内部ヘルパーへの切り出しのみ、出力不変)。
 
 ---
 
