@@ -242,7 +242,10 @@ describe('DatePickerField', () => {
     // July 2024 starts on a Monday: 30 June fills the first cell.
     const firstWeek = within(screen.getByRole('grid')).getAllByRole('row')[1]
     const first = within(firstWeek).getAllByRole('gridcell')[0]
-    expect(first).toHaveTextContent('30')
+    // The number is decorative CSS generated content (no text node).
+    expect(first.querySelector('[data-day]')).toHaveAttribute('data-day', '30')
+    expect(first.querySelector('[data-day]')).toHaveAttribute('aria-hidden', 'true')
+    expect(first.textContent).toBe('')
     expect(first.tagName).toBe('SPAN')
     expect(first).not.toHaveAccessibleName()
   })

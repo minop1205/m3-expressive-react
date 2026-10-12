@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import Mail from '@material-symbols/svg-400/outlined/mail.svg?react'
 import Notifications from '@material-symbols/svg-400/outlined/notifications.svg?react'
 import { Badge } from './Badge'
+import { Button } from '../Button'
 
 // Badge wraps arbitrary content and doesn't size it, so give the demo icons an
 // explicit 24dp size (Material Symbols render at 1em by default).
@@ -84,9 +85,9 @@ export const ToggleVisibility: Story = {
     return (
       <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
         <Badge value={5} visible={visible}>{NotificationsIcon}</Badge>
-        <button type="button" onClick={toggle}>
-          {visible ? 'Hide' : 'Show'}
-        </button>
+        <Button variant="text" onClick={toggle}>
+          {visible ? 'Hide badge' : 'Show badge'}
+        </Button>
       </div>
     )
   },
