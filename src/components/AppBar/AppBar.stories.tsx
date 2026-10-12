@@ -281,7 +281,8 @@ export const SearchCentered: Story = {
 /**
  * Icon layouts (m3): a trailing avatar outside; a mic inside the field plus
  * the avatar outside; two trailing elements outside; and the default search
- * glyph inside the field with no navigation icon.
+ * glyph inside the field with no navigation icon. Each `role="search"`
+ * landmark gets its own label (axe `landmark-unique`).
  */
 export const SearchLayouts: Story = {
   render: () => (
@@ -292,7 +293,7 @@ export const SearchLayouts: Story = {
           titleAlignment="center"
           navigationIcon={nav}
           actions={<Avatar />}
-          searchBar={searchField()}
+          searchBar={searchField({ 'aria-label': 'Product search, trailing outside' })}
         />
       </article>
       <article aria-label="Trailing inside and outside">
@@ -301,7 +302,7 @@ export const SearchLayouts: Story = {
           titleAlignment="center"
           navigationIcon={nav}
           actions={<Avatar />}
-          searchBar={searchField({ endIcon: mic })}
+          searchBar={searchField({ 'aria-label': 'Product search, trailing inside and outside', endIcon: mic })}
         />
       </article>
       <article aria-label="Two trailing outside">
@@ -314,14 +315,14 @@ export const SearchLayouts: Story = {
               <Avatar />
             </>
           }
-          searchBar={searchField()}
+          searchBar={searchField({ 'aria-label': 'Product search, two trailing outside' })}
         />
       </article>
       <article aria-label="Leading glyph inside">
         <TopAppBar
           variant="search"
           actions={<IconButton icon={<MoreVert />} aria-label="More" variant="standard" />}
-          searchBar={searchField({ startIcon: undefined })}
+          searchBar={searchField({ 'aria-label': 'Product search, leading glyph inside', startIcon: undefined })}
         />
       </article>
     </div>
