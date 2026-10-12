@@ -14,11 +14,15 @@
   justify-content: center;
   visibility: hidden;
   pointer-events: none;
+  /* Stay visible until the exit motion has played (#433), then hide —
+     the same delayed-visibility pattern as NavigationDrawer. */
+  transition: visibility 0s linear max(var(--md-sys-motion-duration-medium4), var(--md-sys-motion-spring-default-effects-duration));
 }
 
 .root[data-open] {
   visibility: visible;
   pointer-events: auto;
+  transition-delay: 0s;
 }
 
 .scrim {
@@ -104,6 +108,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .root,
   .scrim,
   .sheet {
     transition: none;
