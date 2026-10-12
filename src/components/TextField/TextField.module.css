@@ -195,7 +195,7 @@
     border-width var(--_label-duration) var(--_label-easing);
 }
 
-/* Left segment: left + top + bottom borders, left corners rounded */
+/* Start segment: start + top + bottom borders, start corners rounded */
 .outlineStart {
   width: calc(var(--_leading-space) - 4px);
   border: var(--_outline-width) solid var(--_outline-color);
@@ -230,13 +230,26 @@
 }
 
 .outlineNotch::before {
-  left: 0;
+  inset-inline-start: 0;
   transform-origin: left;
 }
 
 .outlineNotch::after {
-  right: 0;
+  inset-inline-end: 0;
   transform-origin: right;
+}
+
+/* transform-origin has no logical keywords: anchor each half at its own
+   inline edge in RTL too, so the notch opens from the centre (#428).
+   RTL rules use `[dir='rtl']`, not `:dir(rtl)`: Lightning CSS (Vite's CSS
+   minifier, here and in consumers' builds) lowers `:dir()` to a `:lang()`
+   list that ignores the `dir` attribute. */
+[dir='rtl'] .outlineNotch::before {
+  transform-origin: right;
+}
+
+[dir='rtl'] .outlineNotch::after {
+  transform-origin: left;
 }
 
 .outlined.focused .outlineNotch::before,
@@ -246,7 +259,7 @@
   transform: scaleX(0);
 }
 
-/* Right segment: right + top + bottom borders, right corners rounded */
+/* End segment: end + top + bottom borders, end corners rounded */
 .outlineEnd {
   flex: 1;
   border: var(--_outline-width) solid var(--_outline-color);
@@ -335,12 +348,12 @@
   /* Resting: vertically centered in 56px container — (56 - 24) / 2 = 16px */
   top: var(--_top-space);
   /* Horizontal: align with input text */
-  left: var(--_leading-space);
-  right: var(--_trailing-space);
+  inset-inline-start: var(--_leading-space);
+  inset-inline-end: var(--_trailing-space);
 
   transition:
     top var(--_label-duration) var(--_label-easing),
-    left var(--_label-duration) var(--_label-easing),
+    inset-inline-start var(--_label-duration) var(--_label-easing),
     font-size var(--_label-duration) var(--_label-easing),
     line-height var(--_label-duration) var(--_label-easing),
     color var(--_effects-duration) var(--_effects-easing);
@@ -348,11 +361,11 @@
 
 /* With icons: adjust label horizontal position */
 .textField.hasLeadingIcon .label {
-  left: 0;
+  inset-inline-start: 0;
 }
 
 .textField.hasTrailingIcon .label {
-  right: 0;
+  inset-inline-end: 0;
 }
 
 /* Filled floating: label at top of container (8px from top) */
@@ -368,7 +381,7 @@
 .outlined.focused .label,
 .outlined.populated .label {
   top: calc(-1 * var(--_label-text-populated-line-height) / 2);
-  left: var(--_leading-space);
+  inset-inline-start: var(--_leading-space);
   font-size: var(--_label-text-populated-size);
   line-height: var(--_label-text-populated-line-height);
 }
@@ -376,7 +389,7 @@
 /* With leading icon: floating label must stay at the no-icon position (16px from field edge) */
 .outlined.hasLeadingIcon.focused .label,
 .outlined.hasLeadingIcon.populated .label {
-  left: calc(
+  inset-inline-start: calc(
     var(--_leading-space) - var(--_with-leading-icon-leading-space) - var(--_icon-size) - var(--_icon-input-space)
   );
 }

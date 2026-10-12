@@ -101,6 +101,13 @@
   gap: 4px;
 }
 
+/* Previous / next month chevrons point along the reading direction: in RTL
+   "previous" sits at the right edge, so mirror the icons (Compose uses
+   AutoMirrored icons) (#428). */
+[dir='rtl'] .navArrow svg {
+  transform: scaleX(-1);
+}
+
 /* Docked header: [‹ Month ▾ ›]  [‹ Year ▾ ›], 64dp high. */
 .nav[data-layout='docked'] {
   height: 64px;

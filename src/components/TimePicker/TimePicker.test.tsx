@@ -269,6 +269,33 @@ describe('TimePicker', () => {
     expect(screen.getByRole('group', { name: 'Hour' })).toBeInTheDocument()
   })
 
+  describe('RTL (#428)', () => {
+    it('keeps the dial-mode hour:minute row LTR', () => {
+      render(
+        <div dir="rtl">
+          <TimePicker value={{ hour: 10, minute: 30 }} />
+        </div>,
+      )
+      const hour = screen.getByRole('radio', { name: 'Select hour' })
+      const row = hour.closest('[dir]')
+      expect(row).toHaveAttribute('dir', 'ltr')
+      expect(row).toContainElement(screen.getByRole('radio', { name: 'Select minutes' }))
+      // The AM/PM selector is not part of the pinned row.
+      expect(row).not.toContainElement(screen.getByRole('radio', { name: 'AM' }))
+    })
+
+    it('keeps the input-mode hour:minute fields LTR', () => {
+      render(
+        <div dir="rtl">
+          <TimePicker mode="input" value={{ hour: 10, minute: 30 }} />
+        </div>,
+      )
+      const row = screen.getByRole('textbox', { name: 'Hour' }).closest('[dir]')
+      expect(row).toHaveAttribute('dir', 'ltr')
+      expect(row).toContainElement(screen.getByRole('textbox', { name: 'Minute' }))
+    })
+  })
+
   it('edits the time via input fields', () => {
     const onChange = vi.fn()
     render(<TimePicker mode="input" value={{ hour: 10, minute: 0 }} onChange={onChange} />)
