@@ -64,9 +64,39 @@ export function handleMenuTypeahead(
   state: MenuTypeahead,
   now: number = Date.now(),
 ): boolean {
+  const match = matchTypeahead(
+    event,
+    items.map(getTypeaheadLabel),
+    items.indexOf(document.activeElement as HTMLElement),
+    state,
+    now,
+  )
+  if (match === null) return false
+  if (match !== -1) items[match].focus()
+  return true
+}
+
+/**
+ * The typeahead search behind `handleMenuTypeahead`, on plain labels (for
+ * popups that keep focus elsewhere, e.g. Select's `aria-activedescendant`
+ * listbox). `labels` are lower-cased (`getTypeaheadLabel`), `current` is the
+ * active index (-1 for none), and `isEnabled` skips items that can't take
+ * the active state.
+ *
+ * Returns `null` when the key is not a typeahead character, `-1` when
+ * nothing matches, else the index of the matching item.
+ */
+export function matchTypeahead(
+  event: { key: string; ctrlKey?: boolean; metaKey?: boolean; altKey?: boolean },
+  labels: string[],
+  current: number,
+  state: MenuTypeahead,
+  now: number = Date.now(),
+  isEnabled: (index: number) => boolean = () => true,
+): number | null {
   const { key } = event
   if (key.length !== 1 || !/\S/.test(key) || event.ctrlKey || event.metaKey || event.altKey) {
-    return false
+    return null
   }
   if (now - state.at > MENU_TYPEAHEAD_RESET_MS) state.buffer = ''
   state.at = now
@@ -75,18 +105,14 @@ export function handleMenuTypeahead(
   // "aaa" cycles through the a-items rather than looking for an "aaa" prefix.
   const repeated = Array.from(state.buffer).every((c) => c === char)
   const search = repeated ? char : state.buffer
-  const current = items.indexOf(document.activeElement as HTMLElement)
-  // A single character searches after the focused item; a growing prefix may
-  // still match the focused item itself.
+  // A single character searches after the active item; a growing prefix may
+  // still match the active item itself.
   const from = search.length === 1 ? current + 1 : Math.max(current, 0)
-  for (let offset = 0; offset < items.length; offset++) {
-    const item = items[(from + offset) % items.length]
-    if (getTypeaheadLabel(item).startsWith(search)) {
-      item.focus()
-      break
-    }
+  for (let offset = 0; offset < labels.length; offset++) {
+    const index = (from + offset) % labels.length
+    if (isEnabled(index) && labels[index].startsWith(search)) return index
   }
-  return true
+  return -1
 }
 
 /**
@@ -94,7 +120,7 @@ export function handleMenuTypeahead(
  * subtrees, so decorative icons — e.g. a Material Symbols `delete` ligature
  * in front of "Remove" — never match.
  */
-function getTypeaheadLabel(item: HTMLElement): string {
+export function getTypeaheadLabel(item: HTMLElement): string {
   let text = ''
   const walk = (node: Node) => {
     for (const child of node.childNodes) {

@@ -294,6 +294,17 @@
         "default": "./dist/components/SearchBar/index.cjs"
       }
     },
+    "./Select": {
+      "import": {
+        "types": "./dist/components/Select/index.d.ts",
+        "node": "./dist/components/Select/index.js",
+        "default": "./dist/Select/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Select/index.d.cts",
+        "default": "./dist/components/Select/index.cjs"
+      }
+    },
     "./SegmentedButton": {
       "import": {
         "types": "./dist/components/SegmentedButton/index.d.ts",
@@ -500,6 +511,9 @@
       ],
       "SearchBar": [
         "./dist/components/SearchBar/index.d.ts"
+      ],
+      "Select": [
+        "./dist/components/Select/index.d.ts"
       ],
       "SegmentedButton": [
         "./dist/components/SegmentedButton/index.d.ts"

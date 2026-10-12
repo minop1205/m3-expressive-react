@@ -57,6 +57,8 @@ import {
   SearchBar,
   SegmentedButton,
   SegmentedButtons,
+  Select,
+  Option,
   SideSheet,
   Slider,
   Snackbar,
@@ -217,6 +219,15 @@ const cases: Record<string, ReactElement> = {
     </ChipSet>
   ),
   TextField: <TextField label="Label" />,
+  Select: (
+    <Select open label="Label" name="field" defaultValue="a">
+      <Option value="a">A</Option>
+      <Option value="b" disabled>
+        B
+      </Option>
+    </Select>
+  ),
+  Option: <Option value="a">A</Option>,
   Badge: <Badge />,
   Snackbar: <Snackbar message="Saved" />,
   SnackbarProvider: (

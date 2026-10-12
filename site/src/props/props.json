@@ -166,10 +166,10 @@
    },
    {
     "name": "onClose",
-    "type": "(() => void)",
+    "type": "((event: ModalCloseEvent, reason: BottomSheetCloseReason) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Called on scrim click, Escape, drag-to-dismiss, or the drag handle."
+    "description": "Called on scrim click, Escape, drag-to-dismiss, or the drag handle, with\nthe triggering event and the `reason`."
    },
    {
     "name": "open",
@@ -1218,10 +1218,10 @@
    },
    {
     "name": "onClose",
-    "type": "(() => void)",
+    "type": "((event: ModalCloseEvent, reason: DialogCloseReason) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Called on scrim click or Escape."
+    "description": "Called on scrim click, Escape, or the full-screen close button, with the\ntriggering event and the `reason`."
    },
    {
     "name": "open",
@@ -1868,6 +1868,13 @@
   "description": "Material Design 3 Navigation drawer (standard or modal).\n\n360dp SurfaceContainerLow (modal) / Surface (standard) panel, rounded 16dp on\nthe trailing edge. Items are 56dp full pills (CornerFull): active =\nSecondaryContainer / OnSecondaryContainer, inactive transparent /\nOnSurfaceVariant, LabelLarge — per Compose NavigationDrawerTokens. Modal adds\na 0.32 Scrim, Escape-to-close, and `role=\"dialog\" aria-modal`.",
   "props": [
    {
+    "name": "defaultValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Uncontrolled initial destination value."
+   },
+   {
     "name": "onChange",
     "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string) => void)",
     "required": false,
@@ -1876,10 +1883,10 @@
    },
    {
     "name": "onClose",
-    "type": "(() => void)",
+    "type": "((event: ModalCloseEvent, reason: NavigationDrawerCloseReason) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Called when the modal scrim is clicked or Escape is pressed."
+    "description": "Called when the modal scrim is clicked or Escape is pressed, with the\ntriggering event and the `reason`."
    },
    {
     "name": "open",
@@ -1893,7 +1900,7 @@
     "type": "string",
     "required": false,
     "defaultValue": null,
-    "description": "Selected destination value (shared with items)."
+    "description": "Controlled selected destination value (shared with items)."
    },
    {
     "name": "variant",
@@ -2052,10 +2059,10 @@
    },
    {
     "name": "onClose",
-    "type": "(() => void)",
+    "type": "((event: ModalCloseEvent, reason: NavigationRailCloseReason) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "With `modal`: called when the scrim is clicked or Escape is pressed."
+    "description": "With `modal`: called when the scrim is clicked or Escape is pressed, with\nthe triggering event and the `reason`."
    },
    {
     "name": "value",
@@ -2458,6 +2465,198 @@
    }
   ]
  },
+ "Select": {
+  "description": "Material Design 3 Select — the non-editable exposed dropdown menu\n(Compose `ExposedDropdownMenuBox` + a read-only `TextField` with the\n`PrimaryNotEditable` anchor, `ExposedDropdownMenu(matchAnchorWidth = true)`).\n\nThe field is the `TextField` anatomy (filled / outlined, floating label,\nstart icon, supporting / error text) with the `ArrowDropDown` trailing icon,\nrotated 180° while open. The listbox is drawn in the top layer below the\nfield (flipped above when there is no room, clamped to the viewport),\nexactly as wide as the field and capped to the room left on that side —\nstyled after the Compose sample: a surface-container-low, 16dp-corner,\nelevation-2 surface with 44dp body-large options (16dp padding, positional\ncorners), and a tertiary-container selected option with a check mark that\nmorphs to 12dp corners.\n\nAccessibility follows the WAI-ARIA APG select-only combobox: the field is a\nfocusable `role=\"combobox\"` that keeps focus while the `role=\"listbox\"`\npopup is open, the active option is exposed through\n`aria-activedescendant`. Closed: ArrowDown / ArrowUp / Enter / Space /\nAlt+ArrowDown open (Home / End open on the first / last option), and\ntyping opens on the matching option. Open: ArrowUp / ArrowDown move (no\nwrap), Home / End / PageUp / PageDown jump, typing moves by typeahead,\nEnter / Space / Alt+ArrowUp select and close, Tab selects and moves on,\nEscape closes without selecting. Disabled options are skipped.\n\nA visually hidden native `<input>` carries `name` / `value` for form\nsubmission, `required` validation, and form reset (uncontrolled values\nreturn to `defaultValue`).",
+  "props": [
+   {
+    "name": "autoFocus",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Focus the combobox on mount."
+   },
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "`Option` elements (direct children or inside Fragments)."
+   },
+   {
+    "name": "defaultOpen",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Uncontrolled initial open state."
+   },
+   {
+    "name": "defaultValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": "",
+    "description": "Uncontrolled initial value."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disables the field (and leaves the value out of form submission)."
+   },
+   {
+    "name": "error",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Error state — error colors, `aria-invalid`, and `errorText`. Ignored while `disabled`."
+   },
+   {
+    "name": "errorText",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Shown instead of `supportingText` (with `role=\"alert\"`) when `error` is set."
+   },
+   {
+    "name": "form",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Associates the hidden native input with a `<form>` elsewhere in the page (native `form` attribute)."
+   },
+   {
+    "name": "fullWidth",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Stretch the field (and therefore the listbox) to the container's width."
+   },
+   {
+    "name": "id",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Applied to the `role=\"combobox\"` element."
+   },
+   {
+    "name": "inputRef",
+    "type": "Ref<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Ref to the hidden native `<input>` that carries the value for forms (the forwarded `ref` points at the root)."
+   },
+   {
+    "name": "label",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Floating label; also names the combobox and the listbox. Rendered with a trailing `*` when `required`."
+   },
+   {
+    "name": "name",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Form field name of the hidden native input that carries the value."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: SyntheticEvent<Element, Event>, value: string) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires when the user picks a different option — with the click or key\nevent and the new value (A2). Not fired on form reset."
+   },
+   {
+    "name": "onOpenChange",
+    "type": "((open: boolean) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Notified when the listbox should open or close."
+   },
+   {
+    "name": "open",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled open state of the listbox."
+   },
+   {
+    "name": "placeholder",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Shown in the field while nothing is selected (once the label has floated, or always without a label)."
+   },
+   {
+    "name": "required",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Requires a value for form submission (native constraint validation) and appends `*` to the label."
+   },
+   {
+    "name": "startIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon at the start of the field (decorative)."
+   },
+   {
+    "name": "supportingText",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Helper line below the field. Replaced by `errorText` while in error."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected value (`''` = nothing selected)."
+   },
+   {
+    "name": "variant",
+    "type": "\"filled\" | \"outlined\"",
+    "required": false,
+    "defaultValue": "filled",
+    "description": "Text field container style (the same two as `TextField`)."
+   }
+  ]
+ },
+ "Option": {
+  "description": "An option of a `Select` (`role=\"option\"`). The selected option shows the\ntertiary-container colors, a 12dp corner shape and a leading check mark.",
+  "props": [
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "The option's label. Also what the field shows once it is selected."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Visible, inert, and skipped by keyboard navigation."
+   },
+   {
+    "name": "startIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon at the start of the option (decorative); the check mark replaces it while selected."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": true,
+    "defaultValue": null,
+    "description": "The value this option selects (submitted with the form)."
+   }
+  ]
+ },
  "SideSheet": {
   "description": "Material Design 3 Side sheet (standard or modal).\n\nA 400dp max-width panel anchored to the right (or left) edge. Standard\n= inline Surface panel; modal = SurfaceContainerLow over a 0.32 Scrim with\n`role=\"dialog\" aria-modal` and Escape-to-close — per m3.material.io specs.\nHeader uses 24dp side padding (16dp with a back icon), 12dp gaps, a Title\nLarge headline, and optional back/close IconButtons. Bottom actions are a\n72dp left-aligned bar.",
   "props": [
@@ -2505,10 +2704,10 @@
    },
    {
     "name": "onClose",
-    "type": "(() => void)",
+    "type": "((event: ModalCloseEvent, reason: SideSheetCloseReason) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Called on close-button click, scrim click, or Escape."
+    "description": "Called on close-button click, scrim click, or Escape, with the\ntriggering event and the `reason`."
    },
    {
     "name": "open",

@@ -4,6 +4,13 @@
 
 ### Added
 
+- **Select** / **Option** (new, `m3-expressive-react/Select`): the MD3
+  non-editable exposed dropdown menu. A filled / outlined text field that
+  opens a listbox as wide as the field, with `value` / `defaultValue` /
+  `onChange(event, value)`, `open` / `defaultOpen` / `onOpenChange`, `name` /
+  `required` / `disabled` / `error`, and form submit / reset through a hidden
+  native input. Keyboard and screen-reader behavior follow the WAI-ARIA APG
+  select-only combobox (#434, ruling B31).
 - **Dialog / BottomSheet / SideSheet / NavigationDrawer / NavigationRail
   (modal)**: `onClose` now receives `(event, reason)` with `reason` one of
   `'escapeKeyDown' | 'backdropClick' | 'closeButton' | 'drag'` as applicable
