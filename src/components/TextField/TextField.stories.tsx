@@ -28,6 +28,7 @@ const meta = {
       options: ['floating', 'above'],
     },
     shrinkLabel: { control: 'boolean' },
+    tonal: { control: 'boolean' },
     error: { control: 'boolean' },
     disabled: { control: 'boolean' },
     multiline: { control: 'boolean' },
@@ -134,19 +135,29 @@ export const Multiline: Story = {
   },
 }
 
+/** Secure field recipe (Compose `SecureTextField`, ruling B44): a
+ * `type="password"` input with a show / hide `IconButton` toggle in
+ * `endIcon`. The toggle keeps the fixed name "Show password" and reports
+ * its state with `aria-pressed`; `aria-controls` points at the input. */
 export const Password: Story = {
   render: (args) => {
     const [visible, setVisible] = useState(false)
     return (
       <TextField
         {...args}
+        id="password-field"
         type={visible ? 'text' : 'password'}
+        autoComplete="current-password"
         endIcon={
           <IconButton
             variant="standard"
-            icon={visible ? <VisibilityOffIcon /> : <VisibilityIcon />}
-            aria-label={visible ? 'Hide password' : 'Show password'}
-            onClick={() => setVisible((v) => !v)}
+            toggle
+            selected={visible}
+            onChange={(_event, next) => setVisible(next)}
+            icon={<VisibilityIcon />}
+            selectedIcon={<VisibilityOffIcon />}
+            aria-label="Show password"
+            aria-controls="password-field"
           />
         }
       />
@@ -188,6 +199,26 @@ export const ShrinkLabel: Story = {
     </div>
   ),
   args: { shrinkLabel: true },
+}
+
+/** `tonal` (experimental — Compose `tonalColors()` + `roundedShape`, still
+ * `TODO(b/448727879)` upstream): 12dp rounded container; filled has no
+ * indicator, outlined keeps an outline-variant border with the label
+ * inside the container. */
+export const Tonal: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <TextField {...args} variant="filled" label="Filled tonal" />
+      <TextField {...args} variant="filled" label="With icons" startIcon={<SearchIcon />} endIcon={<ClearIcon />} defaultValue="Value" supportingText="Supporting text" />
+      <TextField {...args} variant="filled" label="Error" error errorText="Error message" defaultValue="Invalid" />
+      <TextField {...args} variant="filled" label="Disabled" disabled defaultValue="Disabled value" />
+      <TextField {...args} variant="outlined" label="Outlined tonal" />
+      <TextField {...args} variant="outlined" label="With icons" startIcon={<SearchIcon />} endIcon={<ClearIcon />} defaultValue="Value" supportingText="Supporting text" />
+      <TextField {...args} variant="outlined" label="Error" error errorText="Error message" defaultValue="Invalid" />
+      <TextField {...args} variant="outlined" label="Disabled" disabled defaultValue="Disabled value" />
+    </div>
+  ),
+  args: { tonal: true },
 }
 
 export const AllVariants: Story = {

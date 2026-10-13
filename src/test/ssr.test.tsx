@@ -32,6 +32,7 @@ import {
   DatePickerField,
   Dialog,
   Divider,
+  DragHandle,
   Fab,
   FabMenu,
   FabMenuItem,
@@ -265,6 +266,7 @@ const cases: Record<string, ReactElement> = {
     </Tooltip>
   ),
   Divider: <Divider />,
+  DragHandle: <DragHandle aria-label="List pane" defaultValue={50} />,
   LinearProgressIndicator: <LinearProgressIndicator value={0.5} />,
   CircularProgressIndicator: <CircularProgressIndicator />,
 }

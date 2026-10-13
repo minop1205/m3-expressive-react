@@ -2,7 +2,8 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'vitest-axe'
 import { describe, expect, it, vi } from 'vitest'
-import { createRef } from 'react'
+import { createRef, useState } from 'react'
+import { IconButton } from '../IconButton'
 import { TextField } from './TextField'
 import styles from './TextField.module.css'
 
@@ -544,6 +545,77 @@ describe('TextField label placement (B37, #439)', () => {
         <TextField variant="outlined" label="Shrunk outlined" shrinkLabel prefixText="$" />
       </>,
     )
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('TextField tonal style (B44, #444)', () => {
+  const root = (container: HTMLElement) => container.firstElementChild as HTMLElement
+
+  it('adds the tonal class only when requested', () => {
+    const { container, rerender } = render(<TextField label="Name" />)
+    expect(root(container)).not.toHaveClass(styles.tonal)
+    rerender(<TextField label="Name" tonal />)
+    expect(root(container)).toHaveClass(styles.tonal, styles.filled)
+  })
+
+  it('keeps the outlined tonal label inside the container (no notch label)', () => {
+    const { container } = render(<TextField variant="outlined" label="Name" tonal />)
+    expect(container.querySelector(`.${styles.outlineLabel}`)).toBeNull()
+    expect(container.querySelector(`.${styles.label}`)).toHaveTextContent('Name')
+  })
+
+  it('has no axe violations in every tonal state', async () => {
+    const { container } = render(
+      <>
+        <TextField tonal label="Filled" supportingText="Help" />
+        <TextField tonal label="Error" error errorText="Error" defaultValue="x" />
+        <TextField tonal variant="outlined" label="Outlined" startIcon={<span />} />
+        <TextField tonal variant="outlined" label="Disabled" disabled defaultValue="x" />
+      </>,
+    )
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('TextField secure field recipe (B44, #444)', () => {
+  function PasswordField() {
+    const [visible, setVisible] = useState(false)
+    return (
+      <TextField
+        id="pw"
+        label="Password"
+        type={visible ? 'text' : 'password'}
+        endIcon={
+          <IconButton
+            variant="standard"
+            toggle
+            selected={visible}
+            onChange={(_event, next) => setVisible(next)}
+            icon={<span />}
+            aria-label="Show password"
+            aria-controls="pw"
+          />
+        }
+      />
+    )
+  }
+
+  it('toggles the input type with aria-pressed and leaves focus on the toggle', async () => {
+    const user = userEvent.setup()
+    render(<PasswordField />)
+    const input = screen.getByLabelText('Password')
+    const toggle = screen.getByRole('button', { name: 'Show password' })
+    expect(input).toHaveAttribute('type', 'password')
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    await user.click(toggle)
+    expect(input).toHaveAttribute('type', 'text')
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    expect(toggle).toHaveFocus()
+  })
+
+  it('has no axe violations', async () => {
+    const { container } = render(<PasswordField />)
     expect(await axe(container)).toHaveNoViolations()
   })
 })
