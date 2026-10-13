@@ -10,6 +10,11 @@ export {
   type MenuAlign,
   type MenuVariant,
   type MenuColor,
+  type MenuAnchorPosition,
+  type MenuSelectionMode,
+  type MenuGroupNoSelectionProps,
+  type MenuGroupSingleSelectionProps,
+  type MenuGroupMultipleSelectionProps,
 } from './Menu'
 
 // Default export for the `m3-expressive-react/Menu` subpath import.

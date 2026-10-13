@@ -55,14 +55,19 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B28 | #265 | Badge のラベルと非表示時の扱い | **visually-hidden の既定英語ラベル + `label` で上書き、`role="status"` 廃止、非表示時は AT からも隠す** | a11y のみ | 決定(2026-09-30・推奨どおり) |
 | B29 | #267 | Divider を既定で装飾扱いに | **既定 decorative(AT から隠す)+ `decorative={false}` で意味付き区切り** | a11y のみ | 決定(2026-09-30・推奨どおり) |
 | B30 | #393 | Search app bar | **`TopAppBar variant="search"` + `searchBar` スロット(SearchBar を合成)、`titleAlignment` で中央揃え、`title` は visually hidden の h1** | なし(追加) | 決定(2026-10-07・#393 の API 案どおり) |
+| B36 | #438 | ChipSet の選択モードと filter chip の `endIcon` | **`ChipSet selectionMode` + `value` / `defaultValue` / `onChange(event, value)` + `selectionRequired`(single = APG radio group)、filter chip に装飾の `endIcon`(Menu の trigger で `aria-expanded` 時に 180° 回転)** | なし(追加) | 決定(2026-10-13・#438 の API 案どおり) |
+| B35 | #437 | BottomSheet の standard variant と detent | **`variant="standard" \| "modal"`(既定 modal)+ `expanded` / `defaultExpanded` / `onExpandedChange` + `skipPartiallyExpanded`、部分展開 = `min(画面/2, シート/2)`(Compose 現行フラグ、TODO 付き)は `skipPartiallyExpanded={false}` で opt-in(既定 true = 従来どおり、切替は v2 候補)、opt-in 時のハンドルは partial ↔ expanded のトグル** | なし(追加) | 決定(2026-10-13) |
 | B31 | #434 | Select(exposed dropdown menu・非編集) | **専用の `<Select>` + `<Option>` 子要素、`value` / `defaultValue` / `onChange(event, value)`、APG select-only combobox + 隠しネイティブ input** | なし(追加) | 決定(2026-10-13・#434 フェーズ 1) |
 | B38 | #440 | Tooltip の配置拡張・rich の既定位置・caret | **`placement` に `'start' \| 'end' \| 'left' \| 'right'`(論理値は RTL で反転、flip あり)、`placement` 未指定の rich は bottom-end の角 + 4 隅の動的配置、`caret?: boolean`(16×8dp)** | 既定値変更(rich の未指定時の位置) | 決定(2026-10-13・#440 の提案どおり) |
 | B32 | #441 | PullToRefresh(新規) | **自身がスクロールコンテナになる `<PullToRefresh refreshing onRefresh indicator disabled threshold>`、touch + pointer、reduced motion はフェードのみ、`aria-busy` + polite live region** | なし(追加) | 決定(2026-10-13・#441 の API 案をもとに確定) |
+| B33 | #435 | Menu の選択項目(単一 / 複数)・supporting text | **`MenuGroup selectionMode="single" \| "multiple"` + `value` / `defaultValue` / `onChange(event, value)`(single = `menuitemradio`、multiple = `menuitemcheckbox` で開いたまま)、`closeOnSelect`(group / item)、`MenuItem supportingText` / `selectedIcon`** | なし(追加。baseline の selected に色が付く) | 決定(2026-10-13・実装時に確定) |
+| B34 | #436 | Menu のサブメニューとコンテキストメニュー | **`MenuItem submenu={…}`(APG のサブメニュー操作、RTL 反転、ホバー意図 400ms、親メニューの横に flip 配置、見た目とモーションは md-sub-menu)+ `Menu anchorPosition={{ top, left }}`(`trigger` 省略可)と `onContextMenu` レシピ。`ContextMenu` ラッパーは作らない** | なし(追加) | 決定(2026-10-13・実装時に確定) |
 | B40 | #443 | Tabs のインラインアイコンとバッジ | **`Tab iconPosition="top" \| "start"`(MUI 名、既定 `'top'`)+ `badge={<Badge …/>}`(アイコン上 / テキストのみはラベルの後ろ、読み上げはラベルの後)** | なし(追加) | 決定(2026-10-13・#443 の API 案どおり) |
 | B39 | #442 | SearchBar の full-screen レイアウト | **`layout="docked" \| "fullscreen"`(既定 docked)、full-screen は Compose `ExpandedFullScreenContainedSearchBar`(contained)、戻るボタンの名前は `backLabel`** | なし(追加) | 決定(2026-10-13・#442 の API 案どおり) |
 | B37 | #439 | TextField のラベル位置(上置き・常時縮小) | **`labelPlacement?: 'floating' \| 'above'`(既定 `'floating'`)+ `shrinkLabel?: boolean`、DatePickerField も同名で素通し** | なし(追加) | 決定(2026-10-13・#439 の API 案どおり) |
 | B41 | #444 | 小さな構成の不足(FabMenu 配置・Toolbar elevation・dismissible drawer・Carousel 幅) | **FabMenu `horizontalAlignment`、Toolbar `disableElevation`、NavigationDrawer `variant="dismissible"`、Carousel `itemWidth` の JSDoc 修正** | なし(追加) | 決定(2026-10-13) |
 | B43 | #444 | TimePicker の vibrant・横向き・スクロールホイール | **`variant="standard" \| "vibrant"`、`orientation="vertical" \| "horizontal"`(dial のみ)、`mode="scroll"`(Compose `TimeScroll`)+ 公開 `ScrollField`(APG spinbutton)** | なし(追加) | 決定(2026-10-13) |
+| B44 | #444 | TextField / Select の tonal・secure field・VerticalDragHandle | **TextField / Select `tonal?: boolean`(`@experimental`、Compose `tonalColors()` + `roundedShape`)、secure field はレシピ(`type="password"` + `IconButton toggle`、名前固定 + `aria-pressed`)、新規 `DragHandle`(APG window splitter、`value` / `onChange(event, value)` / `min` / `max` / `step` / `paneSide`)** | なし(追加) | 決定(2026-10-13) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -677,6 +682,69 @@ m3 ラベル表の `gridcell` は remove ボタン付き input chip で 2 つの
 
 **影響**: すべて非破壊(追加・新規)。VRT: 選択 input / avatar / ChipSet のストーリーを追加。対象: Chip、新規 ChipSet。
 
+### B36: ChipSet の単一 / 複数選択と filter chip の trailing icon(`endIcon`)
+
+- **Issue**: #438
+- **状態**: 決定(2026-10-13・#438 の API 案どおり。ARIA は実装時に下記で確定)
+- **背景**: m3 chips/guidelines「filter chip は、1つを選ぶと set 内の他の chip が自動で解除されるように設定できる」
+  「segmented button・radio button・単一選択メニューの代わりになる」。trailing icon は「filter chip では任意で、
+  **メニューを開く**か chip を削除する」「filter chip はさらなる絞り込みのメニューを開ける」(menus/guidelines にも
+  「メニューは filter chip から開ける」)。現状 `ChipSet` は矢印キーのロービングだけで選択モデルがなく、Chip の
+  trailing は `removable` の × だけ。Compose には chip group の選択モデルがない(`FlowRow` + 呼び出し側の状態)。
+  `FilterChip(trailingIcon)` は chip 全体のクリック面の中のスロット(Chip.kt:635–665、`SelectableChip` は
+  `Role.Checkbox` — Chip.kt:3258)、余白は `ContentPadding` 8 + arrangement 8(Chip.kt:2241–2269)、色は
+  `FilterChipTokens.*TrailingIconColor` = 非選択 on-surface-variant / 選択 on-secondary-container / disabled
+  on-surface 0.38(FilterChipTokens.kt:179–210)。ドロップダウン矢印の回転は
+  `ExposedDropdownMenuDefaults.TrailingIcon` の `rotate(if (expanded) 180f else 0f)`(ExposedDropdownMenu.kt:462–463)。
+
+**選択肢**
+
+- (1) 選択モデル
+  - **(a) `ChipSet` に B13(ButtonGroup)/ B17(List)と同じ形を追加**
+    ```tsx
+    <ChipSet aria-label="Size" selectionMode="single" value={size} onChange={(e, v) => setSize(v)}>
+      <Chip variant="filter" label="Small" value="s" />
+      <Chip variant="filter" label="Medium" value="m" />
+    </ChipSet>
+    ```
+    `selectionMode: 'none'(既定) | 'single' | 'multiple'`、値は single = `string | null`・multiple = `string[]`、
+    `selectionRequired`(B13 と同じ)。`value` を持つ filter / input chip を set が管理し、chip 側の `selected` /
+    `defaultSelected` は無視、chip の `onChange(event, selected)` は引き続き発火(Button の B13 実装と同じ)
+  - **(b) 現状維持(各 chip を手で配線)** — 単一選択の排他性が支援技術に伝わらない
+- (2) single の ARIA(APG)
+  - **(c) Radio Group パターン**: set = `role="radiogroup"`、chip = `role="radio"` + `aria-checked`、選択中の chip が
+    Tab 停止、←/→/↑/↓(折り返し)と Home / End でフォーカス移動と同時に選択
+  - (d) Toolbar のまま `aria-pressed` — 排他であることが伝わらない(トグルボタンは独立した状態を表す)
+  - (e) Listbox / option — option の中に remove ボタン等の操作要素を置けず(removable filter chip と両立しない)、
+    m3 が web の chip に `listbox` を挙げていない
+- (3) multiple の ARIA
+  - **(f) 現行の Toolbar + `aria-pressed` のトグル chip を維持**(APG Toolbar はトグルボタンを含められる。
+    ロービング・remove への矢印移動も現行どおり)
+- (4) trailing icon
+  - **(g) `endIcon?: ReactNode`(A5 の `startIcon` / `endIcon` 語彙)**: filter chip のみ、primary の `<button>` の
+    内側に装飾(`aria-hidden`)として描く(Compose と同じく chip 全体が1つのクリック面)。開いているかは
+    `Menu` が trigger に付ける `aria-expanded="true"` を CSS で読み 180° 回転 — Chip 側に `open` prop を足さない。
+    `removable` のときは remove ボタンが trailing を占めるので無視
+  - (h) 別のクリック可能な trailing ボタン — m3 の「メニューを開く」は chip の主アクションで足り、Tab / 矢印の
+    停止点が増えるだけ
+
+**決定**: **(a) + (c) + (f) + (g)**。理由: (a) はライブラリ内の選択グループ(ButtonGroup・List)と同じ形で書けるため。
+(c) は m3 が単一選択 chip を「radio button の代わり」と位置づけ、APG で排他的な単一選択を伝えるのが radio group で
+あり、B13 の single(radiogroup / radio)とも一致するため。(f) は複数選択では各 chip が独立したトグルで、既存の
+toolbar の意味とキー操作を変えずに済むため(非破壊)。(g) は Compose `FilterChip(trailingIcon)` の構造どおりで、
+Menu との合成が `trigger` だけで成り立つため。補足:
+
+- 回転は SplitButton の chevron と同じく FastSpatial のスプリングで遷移させる(Compose の ExposedDropdown は
+  瞬時。ライブラリ内のメニュー矢印の見え方を揃える判断。reduced motion では spatial トークンが 0ms)
+- single で `value` を持たない chip(assist 等)は set の選択に入らず、通常のボタンのまま
+- Menu の trigger にする chip は `selected` を controlled にすることを推奨(uncontrolled だとクリックのたびに
+  選択がトグルする)— ドキュメントで案内
+- docs/audits/chip.md 軽微欄の「chip set 内のロール(gridcell)は CH10 で再判断」「ドロップダウン矢印は将来の
+  API 候補」は本裁定で置き換え(gridcell は採らない: grid パターンは chip の button 意味と `aria-pressed` を失う)
+
+**影響**: 非破壊(既定 `selectionMode` なし = 現行どおり、`endIcon` は新規 prop)。VRT: `ChipSetSelection` /
+`FilterEndIcon` / `FilterMenu` ストーリーを追加(既存ストーリーは不変)。対象: Chip、ChipSet。
+
 ---
 
 ## List と SwipeToDismiss
@@ -1134,6 +1202,66 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 
 ---
 
+## シート
+
+### B35: BottomSheet の standard variant と detent(部分展開 / 全展開)
+
+- **Issue**: #437
+- **状態**: 決定(2026-10-13・#437 の API 案を実装時に確定。同日、v1 では部分展開を opt-in とする互換条件を追加)
+- **背景**: BottomSheet はモーダル・単一の高さのみだった。m3 は「Two variants: standard and modal」「Standard bottom sheets
+  co-exist with the screen's main UI region」「preset positions from full-screen height to preview」「toggled between a
+  collapsed and expanded state」。Compose は `ModalBottomSheet` / 非モーダルの `BottomSheet`(BottomSheet.kt)/
+  `BottomSheetScaffold`(BottomSheetScaffold.kt:116、スクリムなし)と `SheetValue.Hidden / PartiallyExpanded / Expanded`
+  (`skipPartiallyExpanded`)を持つ。SideSheet・NavigationDrawer は既に `variant: 'standard' | 'modal'`。
+
+**選択肢**
+
+- **(a) `variant` + `expanded` / `defaultExpanded` / `onExpandedChange(expanded)` + `skipPartiallyExpanded`**
+  - 利点: 隠す / 出すは既存の `open` / `onClose`(A3)のまま、見えている間の 2 状態だけを boolean で持つ。Toolbar の
+    `expanded` / `defaultExpanded` / `onExpandedChange` と同じ形(値のみのコールバック)。`skipPartiallyExpanded` は Compose と同名
+  - 欠点: detent が 3 つ以上に増えたら別 prop が要る(Compose・m3 とも可視 detent は 2 つ)
+- **(b) `detent: 'partial' | 'full'` / `onDetentChange`** — 拡張性はあるが、`open` と hidden の二重表現になりやすい
+- **(c) Compose 流の `sheetState` オブジェクト** — Compose 専用の形で API 方針に反する
+
+**決定**: **(a)**。補足:
+
+- **`variant="standard" | "modal"`、既定 `'modal'`**(既存利用者の挙動を保つ)。standard はスクリム・フォーカストラップ・
+  inert・スクロールロックなし(`useModal` を使わない)、`role="region"`(既定名 "Bottom sheet")、`aria-modal` なし。
+  **最も近い position 指定祖先の下端に `position: absolute` で置く**(Compose `BottomSheetScaffold` の「scaffold 内の
+  レイアウト」に相当。ビューポートに固定したい場合は fixed のコンテナに入れる)。standard はフォーカスが内側にあるときだけ
+  Escape で `onClose(event, 'escapeKeyDown')`(Compose `BottomSheet` の `backHandlerEnabled` 既定 true に相当)
+- **部分展開の高さ = `min(fullHeight / 2, sheetHeight / 2)`**(シートの半分、最大で画面 / コンテナの半分)。Compose の現行既定
+  `ComposeMaterial3Flags.isBottomSheetPartiallyExpandedDeterministicEnabled = true`(ComposeMaterial3Flags.kt:114)での
+  `calculatePartiallyExpandedOffset`(BottomSheet.kt:427-440、androidx commit `02b1dbca`, 2026-09-30)。CSS では
+  ルートを size container にして `translateY(max(50%, 100% - 50cqh))` で表す(計測不要・SSR 安全)
+  - **注意(TODO)**: このフラグには `// TODO: b/512076811` が付いており、Compose 側でまだ確定扱いではない。旧挙動(フラグ
+    false)は「シートが画面の半分以下なら部分展開を自動で除外、ある場合は画面の 50% 位置」で、非推奨の
+    `rememberModalBottomSheetState` / `rememberStandardBottomSheetState` は今も旧挙動を固定で渡す(ModalBottomSheet.kt:251、
+    BottomSheetScaffold.kt:238)。m3.material.io は「preview」位置の高さを数値で規定していない。フラグが撤回・変更されたら
+    本裁定を見直す
+- **v1 では部分展開は opt-in**: **`skipPartiallyExpanded` の既定は `true`**(常に全展開で開き、ハンドルは従来どおり閉じる
+  ボタン・既定ラベル "Close")。v1.1.0 以降の「v2 まで既定の挙動を壊さない」方針(本書冒頭の裁定条件)に従うため。
+  `skipPartiallyExpanded={false}` を渡すと Compose の現行既定 — `show()` が PartiallyExpanded を優先する
+  (SheetDefaults.kt:283-289)— どおり部分展開で開く(`defaultExpanded` 既定 false)。uncontrolled のシートは閉じるたびに
+  初期 detent に戻る(`show()` 相当)。**既定を Compose どおり(部分展開が先)に切り替えるのは v2 の候補**(上記 TODO
+  フラグの確定を待って判断する)
+- **ドラッグ**: hidden / partial / expanded の 3 アンカー間でスナップ。Compose の `AnchoredDraggable` と同じ判定 —
+  開始 detent から 56px(`PositionalThreshold`)を超えたら隣の detent、125px/s(`VelocityThreshold`)を超える fling は
+  その方向で最も近い detent。hidden に達したら `onClose(event, 'drag')`
+- **ドラッグハンドル(キーボード操作)**: 部分展開を有効にしたとき(`skipPartiallyExpanded={false}`)は
+  **partial ↔ expanded をトグルするボタン**(`aria-expanded`、既定ラベル "Drag handle")。Compose `BottomSheet` のハンドルクリックは Expanded → 閉じる、`BottomSheetScaffold`
+  (skipHiddenState)は Expanded → PartiallyExpanded で、Web では閉じる手段は Escape / スクリムに既にあるため、
+  ハンドルは detent 専用(Scaffold 側の挙動)とした。既定(`skipPartiallyExpanded` = true)では従来どおり閉じるボタン
+  (`'closeButton'`、既定ラベル "Close")
+- **Escape(modal)は常に閉じる**。Compose の back(`settleToDismiss`)は Expanded → PartiallyExpanded だが、APG の
+  モーダルダイアログでは Escape は閉じる操作のため Web の慣習を優先
+- **reduced motion**(B3): detent 間の移動は空間移動なので即時(既存の `transition: none`)。JS 駆動のモーションはない
+
+**影響**: 非破壊。型は追加のみ(`variant` / `expanded` / `defaultExpanded` / `onExpandedChange` /
+`skipPartiallyExpanded`、`BottomSheetVariant`)、既定の挙動・見た目・ハンドルのラベルは従来どおり。部分展開の CSS
+(size container + clip)も opt-in 時と standard だけに効かせ、既定の modal シートの描画は変えない。VRT: Default は
+不変、PartiallyExpanded / Expanded / ControlledDetent / Standard を追加。対象: BottomSheet。
+数値と裁定は docs/audits/modal-overlays.md「BottomSheet の standard variant と detent」節。
 ## フォーム入力
 
 ### B31: Select(exposed dropdown menu・非編集)
@@ -1306,6 +1434,117 @@ API:
 
 **影響**: 非破壊(新規コンポーネント・新しい subpath `m3-expressive-react/PullToRefresh`)。VRT: `Components/PullToRefresh` の
 Default / Refreshing / Circular を追加。
+## Menu
+
+### B33: Menu の選択項目(単一 / 複数)と supporting text
+
+- **Issue**: #435
+- **状態**: 決定(2026-10-13・実装時に確定)
+- **背景**: m3 menus/guidelines「Single-select menus can have one item selected at a time」「Multi-select menus can have many
+  selected items. They stay open until the person dismisses the menu」。Compose は `SelectableDropdownMenuItem`
+  (`Role.RadioButton`、Menu.kt:705 / :726)と `CheckableDropdownMenuItem`(`Role.Checkbox`、:463 / :484)を持ち、すべての
+  item に `supportingText`(:393 / :472 / :714)、選択時に leading icon を差し替える `selectedLeadingIcon` /
+  `checkedLeadingIcon` がある。現状は `selected` が常に `menuitemcheckbox` で、選択すると必ず閉じる。
+
+**選択肢**
+
+- **(a) `MenuGroup` に選択モデル**(B13 ButtonGroup と同型)
+  ```tsx
+  <MenuGroup label="Sort by" selectionMode="single" value={sort} onChange={(e, v) => setSort(v)}>
+    <MenuItem value="name" selectedIcon={<CheckIcon />}>Name</MenuItem>
+    <MenuItem value="date" selectedIcon={<CheckIcon />} supportingText="Newest first">Date</MenuItem>
+  </MenuGroup>
+  ```
+  - 利点: radio の集合が `role="group"` 単位で支援技術に伝わる(APG の menuitemradio はグループ内で排他)。B13 / B17 と
+    同じ `selectionMode` + `value` / `onChange(event, value)` の語彙。欠点: 選択項目にはグループが要る
+- **(b) item 単位の `type="radio" | "checkbox"`**
+  - 利点: グループ不要。欠点: 排他の範囲が DOM 上で表現されず、状態は利用者がすべて手配線する
+- **(c) 現状維持(`selected` = checkbox のみ)** — m3 の single-select と「開いたまま」を表現できない
+
+**決定**: **(a)**。補足:
+
+- `selectionMode: 'none'(既定) | 'single' | 'multiple'`。値の型は single = `string | null`、multiple = `string[]`
+  (B13 と同じ判別 union)。item の `selected` を明示した場合はグループの値より優先(item 単位の controlled)。
+  `selectionMode` のないグループやグループ外の `selected` は従来どおり `menuitemcheckbox`(非破壊)
+- single は radio の意味: 選択中の item を再度押しても外れない(`onChange` も呼ばない)
+- 閉じるかどうか: `closeOnSelect` を **item と group の両方**に置き、item > group > 既定の順で決める。既定は
+  multiple なら `false`(m3「stay open until dismissed」)、それ以外は `true`。MUI に同名の prop はないが Autocomplete の
+  `disableCloseOnSelect` と同じ考え方を肯定形で持つ
+- `selectedIcon`(A5 / B22 と同名): 選択中は `startIcon` を置き換える。`startIcon` がなければ選択時に幅 0 → アイコン幅へ展開
+  (Compose `AnimatedVisibility` の expandHorizontally + fade、Menu.kt:2071 — FastSpatial / FastEffects)。展開前もアイコン
+  と文字の間隔は残る(Compose の `MenuArrangement` と同じ)
+- `supportingText`: ラベルの下に BodyMedium(Compose `LabelWithSupportingText`、Menu.kt:2252-2261 /
+  `SegmentedMenuTokens.ItemSupportingTextFont`)。色は `StandardMenuTokens.ItemSupportingTextColor` = on-surface-variant
+  (Compose の出荷実装は色を指定せずラベル色を継承するが、トークン = 仕様を優先)、選択時はラベルと同じ選択色。支援技術には
+  ラベルを名前、supporting text を説明(`aria-describedby`)として出す
+- **padding**: vertical variant は既存のとおり外側 4dp inset(`DropdownMenuSelectableItemPadding`、Menu.kt:2381)と縦 12dp
+  (`MenuDefaults.SelectableItemVerticalPadding`、MenuDefaults.kt:863)。supporting text があると外側に縦 2dp を足す
+  (`DropdownMenuSelectableItemWithSupportTexPadding`、Menu.kt:2382)。横は **SegmentedMenuTokens の leading / trailing
+  16dp・between 12dp を維持**し、`MenuDefaults.DropdownMenuSelectableItemContentPadding`(precision pointer フラグ既定オフ時の
+  横 12dp)と `itemHorizontalArrangement`(8dp)は採らない — トークン(= m3 vertical menu の仕様値)を Defaults より優先
+  (要オーナー確認: m3.material.io の vertical menu specs で横 padding を目視確認したい)。baseline は 12dp のまま、supporting
+  text のある 2 行 item だけ縦 12dp
+- **baseline の selected 色**: これまで baseline は selected を描かなかった(監査 menu.md: Compose の `MenuTokens.ListItemSelected*`
+  は未使用の dead token)。単一選択を baseline でも使えるようにしたので、m3 baseline specs と `MenuTokens`(:34-41)、
+  material-web `md-menu-item` の selected(secondary-container / on-secondary-container)を採用する
+- baseline の `MenuGroup` は面(背景・影・角丸)を持たず、項目のグループ化とラベルだけを担う(vertical では従来どおり面)
+
+**影響**: 非破壊(prop 追加のみ)。見た目: baseline で `selected` を付けていた item に secondary-container の色が付く。VRT:
+新ストーリー(SingleSelect / VerticalMultiSelect)のみ。対象: Menu(MenuGroup / MenuItem)。
+
+### B34: Menu のサブメニューとコンテキストメニュー
+
+- **Issue**: #436
+- **状態**: 決定(2026-10-13・実装時に確定)
+- **背景**: m3 menus/guidelines「On web, menus can open submenus」「Submenus should open next to the parent menu item without
+  overlapping it」「Note: Submenus are not currently available on Jetpack Compose」「The corner shape changes to show which
+  submenu has focus」。context menu は menus/overview「usually open with a secondary click」。Compose には実装がないため、
+  挙動は WAI-ARIA APG の menu パターン、見た目とモーションは material-web `md-sub-menu` を参照する。
+
+**選択肢(サブメニュー)**
+
+- **(a) `<MenuItem submenu={<>…items…</>}>`**
+  - 利点: 親 item とサブメニューが 1 要素で対応し、variant / color / 閉じ方を親から継承できる。新しいコンポーネントが増えない
+  - 欠点: サブメニュー自体に任意の prop(独自の `aria-label` 等)を渡せない(名前は親 item から付く)
+- **(b) `MenuSub` / `MenuSubTrigger` / `MenuSubContent`(Radix 型)** — 柔軟だが 3 部品が増え、MUI 系の利用者には馴染みが薄い
+- **(c) `Menu` を入れ子にする(`<Menu trigger={<MenuItem/>}>`)** — `trigger` は外部ボタン向けの設計で、menuitem に
+  `aria-haspopup` 等を載せる経路・閉じ方・フォーカス管理が二重になる
+
+**選択肢(コンテキストメニュー)**
+
+- **(a) `Menu anchorPosition={{ top, left }}`(MUI Popover の `anchorPosition` と同じ形)+ `onContextMenu` レシピ**
+- **(b) `<ContextMenu>` ラッパー(右クリック / Shift+F10 / ContextMenu キーを内部で処理)** — 1 MD3 コンポーネント = 1
+  コンポーネントの方針から外れ、ラップ対象の要素の扱い(子に props を注入するか、`<div>` で包むか)という新しい API 判断が要る
+
+**決定**: サブメニュー **(a)**、コンテキストメニュー **(a)**。補足:
+
+- **キーボード(APG)**: 親 item で ArrowRight(RTL は ArrowLeft)/ Enter / Space → 開いて先頭 item へ。サブメニュー内で
+  ArrowLeft(RTL は ArrowRight)/ Escape → そのサブメニューだけ閉じて親 item へ(md-sub-menu の open / close キーと同じ、
+  sub-menu.ts:384-416。Escape が 1 段だけ閉じるのも :340)。↑↓ / Home / End / typeahead はそのサブメニュー内だけで動き、
+  Tab はメニュー全体を閉じる。サブメニュー内の item を選ぶとメニュー全体が閉じて trigger にフォーカスが戻る。RTL 判定は
+  JS(`getComputedStyle().direction`)、CSS は `[dir='rtl']`(`:dir()` は使わない)
+- **ARIA**: 親 item は `aria-haspopup="menu"` / `aria-expanded` / `aria-controls`、サブメニューは `role="menu"` で親 item
+  を `aria-labelledby`。サブメニューは親 item の次の兄弟要素として描く(positional shape の `:first-of-type` を崩さない)
+- **ホバー意図**: item に 400ms 留まると開き、item とサブメニューの両方から 400ms 離れると閉じる(md-sub-menu
+  `hoverOpenDelay` / `hoverCloseDelay` の既定値、sub-menu.ts:56-61)。遅延が斜め移動の猶予を兼ねる。ホバーで開いた時は
+  フォーカスを動かさない。値は公開 prop にしない(内部定数)
+- **配置**: 親メニューの端の外側、上端を親 item に揃える(md-sub-menu anchor corner START_END / menu corner START_START、
+  sub-menu.ts:48-52)。入らなければ反対側へ flip、縦は viewport 内に clamp(B4 の共通ヘルパーの `end` 側 — #476 で追加 — に
+  上端揃えと仮想 anchor を追加)。gap は baseline 0、vertical は SegmentedGap 2dp
+- **見た目とモーション(md-sub-menu を記録)**: サブメニューは親と同じメニュー面(baseline: surface-container / 4dp /
+  Level2、vertical: MenuGroup の面)。md-sub-menu はサブメニューを `quick`(アニメーションなし、sub-menu.ts:153 / :208)で
+  開閉するので、scale / fade のモーションは付けない。開いている間、親 item は強調表示を保つ(md-sub-menu は item を
+  `selected` にする)— ここでは hover state layer 相当の色を保持し、vertical では m3 の「corner shape changes」に従って
+  selected と同じ 12dp へ形を変える
+- **コンテキストメニュー**: `anchorPosition` は viewport 座標(`clientY` / `clientX`)。指定時は点の下・後ろに開き、入らなければ
+  上へ flip、viewport 内に clamp。`trigger` は省略可能になり、その場合は `open` を controlled で使い `aria-label` を付ける。
+  閉じたらフォーカスは開く前にフォーカスされていた要素へ戻る。ドキュメントのレシピ: 対象要素の `onContextMenu` で
+  `preventDefault()` して位置を保存する — 右クリック・長押し・Shift+F10・ContextMenu キーはすべて `contextmenu` イベントに
+  なる。キーボード起動で座標が 0 のときは要素の矩形を使う
+
+**影響**: 非破壊(prop 追加、`trigger` が任意になるだけ)。内部: `usePopupPosition` の `start` / `end` 側に縦の端揃え(`inlineAlign`)と仮想 anchor の
+`getAnchorRect` を追加。VRT: 新ストーリー(Submenu / VerticalSubmenu / ContextMenu)のみ。対象: Menu(MenuItem)。
+仕様メモは docs/audits/menu.md「B33 / B34 実装メモ」。
 
 ---
 
@@ -1463,6 +1702,100 @@ Default / Refreshing / Circular を追加。
 従来の値のまま(既存ストーリーはピクセル不変 — 変更前後の Storybook を同じブラウザで撮って一致を確認)。VRT:
 `Components/TimePicker` の Vibrant / VibrantInputMode / Horizontal / VibrantHorizontal / ScrollMode / VibrantScrollMode、
 `Components/ScrollField` の Default / CustomRange / Disabled を追加。対象: TimePicker、ScrollField(新規)。
+### B44: TextField / Select の tonal スタイル・secure field・VerticalDragHandle(#444 の残り)
+
+- **Issue**: #444(トラッキング。TimePicker のホイール / vibrant / 横向きと ScrollField は別途。#444 は開いたまま)
+- **状態**: 決定(2026-10-13)
+- **背景**: 2026-10-09 スイープで残った、TimePicker 以外の 3 件。Compose の出典は androidx-main の
+  `TextFieldDefaults.kt`・`SecureTextField.kt`・`DragHandle.kt`・`tokens/DragHandleTokens.kt`。
+  drag handle の数値は docs/specs/drag-handle.md。m3.material.io にはどれもコンポーネントの寸法表がない
+  (tonal は Compose の Expressive 追加、drag handle は layout の foundations にあるだけ)ため、Compose を正とする。
+
+**選択肢**
+
+1. tonal スタイル
+   - **(a) `tonal?: boolean`**(Fab / FabMenu の `tonal` と同じ形 — A6・B24)。`variant`(filled / outlined)と
+     直交し、どちらにも付く
+   - (b) `variant="tonal"` — Compose は filled 用(`TextFieldDefaults.tonalColors()`)と outlined 用
+     (`OutlinedTextFieldDefaults.tonalColors()`)の 2 つを持つので、1 つの variant 値では片方しか表せない
+   - (c) `shape="rounded"` を別 prop に分ける — Compose の `roundedShape` は「Expressive style の推奨」で
+     tonal と対で使う前提。今は分ける需要がない
+2. secure field
+   - **(a) レシピを文書化**(`type="password"` + `endIcon` に `IconButton` のトグル)
+   - (b) `passwordToggle` のような prop — TextField が IconButton に依存し、トグルの文言 prop(B1 の
+     `*Label`)も増える。Compose の `SecureTextField` 自身もトグルを持たず、サンプルが `trailingIcon` に
+     置いている(SecureTextField.kt:66 `@sample PasswordTextField`、:137 `trailingIcon`)
+3. VerticalDragHandle
+   - **(a) 新規 `DragHandle`(`src/components/DragHandle/`)、値ベースの window splitter**
+     (`value` / `defaultValue` / `onChange(event, value)` + `min` / `max` / `step`)
+   - (b) 見た目だけの部品 + `onDrag(deltaX)` — キーボード操作と `aria-valuenow` を利用者が組む必要があり、
+     APG の window splitter を満たしにくい
+
+**決定**: すべて **(a)**。
+
+1. **TextField / Select `tonal?: boolean`(既定 false、`@experimental`)**
+   - 上流はまだ `TODO(b/448727879)`(TextFieldDefaults.kt:76・:751・:1002・:1639 — 実トークン待ち)。
+     JSDoc に `@experimental` を付け、docs にも「仕様確定時にマイナーで見た目が変わりうる」と明記する
+   - 形: `roundedShape` = **CornerMedium 12dp**(TextFieldDefaults.kt:75、outlined は :1001)。filled も
+     4 隅すべて丸める(indicator がないため)
+   - filled(`tonalColors()`、:510 / :748–833): container **SurfaceContainer**(error 時 **ErrorContainer**、
+     disabled は SurfaceContainer の 38%)、indicator は全状態 **Transparent**(描かない)、focus 時の
+     ラベルは **OnSurfaceVariant のまま**(primary にしない)、error のラベル・trailing icon・supporting は
+     Error、supporting は OnBackground
+   - outlined(`tonalOutlinedTextFieldColors`、:1395 / :1636–1719、androidx f06c082512): container
+     **Transparent**、枠は error 以外の全状態で **OutlineVariant**(disabled も)、error は Error。focus での
+     2dp 化は Compose でも色と独立(`focusedBorderThickness`)なので残す。KDoc「This should be used in
+     conjunction with `TextFieldLabelPosition.Inside`」(:1392。filled 側も :507 で同じ)に従い、**ラベルは container の内側**
+     (filled と同じ浮上位置・余白)に置き、notch は作らない。`labelPlacement="above"` はそのまま使える
+   - hover は Compose にない状態(`TextFieldColors` に hover スロットがない — textfield 監査)。filled は
+     m3 の hover state layer を残し、outlined は枠とラベルの色を変えない(hover の色変化が focus より
+     強く見えるのを避ける)
+   - Select も TextField の CSS(`TextField.module.css`)をそのまま共有しているので同じ `tonal` を足す。
+     DatePickerField への素通しは今回は行わない(必要になれば B37 と同じ形で追加)
+   - **注意(オーナー確認)**: filled tonal は indicator もラベル色の変化もないため、focus の目印は
+     ほぼキャレットだけになる(Compose どおり)。WCAG 2.4.7 の観点で気になる場合は、focus 時に限り
+     枠を出す等の Web 側の調整を別途判断する
+2. **secure field はレシピ(新しい prop なし)**
+   - `type="password"` + `autoComplete="current-password" | "new-password"`。Compose の
+     `textObfuscationMode`(既定 `System`、:143)・`KeyboardType.Password` / autocorrect 無効(:388)は
+     ブラウザ / OS の password 入力がそのまま担う
+   - トグルは `IconButton variant="standard" toggle`(`selected` = 表示中、`selectedIcon` =
+     visibility_off)。名前は **"Show password" で固定**し、状態は `aria-pressed` で伝える(名前と
+     `aria-pressed` を両方切り替えない)。`aria-controls` は input の id。クリックしても input に
+     フォーカスは移らない(#414 の挙動)
+   - TextField の `type` の JSDoc、Storybook の `Password` ストーリー(初期表示はピクセル同一)、
+     docs の「Password (secure) field」節に記載
+3. **`DragHandle`(Compose `VerticalDragHandle`、DragHandle.kt:73)**
+   - API: `value` / `defaultValue`(px、既定 `min`)/ `onChange(event, value)`(A2・ドラッグ中の毎移動と
+     キー操作ごと、値が変わったときだけ)、`onDragStart` / `onDragEnd(event, value)`(ポインタードラッグ
+     1 回につき 1 度)、`min`(0)/ `max`(100)/ `step`(1)/ `shiftStep`(10、MUI Slider と同名)、
+     `paneSide?: 'start' | 'end'`(既定 start — 値が表す pane が handle のどちら側か。論理方向で RTL は
+     反転)、`getAriaValueText`(MUI Slider と同名)、`disabled`。`ref` と残りの属性はルート
+     (`aria-label` / `aria-labelledby` / `aria-controls` もここ)
+   - 名前は `DragHandle`(1 コンポーネント = 1 MD3 コンポーネント)。Compose に横向きはないので
+     `orientation` は持たない(`aria-orientation="vertical"` 固定)
+   - 見た目(DragHandleTokens / `VerticalDragHandleDefaults`): 通常 4×48dp・Outline・CornerFull、
+     pressed / dragged 12×52dp・OnSurface・CornerMedium、優先順位 dragged > pressed > 通常
+     (DH:91–122)。Compose どおり**アニメーションなし**で切り替える(reduced motion の追加ルール不要)。
+     ホストは `ContainerWidth` 24dp 幅、48dp のタッチターゲット(`minimumInteractiveComponentSize`)、
+     state layer は capsule に clip(`ripple()`、DH:125)、FocusRing も capsule に合わせる
+   - a11y(WAI-ARIA APG window splitter): `role="separator"`・フォーカス可能・`aria-valuenow` /
+     `aria-valuemin` / `aria-valuemax`。キーは ←/→(`step`、Shift で `shiftStep`)、PageUp / PageDown
+     (`shiftStep`)、Home / End(min / max)、↑/↓(拡大 / 縮小)。APG の任意キー Enter(折りたたみ /
+     復元)と F6 は、pane の構成をアプリが持つため実装しない。名前がないと dev 警告(pane と同じ名前を
+     付けるよう案内)
+   - pressed はポインター押下(Compose `pressable`、DH:346–358)、dragged は最初の横移動から
+     (Compose は呼び出し側の draggable の `DragInteraction`、DH:82)
+   - disabled は Compose にない Web 側の追加: `aria-disabled`、タブ順から外す、capsule を
+     on-surface 38%
+   - Compose の pane 側の挙動(`material3-adaptive` の `paneExpansionDraggable`・アンカー)は参照範囲外。
+     handle は値を報告するだけで、pane の幅はアプリが適用する
+
+**影響**: 非破壊(prop の追加と新規コンポーネント `DragHandle`・新しい subpath `m3-expressive-react/DragHandle`)。
+既定値は不変、既存ストーリーはピクセル不変(`Password` は toggle 化したが初期状態の見た目は同じ)。VRT: TextField
+`Tonal`、Select `Tonal`、DragHandle `Default` / `Disabled` / `ListDetail` を追加。対象: TextField、Select、DragHandle。
+textfield 監査(docs/audits/textfield.md 軽微欄)の「機能追加の候補」の SecureTextField / tonal / roundedShape は
+本裁定で対応済み(監査側に相互参照を追記)。
 
 ---
 

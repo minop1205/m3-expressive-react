@@ -74,6 +74,7 @@ export const DeleteIcon = icon(
   'M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z',
   'DeleteIcon',
 )
+export const ArrowDropDownIcon = icon('M7 10l5 5 5-5z', 'ArrowDropDownIcon')
 /** A deterministic placeholder avatar image (no network) tinted by `hue`. */
 export function AvatarImage({ hue = 200 }: { hue?: number }) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" fill="hsl(${hue} 55% 55%)"/><circle cx="12" cy="9.5" r="4.5" fill="hsl(${hue} 60% 88%)"/><ellipse cx="12" cy="22" rx="8" ry="6" fill="hsl(${hue} 60% 88%)"/></svg>`

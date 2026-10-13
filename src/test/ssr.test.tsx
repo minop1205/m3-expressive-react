@@ -32,6 +32,7 @@ import {
   DatePickerField,
   Dialog,
   Divider,
+  DragHandle,
   Fab,
   FabMenu,
   FabMenuItem,
@@ -150,13 +151,24 @@ const cases: Record<string, ReactElement> = {
     </Dialog>
   ),
   Menu: (
-    <Menu open trigger={<Button>Open</Button>}>
-      <MenuGroup label="Group">
-        <MenuItem>Item</MenuItem>
-      </MenuGroup>
-      <MenuDivider />
-      <MenuItem>Other</MenuItem>
-    </Menu>
+    <>
+      <Menu open trigger={<Button>Open</Button>}>
+        <MenuGroup label="Group">
+          <MenuItem>Item</MenuItem>
+        </MenuGroup>
+        <MenuDivider />
+        <MenuItem>Other</MenuItem>
+        <MenuGroup selectionMode="single" defaultValue="a">
+          <MenuItem value="a" selectedIcon={icon} supportingText="Supporting">
+            A
+          </MenuItem>
+        </MenuGroup>
+        <MenuItem submenu={<MenuItem>Nested</MenuItem>}>More</MenuItem>
+      </Menu>
+      <Menu open aria-label="Context" anchorPosition={{ top: 10, left: 10 }}>
+        <MenuItem>Copy</MenuItem>
+      </Menu>
+    </>
   ),
   MenuItem: <MenuItem>Item</MenuItem>,
   MenuGroup: (
@@ -256,6 +268,7 @@ const cases: Record<string, ReactElement> = {
     </Tooltip>
   ),
   Divider: <Divider />,
+  DragHandle: <DragHandle aria-label="List pane" defaultValue={50} />,
   LinearProgressIndicator: <LinearProgressIndicator value={0.5} />,
   CircularProgressIndicator: <CircularProgressIndicator />,
 }

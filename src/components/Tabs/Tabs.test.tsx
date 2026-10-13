@@ -347,6 +347,17 @@ describe('Tab iconPosition and badge (#443)', () => {
     expect(tab.querySelectorAll('[data-tab-content]')).toHaveLength(2)
   })
 
+  it('keeps an icon-only tab at the 48dp height (#484)', () => {
+    render(
+      <Tabs value="a" aria-label="S">
+        <Tab value="a" icon={Icon} aria-label="Alpha" />
+      </Tabs>,
+    )
+    const tab = screen.getByRole('tab', { name: 'Alpha' })
+    expect(tab).not.toHaveAttribute('data-with-icon')
+    expect(getComputedStyle(tab).minHeight).toBe('48px')
+  })
+
   it('iconPosition="start" groups the icon and label into one content box', () => {
     render(
       <Tabs value="a" aria-label="S">

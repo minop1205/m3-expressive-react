@@ -166,6 +166,41 @@ describe('side placements and four-corner alignment (B38)', () => {
   })
 })
 
+describe('computePopupPosition (edge-aligned inline sides, #436)', () => {
+  const popup = { width: 150, height: 120 }
+
+  it('places the popup after the anchor, top edges aligned', () => {
+    const pos = computePopupPosition(anchorAt(100, 200, 200, 48), popup, viewport, {
+      side: 'end',
+      inlineAlign: 'start',
+      gap: 0,
+      margin: 8,
+    })
+    expect(pos).toEqual({ side: 'right', top: 200, left: 300 })
+  })
+
+  it('mirrors end to the left in RTL', () => {
+    const pos = computePopupPosition(anchorAt(400, 200, 200, 48), popup, viewport, {
+      side: 'end',
+      inlineAlign: 'start',
+      gap: 2,
+      rtl: true,
+    })
+    expect(pos).toEqual({ side: 'left', top: 200, left: 400 - 2 - 150 })
+  })
+
+  it('flips to the other side when it does not fit and clamps vertically', () => {
+    // 100px right of the anchor < 150 → left of it; clamped above the bottom edge.
+    const pos = computePopupPosition(anchorAt(500, 560, 200, 40), popup, viewport, {
+      side: 'end',
+      inlineAlign: 'start',
+      gap: 0,
+      margin: 8,
+    })
+    expect(pos).toEqual({ side: 'left', top: 600 - 120 - 8, left: 350 })
+  })
+})
+
 describe('usePopupPosition', () => {
   type HarnessProps = Omit<UsePopupPositionOptions, 'anchorRef' | 'popupRef'>
 
@@ -384,6 +419,22 @@ describe('usePopupPosition', () => {
     expect(popup.style.visibility).toBe('hidden')
     rerender(<Harness open={false} side="bottom" />)
     expect(popup.style.visibility).toBe('')
+  })
+
+  it('positions against a virtual anchor rect (context menu point)', () => {
+    const point = () => ({ top: 100, bottom: 100, left: 300, right: 300, width: 0, height: 0 })
+    const { getByTestId } = setup({
+      open: true,
+      side: 'bottom',
+      align: 'start',
+      gap: 0,
+      margin: 8,
+      getAnchorRect: point,
+    })
+    const popup = getByTestId('popup')
+    expect(popup.dataset.side).toBe('bottom')
+    expect(popup.style.top).toBe('100px')
+    expect(popup.style.left).toBe('300px')
   })
 
   it('does nothing while closed', () => {

@@ -45,6 +45,16 @@ export interface SelectProps
   > {
   /** Text field container style (the same two as `TextField`). @default 'filled' */
   variant?: SelectVariant
+  /**
+   * Expressive tonal style, as TextField `tonal` (Compose `tonalColors()` +
+   * `roundedShape`): 12dp rounded container, no indicator on `filled`,
+   * outline-variant border and inside label on `outlined`.
+   *
+   * @experimental Compose still marks these values `TODO(b/448727879)`, so
+   * the look may change when the spec settles.
+   * @default false
+   */
+  tonal?: boolean
   /** Floating label; also names the combobox and the listbox. Rendered with a trailing `*` when `required`. */
   label?: string
   /** Controlled selected value (`''` = nothing selected). */
@@ -181,6 +191,7 @@ function collectOptions(children: ReactNode, out: OptionData[] = []): OptionData
 export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
   {
     variant = 'filled',
+    tonal = false,
     label,
     value: controlledValue,
     defaultValue = '',
@@ -495,6 +506,7 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
       className={clsx(
         fieldStyles.textField,
         fieldStyles[variant],
+        tonal && fieldStyles.tonal,
         styles.select,
         (focused || open) && fieldStyles.focused,
         populated && fieldStyles.populated,
@@ -526,7 +538,9 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
           <div className={fieldStyles.outline} aria-hidden="true">
             <div className={fieldStyles.outlineStart} />
             <div className={fieldStyles.outlineNotch}>
-              {labelText && <span className={fieldStyles.outlineLabel}>{labelText}</span>}
+              {labelText && !tonal && (
+                <span className={fieldStyles.outlineLabel}>{labelText}</span>
+              )}
             </div>
             <div className={fieldStyles.outlineEnd} />
           </div>
