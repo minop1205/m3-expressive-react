@@ -2,6 +2,8 @@ export {
   TimePicker,
   type TimePickerProps,
   type TimePickerMode,
+  type TimePickerVariant,
+  type TimePickerOrientation,
   type TimePickerCloseReason,
   type TimeValue,
 } from './TimePicker'

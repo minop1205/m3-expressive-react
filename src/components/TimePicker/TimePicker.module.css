@@ -439,6 +439,243 @@
   }
 }
 
+/* --------------------------------------------------------------------------- */
+/* Scroll mode (Compose TimeScroll: two 100×120 ScrollFields)                  */
+/* --------------------------------------------------------------------------- */
+.scrollField {
+  width: 100px;
+  height: 120px;
+}
+
+.picker[data-mode='scroll'] .fields {
+  margin-bottom: 24px;
+}
+
+/* --------------------------------------------------------------------------- */
+/* Horizontal orientation (Compose HorizontalTimePicker, dial mode only):      */
+/* time display (selectors, then a 216×38 AM/PM 16 below) 36 before the dial;  */
+/* the action row 4 below (TimePickerDialog landscape).                        */
+/* --------------------------------------------------------------------------- */
+.body {
+  display: flex;
+  align-items: center;
+}
+
+.picker[data-orientation='horizontal'] .fields {
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  margin-inline-end: 36px;
+}
+
+.picker[data-orientation='horizontal'] .dial {
+  margin-bottom: 0;
+}
+
+.picker[data-orientation='horizontal'] .actions {
+  margin-top: 4px;
+}
+
+/* The 114dp selector is the *vertical* 24h width; Compose keeps 96 here. */
+.picker[data-orientation='horizontal'][data-24h] .field {
+  width: 96px;
+}
+
+.picker[data-orientation='horizontal'] .period {
+  flex-direction: row;
+  width: 216px;
+  height: 38px;
+  margin-top: 16px;
+}
+
+.picker[data-orientation='horizontal'] .periodButton {
+  border-radius: 0;
+  border-start-start-radius: calc(var(--md-sys-shape-corner-small) - 1px);
+  border-end-start-radius: calc(var(--md-sys-shape-corner-small) - 1px);
+}
+
+.picker[data-orientation='horizontal'] .periodButton + .periodButton {
+  border-top: none;
+  border-inline-start: 1px solid var(--md-sys-color-outline);
+  border-radius: 0;
+  border-start-end-radius: calc(var(--md-sys-shape-corner-small) - 1px);
+  border-end-end-radius: calc(var(--md-sys-shape-corner-small) - 1px);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Vibrant (Compose TimePickerDefaults.vibrantColors / TimeInputDefaults       */
+/* .vibrantColors + TimePickerShapes + VibrantTimePickerDialog)                */
+/* --------------------------------------------------------------------------- */
+/* Container: SurfaceContainer, CornerExtraLarge; 12 around (24 at the sides
+   when horizontal), 12 between content and actions, no title. */
+.picker[data-variant='vibrant'] {
+  padding: 12px;
+  background-color: var(--md-sys-color-surface-container);
+  --_period-item-size: 56px;
+}
+
+.picker[data-variant='vibrant'][data-orientation='horizontal'] {
+  padding: 12px 24px;
+  --_period-item-size: 40px;
+}
+
+/* Display → dial 12 (VibrantVerticalTimePickerGap); AM/PM 16 after the
+   selectors (VibrantPeriodToggleLargePadding), 8 after input / scroll
+   fields (VibrantPeriodTogglePadding). */
+.picker[data-variant='vibrant'] .fields {
+  gap: 16px;
+  margin-bottom: 12px;
+  padding-bottom: 0;
+}
+
+.picker[data-variant='vibrant']:not([data-mode='dial']) .fields {
+  gap: 8px;
+}
+
+.picker[data-variant='vibrant'][data-orientation='horizontal'] .fields {
+  gap: 0;
+  margin-bottom: 0;
+  margin-inline-end: 52px;
+}
+
+.picker[data-variant='vibrant'] .dial {
+  margin-bottom: 12px;
+  background-color: var(--md-sys-color-surface-container-lowest);
+}
+
+.picker[data-variant='vibrant'][data-orientation='horizontal'] .dial {
+  margin-bottom: 0;
+}
+
+.picker[data-variant='vibrant'][data-orientation='horizontal'] .actions {
+  margin-top: 24px;
+}
+
+/* Time selectors: 100×120 (132 wide for a vertical 24h clock), CornerLarge,
+   SurfaceContainerLowest; selected Primary text + 2dp Primary border. */
+.picker[data-variant='vibrant'] .field {
+  width: 100px;
+  height: 120px;
+  border-radius: var(--md-sys-shape-corner-large);
+  background-color: var(--md-sys-color-surface-container-lowest);
+  color: var(--md-sys-color-on-surface);
+}
+
+.picker[data-variant='vibrant'][data-24h] .field {
+  width: 132px;
+}
+
+.picker[data-variant='vibrant'][data-orientation='horizontal'] .field {
+  width: 100px;
+}
+
+.picker[data-variant='vibrant'] .field[data-active] {
+  background-color: var(--md-sys-color-surface-container-lowest);
+  color: var(--md-sys-color-primary);
+  box-shadow: inset 0 0 0 2px var(--md-sys-color-primary);
+}
+
+.picker[data-variant='vibrant'] .separator {
+  width: 16px;
+}
+
+/* AM / PM: two pill toggle buttons (ToggleButton: round → 12dp when
+   selected or pressed, FastSpatial), 8 apart (16 when horizontal), no
+   outline. SurfaceContainerLowest / OnSurfaceVariant; selected
+   PrimaryContainer / OnPrimaryContainer, bold. */
+.picker[data-variant='vibrant'] .period {
+  width: 56px;
+  gap: 8px;
+  border: none;
+}
+
+.picker[data-variant='vibrant'][data-mode='input'] .period {
+  height: 120px;
+}
+
+.picker[data-variant='vibrant'][data-orientation='horizontal'] .period {
+  width: 216px;
+  height: 40px;
+  gap: 16px;
+}
+
+.picker[data-variant='vibrant'] .periodButton,
+.picker[data-variant='vibrant'] .periodButton + .periodButton {
+  border: none;
+  border-radius: calc(var(--_period-item-size) / 2);
+  background-color: var(--md-sys-color-surface-container-lowest);
+  color: var(--md-sys-color-on-surface-variant);
+  transition: border-radius var(--md-sys-motion-spring-fast-spatial-duration)
+    var(--md-sys-motion-spring-fast-spatial-easing);
+  --md-focus-ring-offset: 2px;
+}
+
+.picker[data-variant='vibrant'] .periodButton[data-selected] {
+  border-radius: var(--md-sys-shape-corner-medium);
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  font-weight: 700;
+}
+
+.picker[data-variant='vibrant'] .periodButton:active {
+  border-radius: var(--md-sys-shape-corner-medium);
+}
+
+/* Input fields: 100×120 DisplayLarge, SurfaceContainerLowest, no border
+   until focused (2dp Primary, Primary text); no "Hour" / "Minute" line —
+   only an error message, in the flow under the field. */
+.picker[data-variant='vibrant'][data-mode='input'] .timeFields {
+  align-items: flex-start;
+}
+
+.picker[data-variant='vibrant'][data-mode='input'] .separator {
+  height: 120px;
+}
+
+.picker[data-variant='vibrant'] .fieldColumn {
+  flex-direction: column;
+}
+
+.picker[data-variant='vibrant'] .fieldInput {
+  width: 100px;
+  height: 120px;
+  border-radius: var(--md-sys-shape-corner-large);
+  background-color: var(--md-sys-color-surface-container-lowest);
+  color: var(--md-sys-color-on-surface);
+  font-family: var(--md-sys-typescale-display-large-font);
+  font-size: var(--md-sys-typescale-display-large-size);
+  font-weight: var(--md-sys-typescale-display-large-weight);
+  line-height: var(--md-sys-typescale-display-large-line-height);
+  letter-spacing: var(--md-sys-typescale-display-large-tracking);
+}
+
+.picker[data-variant='vibrant'] .fieldInput:focus {
+  background-color: var(--md-sys-color-surface-container-lowest);
+  color: var(--md-sys-color-primary);
+}
+
+.picker[data-variant='vibrant'] .fieldInput[data-error] {
+  border: 2px solid var(--md-sys-color-error);
+  background-color: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-error);
+}
+
+.picker[data-variant='vibrant'] .fieldStateLayer {
+  bottom: auto;
+  height: 120px;
+  border-radius: var(--md-sys-shape-corner-large);
+}
+
+.picker[data-variant='vibrant'] .supportingText {
+  position: static;
+  margin-top: 7px;
+}
+
+.picker[data-variant='vibrant'] .supportingText:not([data-error]),
+.picker[data-variant='vibrant'] .supportingText:empty {
+  display: none;
+}
+
 /* B3: state changes are instant — the hand jumps, the numbers swap. */
 /* High contrast (forced colors): the dial, hand, selector and the selected
    field / period are all background fills, which forced colors replaces with
@@ -491,6 +728,12 @@
   .scrim {
     forced-color-adjust: none;
     background-color: color-mix(in srgb, CanvasText 40%, transparent);
+  }
+
+  .picker[data-variant='vibrant'] .field[data-active],
+  .picker[data-variant='vibrant'] .periodButton[data-selected] {
+    background-color: Highlight;
+    color: HighlightText;
   }
 }
 

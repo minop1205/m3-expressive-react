@@ -9,8 +9,9 @@ import { TimePicker, Button } from 'm3-expressive-react'
 
 # TimePicker
 
-MD3 time picker with a clock dial and a keyboard input mode, shown inline
-or as a modal dialog, in 12-hour (AM/PM) or 24-hour format.
+MD3 time picker with a clock dial, a keyboard input mode and Expressive
+scroll wheels, shown inline or as a modal dialog, in 12-hour (AM/PM) or
+24-hour format, in the standard or vibrant style.
 
 export const formatTime = (t) =>
   t ? `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}` : '—'
@@ -81,6 +82,55 @@ When `ampm` is omitted it follows the `locale`'s hour cycle (default
 <TimePicker locale="de-DE" />
 ```
 
+## Scroll wheels
+
+`mode="scroll"` shows two endless scroll wheels (Compose's `TimeScroll`,
+built on [ScrollField](/components/scrollfield)) instead of the dial. Scroll
+with the mouse wheel, drag, or use ArrowUp / ArrowDown. The toggle then
+switches between scroll and text input.
+
+<Demo>
+  <TimePicker defaultMode="scroll" defaultValue={{ hour: 7, minute: 45 }} />
+</Demo>
+
+```tsx
+<TimePicker defaultMode="scroll" defaultValue={{ hour: 7, minute: 45 }} />
+```
+
+## Vibrant style
+
+`variant="vibrant"` is the Expressive style (Compose's `vibrantColors()`,
+`TimePickerShapes` and `VibrantTimePickerDialog`): a SurfaceContainer
+container with 12px padding and no headline, larger 100×120
+SurfaceContainerLowest time fields with a Primary selection, pill-shaped
+AM / PM toggle buttons and a SurfaceContainerLowest dial. It applies to every
+mode.
+
+<Demo>
+  <TimePicker variant="vibrant" defaultValue={{ hour: 9, minute: 30 }} onAccept={() => {}} />
+  <TimePicker variant="vibrant" defaultMode="scroll" defaultValue={{ hour: 9, minute: 30 }} />
+</Demo>
+
+```tsx
+<TimePicker variant="vibrant" onAccept={saveTime} />
+<TimePicker variant="vibrant" defaultMode="scroll" />
+```
+
+## Horizontal layout
+
+`orientation="horizontal"` (Compose's `TimePickerLayoutType.Horizontal`)
+puts the time display and a wide AM / PM toggle beside the dial, for
+landscape screens or short containers. It only changes the dial mode: the
+input and scroll modes have a single layout.
+
+<Demo>
+  <TimePicker orientation="horizontal" defaultValue={{ hour: 16, minute: 20 }} />
+</Demo>
+
+```tsx
+<TimePicker orientation="horizontal" />
+```
+
 ## Modal dialog
 
 Pass `open` to show the picker as a modal dialog (scrim, focus trap,
@@ -137,8 +187,8 @@ action row on an inline picker.
 
 Every built-in string is a prop with an English default: `titleLabel`,
 `hourLabel`, `minuteLabel`, `amLabel`, `pmLabel`, `okLabel`, `cancelLabel`,
-`switchToInputLabel`, `switchToDialLabel`, and the `getHourLabel` /
-`getMinuteLabel` / `getErrorLabel` functions.
+`switchToInputLabel`, `switchToDialLabel`, `switchToScrollLabel`, and the
+`getHourLabel` / `getMinuteLabel` / `getErrorLabel` functions.
 
 <Demo>
   <TimePicker
@@ -173,6 +223,10 @@ Every built-in string is a prop with an English default: `titleLabel`,
   around the ring (continuing into the inner ring in 24-hour mode) and
   Enter / Space select. Numbers are read as "3 o'clock" / "15 minutes"
   (customize with `getHourLabel` / `getMinuteLabel`).
+- In scroll mode the hour and minute wheels are spinbuttons ("Select hour"
+  / "Select minutes", read as "7 o'clock" / "45 minutes"): ArrowUp / ArrowDown
+  step and wrap, PageUp / PageDown move by 3 hours (6 on a 24-hour clock) or
+  5 minutes, Home / End jump to the ends.
 - The modal picker traps focus, closes on Escape, and returns focus to the
   opener.
 

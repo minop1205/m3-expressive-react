@@ -56,6 +56,7 @@ import {
   Radio,
   RadioGroup,
   Ripple,
+  ScrollField,
   SearchBar,
   SegmentedButton,
   SegmentedButtons,
@@ -192,6 +193,7 @@ const cases: Record<string, ReactElement> = {
   ListItem: <ListItem headline="One" />,
   LoadingIndicator: <LoadingIndicator />,
   PullToRefresh: <PullToRefresh refreshing>Content</PullToRefresh>,
+  ScrollField: <ScrollField max={59} aria-label="Minute" />,
   Fab: <Fab icon={icon} aria-label="Add" />,
   NavigationBar: (
     <NavigationBar value="a">

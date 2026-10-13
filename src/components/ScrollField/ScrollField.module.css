@@ -1,0 +1,137 @@
+/**
+ * MD3 Expressive scroll field (androidx.compose.material3 ScrollField /
+ * ScrollFieldDefaults): 200dp tall (ScrollFieldHeight), items a third of
+ * that, ShapeDefaults.Large corners, SurfaceContainerLowest container. The
+ * centred value is DisplayLargeEmphasized in OnSurface, the others
+ * DisplayMedium in Outline, interpolated on the FastSpatial spring
+ * (ScrollFieldDefaults.Item). Disabled: container and content at 38%.
+ *
+ * Override the size with `width` / `height` (e.g. TimePicker uses 100×120).
+ */
+.root {
+  --_container-color: var(--md-sys-color-surface-container-lowest);
+  --_content-color: var(--md-sys-color-outline);
+  --_selected-content-color: var(--md-sys-color-on-surface);
+  --_container-shape: var(--md-sys-shape-corner-large);
+  --_item-size: calc(200px / 3);
+
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+  width: 100px;
+  height: 200px;
+  border-radius: var(--_container-shape);
+  outline: none;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.root[data-disabled] {
+  --_container-color: color-mix(
+    in srgb,
+    var(--md-sys-color-surface-container-lowest) 38%,
+    transparent
+  );
+  --_content-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  --_selected-content-color: color-mix(
+    in srgb,
+    var(--md-sys-color-on-surface) 38%,
+    transparent
+  );
+
+  cursor: default;
+}
+
+.viewport {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  background-color: var(--_container-color);
+}
+
+/* Focus state layer (Compose ripple indication on the focusable). */
+.viewport::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-color: var(--_selected-content-color);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.root:focus-visible .viewport::after {
+  opacity: var(--md-sys-state-focus-state-layer-opacity);
+}
+
+/* The strip is centred on the viewport; JS translates it by the scroll
+   position and each item by its page. */
+.strip {
+  position: absolute;
+  top: calc(50% - var(--_item-size) / 2);
+  left: 0;
+  right: 0;
+  height: var(--_item-size);
+}
+
+/* Settling / stepping: the pager snap — Compose PagerDefaults /
+   animateScrollToPage use a plain critically damped spring(), not a
+   motion-scheme key, so it keeps the tween tokens (as PullToRefresh).
+   Off while dragging. */
+.strip[data-animate] {
+  transition: transform var(--md-sys-motion-duration-medium1)
+    var(--md-sys-motion-easing-standard);
+}
+
+.item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--_item-size);
+  color: var(--_content-color);
+  font-family: var(--md-sys-typescale-display-medium-font);
+  font-size: var(--md-sys-typescale-display-medium-size);
+  font-weight: var(--md-sys-typescale-display-medium-weight);
+  line-height: var(--md-sys-typescale-display-medium-line-height);
+  letter-spacing: var(--md-sys-typescale-display-medium-tracking);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transition-property: color, font-size, line-height, font-weight;
+  transition-duration: var(--md-sys-motion-spring-fast-spatial-duration);
+  transition-timing-function: var(--md-sys-motion-spring-fast-spatial-easing);
+}
+
+/* DisplayLargeEmphasized (Compose TypeScaleTokens: 57/64, Medium, 0). */
+.item[data-selected] {
+  color: var(--_selected-content-color);
+  font-family: var(--md-sys-typescale-display-large-font);
+  font-size: var(--md-sys-typescale-display-large-size);
+  font-weight: var(--md-sys-typescale-weight-medium);
+  line-height: var(--md-sys-typescale-display-large-line-height);
+  letter-spacing: 0;
+}
+
+@media (forced-colors: active) {
+  .viewport {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+
+  .item[data-selected] {
+    color: Highlight;
+  }
+}
+
+/* B3: the snap is instant; the centred-value interpolation runs on the
+   FastSpatial token, which is already 0ms under reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  .strip[data-animate] {
+    transition: none;
+  }
+}

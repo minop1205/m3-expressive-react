@@ -234,7 +234,8 @@ unaffected.
 | SearchBar docked view | DefaultSpatial (expand) / FastSpatial (collapse) | content fades stay Compose tweens |
 | AppBar / Toolbar | FastSpatial (slots, padding) | DefaultEffects (color, snap / hide) |
 | DatePicker | FastSpatial (menu arrow) | DefaultEffects (year reveal, mode switch) |
-| TimePicker | DefaultSpatial (hand) | DefaultEffects (dial crossfade) |
+| TimePicker | DefaultSpatial (hand), FastSpatial (vibrant AM / PM ToggleButton shape) | DefaultEffects (dial crossfade) |
+| ScrollField centred value (DisplayMedium ⇄ DisplayLargeEmphasized size and color) | FastSpatial (Compose `ScrollFieldDefaults.Item` animates both on `fastSpatialSpec`) | — |
 | Checkbox | DefaultSpatial (draw, check↔dash, fill scale) | DefaultEffects in / FastEffects out |
 | RadioButton | FastSpatial (dot grow) | DefaultEffects (ring color, dot shrink†) |
 | Switch | FastSpatial (icon rotate only) — thumb offset / size follow material-web (#373, see below) | — (colors: material-web 67ms) |
@@ -253,7 +254,9 @@ elevation (`box-shadow`; Compose `ElevationDefaults` tweens), state layers /
 Ripple / FocusRing, Dialog and the DatePicker / TimePicker modal enter
 (platform dialog), BottomSheet / SideSheet slide (`BottomSheetAnimationSpec`
 tween 300ms FastOutSlowIn), SwipeToDismiss settle (`AnchoredDraggableDefaults`
-tween), PullToRefresh settle to the threshold / hidden (`Animatable`
+tween), ScrollField snap (foundation `PagerDefaults.flingBehavior` /
+`animateScrollToPage` default `spring()`: `duration-medium1` `easing-standard`),
+PullToRefresh settle to the threshold / hidden (`Animatable`
 default `spring()`: `duration-medium1` `easing-standard`), determinate progress (`ProgressAnimationSpec`, a fixed non-bouncy
 spring), Switch colors and thumb (web adaptation #373:
 slide 300ms `--md-web-motion-easing-back-out`, press grow `duration-short2`
