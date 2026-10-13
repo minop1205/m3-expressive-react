@@ -47,6 +47,26 @@ Each `Option` has a string `value`. Its children are the label, and the field
 shows that label once the option is selected. The selected option is shown
 with the tertiary-container colors and a check mark.
 
+## Tonal style (experimental)
+
+`tonal` gives the field the same Expressive tonal look as
+[TextField `tonal`](/components/textfield#tonal-style-experimental): a 12dp
+rounded container, no indicator line on `filled`, and an outline-variant
+border with the label inside the container on `outlined`. Compose still
+marks these values `TODO(b/448727879)`, so the look may change once the spec
+settles.
+
+<Demo>
+  <Select tonal label="Filled tonal" defaultValue="banana">
+    <Option value="apple">Apple</Option>
+    <Option value="banana">Banana</Option>
+  </Select>
+  <Select tonal variant="outlined" label="Outlined tonal" defaultValue="banana">
+    <Option value="apple">Apple</Option>
+    <Option value="banana">Banana</Option>
+  </Select>
+</Demo>
+
 ## Controlled value
 
 `value` + `onChange(event, value)` control the selection. `onChange` fires
