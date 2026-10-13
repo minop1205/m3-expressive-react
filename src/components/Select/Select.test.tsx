@@ -484,3 +484,13 @@ describe('Select', () => {
     })
   })
 })
+
+describe('Select tonal style (B44, #444)', () => {
+  it('shares the TextField tonal class and keeps the outlined label out of the notch', async () => {
+    const { container } = render(<Fruit tonal variant="outlined" defaultValue="apple" />)
+    const root = container.firstElementChild as HTMLElement
+    expect(root.className).toMatch(/tonal/)
+    expect(container.querySelector('[class*="outlineLabel"]')).toBeNull()
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})

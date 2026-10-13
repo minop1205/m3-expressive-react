@@ -173,6 +173,17 @@
         "default": "./dist/components/Divider/index.cjs"
       }
     },
+    "./DragHandle": {
+      "import": {
+        "types": "./dist/components/DragHandle/index.d.ts",
+        "node": "./dist/components/DragHandle/index.js",
+        "default": "./dist/DragHandle/index.js"
+      },
+      "require": {
+        "types": "./dist/components/DragHandle/index.d.cts",
+        "default": "./dist/components/DragHandle/index.cjs"
+      }
+    },
     "./Fab": {
       "import": {
         "types": "./dist/components/Fab/index.d.ts",
@@ -500,6 +511,9 @@
       ],
       "Divider": [
         "./dist/components/Divider/index.d.ts"
+      ],
+      "DragHandle": [
+        "./dist/components/DragHandle/index.d.ts"
       ],
       "Fab": [
         "./dist/components/Fab/index.d.ts"

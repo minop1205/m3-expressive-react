@@ -31,6 +31,7 @@ const meta = {
   },
   argTypes: {
     variant: { control: 'inline-radio', options: ['filled', 'outlined'] },
+    tonal: { control: 'boolean' },
     error: { control: 'boolean' },
     disabled: { control: 'boolean' },
     required: { control: 'boolean' },
@@ -118,6 +119,21 @@ export const Open: Story = {
   render: (args) => (
     <div style={{ paddingBottom: 300 }}>
       <Select {...args} defaultOpen defaultValue="banana" placeholder="Pick one" />
+    </div>
+  ),
+}
+
+/**
+ * `tonal` (experimental, as TextField `tonal` — Compose `tonalColors()` +
+ * `roundedShape`, still `TODO(b/448727879)` upstream).
+ */
+export const Tonal: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <Select {...args} tonal defaultValue="banana" supportingText="Supporting text" />
+      <Select {...args} tonal variant="outlined" defaultValue="banana" supportingText="Supporting text" />
+      <Select {...args} tonal variant="outlined" startIcon={<Commute />} placeholder="Pick one" />
+      <Select {...args} tonal error defaultValue="grape" errorText="Out of stock" />
     </div>
   ),
 }

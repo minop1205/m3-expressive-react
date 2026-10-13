@@ -42,6 +42,20 @@ export interface TextFieldProps
   > {
   /** Container style. @default 'filled' */
   variant?: TextFieldVariant
+  /**
+   * Expressive tonal style (Compose `TextFieldDefaults.tonalColors()` /
+   * `OutlinedTextFieldDefaults.tonalColors()` with `roundedShape`): a 12dp
+   * rounded container, no active indicator on `filled` (surface-container
+   * fill, error-container in error) and an outline-variant border on
+   * `outlined` (transparent container, label inside the container rather than
+   * notched into the border). The focused label stays on-surface-variant.
+   *
+   * @experimental Compose still marks these values
+   * `TODO(b/448727879)` (pending real tokens), so the look may change in a
+   * minor release when the spec settles.
+   * @default false
+   */
+  tonal?: boolean
   /** Field label; rendered with a trailing `*` when `required`. */
   label?: string
   /**
@@ -116,7 +130,15 @@ export interface TextFieldProps
   onFocus?: FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>
   /** Blur handler for the input / textarea. */
   onBlur?: FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>
-  /** Native input `type` (single-line only). @default 'text' */
+  /**
+   * Native input `type` (single-line only). For a password field (Compose
+   * `SecureTextField`) use `type="password"` with an `autoComplete` of
+   * `"current-password"` / `"new-password"`, and put a show / hide toggle in
+   * `endIcon`: an `IconButton variant="standard" toggle` labelled
+   * "Show password" (the label stays fixed; `aria-pressed` carries the
+   * state) that switches `type` between `'password'` and `'text'`.
+   * @default 'text'
+   */
   type?: string
   /** Native input `name`. */
   name?: string
@@ -136,7 +158,7 @@ const defaultCounterLabel = (length: number, maxLength: number) =>
   `Character count: ${length} of ${maxLength}`
 
 /**
- * Material Design 3 Text field (filled / outlined).
+ * Material Design 3 Text field (filled / outlined, optionally `tonal`).
  *
  * A single-line `<input>` — or auto-growing `<textarea>` with `multiline` —
  * wrapped in the MD3 field anatomy: floating label (outlined variant notches
@@ -157,6 +179,7 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
   function TextField(
     {
       variant = 'filled',
+      tonal = false,
       label,
       labelPlacement = 'floating',
       shrinkLabel = false,
@@ -431,6 +454,7 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
         className={clsx(
           styles.textField,
           styles[variant],
+          tonal && styles.tonal,
           focused && styles.focused,
           populated && styles.populated,
           showError && styles.error,
@@ -464,7 +488,10 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
             <div className={styles.outline} aria-hidden="true">
               <div className={styles.outlineStart} />
               <div className={styles.outlineNotch}>
-                {fieldLabel && (
+                {/* Tonal outlined keeps the label inside the container
+                    (Compose: use with `TextFieldLabelPosition.Inside`), so
+                    the border has no notch. */}
+                {fieldLabel && !tonal && (
                   <span className={styles.outlineLabel}>{fieldLabel}</span>
                 )}
               </div>
