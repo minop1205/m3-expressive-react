@@ -2,8 +2,9 @@
 
 Date: 2026-10-13. Issue #434, phase 1 (non-editable select). Phase 2
 (autocomplete, the editable combobox) shares the popup and the option
-component and is not covered here. API ruling: docs/decisions/phase-b-api.md
-**B31**.
+component (`src/internal/listbox`) and is covered in
+docs/specs/autocomplete.md (ruling B42). API ruling:
+docs/decisions/phase-b-api.md **B31**.
 
 Sources:
 
@@ -66,7 +67,9 @@ Select that picks one value is the case `SelectableDropdownMenuItem` exists
 for (`Role.RadioButton`, `Menu.kt:726`). **Ruling: the listbox and options
 follow the sample's Expressive styling.** The baseline defaults are recorded
 above for reference. If an owner wants the baseline look, the change is
-limited to the `--_listbox-*` / `--_option-*` tokens in `Select.module.css`.
+limited to the `--_listbox-*` / `--_option-*` tokens, which since phase 2 live
+in the shared `src/internal/listbox/Listbox.module.css` (Select and
+Autocomplete both use them).
 
 | Part | Value | Source |
 |---|---|---|
@@ -117,4 +120,4 @@ limited to the `--_listbox-*` / `--_option-*` tokens in `Select.module.css`.
   multi-select, and the m3 menu guidance doesn't describe one either. It is
   left for a later decision.
 - Option groups and dividers inside the listbox.
-- Autocomplete (phase 2).
+- Autocomplete: phase 2, docs/specs/autocomplete.md.

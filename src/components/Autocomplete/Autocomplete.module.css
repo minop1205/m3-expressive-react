@@ -1,0 +1,66 @@
+/**
+ * MD3 Autocomplete (editable exposed dropdown menu). The field reuses the
+ * TextField module (TextField.module.css) and the listbox is shared with
+ * Select (src/internal/listbox/Listbox.module.css); this module adds the
+ * autocomplete-specific parts. Values: docs/specs/autocomplete.md.
+ */
+
+.fullWidth {
+  display: flex;
+  width: 100%;
+}
+
+.autocomplete .field {
+  cursor: text;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The trailing ArrowDropDown is the SecondaryEditable anchor: a button that
+   toggles the listbox without taking focus from the input. */
+.toggle {
+  appearance: none;
+  margin-block: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+/* 48dp minimum touch target. */
+.toggle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 48px;
+  height: 48px;
+  transform: translate(-50%, -50%);
+}
+
+.toggle:disabled {
+  cursor: default;
+}
+
+/* ExposedDropdownMenuDefaults.TrailingIcon: rotate(180f) while expanded —
+   instant, as in Compose. */
+.autocomplete[data-open] .toggle svg {
+  transform: rotate(180deg);
+}
+
+/* The form control: invisible, inert, and laid over the bottom edge of the
+   field so the browser's validation bubble points at it. */
+.nativeInput {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}

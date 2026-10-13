@@ -135,7 +135,8 @@ Buttons & actions — `Button`, `IconButton`, `ButtonGroup`, `SplitButton`,
 `SegmentedButton`, `Fab`, `FabMenu`, `Chip` / `ChipSet`
 
 Selection & input — `Checkbox`, `Radio` / `RadioGroup`, `Switch`, `Slider`,
-`TextField`, `Select`, `SearchBar`, `DatePicker`, `TimePicker`
+`TextField`, `Select`, `Autocomplete`, `SearchBar`, `DatePicker`,
+`TimePicker`
 
 Navigation — `AppBar`, `Toolbar`, `NavigationBar`, `NavigationRail`,
 `NavigationDrawer`, `Tabs`, `Menu`

@@ -60,6 +60,7 @@ import {
   SegmentedButtons,
   Select,
   Option,
+  Autocomplete,
   SideSheet,
   Slider,
   Snackbar,
@@ -230,6 +231,15 @@ const cases: Record<string, ReactElement> = {
     </Select>
   ),
   Option: <Option value="a">A</Option>,
+  Autocomplete: (
+    <Autocomplete
+      open
+      label="Label"
+      name="field"
+      defaultValue="a"
+      options={['a', { value: 'b', label: 'B', disabled: true }]}
+    />
+  ),
   Badge: <Badge />,
   Snackbar: <Snackbar message="Saved" />,
   SnackbarProvider: (
