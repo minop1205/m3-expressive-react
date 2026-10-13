@@ -60,6 +60,8 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B31 | #434 | Select(exposed dropdown menu・非編集) | **専用の `<Select>` + `<Option>` 子要素、`value` / `defaultValue` / `onChange(event, value)`、APG select-only combobox + 隠しネイティブ input** | なし(追加) | 決定(2026-10-13・#434 フェーズ 1) |
 | B38 | #440 | Tooltip の配置拡張・rich の既定位置・caret | **`placement` に `'start' \| 'end' \| 'left' \| 'right'`(論理値は RTL で反転、flip あり)、`placement` 未指定の rich は bottom-end の角 + 4 隅の動的配置、`caret?: boolean`(16×8dp)** | 既定値変更(rich の未指定時の位置) | 決定(2026-10-13・#440 の提案どおり) |
 | B32 | #441 | PullToRefresh(新規) | **自身がスクロールコンテナになる `<PullToRefresh refreshing onRefresh indicator disabled threshold>`、touch + pointer、reduced motion はフェードのみ、`aria-busy` + polite live region** | なし(追加) | 決定(2026-10-13・#441 の API 案をもとに確定) |
+| B33 | #435 | Menu の選択項目(単一 / 複数)・supporting text | **`MenuGroup selectionMode="single" \| "multiple"` + `value` / `defaultValue` / `onChange(event, value)`(single = `menuitemradio`、multiple = `menuitemcheckbox` で開いたまま)、`closeOnSelect`(group / item)、`MenuItem supportingText` / `selectedIcon`** | なし(追加。baseline の selected に色が付く) | 決定(2026-10-13・実装時に確定) |
+| B34 | #436 | Menu のサブメニューとコンテキストメニュー | **`MenuItem submenu={…}`(APG のサブメニュー操作、RTL 反転、ホバー意図 400ms、親メニューの横に flip 配置、見た目とモーションは md-sub-menu)+ `Menu anchorPosition={{ top, left }}`(`trigger` 省略可)と `onContextMenu` レシピ。`ContextMenu` ラッパーは作らない** | なし(追加) | 決定(2026-10-13・実装時に確定) |
 | B40 | #443 | Tabs のインラインアイコンとバッジ | **`Tab iconPosition="top" \| "start"`(MUI 名、既定 `'top'`)+ `badge={<Badge …/>}`(アイコン上 / テキストのみはラベルの後ろ、読み上げはラベルの後)** | なし(追加) | 決定(2026-10-13・#443 の API 案どおり) |
 | B39 | #442 | SearchBar の full-screen レイアウト | **`layout="docked" \| "fullscreen"`(既定 docked)、full-screen は Compose `ExpandedFullScreenContainedSearchBar`(contained)、戻るボタンの名前は `backLabel`** | なし(追加) | 決定(2026-10-13・#442 の API 案どおり) |
 | B37 | #439 | TextField のラベル位置(上置き・常時縮小) | **`labelPlacement?: 'floating' \| 'above'`(既定 `'floating'`)+ `shrinkLabel?: boolean`、DatePickerField も同名で素通し** | なし(追加) | 決定(2026-10-13・#439 の API 案どおり) |
@@ -1430,6 +1432,117 @@ API:
 
 **影響**: 非破壊(新規コンポーネント・新しい subpath `m3-expressive-react/PullToRefresh`)。VRT: `Components/PullToRefresh` の
 Default / Refreshing / Circular を追加。
+## Menu
+
+### B33: Menu の選択項目(単一 / 複数)と supporting text
+
+- **Issue**: #435
+- **状態**: 決定(2026-10-13・実装時に確定)
+- **背景**: m3 menus/guidelines「Single-select menus can have one item selected at a time」「Multi-select menus can have many
+  selected items. They stay open until the person dismisses the menu」。Compose は `SelectableDropdownMenuItem`
+  (`Role.RadioButton`、Menu.kt:705 / :726)と `CheckableDropdownMenuItem`(`Role.Checkbox`、:463 / :484)を持ち、すべての
+  item に `supportingText`(:393 / :472 / :714)、選択時に leading icon を差し替える `selectedLeadingIcon` /
+  `checkedLeadingIcon` がある。現状は `selected` が常に `menuitemcheckbox` で、選択すると必ず閉じる。
+
+**選択肢**
+
+- **(a) `MenuGroup` に選択モデル**(B13 ButtonGroup と同型)
+  ```tsx
+  <MenuGroup label="Sort by" selectionMode="single" value={sort} onChange={(e, v) => setSort(v)}>
+    <MenuItem value="name" selectedIcon={<CheckIcon />}>Name</MenuItem>
+    <MenuItem value="date" selectedIcon={<CheckIcon />} supportingText="Newest first">Date</MenuItem>
+  </MenuGroup>
+  ```
+  - 利点: radio の集合が `role="group"` 単位で支援技術に伝わる(APG の menuitemradio はグループ内で排他)。B13 / B17 と
+    同じ `selectionMode` + `value` / `onChange(event, value)` の語彙。欠点: 選択項目にはグループが要る
+- **(b) item 単位の `type="radio" | "checkbox"`**
+  - 利点: グループ不要。欠点: 排他の範囲が DOM 上で表現されず、状態は利用者がすべて手配線する
+- **(c) 現状維持(`selected` = checkbox のみ)** — m3 の single-select と「開いたまま」を表現できない
+
+**決定**: **(a)**。補足:
+
+- `selectionMode: 'none'(既定) | 'single' | 'multiple'`。値の型は single = `string | null`、multiple = `string[]`
+  (B13 と同じ判別 union)。item の `selected` を明示した場合はグループの値より優先(item 単位の controlled)。
+  `selectionMode` のないグループやグループ外の `selected` は従来どおり `menuitemcheckbox`(非破壊)
+- single は radio の意味: 選択中の item を再度押しても外れない(`onChange` も呼ばない)
+- 閉じるかどうか: `closeOnSelect` を **item と group の両方**に置き、item > group > 既定の順で決める。既定は
+  multiple なら `false`(m3「stay open until dismissed」)、それ以外は `true`。MUI に同名の prop はないが Autocomplete の
+  `disableCloseOnSelect` と同じ考え方を肯定形で持つ
+- `selectedIcon`(A5 / B22 と同名): 選択中は `startIcon` を置き換える。`startIcon` がなければ選択時に幅 0 → アイコン幅へ展開
+  (Compose `AnimatedVisibility` の expandHorizontally + fade、Menu.kt:2071 — FastSpatial / FastEffects)。展開前もアイコン
+  と文字の間隔は残る(Compose の `MenuArrangement` と同じ)
+- `supportingText`: ラベルの下に BodyMedium(Compose `LabelWithSupportingText`、Menu.kt:2252-2261 /
+  `SegmentedMenuTokens.ItemSupportingTextFont`)。色は `StandardMenuTokens.ItemSupportingTextColor` = on-surface-variant
+  (Compose の出荷実装は色を指定せずラベル色を継承するが、トークン = 仕様を優先)、選択時はラベルと同じ選択色。支援技術には
+  ラベルを名前、supporting text を説明(`aria-describedby`)として出す
+- **padding**: vertical variant は既存のとおり外側 4dp inset(`DropdownMenuSelectableItemPadding`、Menu.kt:2381)と縦 12dp
+  (`MenuDefaults.SelectableItemVerticalPadding`、MenuDefaults.kt:863)。supporting text があると外側に縦 2dp を足す
+  (`DropdownMenuSelectableItemWithSupportTexPadding`、Menu.kt:2382)。横は **SegmentedMenuTokens の leading / trailing
+  16dp・between 12dp を維持**し、`MenuDefaults.DropdownMenuSelectableItemContentPadding`(precision pointer フラグ既定オフ時の
+  横 12dp)と `itemHorizontalArrangement`(8dp)は採らない — トークン(= m3 vertical menu の仕様値)を Defaults より優先
+  (要オーナー確認: m3.material.io の vertical menu specs で横 padding を目視確認したい)。baseline は 12dp のまま、supporting
+  text のある 2 行 item だけ縦 12dp
+- **baseline の selected 色**: これまで baseline は selected を描かなかった(監査 menu.md: Compose の `MenuTokens.ListItemSelected*`
+  は未使用の dead token)。単一選択を baseline でも使えるようにしたので、m3 baseline specs と `MenuTokens`(:34-41)、
+  material-web `md-menu-item` の selected(secondary-container / on-secondary-container)を採用する
+- baseline の `MenuGroup` は面(背景・影・角丸)を持たず、項目のグループ化とラベルだけを担う(vertical では従来どおり面)
+
+**影響**: 非破壊(prop 追加のみ)。見た目: baseline で `selected` を付けていた item に secondary-container の色が付く。VRT:
+新ストーリー(SingleSelect / VerticalMultiSelect)のみ。対象: Menu(MenuGroup / MenuItem)。
+
+### B34: Menu のサブメニューとコンテキストメニュー
+
+- **Issue**: #436
+- **状態**: 決定(2026-10-13・実装時に確定)
+- **背景**: m3 menus/guidelines「On web, menus can open submenus」「Submenus should open next to the parent menu item without
+  overlapping it」「Note: Submenus are not currently available on Jetpack Compose」「The corner shape changes to show which
+  submenu has focus」。context menu は menus/overview「usually open with a secondary click」。Compose には実装がないため、
+  挙動は WAI-ARIA APG の menu パターン、見た目とモーションは material-web `md-sub-menu` を参照する。
+
+**選択肢(サブメニュー)**
+
+- **(a) `<MenuItem submenu={<>…items…</>}>`**
+  - 利点: 親 item とサブメニューが 1 要素で対応し、variant / color / 閉じ方を親から継承できる。新しいコンポーネントが増えない
+  - 欠点: サブメニュー自体に任意の prop(独自の `aria-label` 等)を渡せない(名前は親 item から付く)
+- **(b) `MenuSub` / `MenuSubTrigger` / `MenuSubContent`(Radix 型)** — 柔軟だが 3 部品が増え、MUI 系の利用者には馴染みが薄い
+- **(c) `Menu` を入れ子にする(`<Menu trigger={<MenuItem/>}>`)** — `trigger` は外部ボタン向けの設計で、menuitem に
+  `aria-haspopup` 等を載せる経路・閉じ方・フォーカス管理が二重になる
+
+**選択肢(コンテキストメニュー)**
+
+- **(a) `Menu anchorPosition={{ top, left }}`(MUI Popover の `anchorPosition` と同じ形)+ `onContextMenu` レシピ**
+- **(b) `<ContextMenu>` ラッパー(右クリック / Shift+F10 / ContextMenu キーを内部で処理)** — 1 MD3 コンポーネント = 1
+  コンポーネントの方針から外れ、ラップ対象の要素の扱い(子に props を注入するか、`<div>` で包むか)という新しい API 判断が要る
+
+**決定**: サブメニュー **(a)**、コンテキストメニュー **(a)**。補足:
+
+- **キーボード(APG)**: 親 item で ArrowRight(RTL は ArrowLeft)/ Enter / Space → 開いて先頭 item へ。サブメニュー内で
+  ArrowLeft(RTL は ArrowRight)/ Escape → そのサブメニューだけ閉じて親 item へ(md-sub-menu の open / close キーと同じ、
+  sub-menu.ts:384-416。Escape が 1 段だけ閉じるのも :340)。↑↓ / Home / End / typeahead はそのサブメニュー内だけで動き、
+  Tab はメニュー全体を閉じる。サブメニュー内の item を選ぶとメニュー全体が閉じて trigger にフォーカスが戻る。RTL 判定は
+  JS(`getComputedStyle().direction`)、CSS は `[dir='rtl']`(`:dir()` は使わない)
+- **ARIA**: 親 item は `aria-haspopup="menu"` / `aria-expanded` / `aria-controls`、サブメニューは `role="menu"` で親 item
+  を `aria-labelledby`。サブメニューは親 item の次の兄弟要素として描く(positional shape の `:first-of-type` を崩さない)
+- **ホバー意図**: item に 400ms 留まると開き、item とサブメニューの両方から 400ms 離れると閉じる(md-sub-menu
+  `hoverOpenDelay` / `hoverCloseDelay` の既定値、sub-menu.ts:56-61)。遅延が斜め移動の猶予を兼ねる。ホバーで開いた時は
+  フォーカスを動かさない。値は公開 prop にしない(内部定数)
+- **配置**: 親メニューの端の外側、上端を親 item に揃える(md-sub-menu anchor corner START_END / menu corner START_START、
+  sub-menu.ts:48-52)。入らなければ反対側へ flip、縦は viewport 内に clamp(B4 の共通ヘルパーの `end` 側 — #476 で追加 — に
+  上端揃えと仮想 anchor を追加)。gap は baseline 0、vertical は SegmentedGap 2dp
+- **見た目とモーション(md-sub-menu を記録)**: サブメニューは親と同じメニュー面(baseline: surface-container / 4dp /
+  Level2、vertical: MenuGroup の面)。md-sub-menu はサブメニューを `quick`(アニメーションなし、sub-menu.ts:153 / :208)で
+  開閉するので、scale / fade のモーションは付けない。開いている間、親 item は強調表示を保つ(md-sub-menu は item を
+  `selected` にする)— ここでは hover state layer 相当の色を保持し、vertical では m3 の「corner shape changes」に従って
+  selected と同じ 12dp へ形を変える
+- **コンテキストメニュー**: `anchorPosition` は viewport 座標(`clientY` / `clientX`)。指定時は点の下・後ろに開き、入らなければ
+  上へ flip、viewport 内に clamp。`trigger` は省略可能になり、その場合は `open` を controlled で使い `aria-label` を付ける。
+  閉じたらフォーカスは開く前にフォーカスされていた要素へ戻る。ドキュメントのレシピ: 対象要素の `onContextMenu` で
+  `preventDefault()` して位置を保存する — 右クリック・長押し・Shift+F10・ContextMenu キーはすべて `contextmenu` イベントに
+  なる。キーボード起動で座標が 0 のときは要素の矩形を使う
+
+**影響**: 非破壊(prop 追加、`trigger` が任意になるだけ)。内部: `usePopupPosition` の `start` / `end` 側に縦の端揃え(`inlineAlign`)と仮想 anchor の
+`getAnchorRect` を追加。VRT: 新ストーリー(Submenu / VerticalSubmenu / ContextMenu)のみ。対象: Menu(MenuItem)。
+仕様メモは docs/audits/menu.md「B33 / B34 実装メモ」。
 
 ---
 

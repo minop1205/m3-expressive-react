@@ -49,7 +49,7 @@ shadow / コンテナ縦 padding 8dp / 幅 112〜280dp / item 高さ 48dp / item
 | 項目 | site | Compose | 裁定 |
 |---|---|---|---|
 | item ラベルの typescale | label-large(14/20/500/0.1) | 出荷実装 labelLarge、ただし ListTokens は BodyLarge で TODO コメントあり | 両者の実効値一致 → **label-large 維持** |
-| selected item の色(baseline) | secondary-container / on-secondary-container | MenuTokens に同トークンがあるが**実装未使用**(dead tokens)。新 API の selected は tertiary 系 | baseline に selected 状態を実装しない現状は妥当。M8 で tertiary 系を採用 |
+| selected item の色(baseline) | secondary-container / on-secondary-container | MenuTokens に同トークンがあるが**実装未使用**(dead tokens)。新 API の selected は tertiary 系 | ~~baseline に selected 状態を実装しない現状は妥当~~ **superseded(2026-10-13・B33)**: baseline でも単一選択を使えるようにしたため site / `MenuTokens` の secondary-container を採用(下記「B33 / B34 実装メモ」)。M8 で tertiary 系を採用 |
 | キーボード操作 | (言及なし) | 矢印キー処理は androidx-main に存在せず(focusable Popup + プラットフォーム走査任せ。desktop 実装は JetBrains fork 側) | Web では **APG が規範** → M1/M2 は APG 準拠で実装 |
 | アイコンサイズ | baseline 24dp / vertical 20dp | classic 24dp / segmented 20dp | 対象は baseline → **24dp**(M5) |
 
@@ -81,3 +81,20 @@ shadow / コンテナ縦 padding 8dp / 幅 112〜280dp / item 高さ 48dp / item
 - Compose には**実装未使用の dead token**(MenuTokens の selected 系)がある — トークンファイル
   だけ読むと存在しない機能を「あるべき」と誤認する。Defaults/実装参照の裏取りは必須(Button の
   教訓の再確認)
+
+## B33 / B34 実装メモ(2026-10-13・#435 / #436)
+
+公開 API の裁定は [phase-b-api.md](../decisions/phase-b-api.md) の B33 / B34。参照元(androidx-main / material-web main、
+2026-10-13 取得)と採否:
+
+| 項目 | 参照 | 採用値 |
+|---|---|---|
+| 単一選択の role | Compose `SelectableDropdownMenuItem` `Role.RadioButton`(Menu.kt:705 / :726) | `menuitemradio`(`MenuGroup selectionMode="single"`) |
+| 複数選択の role | `CheckableDropdownMenuItem` `Role.Checkbox`(Menu.kt:463 / :484) | `menuitemcheckbox`、既定で開いたまま(m3 guidelines) |
+| 選択時アイコン | `selectedLeadingIcon` / `checkedLeadingIcon`、leading がなければ `AnimatedVisibility` expand + fade(Menu.kt:2066-2088、FastSpatial / FastEffects) | `selectedIcon`、幅 0 ↔ アイコン幅の width transition(spatial)+ opacity(effects) |
+| supporting text | `LabelWithSupportingText`: labelLarge + bodyMedium(Menu.kt:2252-2261)、`SegmentedMenuTokens.ItemSupportingTextFont` = BodyMedium(:144)、`StandardMenuTokens.ItemSupportingTextColor` = OnSurfaceVariant(:181)、disabled OnSurface 0.38(:54-57) | 同値。Compose 出荷実装は色を指定せずラベル色を継承 — トークン側を採用 |
+| 選択 item の外側 padding | `DropdownMenuSelectableItemPadding` 横 4dp / `…WithSupportTexPadding` 横 4dp・縦 2dp(Menu.kt:2381-2383) | 同値(vertical) |
+| 選択 item の内側 padding | `MenuDefaults.DropdownMenuSelectableItemContentPadding`: 横 12dp・縦 12dp(precision pointer 時 16 / 10dp、MenuDefaults.kt:863-883)、アイコン-文字 8dp(:851-857) / `SegmentedMenuTokens` ItemLeading / TrailingSpace 16dp(:135 / :153)・ItemBetweenSpace 12dp(:108) | 縦 12dp は Defaults、横 16dp・間隔 12dp はトークンを維持(B33 補足。要オーナー確認) |
+| baseline の selected | `MenuTokens.ListItemSelected*` = SecondaryContainer / OnSecondaryContainer(MenuTokens.kt:34-41、Compose では未使用)、material-web `md-menu-item` `.selected`(_menu-item.scss) | secondary-container / on-secondary-container |
+| サブメニュー(Compose なし) | material-web `md-sub-menu`: anchor START_END / menu START_START(sub-menu.ts:48-52)、hover open / close 400ms(:56-61, :249-287)、`quick = true`(:153, :208)、open キー Right(RTL Left)/ Space / Enter(:384-397)、close キー Left(RTL Right)/ Escape(:404-416)、Escape は 1 段だけ(:340) | 同じ。gap は baseline 0 / vertical 2dp(SegmentedGap)、親 item は開いている間 state layer 色を保持(vertical は 12dp に形を変える — m3「corner shape changes」) |
+| コンテキストメニュー | m3 overview / guidelines(secondary click)、MUI `anchorPosition` | `anchorPosition={{ top, left }}`、点の下・後ろに開き flip + clamp |
