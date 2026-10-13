@@ -523,3 +523,18 @@ describe('BottomSheet variant="standard" (#437)', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 })
+
+describe('BottomSheet partial detent layout', () => {
+  it('clips without becoming a scroll container (focus must not scroll the root)', () => {
+    render(
+      <BottomSheet open onClose={() => {}} skipPartiallyExpanded={false} aria-label="Sheet">
+        <button type="button">Item</button>
+      </BottomSheet>,
+    )
+    const root = document.querySelector('[data-detent="partial"]') as HTMLElement
+    // `overflow: hidden` would still be scrollable: moving focus into the
+    // translated sheet scrolled the root and shifted the scrim up.
+    expect(getComputedStyle(root).overflow).toBe('clip')
+  })
+})
+

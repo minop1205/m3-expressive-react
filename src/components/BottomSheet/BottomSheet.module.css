@@ -33,12 +33,15 @@
 /* Partial detent (opt-in) and standard sheets: a size container, so `cqh`
    in the partial-detent translate is the container (viewport / scaffold)
    height; clipped, so the off-screen part of the sheet adds no scroll
-   overflow and never paints past the edge. Scoped so the default
-   full-height modal sheet renders exactly as before. */
+   overflow and never paints past the edge. `overflow: clip`, not `hidden`:
+   a hidden-overflow box is still a scroll container, so moving focus into
+   the translated sheet scrolled the root and shifted the scrim and sheet
+   up. Scoped so the default full-height modal sheet renders exactly as
+   before. */
 .root[data-detent='partial'],
 .root[data-variant='standard'] {
   container-type: size;
-  overflow: hidden;
+  overflow: clip;
 }
 
 /* Standard: lives in the layout — fills its nearest positioned ancestor (the
