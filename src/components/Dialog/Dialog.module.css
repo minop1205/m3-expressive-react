@@ -9,18 +9,22 @@
 .root {
   position: fixed;
   inset: 0;
-  z-index: 24;
+  z-index: var(--md-sys-z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
   visibility: hidden;
   pointer-events: none;
+  /* Stay visible until the exit motion has played (#433), then hide —
+     the same delayed-visibility pattern as NavigationDrawer. */
+  transition: visibility 0s linear var(--md-sys-motion-duration-medium2);
 }
 
 .root[data-open] {
   visibility: visible;
   pointer-events: auto;
+  transition-delay: 0s;
 }
 
 .scrim {
@@ -157,35 +161,6 @@
   color: var(--md-sys-color-on-surface);
 }
 
-.fsClose {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: transparent;
-  cursor: pointer;
-  outline: none;
-  color: var(--md-sys-color-on-surface);
-}
-
-.fsClose:hover {
-  background-color: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
-}
-
-.fsClose:focus-visible {
-  outline: 2px solid var(--md-sys-color-secondary);
-}
-
-.fsClose svg {
-  width: 24px;
-  height: 24px;
-  fill: currentColor;
-}
-
 .fsTitle {
   flex: 1 1 auto;
   min-width: 0;
@@ -217,7 +192,24 @@
   padding: 8px 24px 24px;
 }
 
+/* High contrast (forced colors): the container fill and shadow and the scrim
+   are all dropped (fills become Canvas), so the dialog floated edgeless over
+   an undimmed page. Outline the container (outlines take no space) and let
+   the scrim paint its own translucent CanvasText. The full-screen dialog
+   covers the viewport and needs neither. */
+@media (forced-colors: active) {
+  .dialog:not([data-full-screen]) {
+    outline: 1px solid CanvasText;
+  }
+
+  .scrim {
+    forced-color-adjust: none;
+    background-color: color-mix(in srgb, CanvasText 40%, transparent);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .root,
   .scrim,
   .dialog {
     transition: none;

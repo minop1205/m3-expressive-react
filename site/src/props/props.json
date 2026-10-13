@@ -107,6 +107,261 @@
    }
   ]
  },
+ "Autocomplete": {
+  "description": "Material Design 3 Autocomplete — the editable exposed dropdown menu\n(Compose `ExposedDropdownMenuBox` + an editable `TextField` with the\n`PrimaryEditable` anchor and a `SecondaryEditable` trailing icon, as in\n`EditableExposedDropdownMenuSample`). m3 menus guidelines: \"A menu can\ninclude a text field to filter options. This pattern is also known as\nautocomplete.\"\n\nThe field is the `TextField` anatomy with a real text `<input>`; typing\nfilters the listbox, which is the one `Select` uses (top layer, field\nwidth, Expressive options with a check on the selected one). Options that\nstay ease into their new position as the list is filtered (DefaultSpatial;\nnone under reduced motion).\n\nAccessibility follows the WAI-ARIA APG editable combobox with list\nautocomplete: the input is `role=\"combobox\"` with `aria-autocomplete=\"list\"`\nand keeps focus while the listbox is open; the active option is exposed\nthrough `aria-activedescendant`. ArrowDown / ArrowUp open and move (wrapping),\nAlt+ArrowDown opens without moving, Enter picks the active option (or\ncommits the text with `freeSolo`), Escape closes the listbox and, when it is\nalready closed, clears the field. Typing opens the listbox without\nactivating an option. The trailing arrow is a button (`tabindex=\"-1\"`) that\ntoggles the listbox.\n\nA visually hidden native `<input>` carries `name` / `value` for form\nsubmission, `required` validation, and form reset.",
+  "props": [
+   {
+    "name": "autoFocus",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Focus the input on mount."
+   },
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "`Option` elements (direct children or inside Fragments), used when `options` is not given."
+   },
+   {
+    "name": "defaultInputValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Uncontrolled initial text of the input. Defaults to the label of\n`defaultValue` (or `defaultValue` itself with `freeSolo`)."
+   },
+   {
+    "name": "defaultOpen",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Uncontrolled initial open state."
+   },
+   {
+    "name": "defaultValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": "",
+    "description": "Uncontrolled initial value."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disables the field (and leaves the value out of form submission)."
+   },
+   {
+    "name": "error",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Error state — error colors, `aria-invalid`, and `errorText`. Ignored while `disabled`."
+   },
+   {
+    "name": "errorText",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Shown instead of `supportingText` (with `role=\"alert\"`) when `error` is set."
+   },
+   {
+    "name": "filterOptions",
+    "type": "((options: AutocompleteOptionItem[], state: AutocompleteFilterState) => AutocompleteOptionItem[])",
+    "required": false,
+    "defaultValue": null,
+    "description": "Custom filtering. Receives every option and `{ inputValue }`; returns the\noptions to show, in order. The default keeps the options whose label\ncontains the text, ignoring case and accents."
+   },
+   {
+    "name": "form",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Associates the hidden native input with a `<form>` elsewhere in the page (native `form` attribute)."
+   },
+   {
+    "name": "freeSolo",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Accept any text, not only an option: Enter (with no option active) or\nleaving the field commits the typed text as the value. Without it, the\ntext returns to the selected option's label on blur."
+   },
+   {
+    "name": "fullWidth",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Stretch the field (and therefore the listbox) to the container's width."
+   },
+   {
+    "name": "id",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Applied to the `role=\"combobox\"` `<input>`."
+   },
+   {
+    "name": "inputRef",
+    "type": "Ref<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Ref to the `role=\"combobox\"` text `<input>` (the forwarded `ref` points at the root)."
+   },
+   {
+    "name": "inputValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled text of the input."
+   },
+   {
+    "name": "label",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Floating label; also names the input and the listbox. Rendered with a trailing `*` when `required`."
+   },
+   {
+    "name": "name",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Form field name of the hidden native input that carries the value."
+   },
+   {
+    "name": "noOptionsText",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Shown in the listbox when no option matches. Without it the listbox\ncloses instead (Compose `EditableExposedDropdownMenuSample`)."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: SyntheticEvent<Element, Event>, value: string) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires when the value changes: an option is picked, the input is cleared\n(or Escape clears it), or — with `freeSolo` — typed text is committed with\nEnter or on blur. Not fired on form reset."
+   },
+   {
+    "name": "onInputChange",
+    "type": "((event: SyntheticEvent<Element, Event>, inputValue: string) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires on every change of the input text: typing, picking an option, clearing, and the reset on blur."
+   },
+   {
+    "name": "onOpenChange",
+    "type": "((open: boolean) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Notified when the listbox should open or close."
+   },
+   {
+    "name": "open",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled open state of the listbox."
+   },
+   {
+    "name": "options",
+    "type": "readonly AutocompleteOption[]",
+    "required": false,
+    "defaultValue": null,
+    "description": "The options, as strings or `{ value, label, disabled }` objects. Use `Option` children instead for icons."
+   },
+   {
+    "name": "placeholder",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Placeholder of the input (shown once the label has floated, or always without a label)."
+   },
+   {
+    "name": "required",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Requires a value for form submission (native constraint validation) and appends `*` to the label."
+   },
+   {
+    "name": "startIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon at the start of the field (decorative)."
+   },
+   {
+    "name": "supportingText",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Helper line below the field. Replaced by `errorText` while in error."
+   },
+   {
+    "name": "toggleLabel",
+    "type": "string",
+    "required": false,
+    "defaultValue": "Toggle dropdown menu",
+    "description": "Accessible name of the trailing toggle button (Compose\n`Strings.ToggleDropdownMenu`)."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled value (`''` = nothing selected; with `freeSolo`, any text)."
+   },
+   {
+    "name": "variant",
+    "type": "\"filled\" | \"outlined\"",
+    "required": false,
+    "defaultValue": "filled",
+    "description": "Text field container style (the same two as `TextField`)."
+   }
+  ]
+ },
+ "Option": {
+  "description": "An option of a `Select` or `Autocomplete` (`role=\"option\"`). The selected\noption shows the tertiary-container colors, a 12dp corner shape and a\nleading check mark.",
+  "props": [
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "The option's label. Also what the field shows once it is selected."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Visible, inert, and skipped by keyboard navigation."
+   },
+   {
+    "name": "startIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon at the start of the option (decorative); the check mark replaces it while selected."
+   },
+   {
+    "name": "textValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Plain-text label for an `Autocomplete`: the text the input shows once the\noption is picked and the text filtering matches. Defaults to the text\ncontent of `children`. Ignored by `Select`."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": true,
+    "defaultValue": null,
+    "description": "The value this option selects (submitted with the form)."
+   }
+  ]
+ },
  "Badge": {
   "description": "",
   "props": [
@@ -155,21 +410,42 @@
   ]
  },
  "BottomSheet": {
-  "description": "Material Design 3 Modal bottom sheet.\n\nSurfaceContainerLow container, 28dp top corners, elevation 1, max-width\n640dp, an OnSurfaceVariant 32×4 drag handle — per Compose SheetBottomTokens.\nSlides up over a 0.32 Scrim; role=\"dialog\" aria-modal, Escape-to-close.\n\nThe drag handle is an accessible button (click/Enter dismisses) and the\npointer can drag the sheet down: release past 56px, or a downward fling\nfaster than 125px/s, dismisses; otherwise the sheet settles back (Compose\nModalBottomSheet thresholds).",
+  "description": "Material Design 3 bottom sheet (modal or standard).\n\nSurfaceContainerLow container, 28dp top corners, elevation 1, max-width\n640dp, an OnSurfaceVariant 32×4 drag handle — per Compose SheetBottomTokens.\nThe modal variant slides up over a 0.32 Scrim (`role=\"dialog\"\naria-modal`); the standard variant is a labelled `region` without a scrim.\nEscape closes either (the standard one while focus is inside it).\n\nBy default the sheet opens at full height and the drag handle is a close\nbutton. With `skipPartiallyExpanded={false}` (Compose `SheetValue`\ndetents) it opens partially expanded — showing\n`min(container / 2, sheet / 2)` — and the handle toggles partial /\nexpanded (`aria-expanded`).\nDragging snaps between hidden, partial and expanded: past 56px from the\nstarting detent, or a fling faster than 125px/s, moves to the next detent\n(Compose thresholds); reaching hidden calls `onClose(event, 'drag')`.",
   "props": [
+   {
+    "name": "defaultExpanded",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Uncontrolled initial detent. An uncontrolled sheet returns to it each\ntime it closes, so it reopens partially expanded (Compose\n`SheetState.show()`)."
+   },
    {
     "name": "dragHandleLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Close",
+    "defaultValue": "'Close' ('Drag handle' with `skipPartiallyExpanded={false}`)",
     "description": "Accessible label for the drag handle button."
    },
    {
-    "name": "onClose",
-    "type": "(() => void)",
+    "name": "expanded",
+    "type": "boolean",
     "required": false,
     "defaultValue": null,
-    "description": "Called on scrim click, Escape, drag-to-dismiss, or the drag handle."
+    "description": "Whether the open sheet is fully expanded (`true`) or partially expanded\n(`false`: half of its height, at most half of the container). Controlled.\nOnly used with `skipPartiallyExpanded={false}`."
+   },
+   {
+    "name": "onClose",
+    "type": "((event: ModalCloseEvent, reason: BottomSheetCloseReason) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Called on scrim click, Escape, a drag / fling to the hidden position,\nor the drag handle (unless partially expanding is enabled), with the triggering\nevent and the `reason`."
+   },
+   {
+    "name": "onExpandedChange",
+    "type": "((expanded: boolean) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Called when a drag or the drag handle moves the sheet between detents."
    },
    {
     "name": "open",
@@ -184,6 +460,20 @@
     "required": false,
     "defaultValue": "true",
     "description": "Show the top drag handle."
+   },
+   {
+    "name": "skipPartiallyExpanded",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "true",
+    "description": "Skip the partially-expanded detent: the sheet always opens fully\nexpanded and the drag handle dismisses it. Pass `false` to opt in to\nCompose's current behavior — open partially expanded, with the handle\ntoggling partial / expanded (ruling B35: the default may flip in v2)."
+   },
+   {
+    "name": "variant",
+    "type": "\"standard\" | \"modal\"",
+    "required": false,
+    "defaultValue": "modal",
+    "description": "`'modal'` overlays the page with a scrim, traps focus and inerts the\nrest of the page (Compose `ModalBottomSheet`). `'standard'` co-exists\nwith the page — no scrim, no focus trap, no inert, no scroll lock — and\nis positioned at the bottom of its nearest positioned ancestor\n(Compose `BottomSheet` / `BottomSheetScaffold`)."
    }
   ]
  },
@@ -271,6 +561,13 @@
     "required": false,
     "defaultValue": "null\n[]",
     "description": "Unused without a selection model (kept for HTMLAttributes compatibility).\nUncontrolled initial selected item value.\nUncontrolled initial selected item values."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disable every `Button` / `IconButton` in the group (MUI\n`ToggleButtonGroup` parity); an item's own `disabled` still applies."
    },
    {
     "name": "onChange",
@@ -445,8 +742,8 @@
     "name": "itemWidth",
     "type": "number",
     "required": false,
-    "defaultValue": "260 (`hero`: fills the container\nbeside its small items)",
-    "description": "Preferred (large) item width in px. `multi-browse` / `hero` fit the\nactual large size to the container (Compose `preferredItemWidth`);\n`uncontained` uses it as-is."
+    "defaultValue": "260 (`hero`: fills the container beside its small items)",
+    "description": "Preferred (large) item width in px — a **target, not a cap** (Compose\n`preferredItemWidth`, renamed from `maxItemWidth`). `multi-browse` /\n`hero` pick the arrangement whose large items land closest to it and\nresize small (40–56dp), then medium, then large items so a whole number\nof items fills the container, so the rendered large width can be wider or\nnarrower than this value. Large items always stay wider than the small\nones, so values at or below the small-item minimum cannot be honored.\n`uncontained` uses it as-is.\n\nAt the end of the list the arrangement shifts so the last item aligns to\nthe container's end (`multi-browse`: the large item slides to the end;\n`hero`: the first / last item aligns to the start / end instead of\ncentering). A `hero` carousel with fewer than 3 items cannot center and\nstays start-aligned (a large item with one small item; a single item is\njust large)."
    },
    {
     "name": "roleDescriptionLabel",
@@ -533,7 +830,7 @@
     "type": "boolean",
     "required": false,
     "defaultValue": "false",
-    "description": "Error state."
+    "description": "Error state. Also sets `aria-invalid` on the native input."
    },
    {
     "name": "indeterminate",
@@ -559,7 +856,7 @@
   ]
  },
  "Chip": {
-  "description": "Material Design 3 Chip.\n\nSupports assist, filter, input, and suggestion variants.\nUses a native `<button>` for the primary action. Filter chips toggle\nselection (`aria-pressed`); input chips opt into the same selection API by\npassing `selected` / `defaultSelected` / `onChange`. Removable chips have a\ntrailing remove button.\n\nStructure mirrors material-web: each action has its own Ripple/FocusRing.\nPrimary Ripple is scoped to the action button. The trailing remove button\nhas its own circular 24dp Ripple/FocusRing.\n\nKeyboard: Arrow keys move focus between primary and trailing actions\n(matching material-web's multi-action chip pattern); at the boundary they\npropagate to an enclosing `ChipSet`. Trailing action is not in the Tab\norder; only reachable via arrow keys. Backspace / Delete on a removable\nchip calls `onRemove`.\n\nThe forwarded `ref` points at the ROOT `<span>` (MUI parity); extra props\n(`{...rest}`) still land on the primary action `<button>`.",
+  "description": "Material Design 3 Chip.\n\nSupports assist, filter, input, and suggestion variants.\nUses a native `<button>` for the primary action. Filter chips toggle\nselection (`aria-pressed`); input chips opt into the same selection API by\npassing `selected` / `defaultSelected` / `onChange`. Inside a `ChipSet` with\na `selectionMode`, chips with a `value` are selected by the set (single →\n`role=\"radio\"` + `aria-checked`). Removable chips have a trailing remove\nbutton; other filter chips may show a decorative `endIcon` (e.g. a menu\narrow).\n\nStructure mirrors material-web: each action has its own Ripple/FocusRing.\nPrimary Ripple is scoped to the action button. The trailing remove button\nhas its own circular 24dp Ripple/FocusRing.\n\nKeyboard: Arrow keys move focus between primary and trailing actions\n(matching material-web's multi-action chip pattern); at the boundary they\npropagate to an enclosing `ChipSet`. Trailing action is not in the Tab\norder; only reachable via arrow keys. Backspace / Delete on a removable\nchip calls `onRemove`.\n\nThe forwarded `ref` points at the ROOT `<span>` (MUI parity); extra props\n(`{...rest}`) still land on the primary action `<button>`.",
   "props": [
    {
     "name": "avatar",
@@ -588,6 +885,13 @@
     "required": false,
     "defaultValue": "false",
     "description": "Whether the chip uses elevated styling (no outline, shadow). MD3 defines\nelevated assist / filter / suggestion chips only."
+   },
+   {
+    "name": "endIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Trailing icon inside the chip's action (filter chips), e.g. an\narrow-drop-down when the chip opens a `Menu`. Decorative (hidden from\nassistive technology); it turns 180° while the chip is an expanded popup\ntrigger (`aria-expanded=\"true\"`, which `Menu` sets on its trigger).\nIgnored when the chip is `removable` (the trailing slot holds the remove\nbutton)."
    },
    {
     "name": "getRemoveLabel",
@@ -646,6 +950,13 @@
     "description": "Whether to show a leading checkmark when selected (filter chip)."
    },
    {
+    "name": "value",
+    "type": "string | number | readonly string[]",
+    "required": false,
+    "defaultValue": null,
+    "description": "The chip's value inside a `ChipSet` with a `selectionMode`: the set then\nowns this filter / input chip's selection (`selected` /\n`defaultSelected` are ignored). Otherwise it is the native button\n`value`."
+   },
+   {
     "name": "variant",
     "type": "\"assist\" | \"filter\" | \"input\" | \"suggestion\"",
     "required": false,
@@ -655,19 +966,61 @@
   ]
  },
  "ChipSet": {
-  "description": "Material Design 3 chip set — lays chips out in a wrapping row (8dp apart)\nand makes the whole set ONE Tab stop (m3 keyboard table: \"Tab moves focus\nto the chip group; Arrows move focus between chips\").\n\n- Roving tabindex: only the last-focused chip's primary action is tabbable.\n- ArrowLeft / ArrowRight (mirrored in RTL) move between chips; inside a\n  removable chip they first step between its primary and remove actions.\n  Moving backwards into a removable chip lands on its remove action.\n- Home / End jump to the first / last chip. Disabled chips are skipped.\n- When a focused chip is removed, focus moves to its neighbour.\n\nRenders `role=\"toolbar\"` (APG toolbar pattern, material-web `md-chip-set`)\nso chips keep their button semantics and `aria-pressed`. Give it an\naccessible name with `aria-label` / `aria-labelledby`.",
+  "description": "Material Design 3 chip set — lays chips out in a wrapping row (8dp apart)\nand makes the whole set ONE Tab stop (m3 keyboard table: \"Tab moves focus\nto the chip group; Arrows move focus between chips\").\n\n- Roving tabindex: only the last-focused chip's primary action is tabbable.\n- ArrowLeft / ArrowRight (mirrored in RTL) move between chips; inside a\n  removable chip they first step between its primary and remove actions.\n  Moving backwards into a removable chip lands on its remove action.\n- Home / End jump to the first / last chip. Disabled chips are skipped.\n- When a focused chip is removed, focus moves to its neighbour.\n\nRenders `role=\"toolbar\"` (APG toolbar pattern, material-web `md-chip-set`)\nso chips keep their button semantics and `aria-pressed`. Give it an\naccessible name with `aria-label` / `aria-labelledby`.\n\nSelection (B36): set `selectionMode` and give each filter / input chip a\n`value`; the set owns the state via `value` / `defaultValue` /\n`onChange(event, value)` (the ButtonGroup / List shape). `multiple` keeps\nthe toolbar of `aria-pressed` toggle chips. `single` follows the APG radio\ngroup: `role=\"radiogroup\"`, chips are `role=\"radio\"` + `aria-checked`, the\nselected chip is the Tab stop, and the arrow keys (Left / Right / Up /\nDown, wrapping) and Home / End move focus AND select.",
   "props": [
    {
     "name": "children",
     "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "The chips. They may be wrapped in other elements (e.g. a Tooltip)."
+    "description": "The chips. They may be wrapped in other elements (e.g. a Tooltip or a\nMenu). Give filter / input chips a `value` when the set has a\n`selectionMode`."
+   },
+   {
+    "name": "defaultValue",
+    "type": "string | number | readonly string[] | string[] | null",
+    "required": false,
+    "defaultValue": "null\n[]",
+    "description": "Unused without a selection model (kept for HTMLAttributes compatibility).\nUncontrolled initial selected chip value.\nUncontrolled initial selected chip values."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disable every chip in the set; a chip's own `disabled` still applies."
+   },
+   {
+    "name": "onChange",
+    "type": "ChangeEventHandler<HTMLDivElement, Element> | ((event: SyntheticEvent<Element, Event>, value: string | null) => void) | ((event: SyntheticEvent<...>, value: string[]) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Native `change` events bubbling from descendants.\nFires with the triggering event and the next selected value.\nFires with the triggering event and the next selected values."
+   },
+   {
+    "name": "selectionMode",
+    "type": "\"none\" | \"single\" | \"multiple\"",
+    "required": false,
+    "defaultValue": "'none'",
+    "description": ""
+   },
+   {
+    "name": "selectionRequired",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false\nfalse",
+    "description": "Keep one chip selected: re-activating the selected chip does nothing.\nKeep at least one chip selected."
+   },
+   {
+    "name": "value",
+    "type": "string | string[] | null",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected chip value (`null` = none).\nControlled selected chip values."
    }
   ]
  },
  "Calendar": {
-  "description": "The month view shared by the modal `DatePicker` and the docked\n`DatePickerField`: navigation header, weekday header and a 6×7 day grid,\nswapped for the year (and, docked, month) selection menus.\n\nGrid semantics follow the APG date picker dialog and m3 accessibility:\n`role=\"grid\"` named by the month, `columnheader`s with the full weekday\nname, and day `gridcell`s (native buttons) named with the full date plus\nCompose's range/today prefixes, `aria-selected` on the selection and\n`aria-current=\"date\"` on today. The grid is a single Tab stop with a roving\ntabindex (selected → today → 1st); arrows move by day / week, PageUp/Down by\nmonth, Shift+PageUp/Down by year, Home/End to the first/last day of the\nmonth (m3 key table), and Enter/Space select.\n\nNavigation is bounded by min/max (else Compose's 1900–2100 year range):\narrows, years and months that cannot show a selectable day are disabled.",
+  "description": "The month view shared by the modal `DatePicker` and the docked\n`DatePickerField`: navigation header, weekday header and a 6×7 day grid,\nswapped for the year (and, docked, month) selection menus.\n\nGrid semantics follow the APG date picker dialog and m3 accessibility:\n`role=\"grid\"` named by the month, `columnheader`s with the full weekday\nname, and day `gridcell`s (native buttons) named with the full date plus\nCompose's range/today prefixes, `aria-selected` on the selection and\n`aria-current=\"date\"` on today. The grid is a single Tab stop with a roving\ntabindex (selected → today → 1st); arrows move by day / week, PageUp/Down by\nmonth, Shift+PageUp/Down by year, Home/End to the first/last day of the\nmonth (m3 key table), and Enter/Space select.\n\nNavigation is bounded by min/max (else Compose's 1900–2100 year range):\narrows, years and months that cannot show a selectable day are disabled,\nand keyboard focus is clamped into that range.",
   "props": [
    {
     "name": "autoFocus",
@@ -745,6 +1098,13 @@
     "required": true,
     "defaultValue": null,
     "description": "Range endpoints (range mode)."
+   },
+   {
+    "name": "referenceDate",
+    "type": "Date",
+    "required": false,
+    "defaultValue": null,
+    "description": "Day marked as today; defaults to the client's current date."
    },
    {
     "name": "selected",
@@ -875,7 +1235,7 @@
     "type": "(() => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Cancel, Escape or a scrim click: the value reverts to what it was when\nthe picker opened (or was last accepted) — reported through `onChange`\nwhen it can be expressed (a date, or a range) — and this fires."
+    "description": "Cancel, Escape or a scrim click: the value reverts to what it was when\nthe picker opened (or was last accepted, or last set from outside) — reported through `onChange`\nwhen it can be expressed (a date, or a range) — and this fires."
    },
    {
     "name": "onChange",
@@ -918,6 +1278,13 @@
     "required": false,
     "defaultValue": "false",
     "description": "Select a start/end range instead of a single date."
+   },
+   {
+    "name": "referenceDate",
+    "type": "Date",
+    "required": false,
+    "defaultValue": null,
+    "description": "The date treated as \"today\": it opens the calendar on its month when no\ndate is selected and receives the today marker. Defaults to the client's\ncurrent date. With server rendering, pass the same date on the server and\nthe client (e.g. computed once in the user's time zone) so the initially\nvisible month hydrates identically; without it the today marker appears\nonly after hydration."
    },
    {
     "name": "selectYearLabel",
@@ -1016,11 +1383,32 @@
     "description": "Error message for rejected typed text. Defaults to Compose's English\nstrings: \"Date does not match expected pattern: MM/DD/YYYY\" / \"Date not\nallowed\"."
    },
    {
+    "name": "inputProps",
+    "type": "InputHTMLAttributes<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Extra attributes for the inner text field's native `<input>` (e.g.\n`autoFocus`, `aria-*`). Same precedence as TextField `inputProps`: the\nfield's own wiring wins; an `onKeyDown` runs before the Enter-to-commit\nhandler."
+   },
+   {
+    "name": "inputRef",
+    "type": "Ref<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Ref to the inner text field's native `<input>` (the forwarded `ref`\npoints at the root) — e.g. for React Hook Form `register`."
+   },
+   {
     "name": "label",
     "type": "string",
     "required": false,
     "defaultValue": "Date",
     "description": "Field label."
+   },
+   {
+    "name": "labelPlacement",
+    "type": "\"floating\" | \"above\"",
+    "required": false,
+    "defaultValue": "'floating'",
+    "description": "Label position, as TextField `labelPlacement`: `'floating'` (in the\noutlined border's notch) or `'above'` the field."
    },
    {
     "name": "locale",
@@ -1042,6 +1430,13 @@
     "required": false,
     "defaultValue": null,
     "description": "Earliest selectable date."
+   },
+   {
+    "name": "name",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Native input `name` (the typed date text is what a form submits)."
    },
    {
     "name": "nextMonthLabel",
@@ -1086,6 +1481,13 @@
     "description": "Accessible label of the previous-year button."
    },
    {
+    "name": "referenceDate",
+    "type": "Date",
+    "required": false,
+    "defaultValue": null,
+    "description": "The date treated as \"today\": it opens the calendar on its month when no\ndate is selected and receives the today marker. Defaults to the client's\ncurrent date. With server rendering, pass the same date on the server and\nthe client (e.g. computed once in the user's time zone) so the initially\nvisible month hydrates identically; without it the today marker appears\nonly after hydration."
+   },
+   {
     "name": "selectMonthLabel",
     "type": "string",
     "required": false,
@@ -1098,6 +1500,13 @@
     "required": false,
     "defaultValue": "Select year",
     "description": "Accessible name of the year menu list."
+   },
+   {
+    "name": "shrinkLabel",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Keep the floating label minimized while the field is empty, as\nTextField `shrinkLabel`."
    },
    {
     "name": "supportingText",
@@ -1162,10 +1571,10 @@
    },
    {
     "name": "onClose",
-    "type": "(() => void)",
+    "type": "((event: ModalCloseEvent, reason: DialogCloseReason) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Called on scrim click or Escape."
+    "description": "Called on scrim click, Escape, or the full-screen close button, with the\ntriggering event and the `reason`."
    },
    {
     "name": "open",
@@ -1206,6 +1615,95 @@
     "required": false,
     "defaultValue": "full-width",
     "description": "Layout variant."
+   }
+  ]
+ },
+ "DragHandle": {
+  "description": "Material Design 3 drag handle for resizing panes (Compose\n`VerticalDragHandle`, DragHandle.kt:73).\n\nA vertical capsule placed between two side-by-side panes; dragging it\nhorizontally (or pressing the arrow keys) changes the size of the pane on\n`paneSide`. The host is a focusable WAI-ARIA APG **window splitter**:\n`role=\"separator\"`, `aria-orientation=\"vertical\"`, `aria-valuenow` /\n`aria-valuemin` / `aria-valuemax` = `value` / `min` / `max`. Give it an\naccessible name that matches the controlled pane (`aria-label` /\n`aria-labelledby`) and point `aria-controls` at that pane.\n\nKeys: ArrowLeft / ArrowRight move the handle by `step` (`shiftStep` with\nShift), Page Up / Page Down by `shiftStep`, Home / End to `min` / `max`.\nArrowUp / ArrowDown also work (up = grow), as for other range widgets.\n\nSize and state follow `VerticalDragHandleDefaults`: 4×48dp `outline`\ncapsule at rest; 12×52dp `on-surface` with 12dp corners while pressed or\ndragged. The host is 24dp wide (`DragHandleTokens.ContainerWidth`) with a\n48dp touch target. The handle only reports sizes; the layout (pane widths)\nis the app's.",
+  "props": [
+   {
+    "name": "defaultValue",
+    "type": "number",
+    "required": false,
+    "defaultValue": "min",
+    "description": "Uncontrolled initial size."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disables dragging and keyboard resizing and removes the handle from the tab order."
+   },
+   {
+    "name": "getAriaValueText",
+    "type": "((value: number) => string)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Human-readable size for assistive tech (`aria-valuetext`), e.g. `(v) => \\`${v} pixels\\``."
+   },
+   {
+    "name": "max",
+    "type": "number",
+    "required": false,
+    "defaultValue": "100",
+    "description": "Largest size (`aria-valuemax`)."
+   },
+   {
+    "name": "min",
+    "type": "number",
+    "required": false,
+    "defaultValue": "0",
+    "description": "Smallest size (`aria-valuemin`)."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: SyntheticEvent<Element, Event>, value: number) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires while dragging and on each key press, with the triggering event and\nthe new (clamped) size. Not fired when the size would not change."
+   },
+   {
+    "name": "onDragEnd",
+    "type": "((event: PointerEvent<HTMLDivElement>, value: number) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires when a pointer drag ends (release or cancel), with the final size — e.g. to persist it."
+   },
+   {
+    "name": "onDragStart",
+    "type": "((event: PointerEvent<HTMLDivElement>, value: number) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires when a pointer drag starts (after the first movement), with the size at that point."
+   },
+   {
+    "name": "paneSide",
+    "type": "\"start\" | \"end\"",
+    "required": false,
+    "defaultValue": "start",
+    "description": "Which side of the handle the controlled pane is on (logical, so it\nmirrors in RTL). `'start'`: dragging toward the inline end grows it (the\nlist of a list-detail layout); `'end'`: dragging toward the inline start\ngrows it."
+   },
+   {
+    "name": "shiftStep",
+    "type": "number",
+    "required": false,
+    "defaultValue": "10",
+    "description": "Size change per Shift + arrow and Page Up / Page Down."
+   },
+   {
+    "name": "step",
+    "type": "number",
+    "required": false,
+    "defaultValue": "1",
+    "description": "Size change per arrow key."
+   },
+   {
+    "name": "value",
+    "type": "number",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled size of the controlled pane, in px (the separator's\n`aria-valuenow`)."
    }
   ]
  },
@@ -1271,7 +1769,7 @@
   ]
  },
  "FabMenu": {
-  "description": "Material Design 3 (Expressive) FAB menu.\n\nA FAB (regular / medium / large) that opens into a vertical stack of\nlabelled action items anchored to its top-trailing edge. The FAB morphs into\na 56dp close button pinned to the top-trailing corner of its footprint\n(container primaryContainer → primary, icon onPrimaryContainer → onPrimary)\nand the items reveal from the trailing edge, bottom item first — per\nm3.material.io / Compose FloatingActionButtonMenu. Items use the\ncontainer/on-container roles of the chosen color set (primary / secondary /\ntertiary). Closes on outside click, Escape, or item selection. Items may be\npassed directly or inside Fragments.\n\nKeyboard / focus (m3.material.io a11y + Compose FloatingActionButtonMenu +\nWAI-ARIA APG menu): opening keeps focus on the toggle; Tab / ArrowDown from\nthe open toggle move to the top item (ArrowUp: the bottom one); ArrowUp /\nArrowDown cycle the items with wrap, Home / End jump; Shift+Tab returns to\nthe toggle; Tab closes and leaves the component; Escape and item selection\nclose and return focus to the toggle. While closed the item list is `inert`\nand `aria-hidden`, so hidden items are out of the Tab order and the\naccessibility tree while they still animate out.",
+  "description": "Material Design 3 (Expressive) FAB menu.\n\nA FAB (regular / medium / large) that opens into a vertical stack of\nlabelled action items above it, aligned to its trailing edge by default\n(`horizontalAlignment`: `start` / `center` / `end`). The FAB morphs into\na 56dp close button pinned to the top-trailing corner of its footprint\n(container primaryContainer → primary, icon onPrimaryContainer → onPrimary)\nand the items reveal from the aligned edge, bottom item first — per\nm3.material.io / Compose FloatingActionButtonMenu. Items use the\ncontainer/on-container roles of the chosen color set (primary / secondary /\ntertiary). Closes on outside click, Escape, or item selection. Items may be\npassed directly or inside Fragments.\n\nKeyboard / focus (m3.material.io a11y + Compose FloatingActionButtonMenu +\nWAI-ARIA APG menu): opening keeps focus on the toggle; Tab / ArrowDown from\nthe open toggle move to the top item (ArrowUp: the bottom one); ArrowUp /\nArrowDown cycle the items with wrap, Home / End jump, printable characters\nmove focus by typeahead; Shift+Tab returns to the toggle; Tab closes and\nleaves the component; Escape and item selection close and return focus to\nthe toggle. While closed the item list is `inert`\nand `aria-hidden`, so hidden items are out of the Tab order and the\naccessibility tree while they still animate out.",
   "props": [
    {
     "name": "ariaLabel",
@@ -1307,6 +1805,13 @@
     "required": false,
     "defaultValue": "false",
     "description": "Uncontrolled initial open state."
+   },
+   {
+    "name": "horizontalAlignment",
+    "type": "\"start\" | \"center\" | \"end\"",
+    "required": false,
+    "defaultValue": "end",
+    "description": "Horizontal alignment of the items above the FAB (Compose\n`horizontalAlignment`): `end` (the default) aligns them to the FAB's\ntrailing edge for a FAB at the bottom-trailing corner, `start` to its\nleading edge for a bottom-leading FAB, `center` centers them over it.\nItems reveal from the same edge (from the middle for `center`). The close\nbutton stays pinned to the top-trailing corner of the FAB's footprint\n(Compose `ToggleFloatingActionButton` `contentAlignment = TopEnd`).\nLogical — mirrored in RTL."
    },
    {
     "name": "icon",
@@ -1623,7 +2128,7 @@
   ]
  },
  "Menu": {
-  "description": "Material Design 3 Menu (dropdown).\n\nAnchors a `role=\"menu\"` popup to a trigger. SurfaceContainer container, 4dp\ncorners, elevation 2, 112–280dp wide, 8dp vertical padding — per Compose\nMenuTokens. Closes on outside click, Escape, Tab-out, or item selection.\nThe menu is drawn in the top layer (Popover API) below the trigger — above\nit when it doesn't fit below — and kept inside the viewport, so ancestors'\n`overflow` / `z-index` can't clip it; it follows scrolling and layout shifts.\n\n`variant=\"vertical\"` renders the MD3 Expressive vertical menu (Compose\n`DropdownMenuPopup`/`DropdownMenuGroup`): a transparent popup that stacks\n`MenuGroup` containers (surface-container-low, elevation 2, 2dp gap) with\n44dp items, 20dp icons, positional corner shapes, and a tertiary-based\nselected state with a springy shape morph. `color=\"vibrant\"` switches the\ngroups and items to the tertiary-container based high-emphasis mapping.\n\nKeyboard (WAI-ARIA APG menu-button pattern): Enter/Space/ArrowDown open and\nfocus the first item (ArrowUp: the last); ArrowUp/Down cycle with wrap;\nHome/End jump; printable characters move focus by typeahead; Escape and\nitem activation close and return focus to the trigger. Items use a roving\ntabindex (-1) so the closed/open menu never pollutes the page Tab order;\ndisabled items are focusable but inert (`aria-disabled`).",
+  "description": "Material Design 3 Menu (dropdown).\n\nAnchors a `role=\"menu\"` popup to a trigger. SurfaceContainer container, 4dp\ncorners, elevation 2, 112–280dp wide, 8dp vertical padding — per Compose\nMenuTokens. Closes on outside press, Escape, Tab-out (or any focus move out\nof it), or item selection. The trigger gets `aria-controls`, and the menu\nis named by the trigger (`aria-labelledby`) unless it has its own label.\nThe menu is drawn in the top layer (Popover API) below the trigger — above\nit when it doesn't fit below — and kept inside the viewport, so ancestors'\n`overflow` / `z-index` can't clip it; it follows scrolling and layout shifts.\n\n`variant=\"vertical\"` renders the MD3 Expressive vertical menu (Compose\n`DropdownMenuPopup`/`DropdownMenuGroup`): a transparent popup that stacks\n`MenuGroup` containers (surface-container-low, elevation 2, 2dp gap) with\n44dp items, 20dp icons, positional corner shapes, and a tertiary-based\nselected state with a springy shape morph. `color=\"vibrant\"` switches the\ngroups and items to the tertiary-container based high-emphasis mapping.\n\nSelection (ruling B33): a `MenuGroup` with `selectionMode=\"single\"` exposes\nits items as `menuitemradio`, `\"multiple\"` as `menuitemcheckbox` and keeps\nthe menu open while toggling. Submenus and context menus (ruling B34): a\n`MenuItem` with `submenu` opens a nested menu beside it; `anchorPosition`\nopens the menu at a point (e.g. from `onContextMenu`).\n\nKeyboard (WAI-ARIA APG menu-button pattern): Enter/Space/ArrowDown open and\nfocus the first item (ArrowUp: the last); ArrowUp/Down cycle with wrap;\nHome/End jump; printable characters move focus by typeahead; Escape and\nitem activation close and return focus to the trigger. Items use a roving\ntabindex (-1) so the closed/open menu never pollutes the page Tab order;\ndisabled items are focusable but inert (`aria-disabled`).",
   "props": [
    {
     "name": "align",
@@ -1631,6 +2136,13 @@
     "required": false,
     "defaultValue": "start",
     "description": "Horizontal alignment to the trigger."
+   },
+   {
+    "name": "anchorPosition",
+    "type": "MenuAnchorPosition",
+    "required": false,
+    "defaultValue": null,
+    "description": "Open at a point instead of below the trigger (MUI `anchorPosition`):\nviewport coordinates, e.g. `{ top: event.clientY, left: event.clientX }`\nfrom an `onContextMenu` handler. The menu opens below and after the point,\nflipping above it and clamping inside the viewport when it doesn't fit."
    },
    {
     "name": "children",
@@ -1670,9 +2182,9 @@
    {
     "name": "trigger",
     "type": "ReactElement<unknown, string | JSXElementConstructor<any>>",
-    "required": true,
+    "required": false,
     "defaultValue": null,
-    "description": "The element that opens the menu (a single button-like element)."
+    "description": "The element that opens the menu (a single button-like element). Omit it\nfor a context menu positioned with `anchorPosition` (then control `open`\nand give the menu an `aria-label`)."
    },
    {
     "name": "variant",
@@ -1687,6 +2199,13 @@
   "description": "A selectable item inside a `Menu`.",
   "props": [
    {
+    "name": "closeOnSelect",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Whether activating the item closes the menu. Defaults to the group's\n`closeOnSelect`, else `false` in a multi-select group (it stays open\nuntil dismissed) and `true` otherwise."
+   },
+   {
     "name": "endIcon",
     "type": "ReactNode",
     "required": false,
@@ -1698,7 +2217,14 @@
     "type": "boolean",
     "required": false,
     "defaultValue": null,
-    "description": "Selection state (for the menu's `vertical` variant). When set (even to\n`false`) the item becomes a `role=\"menuitemcheckbox\"` with `aria-checked`;\na selected item shows the tertiary-container mapping and morphs to a 12dp\ncorner shape."
+    "description": "Selection state. When set (even to `false`) the item becomes a\n`role=\"menuitemcheckbox\"` (`menuitemradio` inside a single-select\n`MenuGroup`) with `aria-checked`. A selected item shows the selected\ncontainer colors (vertical variant: tertiary container, morphing to a\n12dp corner shape; baseline: secondary container). Inside a `MenuGroup`\nwith a `selectionMode`, leave it unset and give the item a `value`."
+   },
+   {
+    "name": "selectedIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon shown at the start while the item is selected (Compose\n`selectedLeadingIcon` / `checkedLeadingIcon`), e.g. a check mark. It\nreplaces `startIcon`; without a `startIcon` it expands into view on\nselection."
    },
    {
     "name": "startIcon",
@@ -1706,11 +2232,25 @@
     "required": false,
     "defaultValue": null,
     "description": "Icon at the start of the item (decorative)."
+   },
+   {
+    "name": "submenu",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Items of a submenu (`MenuItem`s / `MenuGroup`s) opened beside this item:\non hover (after a short delay), click, Enter / Space, or ArrowRight\n(ArrowLeft in RTL); ArrowLeft (RTL: ArrowRight) or Escape returns to\nthis item. Pair it with an `endIcon` chevron, which mirrors in RTL."
+   },
+   {
+    "name": "supportingText",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Secondary text below the label (BodyMedium); it describes the item."
    }
   ]
  },
  "MenuGroup": {
-  "description": "A visually distinct group of items inside a `variant=\"vertical\"` `Menu`\n(Compose `DropdownMenuGroup`): a surface-container-low container at\nelevation 2 whose corner shape depends on its position in the menu (single\ngroup 16dp; first 16/8dp, middle 8dp, last 8/16dp), morphing to the 8dp\ninactive shape while another group is hovered.",
+  "description": "A group of items inside a `Menu` (`role=\"group\"`, named by its `label`).\n\nIn a `variant=\"vertical\"` menu it is a visually distinct container (Compose\n`DropdownMenuGroup`): surface-container-low at elevation 2 whose corner\nshape depends on its position in the menu (single group 16dp; first\n16/8dp, middle 8dp, last 8/16dp), morphing to the 8dp inactive shape while\nanother group is hovered. In a baseline menu it only groups (and labels)\nits items.\n\n`selectionMode` (ruling B33) adds a selection model: give each `MenuItem` a\n`value`; the group owns the state via `value` / `defaultValue` /\n`onChange(event, value)`. `single` exposes `menuitemradio` items (selecting\none closes the menu), `multiple` exposes `menuitemcheckbox` items and keeps\nthe menu open until it is dismissed (m3 guidelines).",
   "props": [
    {
     "name": "children",
@@ -1720,11 +2260,46 @@
     "description": "`MenuItem`s (and `MenuDivider`s)."
    },
    {
+    "name": "closeOnSelect",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "`false` for `selectionMode=\"multiple\"`,\nelse `true`",
+    "description": "Default for the items' `closeOnSelect`: `false` keeps the menu open while\nthe items are activated."
+   },
+   {
+    "name": "defaultValue",
+    "type": "string | number | readonly string[] | string[] | null",
+    "required": false,
+    "defaultValue": "null\n[]",
+    "description": "Unused without a selection model (kept for HTMLAttributes compatibility).\nUncontrolled initial selected item value.\nUncontrolled initial selected item values."
+   },
+   {
     "name": "label",
     "type": "ReactNode",
     "required": false,
     "defaultValue": null,
     "description": "Optional section label rendered above the group's items."
+   },
+   {
+    "name": "onChange",
+    "type": "ChangeEventHandler<HTMLDivElement, Element> | ((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string | null) => void) | ((event: MouseEvent<...>, value: string[]) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Native `change` events bubbling from descendants.\nFires with the activating event and the selected value.\nFires with the activating event and the next selected values."
+   },
+   {
+    "name": "selectionMode",
+    "type": "\"none\" | \"single\" | \"multiple\"",
+    "required": false,
+    "defaultValue": "'none'",
+    "description": ""
+   },
+   {
+    "name": "value",
+    "type": "string | string[] | null",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected item value (`null` = none).\nControlled selected item values."
    }
   ]
  },
@@ -1809,8 +2384,15 @@
   ]
  },
  "NavigationDrawer": {
-  "description": "Material Design 3 Navigation drawer (standard or modal).\n\n360dp SurfaceContainerLow (modal) / Surface (standard) panel, rounded 16dp on\nthe trailing edge. Items are 56dp full pills (CornerFull): active =\nSecondaryContainer / OnSecondaryContainer, inactive transparent /\nOnSurfaceVariant, LabelLarge — per Compose NavigationDrawerTokens. Modal adds\na 0.32 Scrim, Escape-to-close, and `role=\"dialog\" aria-modal`.",
+  "description": "Material Design 3 Navigation drawer (standard or modal).\n\n360dp SurfaceContainerLow (modal) / Surface (standard) panel, rounded 16dp on\nthe trailing edge. Items are 56dp full pills (CornerFull): active =\nSecondaryContainer / OnSecondaryContainer, inactive transparent /\nOnSurfaceVariant, LabelLarge — per Compose NavigationDrawerTokens. Modal adds\na 0.32 Scrim, Escape-to-close, and `role=\"dialog\" aria-modal`.\n\n`dismissible` (Compose `DismissibleNavigationDrawer`) is the standard\nSurface panel toggled by `open`: it opens on DefaultSpatial and closes on\nFastEffects by sliding its inline-start margin, so place it as the first\nchild of a flex (or grid) row next to the content — the content is pushed\naside rather than covered (give the row `overflow: hidden` so the sliding\npanel stays clipped). There is no scrim or focus trap. Opening moves focus\nto the selected (else first) item, as Compose does; Escape inside the\ndrawer calls `onClose`; a closed drawer is `inert`, and closing it with\nfocus inside returns focus to where it was before opening. Pair it with a\nmenu button carrying `aria-expanded` / `aria-controls`.",
   "props": [
+   {
+    "name": "defaultValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Uncontrolled initial destination value."
+   },
    {
     "name": "onChange",
     "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string) => void)",
@@ -1820,31 +2402,31 @@
    },
    {
     "name": "onClose",
-    "type": "(() => void)",
+    "type": "((event: ModalCloseEvent, reason: NavigationDrawerCloseReason) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Called when the modal scrim is clicked or Escape is pressed."
+    "description": "Called with the triggering event and the `reason` when the drawer asks to\nclose: Escape (`modal`, and `dismissible` while focus is inside it) or a\nscrim click (`modal`)."
    },
    {
     "name": "open",
     "type": "boolean",
     "required": false,
     "defaultValue": "false",
-    "description": "Modal open state."
+    "description": "Open state of a `modal` / `dismissible` drawer (controlled)."
    },
    {
     "name": "value",
     "type": "string",
     "required": false,
     "defaultValue": null,
-    "description": "Selected destination value (shared with items)."
+    "description": "Controlled selected destination value (shared with items)."
    },
    {
     "name": "variant",
-    "type": "\"standard\" | \"modal\"",
+    "type": "\"standard\" | \"modal\" | \"dismissible\"",
     "required": false,
     "defaultValue": "standard",
-    "description": "Standard (inline) or modal (overlay + scrim)."
+    "description": "- `standard` — always visible, inline beside the content;\n- `modal` — an overlay with a scrim (`open` / `onClose`);\n- `dismissible` — inline like `standard`, but `open` slides it in and out,\n  pushing the content beside it; no scrim, the page stays interactive\n  (Compose `DismissibleNavigationDrawer`)."
    }
   ]
  },
@@ -1996,10 +2578,10 @@
    },
    {
     "name": "onClose",
-    "type": "(() => void)",
+    "type": "((event: ModalCloseEvent, reason: NavigationRailCloseReason) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "With `modal`: called when the scrim is clicked or Escape is pressed."
+    "description": "With `modal`: called when the scrim is clicked or Escape is pressed, with\nthe triggering event and the `reason`."
    },
    {
     "name": "value",
@@ -2073,6 +2655,53 @@
     "required": false,
     "defaultValue": null,
     "description": "Progress value from 0 to 1. Omit for indeterminate progress."
+   }
+  ]
+ },
+ "PullToRefresh": {
+  "description": "Material Design 3 pull-to-refresh (Compose `PullToRefreshBox`).\n\nThe component **is the scroll container**: give it a height (or a flex /\ngrid track) and put the content inside. A downward pull that starts while\nthe container — and every scrollable element between it and the pointer —\nis scrolled to the top drags the indicator in at half the finger speed (with\nCompose's tension past the threshold); releasing beyond `threshold` (80px)\ncalls `onRefresh`. While pulling the indicator is determinate (its progress\nis the pulled fraction); while `refreshing` it sits at the threshold and is\nindeterminate. Touch (non-passive touch listeners) and mouse / pen (pointer\nevents) both pull. Under reduced motion the indicator does not travel: it\nfades in at its resting position.\n\nThe gesture is not keyboard-reachable — always provide a visible refresh\ncontrol too. The root carries `aria-busy` while refreshing and a polite\nlive region announces `refreshingLabel`.\n\nStyling hooks on the root: `data-indicator`, `data-refreshing`,\n`data-pulling`, `data-disabled`, and `--md-pull-to-refresh-progress`\n(the indicator's distance fraction, 0 at rest, 1 at the threshold, up to 2).",
+  "props": [
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disables the pull gesture (an ongoing refresh is still shown)."
+   },
+   {
+    "name": "indicator",
+    "type": "\"loading\" | \"circular\"",
+    "required": false,
+    "defaultValue": "loading",
+    "description": "Indicator flavor."
+   },
+   {
+    "name": "onRefresh",
+    "type": "(() => void | Promise<unknown>)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires when a pull is released past `threshold`. Return a promise to keep\nthe indicator spinning until it settles when `refreshing` is not\ncontrolled."
+   },
+   {
+    "name": "refreshing",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled refreshing state (Compose `isRefreshing`): the indicator sits\nat the threshold and spins while `true`. Omit it to let the component\ntrack the promise returned by `onRefresh` instead."
+   },
+   {
+    "name": "refreshingLabel",
+    "type": "string",
+    "required": false,
+    "defaultValue": "Refreshing",
+    "description": "Text announced by the polite live region when refreshing starts."
+   },
+   {
+    "name": "threshold",
+    "type": "number",
+    "required": false,
+    "defaultValue": "80",
+    "description": "Distance (px, after the 0.5 drag resistance) a pull must exceed to\nrefresh on release (Compose `PositionalThreshold` 80dp)."
    }
   ]
  },
@@ -2156,9 +2785,84 @@
    }
   ]
  },
- "SearchBar": {
-  "description": "Material Design 3 Search bar (docked field + search view).\n\n56dp SurfaceContainerHigh stadium field (360–720dp wide); OnSurface\nBodyLarge input with a Primary caret, OnSurfaceVariant placeholder, 48dp\nleading / trailing slots — per Compose SearchBarTokens and m3.material.io.\nHover / pressed state layer and a keyboard-only focus ring on the bar.\nProviding `children` (results) turns it into a docked search view in the\nExpressive \"contained\" style: a 12dp results container 2dp under the bar\nover a scrim, opening on focus and closing on Escape / outside click /\nscrim click. The view is drawn in the top layer (Popover API), pinned under\nthe bar at the bar's width, so ancestors' `overflow` / `z-index` can't clip\nit; like Compose's docked view it never flips above the bar.\n\nWith a view, the input is an APG-style `role=\"combobox\"` (`aria-expanded`,\n`aria-controls`, `aria-autocomplete=\"list\"`) and the view's opening is\nannounced via `suggestionsLabel`. Keyboard: ArrowDown opens the view /\nmoves into the results, ArrowUp / ArrowDown / Home / End move between the\nfocusable result items (ArrowUp from the first returns to the input),\nEscape closes the view from anywhere in it and returns focus to the input,\nand moving focus out of the component closes it. While the view is open,\nEscape only closes it (the native `type=\"search\"` clear is suppressed);\nwith the view closed — or without a view — Escape keeps the browser's\nnative behavior (Chromium / Safari clear the query). Enter calls\n`onSearch`, except while an IME composition is in progress.\nA consumer `onKeyDown` that calls `preventDefault()` opts out of the\nbuilt-in key handling for that event.\n\nMUI parity: the forwarded `ref` and any extra props (`{...rest}`) land on\nthe ROOT element (the `role=\"search\"` landmark); input concerns are\ndedicated props (`placeholder`, `name`, `onFocus`, `onKeyDown`, …),\n`inputRef` reaches the native `<input>`, and `inputProps` spreads extra\nattributes on it (the component's own wiring wins).",
+ "ScrollField": {
+  "description": "Material Design 3 Expressive scroll field (Compose `ScrollField`): a\nvertical, endlessly wrapping wheel of numbers that snaps the selected value\nto its centre. 200px tall by default (Compose `ScrollFieldHeight`), Large\ncorners, SurfaceContainerLowest; the centred value is DisplayLarge\nEmphasized in OnSurface, the others DisplayMedium in Outline.\n\nIt is an ARIA `spinbutton` (`aria-valuenow` / `aria-valuetext` / min / max):\nArrowUp / ArrowDown step by one (wrapping), PageUp / PageDown by\n`pageStep`, Home / End jump to `min` / `max`. The mouse wheel moves one\nvalue per notch; drag (touch, mouse, pen) scrolls and snaps, with a short\nfling; tapping a neighbouring value scrolls to it.",
   "props": [
+   {
+    "name": "defaultValue",
+    "type": "number",
+    "required": false,
+    "defaultValue": "min",
+    "description": "Uncontrolled initial value."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disabled: dimmed colors, no interaction, out of the Tab order."
+   },
+   {
+    "name": "formatValue",
+    "type": "((value: number) => string)",
+    "required": false,
+    "defaultValue": "(n: number) => String(n).padStart(2, '0')",
+    "description": "Text drawn for a value."
+   },
+   {
+    "name": "getValueText",
+    "type": "((value: number) => string)",
+    "required": false,
+    "defaultValue": "formatValue's result",
+    "description": "`aria-valuetext` for a value — include the unit (e.g. `\"7 o'clock\"`)."
+   },
+   {
+    "name": "max",
+    "type": "number",
+    "required": true,
+    "defaultValue": null,
+    "description": "Largest value (inclusive). The wheel wraps from `max` back to `min`."
+   },
+   {
+    "name": "min",
+    "type": "number",
+    "required": false,
+    "defaultValue": "0",
+    "description": "Smallest value."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: Event, value: number) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the new value as the wheel moves (keyboard, wheel, drag,\ntap). The event is the native event behind the change."
+   },
+   {
+    "name": "pageStep",
+    "type": "number",
+    "required": false,
+    "defaultValue": "5",
+    "description": "Values moved by PageUp / PageDown."
+   },
+   {
+    "name": "value",
+    "type": "number",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled value (an integer from `min` to `max`)."
+   }
+  ]
+ },
+ "SearchBar": {
+  "description": "Material Design 3 Search bar (docked field + search view).\n\n56dp SurfaceContainerHigh stadium field (360–720dp wide); OnSurface\nBodyLarge input with a Primary caret, OnSurfaceVariant placeholder, 48dp\nleading / trailing slots — per Compose SearchBarTokens and m3.material.io.\nHover / pressed state layer and a keyboard-only focus ring on the bar.\nProviding `children` (results) turns it into a docked search view in the\nExpressive \"contained\" style: a 12dp results container 2dp under the bar\nover a scrim, opening on focus and closing on Escape / outside click /\nscrim click. The view is drawn in the top layer (Popover API), pinned under\nthe bar at the bar's width, so ancestors' `overflow` / `z-index` can't clip\nit; like Compose's docked view it never flips above the bar.\n\nWith a view, the input is an APG-style `role=\"combobox\"` (`aria-expanded`,\n`aria-controls`, `aria-autocomplete=\"list\"`) and the view's opening is\nannounced via `suggestionsLabel`. Keyboard: ArrowDown opens the view /\nmoves into the results, ArrowUp / ArrowDown / Home / End move between the\nfocusable result items (ArrowUp from the first returns to the input),\nEscape closes the view from anywhere in it and returns focus to the input\n(typing, or pressing the focused input, reopens it), and moving focus out of the component closes it. While the view is open,\nEscape only closes it (the native `type=\"search\"` clear is suppressed);\nwith the view closed — or without a view — Escape keeps the browser's\nnative behavior (Chromium / Safari clear the query). Enter calls\n`onSearch`, except while an IME composition is in progress.\nA consumer `onKeyDown` that calls `preventDefault()` opts out of the\nbuilt-in key handling for that event.\n\n`layout=\"fullscreen\"` (Compose `ExpandedFullScreenContainedSearchBar`, the\nExpressive contained style) instead opens a modal view over the whole\nviewport (`role=\"dialog\"`, drawn in the top layer): a SurfaceContainerLow\nsurface fades in while the field moves from the bar to the top (4dp from\nthe top, 8dp from the sides) with a back button in place of the leading\nicon, and the results fill the space 8dp below it — no divider. Expand and\ncollapse run on the FastSpatial spring (reduced motion: a fade). Focus is\ntrapped in the view (`useModal`); Escape or the back button collapses it\nand focus returns to the bar. The bar opens it on a click, typing or\nArrowDown — focus alone (Tab) doesn't (a modal shouldn't open on Tab).\n`onChange` / `onSearch` / `onKeyDown` follow the view's field;\n`onFocus` / `onBlur` / `inputRef` stay on the bar's input.\n\nMUI parity: the forwarded `ref` and any extra props (`{...rest}`) land on\nthe ROOT element (the `role=\"search\"` landmark); input concerns are\ndedicated props (`placeholder`, `name`, `onFocus`, `onKeyDown`, …),\n`inputRef` reaches the native `<input>`, and `inputProps` spreads extra\nattributes on it (the component's own wiring wins).",
+  "props": [
+   {
+    "name": "backLabel",
+    "type": "string",
+    "required": false,
+    "defaultValue": "Back",
+    "description": "Accessible name of the full-screen view's back button. Localize it\nwith the rest of your UI strings."
+   },
    {
     "name": "children",
     "type": "ReactNode",
@@ -2207,6 +2911,13 @@
     "required": false,
     "defaultValue": null,
     "description": "Ref to the native `<input>` element (the forwarded `ref` points at the root)."
+   },
+   {
+    "name": "layout",
+    "type": "\"docked\" | \"fullscreen\"",
+    "required": false,
+    "defaultValue": "docked",
+    "description": "How the search view (`children`) opens:\n- `'docked'` — a results container pinned 2dp under the bar, over a\n  scrim (Compose `ExpandedDockedSearchBarWithGap`; larger screens).\n- `'fullscreen'` — a modal view covering the viewport: the field moves\n  to the top with a back button in place of the leading icon and the\n  results below it (Compose `ExpandedFullScreenContainedSearchBar`, the\n  Expressive contained style; compact screens). Focus is trapped inside\n  it; Escape or the back button closes it and focus returns to the bar."
    },
    {
     "name": "name",
@@ -2295,20 +3006,20 @@
   ]
  },
  "SegmentedButton": {
-  "description": "Material Design 3 Segmented Buttons (single- or multi-select).\n\nA 40dp stadium row of equal-width outlined segments (Outline 1dp). Selected\nsegments fill with SecondaryContainer / OnSecondaryContainer and show an\n18dp check in an always-reserved icon slot, so selecting never resizes the\nrow; unselected are transparent with OnSurface content — per Compose\nOutlinedSegmentedButtonTokens / SegmentedButtonContent.\n\nSingle-select is a `radiogroup` (one Tab stop, arrow keys move focus,\nSpace / Enter select); multi-select is a `group` of `aria-pressed` toggle\nbuttons (each a Tab stop; arrow keys also move focus). Name the group with\n`aria-label` / `aria-labelledby`.\n\nIn Material 3 Expressive the segmented button is no longer recommended:\nm3.material.io says connected button groups replace it. Prefer\n`<ButtonGroup variant=\"connected\" selectionMode=\"single\" | \"multiple\">` with\n`Button` / `IconButton` children that carry a `value`. SegmentedButton stays\navailable (Compose still ships it) and is not deprecated.",
+  "description": "Material Design 3 Segmented Buttons (single- or multi-select).\n\nA 40dp stadium row of equal-width outlined segments (Outline 1dp). Selected\nsegments fill with SecondaryContainer / OnSecondaryContainer and show an\n18dp check in an always-reserved icon slot, so selecting never resizes the\nrow; unselected are transparent with OnSurface content — per Compose\nOutlinedSegmentedButtonTokens / SegmentedButtonContent.\n\nSingle-select is a `radiogroup` (one Tab stop; arrow keys move focus and\nselect, as in the WAI-ARIA APG radio group and `ButtonGroup`; Space / Enter\nselect); multi-select is a `group` of `aria-pressed` toggle buttons (each a\nTab stop; arrow keys move focus only). Name the group with `aria-label` /\n`aria-labelledby`.\n\nIn Material 3 Expressive the segmented button is no longer recommended:\nm3.material.io says connected button groups replace it. Prefer\n`<ButtonGroup variant=\"connected\" selectionMode=\"single\" | \"multiple\">` with\n`Button` / `IconButton` children that carry a `value`. SegmentedButton stays\navailable (Compose still ships it) and is not deprecated.",
   "props": [
    {
     "name": "defaultValue",
     "type": "string | string[]",
     "required": false,
-    "defaultValue": null,
-    "description": "Uncontrolled initial selection. Defaults to none (`''`, or `[]` when `multiSelect`)."
+    "defaultValue": "'' (none)\n[]",
+    "description": "Uncontrolled initial selection."
    },
    {
     "name": "disabled",
     "type": "boolean",
     "required": false,
-    "defaultValue": "false",
+    "defaultValue": null,
     "description": "Disable the whole group."
    },
    {
@@ -2316,14 +3027,14 @@
     "type": "boolean",
     "required": false,
     "defaultValue": "false",
-    "description": "Allow selecting multiple segments. Single-select renders a `radiogroup`\nof radios; multi-select renders a `group` of toggle buttons (`aria-pressed`)."
+    "description": "Allow selecting multiple segments. Single-select renders a `radiogroup`\nof radios; multi-select renders a `group` of toggle buttons (`aria-pressed`).\nAllow selecting multiple segments."
    },
    {
     "name": "onChange",
-    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string | string[]) => void)",
+    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string) => void) | ((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string[]) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Fires with the triggering event and the next selection (string, or\nstring[] when `multiSelect`). Keyboard activation (Space / Enter) arrives\nas the native button `click`."
+    "description": "Fires with the triggering event and the newly selected value — on click,\nSpace / Enter (the native button `click`) and arrow-key selection. Not\nfired when the selected segment is activated again.\nFires with the triggering event and the next selected values. Keyboard\nactivation (Space / Enter) arrives as the native button `click`."
    },
    {
     "name": "options",
@@ -2344,7 +3055,7 @@
     "type": "string | string[]",
     "required": false,
     "defaultValue": null,
-    "description": "Controlled selected value (string) — or an array of values when `multiSelect`."
+    "description": "Controlled selected value (`''` = none).\nControlled selected values."
    }
   ]
  },
@@ -2355,14 +3066,14 @@
     "name": "defaultValue",
     "type": "string | string[]",
     "required": false,
-    "defaultValue": null,
-    "description": "Uncontrolled initial selection. Defaults to none (`''`, or `[]` when `multiSelect`)."
+    "defaultValue": "'' (none)\n[]",
+    "description": "Uncontrolled initial selection."
    },
    {
     "name": "disabled",
     "type": "boolean",
     "required": false,
-    "defaultValue": "false",
+    "defaultValue": null,
     "description": "Disable the whole group."
    },
    {
@@ -2370,14 +3081,14 @@
     "type": "boolean",
     "required": false,
     "defaultValue": "false",
-    "description": "Allow selecting multiple segments. Single-select renders a `radiogroup`\nof radios; multi-select renders a `group` of toggle buttons (`aria-pressed`)."
+    "description": "Allow selecting multiple segments. Single-select renders a `radiogroup`\nof radios; multi-select renders a `group` of toggle buttons (`aria-pressed`).\nAllow selecting multiple segments."
    },
    {
     "name": "onChange",
-    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string | string[]) => void)",
+    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string) => void) | ((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string[]) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Fires with the triggering event and the next selection (string, or\nstring[] when `multiSelect`). Keyboard activation (Space / Enter) arrives\nas the native button `click`."
+    "description": "Fires with the triggering event and the newly selected value — on click,\nSpace / Enter (the native button `click`) and arrow-key selection. Not\nfired when the selected segment is activated again.\nFires with the triggering event and the next selected values. Keyboard\nactivation (Space / Enter) arrives as the native button `click`."
    },
    {
     "name": "options",
@@ -2398,12 +3109,178 @@
     "type": "string | string[]",
     "required": false,
     "defaultValue": null,
-    "description": "Controlled selected value (string) — or an array of values when `multiSelect`."
+    "description": "Controlled selected value (`''` = none).\nControlled selected values."
+   }
+  ]
+ },
+ "Select": {
+  "description": "Material Design 3 Select — the non-editable exposed dropdown menu\n(Compose `ExposedDropdownMenuBox` + a read-only `TextField` with the\n`PrimaryNotEditable` anchor, `ExposedDropdownMenu(matchAnchorWidth = true)`).\n\nThe field is the `TextField` anatomy (filled / outlined, floating label,\nstart icon, supporting / error text) with the `ArrowDropDown` trailing icon,\nrotated 180° while open. The listbox is drawn in the top layer below the\nfield (flipped above when there is no room, clamped to the viewport),\nexactly as wide as the field and capped to the room left on that side —\nstyled after the Compose sample: a surface-container-low, 16dp-corner,\nelevation-2 surface with 44dp body-large options (16dp padding, positional\ncorners), and a tertiary-container selected option with a check mark that\nmorphs to 12dp corners.\n\nAccessibility follows the WAI-ARIA APG select-only combobox: the field is a\nfocusable `role=\"combobox\"` that keeps focus while the `role=\"listbox\"`\npopup is open, the active option is exposed through\n`aria-activedescendant`. Closed: ArrowDown / ArrowUp / Enter / Space /\nAlt+ArrowDown open (Home / End open on the first / last option), and\ntyping opens on the matching option. Open: ArrowUp / ArrowDown move (no\nwrap), Home / End / PageUp / PageDown jump, typing moves by typeahead,\nEnter / Space / Alt+ArrowUp select and close, Tab selects and moves on,\nEscape closes without selecting. Disabled options are skipped.\n\nA visually hidden native `<input>` carries `name` / `value` for form\nsubmission, `required` validation, and form reset (uncontrolled values\nreturn to `defaultValue`).",
+  "props": [
+   {
+    "name": "autoFocus",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Focus the combobox on mount."
+   },
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "`Option` elements (direct children or inside Fragments)."
+   },
+   {
+    "name": "defaultOpen",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Uncontrolled initial open state."
+   },
+   {
+    "name": "defaultValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": "",
+    "description": "Uncontrolled initial value."
+   },
+   {
+    "name": "disabled",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Disables the field (and leaves the value out of form submission)."
+   },
+   {
+    "name": "error",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Error state — error colors, `aria-invalid`, and `errorText`. Ignored while `disabled`."
+   },
+   {
+    "name": "errorText",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Shown instead of `supportingText` (with `role=\"alert\"`) when `error` is set."
+   },
+   {
+    "name": "form",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Associates the hidden native input with a `<form>` elsewhere in the page (native `form` attribute)."
+   },
+   {
+    "name": "fullWidth",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Stretch the field (and therefore the listbox) to the container's width."
+   },
+   {
+    "name": "id",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Applied to the `role=\"combobox\"` element."
+   },
+   {
+    "name": "inputRef",
+    "type": "Ref<HTMLInputElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Ref to the hidden native `<input>` that carries the value for forms (the forwarded `ref` points at the root)."
+   },
+   {
+    "name": "label",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Floating label; also names the combobox and the listbox. Rendered with a trailing `*` when `required`."
+   },
+   {
+    "name": "name",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Form field name of the hidden native input that carries the value."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: SyntheticEvent<Element, Event>, value: string) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires when the user picks a different option — with the click or key\nevent and the new value (A2). Not fired on form reset."
+   },
+   {
+    "name": "onOpenChange",
+    "type": "((open: boolean) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Notified when the listbox should open or close."
+   },
+   {
+    "name": "open",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled open state of the listbox."
+   },
+   {
+    "name": "placeholder",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Shown in the field while nothing is selected (once the label has floated, or always without a label)."
+   },
+   {
+    "name": "required",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Requires a value for form submission (native constraint validation) and appends `*` to the label."
+   },
+   {
+    "name": "startIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon at the start of the field (decorative)."
+   },
+   {
+    "name": "supportingText",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Helper line below the field. Replaced by `errorText` while in error."
+   },
+   {
+    "name": "tonal",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Expressive tonal style, as TextField `tonal` (Compose `tonalColors()` +\n`roundedShape`): 12dp rounded container, no indicator on `filled`,\noutline-variant border and inside label on `outlined`.\n@experimental Compose still marks these values `TODO(b/448727879)`, so\nthe look may change when the spec settles."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected value (`''` = nothing selected)."
+   },
+   {
+    "name": "variant",
+    "type": "\"filled\" | \"outlined\"",
+    "required": false,
+    "defaultValue": "filled",
+    "description": "Text field container style (the same two as `TextField`)."
    }
   ]
  },
  "SideSheet": {
-  "description": "Material Design 3 Side sheet (standard or modal).\n\nA 400dp max-width panel anchored to the trailing (or leading) edge. Standard\n= inline Surface panel; modal = SurfaceContainerLow over a 0.32 Scrim with\n`role=\"dialog\" aria-modal` and Escape-to-close — per m3.material.io specs.\nHeader uses 24dp side padding (16dp with a back icon), 12dp gaps, a Title\nLarge headline, and optional back/close IconButtons. Bottom actions are a\n72dp left-aligned bar.",
+  "description": "Material Design 3 Side sheet (standard or modal).\n\nA 400dp max-width panel anchored to the right (or left) edge. Standard\n= inline Surface panel; modal = SurfaceContainerLow over a 0.32 Scrim with\n`role=\"dialog\" aria-modal` and Escape-to-close — per m3.material.io specs.\nHeader uses 24dp side padding (16dp with a back icon), 12dp gaps, a Title\nLarge headline, and optional back/close IconButtons. Bottom actions are a\n72dp left-aligned bar.",
   "props": [
    {
     "name": "actions",
@@ -2417,7 +3294,7 @@
     "type": "\"left\" | \"right\"",
     "required": false,
     "defaultValue": "right",
-    "description": "Edge the sheet is anchored to."
+    "description": "Physical edge the sheet is anchored to; it does not flip in RTL."
    },
    {
     "name": "backLabel",
@@ -2449,10 +3326,10 @@
    },
    {
     "name": "onClose",
-    "type": "(() => void)",
+    "type": "((event: ModalCloseEvent, reason: SideSheetCloseReason) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Called on close-button click, scrim click, or Escape."
+    "description": "Called on close-button click, scrim click, or Escape, with the\ntriggering event and the `reason`."
    },
    {
     "name": "open",
@@ -2893,7 +3770,7 @@
     "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Fires with the triggering event and the newly selected tab value."
+    "description": "Fires with the triggering event and the newly selected tab value. Not\nfired when the selected tab is activated again, or when the tab's own\n`onClick` called `event.preventDefault()`."
    },
    {
     "name": "scrollable",
@@ -2922,11 +3799,25 @@
   "description": "A single tab; must be rendered inside `Tabs`.",
   "props": [
    {
+    "name": "badge",
+    "type": "ReactElement<BadgeProps, string | JSXElementConstructor<any>>",
+    "required": false,
+    "defaultValue": null,
+    "description": "A `<Badge>` (without children). It is placed on the icon, or next to the\nlabel when the tab has no icon, and takes no layout space (the active\nindicator still follows the label / icon). Its accessible text (the\nBadge `label`, or the default \"New notification\" / \"{n} new\nnotifications\") is read after the tab label."
+   },
+   {
     "name": "icon",
     "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Optional icon (shown above the label)."
+    "description": "Optional icon (24dp), above the label or before it (see `iconPosition`)."
+   },
+   {
+    "name": "iconPosition",
+    "type": "\"top\" | \"start\"",
+    "required": false,
+    "defaultValue": "top",
+    "description": "Icon placement: `'top'` stacks the icon above the label (64dp tab),\n`'start'` puts it before the label with an 8dp gap (48dp tab, Compose\n`LeadingIconTab`)."
    },
    {
     "name": "label",
@@ -2945,7 +3836,7 @@
   ]
  },
  "TextField": {
-  "description": "Material Design 3 Text field (filled / outlined).\n\nA single-line `<input>` — or auto-growing `<textarea>` with `multiline` —\nwrapped in the MD3 field anatomy: floating label (outlined variant notches\nthe border), start/end icons, prefix/suffix text, and a supporting\nline that holds helper text, the error message, and the `maxLength`\ncounter. Value follows the standard controlled (`value` + `onChange`) or\nuncontrolled (`defaultValue`) input pattern; clicking anywhere on the\ncontainer focuses the input.\n\nMUI parity: the forwarded `ref` and any extra props (`{...rest}`) land on\nthe ROOT element; input concerns are dedicated props (`type`, `name`,\n`placeholder`, `required`, `readOnly`, `autoComplete`, `maxLength`, …),\n`inputRef` reaches the native `<input>` / `<textarea>`, and `inputProps`\nspreads extra attributes on it (the component's own wiring wins).",
+  "description": "Material Design 3 Text field (filled / outlined, optionally `tonal`).\n\nA single-line `<input>` — or auto-growing `<textarea>` with `multiline` —\nwrapped in the MD3 field anatomy: floating label (outlined variant notches\nthe border; `shrinkLabel` keeps it minimized, `labelPlacement=\"above\"`\nmoves it above the container), start/end icons, prefix/suffix text, and a supporting\nline that holds helper text, the error message, and the `maxLength`\ncounter. Value follows the standard controlled (`value` + `onChange`) or\nuncontrolled (`defaultValue`) input pattern; clicking anywhere on the\ncontainer focuses the input.\n\nMUI parity: the forwarded `ref` and any extra props (`{...rest}`) land on\nthe ROOT element; input concerns are dedicated props (`type`, `name`,\n`placeholder`, `required`, `readOnly`, `autoComplete`, `maxLength`, …),\n`inputRef` reaches the native `<input>` / `<textarea>`, and `inputProps`\nspreads extra attributes on it (the component's own wiring wins).",
   "props": [
    {
     "name": "autoComplete",
@@ -3008,7 +3899,7 @@
     "type": "InputHTMLAttributes<HTMLInputElement> | TextareaHTMLAttributes<HTMLTextAreaElement>",
     "required": false,
     "defaultValue": null,
-    "description": "Extra attributes spread on the native `<input>` (or `<textarea>` when\n`multiline`) — the escape hatch for attributes without a dedicated prop\n(`pattern`, `min`, `max`, `step`, `onKeyDown`, extra `aria-*`, …).\nPrecedence: the component's own wiring always wins over conflicting\n`inputProps` keys — the controlled `value` / `onChange` / `onFocus` /\n`onBlur`, `id`, `className`, and every dedicated input prop the\ncomponent sets (`type`, `name`, `placeholder`, `required`, `readOnly`,\n`autoComplete`, `maxLength`, `rows`, …)."
+    "description": "Extra attributes spread on the native `<input>` (or `<textarea>` when\n`multiline`) — the escape hatch for attributes without a dedicated prop\n(`pattern`, `min`, `max`, `step`, `onKeyDown`, extra `aria-*`, …).\nPrecedence: the component's own wiring always wins over conflicting\n`inputProps` keys — the controlled `value` / `onChange` / `onFocus` /\n`onBlur`, `id`, `className`, and every dedicated input prop the\ncomponent sets (`type`, `name`, `placeholder`, `required`, `readOnly`,\n`autoComplete`, `maxLength`, `rows`, …). Exceptions: `aria-describedby`\nis merged (the field's own ids first), and an `onInput` handler is\ncalled after the component's own."
    },
    {
     "name": "inputRef",
@@ -3022,7 +3913,14 @@
     "type": "string",
     "required": false,
     "defaultValue": null,
-    "description": "Floating label; rendered with a trailing `*` when `required`."
+    "description": "Field label; rendered with a trailing `*` when `required`."
+   },
+   {
+    "name": "labelPlacement",
+    "type": "\"floating\" | \"above\"",
+    "required": false,
+    "defaultValue": "floating",
+    "description": "Label position. `'floating'` keeps the label inside the container (it\nrests in the input line and minimizes on focus or value; the outlined\nvariant notches the border). `'above'` draws it minimized above the\ncontainer — no notch — and the field lays out like a label-less one\n(Compose `TextFieldLabelPosition.Above`)."
    },
    {
     "name": "maxLength",
@@ -3102,6 +4000,13 @@
     "description": "Initial visible rows of the `multiline` textarea."
    },
    {
+    "name": "shrinkLabel",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Keep the floating label minimized even while the field is empty and\nunfocused, so the placeholder and prefix / suffix show alongside it\n(Compose `Inside` / `Cutout(isAlwaysMinimized = true)`; MUI's `shrink`).\nNo effect with `labelPlacement=\"above\"`, which is always minimized."
+   },
+   {
     "name": "startIcon",
     "type": "ReactNode",
     "required": false,
@@ -3123,11 +4028,18 @@
     "description": "Helper line below the field. Replaced by `errorText` while in error."
    },
    {
+    "name": "tonal",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Expressive tonal style (Compose `TextFieldDefaults.tonalColors()` /\n`OutlinedTextFieldDefaults.tonalColors()` with `roundedShape`): a 12dp\nrounded container, no active indicator on `filled` (surface-container\nfill, error-container in error) and an outline-variant border on\n`outlined` (transparent container, label inside the container rather than\nnotched into the border). The focused label stays on-surface-variant.\n@experimental Compose still marks these values\n`TODO(b/448727879)` (pending real tokens), so the look may change in a\nminor release when the spec settles."
+   },
+   {
     "name": "type",
     "type": "string",
     "required": false,
     "defaultValue": "text",
-    "description": "Native input `type` (single-line only)."
+    "description": "Native input `type` (single-line only). For a password field (Compose\n`SecureTextField`) use `type=\"password\"` with an `autoComplete` of\n`\"current-password\"` / `\"new-password\"`, and put a show / hide toggle in\n`endIcon`: an `IconButton variant=\"standard\" toggle` labelled\n\"Show password\" (the label stays fixed; `aria-pressed` carries the\nstate) that switches `type` between `'password'` and `'text'`."
    },
    {
     "name": "value",
@@ -3146,7 +4058,7 @@
   ]
  },
  "TimePicker": {
-  "description": "Material Design 3 Time picker (dial + input).\n\nSurfaceContainerHigh surface with hour/minute selector fields (PrimaryContainer\nwhen active), an AM/PM toggle (TertiaryContainer selected), and either a 256dp\nSurfaceContainerHighest clock dial with a Primary selector, or editable input\nfields — toggled with the keyboard/clock button, per Compose TimePickerTokens.\n\nThe dial follows Compose `ClockFace` / `ClockText`: tap a number or drag the\nselector track (1-minute resolution while dragging); choosing an hour with a\npointer switches to minutes. The dial is one Tab stop (the selected number);\narrow keys move around the ring and Enter / Space selects. The hour / minute\nselectors and AM / PM are radio groups. With `ampm={false}` (or a 24-hour\n`locale`) the dial has an inner 12–23 ring and there is no AM / PM.\n\nInput mode validates like Compose `TimeInput`: 2 digits max, out-of-range\ntext shows an error and is not committed, and an empty / invalid field\nreverts to the current value on blur. `onChange` only ever receives valid\nvalues.\n\n`onAccept` / `onCancel` add the \"Select time\" headline and Cancel / OK\n(Compose `TimePickerDialog`), with draft / commit semantics; `open` shows\nthe picker as a modal dialog that reports `onClose(reason)`.",
+  "description": "Material Design 3 Time picker (dial + input).\n\nSurfaceContainerHigh surface with hour/minute selector fields (PrimaryContainer\nwhen active), an AM/PM toggle (TertiaryContainer selected), and either a 256dp\nSurfaceContainerHighest clock dial with a Primary selector, or editable input\nfields — toggled with the keyboard/clock button, per Compose TimePickerTokens.\n\nThe dial follows Compose `ClockFace` / `ClockText`: tap a number or drag the\nselector track (1-minute resolution while dragging); choosing an hour with a\npointer switches to minutes. The dial is one Tab stop (the selected number);\narrow keys move around the ring and Enter / Space selects. The hour / minute\nselectors and AM / PM are radio groups. With `ampm={false}` (or a 24-hour\n`locale`) the dial has an inner 12–23 ring and there is no AM / PM.\n\nInput mode validates like Compose `TimeInput`: 2 digits max, out-of-range\ntext shows an error and is not committed, and an empty / invalid field\nreverts to the current value on blur. `onChange` only ever receives valid\nvalues.\n\n`mode=\"scroll\"` shows two endless scroll wheels (Compose `TimeScroll`,\nbuilt on {@link ScrollField}); its toggle switches scroll ⇄ input.\n`variant=\"vibrant\"` is the Expressive style (Compose `vibrantColors()`,\n`TimePickerShapes`, `VibrantTimePickerDialog`), and\n`orientation=\"horizontal\"` puts the dial beside the time display.\n\n`onAccept` / `onCancel` add the \"Select time\" headline and Cancel / OK\n(Compose `TimePickerDialog`), with draft / commit semantics; `open` shows\nthe picker as a modal dialog that reports `onClose(reason)`.",
   "props": [
    {
     "name": "amLabel",
@@ -3171,7 +4083,7 @@
    },
    {
     "name": "defaultMode",
-    "type": "\"dial\" | \"input\"",
+    "type": "\"dial\" | \"input\" | \"scroll\"",
     "required": false,
     "defaultValue": "'dial'",
     "description": "Uncontrolled initial display mode."
@@ -3227,7 +4139,7 @@
    },
    {
     "name": "mode",
-    "type": "\"dial\" | \"input\"",
+    "type": "\"dial\" | \"input\" | \"scroll\"",
     "required": false,
     "defaultValue": null,
     "description": "Display mode: clock `dial` or keyboard `input`. Controlled when\n`onModeChange` is also passed.\n@deprecated Passing `mode` **without** `onModeChange` keeps the v1.0\nbehavior — it only sets the initial mode and the toggle still switches.\nUse `defaultMode` for that; in v2 `mode` will always be controlled."
@@ -3282,6 +4194,13 @@
     "description": "Show the picker as a modal dialog (scrim, focus trap, Escape) — the\nCompose `TimePickerDialog` equivalent. Renders nothing while `false`."
    },
    {
+    "name": "orientation",
+    "type": "\"vertical\" | \"horizontal\"",
+    "required": false,
+    "defaultValue": "vertical",
+    "description": "Dial layout: time display above the dial (`vertical`) or beside it\n(`horizontal`, for landscape / short containers). The input and scroll\nmodes have a single layout."
+   },
+   {
     "name": "periodLabel",
     "type": "string",
     "required": false,
@@ -3314,7 +4233,7 @@
     "type": "boolean",
     "required": false,
     "defaultValue": "true",
-    "description": "Show the dial / input toggle."
+    "description": "Show the mode toggle: dial ⇄ input, or scroll ⇄ input when the picker\nstarted in (or was switched to) `scroll` mode."
    },
    {
     "name": "switchToDialLabel",
@@ -3331,6 +4250,13 @@
     "description": "Name of the toggle while showing the dial."
    },
    {
+    "name": "switchToScrollLabel",
+    "type": "string",
+    "required": false,
+    "defaultValue": "Switch to scroll mode",
+    "description": "Name of the toggle while showing the text input after scroll mode."
+   },
+   {
     "name": "titleLabel",
     "type": "string",
     "required": false,
@@ -3343,6 +4269,13 @@
     "required": false,
     "defaultValue": null,
     "description": "Controlled value."
+   },
+   {
+    "name": "variant",
+    "type": "\"standard\" | \"vibrant\"",
+    "required": false,
+    "defaultValue": "standard",
+    "description": "Visual style. `vibrant` is the Expressive style: SurfaceContainer\ncontainer, larger SurfaceContainerLowest time fields with a Primary\nselection, pill AM / PM toggles and a SurfaceContainerLowest dial."
    }
   ]
  },
@@ -3369,6 +4302,13 @@
     "required": false,
     "defaultValue": "true",
     "description": "Initial `expanded` when uncontrolled."
+   },
+   {
+    "name": "disableElevation",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Floating: removes the container shadow. m3 toolbars guidelines: \"The\nelevation on floating toolbars can be removed if on a visually distinct\nbackground\" — keep it when the toolbar floats over content (the Fab\n`disableElevation` prop). A docked toolbar has no elevation either way."
    },
    {
     "name": "endContent",
@@ -3446,6 +4386,13 @@
     "description": "Rich tooltip action(s) — up to two text buttons, laid out side by side.\nA rich tooltip with an action becomes a non-modal `role=\"dialog\"` whose\nactions are reachable with Tab from the trigger; consider `persistent`."
    },
    {
+    "name": "caret",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Draw a caret (16×8dp triangle) pointing at the trigger, on the side of\nthe tooltip that faces it."
+   },
+   {
     "name": "children",
     "type": "ReactElement<unknown, string | JSXElementConstructor<any>>",
     "required": true,
@@ -3482,10 +4429,10 @@
    },
    {
     "name": "placement",
-    "type": "\"top\" | \"bottom\"",
+    "type": "\"top\" | \"bottom\" | \"start\" | \"end\" | \"left\" | \"right\"",
     "required": false,
-    "defaultValue": "'top' for plain, 'bottom' for rich",
-    "description": "Preferred placement relative to the trigger. The tooltip flips to the\nother side when there is no room and is kept inside the viewport.\nInside a top app bar, use `'bottom'`."
+    "defaultValue": "'top' for plain, bottom-end corner for rich",
+    "description": "Preferred placement relative to the trigger: `'top'` / `'bottom'`\n(centered on the trigger) or beside it — `'start'` / `'end'` (mirrored\nin RTL) or `'left'` / `'right'` (vertically centered). The tooltip flips\nto the opposite side when there is no room and is kept inside the\nviewport. Inside a top app bar, use `'bottom'`.\n\nWhen omitted, a plain tooltip goes above its trigger; a rich tooltip goes\nto the trigger's bottom-end corner (below, extending toward the end\nedge) and moves to whichever of the four corners keeps it on screen."
    },
    {
     "name": "subhead",

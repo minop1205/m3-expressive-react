@@ -121,7 +121,7 @@
       var(--md-sys-motion-spring-fast-spatial-easing);
 }
 
-.split:dir(rtl) .chevron {
+[dir='rtl'] .split .chevron {
   translate: calc(-1 * var(--_chevron-offset)) 0;
 }
 
@@ -182,6 +182,26 @@
   --_chevron-offset: -6px;
   --_inner-corner-size: 12px;
   --_hovered-inner-corner-size: 20px;
+}
+
+/* High contrast (forced colors): the halves get their edge from Button's
+   forced-colors rules; the open (checked) trailing button — shown only by a
+   shape change and a state layer in normal mode — fills with Highlight. */
+@media (forced-colors: active) {
+  .split[data-open] .trailing:not(:disabled) {
+    --_container-color: Highlight;
+    outline: 1px solid Highlight;
+    outline-offset: -1px;
+  }
+
+  .split[data-open] .trailing::after {
+    display: none;
+  }
+
+  .split[data-open] .trailing:not(:disabled) .chevron {
+    forced-color-adjust: none;
+    color: HighlightText;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

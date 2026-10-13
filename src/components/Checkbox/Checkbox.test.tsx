@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { createRef } from 'react'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'vitest-axe'
 import { Checkbox } from './Checkbox'
@@ -225,5 +225,80 @@ describe('Checkbox indeterminate interaction', () => {
     await user.click(input)
     expect(input.indeterminate).toBe(true)
     expect(input).toHaveAttribute('aria-checked', 'mixed')
+  })
+})
+
+describe('Checkbox form reset (#432)', () => {
+  it('restores the uncontrolled default on form.reset() and keeps onChange firing', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const { container } = render(
+      <form>
+        <Checkbox aria-label="Toggle" name="c" defaultChecked onChange={onChange} />
+      </form>,
+    )
+    const form = container.querySelector('form')!
+    const input = screen.getByRole('checkbox')
+    const root = input.parentElement!
+
+    await user.click(input)
+    expect(input).not.toBeChecked()
+    expect(root).toHaveClass(styles.unchecked)
+
+    act(() => form.reset())
+    expect(input).toBeChecked()
+    expect(root).toHaveClass(styles.checked)
+    expect(new FormData(form).get('c')).toBe('on')
+
+    onChange.mockClear()
+    await user.click(input)
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), false)
+    expect(input).not.toBeChecked()
+    expect(root).toHaveClass(styles.unchecked)
+  })
+
+  it('follows the form attribute and removes its listener on unmount', async () => {
+    const user = userEvent.setup()
+    const { container, unmount } = render(
+      <>
+        <form id="f" />
+        <Checkbox aria-label="Toggle" form="f" />
+      </>,
+    )
+    const form = container.querySelector('form')!
+    const removeSpy = vi.spyOn(form, 'removeEventListener')
+    const input = screen.getByRole('checkbox')
+
+    await user.click(input)
+    expect(input).toBeChecked()
+    act(() => form.reset())
+    expect(input).not.toBeChecked()
+    expect(input.parentElement).toHaveClass(styles.unchecked)
+
+    unmount()
+    expect(removeSpy).toHaveBeenCalledWith('reset', expect.any(Function))
+  })
+})
+
+describe('Checkbox API consistency (#421)', () => {
+  it('puts style on the root together with className (A10 addendum)', () => {
+    render(<Checkbox aria-label="Agree" className="custom" style={{ marginLeft: 13 }} />)
+    const input = screen.getByRole('checkbox')
+    const root = input.parentElement as HTMLElement
+    expect(root).toHaveClass('custom')
+    expect(root.style.marginLeft).toBe('13px')
+    expect(input.style.marginLeft).toBe('')
+  })
+
+  it('sets aria-invalid when error', () => {
+    const { rerender } = render(<Checkbox aria-label="Agree" error />)
+    expect(screen.getByRole('checkbox')).toHaveAttribute('aria-invalid', 'true')
+    rerender(<Checkbox aria-label="Agree" />)
+    expect(screen.getByRole('checkbox')).not.toHaveAttribute('aria-invalid')
+  })
+
+  it('lets an explicit aria-invalid override error', () => {
+    render(<Checkbox aria-label="Agree" error aria-invalid={false} />)
+    expect(screen.getByRole('checkbox')).toHaveAttribute('aria-invalid', 'false')
   })
 })

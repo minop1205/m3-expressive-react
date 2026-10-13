@@ -2,12 +2,40 @@
 title: TextField
 ---
 
+import { useState } from 'react'
 import Demo from '@site/src/components/Demo'
 import PropsTable from '@site/src/components/PropsTable'
-import { TextField } from 'm3-expressive-react'
+import { TextField, IconButton } from 'm3-expressive-react'
 import { SearchIcon, MailIcon } from '@site/src/components/icons/ActionIcons'
 import ErrorIcon from '@material-symbols/svg-400/outlined/error.svg'
 import VisibilityIcon from '@material-symbols/svg-400/outlined/visibility.svg'
+import VisibilityOffIcon from '@material-symbols/svg-400/outlined/visibility_off.svg'
+
+export function PasswordField({ variant }) {
+  const [visible, setVisible] = useState(false)
+  const id = `password-${variant}`
+  return (
+    <TextField
+      id={id}
+      variant={variant}
+      label="Password"
+      type={visible ? 'text' : 'password'}
+      autoComplete="current-password"
+      endIcon={
+        <IconButton
+          variant="standard"
+          toggle
+          selected={visible}
+          onChange={(_event, next) => setVisible(next)}
+          icon={<VisibilityIcon />}
+          selectedIcon={<VisibilityOffIcon />}
+          aria-label="Show password"
+          aria-controls={id}
+        />
+      }
+    />
+  )
+}
 
 # TextField
 
@@ -29,6 +57,38 @@ supporting text, character counter, and multiline mode.
   onChange={(event) => setEmail(event.target.value)}
 />
 ```
+
+## Tonal style (experimental)
+
+`tonal` applies the Expressive tonal look from Compose
+(`TextFieldDefaults.tonalColors()` with `roundedShape`): a 12dp rounded
+container and a label that stays on-surface-variant on focus.
+
+- `filled` — a surface-container fill with **no** active indicator line
+  (error-container in error).
+- `outlined` — a transparent container with an outline-variant border (error
+  in error; it thickens to 2dp on focus). The label stays **inside** the
+  container, as on `filled`, so the border has no notch.
+
+<Demo>
+  <TextField tonal label="Filled tonal" />
+  <TextField tonal variant="outlined" label="Outlined tonal" />
+  <TextField tonal label="Error" error errorText="Error message" defaultValue="Invalid" />
+</Demo>
+
+```tsx
+<TextField tonal label="Name" />
+<TextField tonal variant="outlined" label="Name" />
+```
+
+:::caution Experimental
+
+Compose still marks these values `TODO(b/448727879)`: they are waiting for
+real design tokens. The tonal look may change in a minor release once the
+spec settles. Because the filled tonal field has no indicator line, focus is
+shown mainly by the text cursor; check that this is enough for your design.
+
+:::
 
 ## Supporting text & error
 
@@ -63,6 +123,35 @@ supporting text, character counter, and multiline mode.
 />
 ```
 
+## Label position
+
+By default the label floats: it rests in the input line and minimizes on
+focus or once there is a value (the outlined variant notches its border).
+`labelPlacement="above"` puts the label above the container instead, always
+minimized and with no notch; the placeholder is then visible right away.
+
+<Demo>
+  <TextField labelPlacement="above" label="Filled" placeholder="Placeholder" />
+  <TextField variant="outlined" labelPlacement="above" label="Outlined" placeholder="Placeholder" />
+</Demo>
+
+```tsx
+<TextField variant="outlined" labelPlacement="above" label="Email" placeholder="you@example.com" />
+```
+
+`shrinkLabel` keeps the floating label minimized even while the field is
+empty and unfocused, so the placeholder and prefix / suffix text show
+alongside it.
+
+<Demo>
+  <TextField shrinkLabel label="Filled" placeholder="Placeholder" />
+  <TextField variant="outlined" shrinkLabel label="Amount" prefixText="$" />
+</Demo>
+
+```tsx
+<TextField shrinkLabel label="Search" placeholder="Try “jacket”" />
+```
+
 ## Icons
 
 `startIcon` / `endIcon` place a decorative icon at either end of the field.
@@ -76,6 +165,52 @@ supporting text, character counter, and multiline mode.
 ```tsx
 <TextField label="Search" startIcon={<SearchIcon />} />
 <TextField variant="outlined" label="Password" type="password" endIcon={<VisibilityIcon />} />
+```
+
+## Password (secure) field
+
+There is no separate secure field component. Compose's `SecureTextField` is a
+text field that hides its value and has a visibility toggle in the trailing
+icon slot, and you can build the same thing from a `TextField` and an
+`IconButton`:
+
+- `type="password"` hides the value. The browser and the on-screen keyboard
+  then handle masking, briefly showing the last character typed on mobile,
+  and turning off autocorrect. Set `autoComplete` to `"current-password"` or
+  `"new-password"` so password managers can help.
+- The toggle is a standard `IconButton` in toggle mode. Its name stays
+  **"Show password"** and `aria-pressed` reports whether the password is
+  shown, so do not swap the label as well. `aria-controls` points at the
+  input.
+- Clicking the toggle does not move focus into the input, and the
+  `IconButton` keeps its own 48dp touch target inside the 24dp icon slot.
+
+<Demo>
+  <PasswordField variant="filled" />
+  <PasswordField variant="outlined" />
+</Demo>
+
+```tsx
+const [visible, setVisible] = useState(false)
+
+<TextField
+  id="password"
+  label="Password"
+  type={visible ? 'text' : 'password'}
+  autoComplete="current-password"
+  endIcon={
+    <IconButton
+      variant="standard"
+      toggle
+      selected={visible}
+      onChange={(_event, next) => setVisible(next)}
+      icon={<VisibilityIcon />}
+      selectedIcon={<VisibilityOffIcon />}
+      aria-label="Show password"
+      aria-controls="password"
+    />
+  }
+/>
 ```
 
 ## Prefix & suffix text

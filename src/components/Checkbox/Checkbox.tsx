@@ -1,15 +1,18 @@
+'use client'
+
 import {
   forwardRef,
   useCallback,
   useEffect,
   useRef,
-  useState,
   type ChangeEvent,
   type InputHTMLAttributes,
   type MutableRefObject,
   type Ref,
 } from 'react'
 import clsx from 'clsx'
+import { syncCheckedToDefault, useFormReset } from '../../internal/useFormReset'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './Checkbox.module.css'
 
 export interface CheckboxProps
@@ -22,7 +25,7 @@ export interface CheckboxProps
   indeterminate?: boolean
   /** Fires with the native event and the next checked state on toggle. */
   onChange?: (event: ChangeEvent<HTMLInputElement>, checked: boolean) => void
-  /** Error state. @default false */
+  /** Error state. Also sets `aria-invalid` on the native input. @default false */
   error?: boolean
   /** Ref to the native `<input>` element (the forwarded `ref` points at the root). */
   inputRef?: Ref<HTMLInputElement>
@@ -48,14 +51,18 @@ export const Checkbox = forwardRef<HTMLSpanElement, CheckboxProps>(
       error = false,
       disabled = false,
       className,
+      style,
       inputRef,
       ...rest
     },
     forwardedRef,
   ) {
-    const isControlled = checked !== undefined
-    const [internalChecked, setInternalChecked] = useState(defaultChecked)
-    const isChecked = isControlled ? checked : internalChecked
+    const [isChecked, setInternalChecked, isControlled] = useControllableState({
+      value: checked,
+      defaultValue: defaultChecked,
+      name: 'Checkbox',
+      state: 'checked',
+    })
 
     const internalInputRef = useRef<HTMLInputElement | null>(null)
     const setInputRef = useCallback(
@@ -75,6 +82,15 @@ export const Checkbox = forwardRef<HTMLSpanElement, CheckboxProps>(
     // the native flag even when the `indeterminate` prop stays true.
     useEffect(() => {
       if (internalInputRef.current) internalInputRef.current.indeterminate = indeterminate
+    })
+
+    // Native form reset (#432): restore the uncontrolled default and resync
+    // React's value tracker so the next click still fires onChange.
+    useFormReset(internalInputRef, () => {
+      const input = internalInputRef.current
+      if (!input || isControlled) return
+      syncCheckedToDefault(input)
+      setInternalChecked(input.defaultChecked)
     })
 
     const handleChange = useCallback(
@@ -109,10 +125,12 @@ export const Checkbox = forwardRef<HTMLSpanElement, CheckboxProps>(
           error && styles.error,
           className,
         )}
+        style={style}
         data-prev-state={prevState}
       >
         <input
           ref={setInputRef}
+          aria-invalid={error ? true : undefined}
           {...rest}
           type="checkbox"
           className={styles.input}

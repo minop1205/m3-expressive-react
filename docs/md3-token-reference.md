@@ -234,14 +234,17 @@ unaffected.
 | SearchBar docked view | DefaultSpatial (expand) / FastSpatial (collapse) | content fades stay Compose tweens |
 | AppBar / Toolbar | FastSpatial (slots, padding) | DefaultEffects (color, snap / hide) |
 | DatePicker | FastSpatial (menu arrow) | DefaultEffects (year reveal, mode switch) |
-| TimePicker | DefaultSpatial (hand) | DefaultEffects (dial crossfade) |
+| TimePicker | DefaultSpatial (hand), FastSpatial (vibrant AM / PM ToggleButton shape) | DefaultEffects (dial crossfade) |
+| ScrollField centred value (DisplayMedium ⇄ DisplayLargeEmphasized size and color) | FastSpatial (Compose `ScrollFieldDefaults.Item` animates both on `fastSpatialSpec`) | — |
 | Checkbox | DefaultSpatial (draw, check↔dash, fill scale) | DefaultEffects in / FastEffects out |
 | RadioButton | FastSpatial (dot grow) | DefaultEffects (ring color, dot shrink†) |
 | Switch | FastSpatial (icon rotate only) — thumb offset / size follow material-web (#373, see below) | — (colors: material-web 67ms) |
 | TextField | FastSpatial (label, indicator / outline width, notch) | FastEffects (colors), SlowEffects / FastEffects (content show / hide) |
+| Slider value label show / hide | — | FastEffects (fade; Compose has no value-label motion) |
 | Badge | FastSpatial (scale-in) | DefaultEffects (scale-out†) |
 | Carousel item press shape | — (DefaultEffects, as B5) | — |
 | BottomSheet / SideSheet scrim | — | DefaultEffects |
+| PullToRefresh indicator crossfade, arrow alpha | — | DefaultEffects |
 
 † Shrinking to `scale(0)` uses the critically damped DefaultEffects: an
 expressive overshoot past 0 would render a mirrored dot / badge.
@@ -251,13 +254,30 @@ elevation (`box-shadow`; Compose `ElevationDefaults` tweens), state layers /
 Ripple / FocusRing, Dialog and the DatePicker / TimePicker modal enter
 (platform dialog), BottomSheet / SideSheet slide (`BottomSheetAnimationSpec`
 tween 300ms FastOutSlowIn), SwipeToDismiss settle (`AnchoredDraggableDefaults`
-tween), determinate progress (`ProgressAnimationSpec`, a fixed non-bouncy
-spring), Slider (no Compose motion), Switch colors and thumb (web adaptation #373:
+tween), ScrollField snap (foundation `PagerDefaults.flingBehavior` /
+`animateScrollToPage` default `spring()`: `duration-medium1` `easing-standard`),
+PullToRefresh settle to the threshold / hidden (`Animatable`
+default `spring()`: `duration-medium1` `easing-standard`), determinate progress (`ProgressAnimationSpec`, a fixed non-bouncy
+spring), Switch colors and thumb (web adaptation #373:
 slide 300ms `--md-web-motion-easing-back-out`, press grow `duration-short2`
 linear, release / selection resize `duration-medium1` `easing-standard` —
 material-web values, superseding Compose FastSpatial + snap-while-pressed),
-Checkbox mark
-visibility gating and the any→unchecked `snap(delayMillis = 100)` hold.
+Checkbox mark visibility gating (`duration-short1` linear) and the
+any→unchecked `snap(delayMillis = 100)` hold (`duration-short2` delay),
+TextField filled hover state layer (`duration-short3` `easing-standard`, the
+Ripple hover tween). The Slider handle has no transition (Compose Slider has
+no motion; the 4 → 2dp squeeze is instant).
+
+**Documented fixed-ms exceptions** — literal times left in component CSS on
+purpose (#424):
+
+| Where | Value | Why |
+| --- | --- | --- |
+| TextField content / placeholder show delay (`--_show-delay`) | 67ms | material-web hold that lets the floating label clear the input line before the content fades in; no MD3 token or Compose counterpart (Compose sequences it inside `TextFieldImpl`). |
+| Checkbox fill / mark snaps, Checkbox & Ripple-style press layer reset | 1ms linear | a discrete step (CSS has no `snap()`), not motion — the delay before it is a token. |
+| TextField autofill detection animation | 10ms | a no-op keyframe on a private custom property used as an event hook (#432), not motion. |
+| Switch colors | 67ms | material-web web adaptation (#373), see above. |
+
 `src/theme/motionUsage.test.ts` rejects `cubic-bezier(` in component code,
 leftover `TODO(#314)`, unpaired spring easing / duration, and JS motion
 without a reduced-motion check.
@@ -298,3 +318,24 @@ primary-fixed-dim, on-primary-fixed, on-primary-fixed-variant` (+ secondary/tert
 - `material-web` SCSS = baseline only; Expressive shape/spring numbers come from `androidx`.
 - Single-cubic-bezier `emphasized` is lossy; use accel/decel pair when accuracy matters.
 - Elevation level0-5 → dp 0,1,3,6,8,12.
+
+## 8. Overlay stacking (z-index)
+
+Library scale, not an MD3 or Compose token: Android has no shared z-order for
+overlays, but on the web it matters wherever an overlay is not promoted to the
+Popover top layer — the inline modals, the docked SearchBar, and the
+Menu / DatePickerField fallback when the Popover API is missing. Defined in
+`src/styles/tokens.css`; component CSS uses the tokens, never the numbers
+(`src/test/cssHygiene.test.ts` rejects a literal `z-index` of 10 or more in
+`*.module.css`; local stacking 0–9 inside a component is fine).
+
+| Token | Value | Used by |
+| --- | --- | --- |
+| `--md-sys-z-tooltip` | 10 | Tooltip |
+| `--md-sys-z-search` | 20 | SearchBar (while open / collapsing) |
+| `--md-sys-z-popup` | 22 | Menu, DatePickerField popup |
+| `--md-sys-z-modal` | 24 | Dialog, BottomSheet, SideSheet, DatePicker / TimePicker modal, modal NavigationDrawer / NavigationRail |
+| `--md-sys-z-snackbar` | 30 | SnackbarProvider |
+
+Higher wins: a snackbar stays above an open modal, a modal above menus, a menu
+above the open search view.

@@ -158,6 +158,23 @@ describe('SnackbarProvider / useSnackbar', () => {
     expect(r.reason).toBe('timeout')
   })
 
+  it('starts a queued snackbar paused when it appears under a resting pointer (#423)', async () => {
+    setup()
+    const a = showTracked('First')
+    const b = showTracked('Second')
+    fireEvent.pointerEnter(screen.getByText('First'))
+    act(() => api.close())
+    await advance(150)
+    expect(a.reason).toBe('dismiss')
+    expect(screen.getByText('Second')).toBeInTheDocument()
+    // No new pointerenter: the pointer never moved, yet B stays paused.
+    await advance(10_000)
+    expect(b.reason).toBeUndefined()
+    fireEvent.pointerLeave(screen.getByText('Second'))
+    await advance(4000)
+    expect(b.reason).toBe('timeout')
+  })
+
   it('pauses the timer while focus is inside', async () => {
     setup()
     const r = showTracked({ message: 'Focus me', actionLabel: 'Retry', duration: 'short' })
@@ -191,6 +208,16 @@ describe('SnackbarProvider / useSnackbar', () => {
     await advance(4150)
     expect(other).toHaveFocus()
     other.remove()
+  })
+
+  it('settles pending show() promises when the provider unmounts (#423)', async () => {
+    const { unmount } = setup()
+    const current = showTracked({ message: 'One', actionLabel: 'Undo' })
+    const queued = showTracked('Two')
+    unmount()
+    await advance(0)
+    expect(current.reason).toBe('dismiss')
+    expect(queued.reason).toBe('dismiss')
   })
 
   it('throws when useSnackbar is used outside a provider', () => {

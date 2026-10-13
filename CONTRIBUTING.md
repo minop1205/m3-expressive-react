@@ -13,7 +13,8 @@ npm run dev      # Storybook dev server
 
 ## Development Workflow
 
-1. Create a feature branch from `develop` (`main` only receives releases)
+1. Create a feature branch from `develop` (`main` only receives releases
+   and [docs hotfixes](#documentation-site))
 2. Make your changes
 3. Ensure all checks pass:
    ```bash
@@ -29,9 +30,21 @@ npm run dev      # Storybook dev server
 The site in `site/` is published from **`main`**, so it always documents the
 released package (npm `latest`). Pull requests that touch the site or the
 library build the site as a check, without deploying. Docs changes merged into
-`develop` go live with the next release; ship an urgent docs-only fix as a
-patch release (or re-run the Docs workflow on `main` after the fix reaches
-`main`).
+`develop` go live with the next release.
+
+**Docs hotfixes** — to publish a docs-only fix without a library release:
+
+1. Branch from `main` (e.g. `docs/hotfix-divider-demo`) and change only
+   `site/`, `docs/`, `README.md` or `CONTRIBUTING.md`.
+2. Open the PR against **`main`**. The `Main PR scope` check fails if the
+   branch touches anything else (library code, `package.json`, workflows, …)
+   — that change must go through `develop` as a release.
+3. Merge it: the push to `main` deploys the site. No version bump, no tag.
+4. Back-merge `main` into `develop` (PR `main` → `develop`, merge commit) so
+   the fix is not lost at the next release.
+
+Only document what is already released in a hotfix — the site builds against
+`main`'s library. Docs for unreleased features belong on `develop`.
 
 ## Commit Messages
 

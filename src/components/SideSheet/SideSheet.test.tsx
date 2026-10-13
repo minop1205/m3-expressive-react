@@ -1,5 +1,5 @@
 import { createRef, useState } from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
@@ -155,5 +155,29 @@ describe('SideSheet accessible name', () => {
   it('labels the standard complementary landmark with its headline', () => {
     render(<SideSheet variant="standard" headline="Details">Body</SideSheet>)
     expect(screen.getByRole('complementary')).toHaveAccessibleName('Details')
+  })
+})
+
+describe('SideSheet onClose reason (#407)', () => {
+  it('passes escapeKeyDown, backdropClick and closeButton', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const { container } = render(
+      <SideSheet variant="modal" open headline="Filters" onClose={onClose}>
+        Body
+      </SideSheet>,
+    )
+    await user.keyboard('{Escape}')
+    expect(onClose).toHaveBeenLastCalledWith(expect.any(KeyboardEvent), 'escapeKeyDown')
+    fireEvent.click(container.querySelector('[class*="scrim"]')!)
+    expect(onClose).toHaveBeenLastCalledWith(
+      expect.objectContaining({ type: 'click' }),
+      'backdropClick',
+    )
+    await user.click(screen.getByRole('button', { name: 'Close' }))
+    expect(onClose).toHaveBeenLastCalledWith(
+      expect.objectContaining({ type: 'click' }),
+      'closeButton',
+    )
   })
 })

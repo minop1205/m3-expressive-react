@@ -3,7 +3,9 @@
  * NavigationDrawerTokens: 360dp width; modal SurfaceContainerLow / standard
  * Surface; 16dp rounded trailing edge; Scrim @ 0.32 (modal). Items = 56dp full
  * pills: active SecondaryContainer / OnSecondaryContainer, inactive transparent
- * / OnSurfaceVariant, LabelLarge, 24dp icon, 12dp side padding.
+ * / OnSurfaceVariant, LabelLarge, 24dp icon, 12dp side padding. The
+ * dismissible variant shares the standard Surface panel
+ * (DrawerDefaults.standardContainerColor).
  */
 
 .drawer {
@@ -27,12 +29,38 @@
 }
 
 /* --------------------------------------------------------------------------- */
+/* Dismissible (Compose DismissibleNavigationDrawer)                           */
+/* --------------------------------------------------------------------------- */
+/* Inline beside the content, no scrim: closed, it slides off past its
+   inline-start edge by a negative margin, so the next flex / grid sibling
+   takes its space (the content is pushed, not covered). Opens on
+   DefaultSpatial, closes on FastEffects (no bounce), like the modal drawer. */
+.drawer[data-variant='dismissible'] {
+  flex-shrink: 0;
+  margin-inline-start: calc(-1 * min(360px, 100%));
+  visibility: hidden;
+  transition:
+    margin-inline-start var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing),
+    visibility 0s linear var(--md-sys-motion-spring-fast-effects-duration);
+}
+
+.drawer[data-variant='dismissible'][data-open] {
+  margin-inline-start: 0;
+  visibility: visible;
+  transition:
+    margin-inline-start var(--md-sys-motion-spring-default-spatial-duration)
+      var(--md-sys-motion-spring-default-spatial-easing),
+    visibility 0s;
+}
+
+/* --------------------------------------------------------------------------- */
 /* Modal overlay                                                               */
 /* --------------------------------------------------------------------------- */
 .modalRoot {
   position: fixed;
   inset: 0;
-  z-index: 24; /* match the other modal overlays */
+  z-index: var(--md-sys-z-modal);
   display: flex;
   visibility: hidden;
   pointer-events: none;
@@ -68,6 +96,12 @@
   /* Compose ModalNavigationDrawer: closes on FastEffects (no bounce) … */
   transition: transform var(--md-sys-motion-spring-fast-effects-duration)
     var(--md-sys-motion-spring-fast-effects-easing);
+}
+
+/* The drawer sits at the inline-start edge (the right in RTL), so it must
+   slide off towards that edge rather than across the content (#428). */
+[dir='rtl'] .modalRoot .drawer {
+  transform: translateX(100%);
 }
 
 .modalRoot[data-open] .drawer {
@@ -182,7 +216,9 @@
   .scrim,
   .modalRoot[data-open] .scrim,
   .modalRoot .drawer,
-  .modalRoot[data-open] .drawer {
+  .modalRoot[data-open] .drawer,
+  .drawer[data-variant='dismissible'],
+  .drawer[data-variant='dismissible'][data-open] {
     transition: none;
   }
 }

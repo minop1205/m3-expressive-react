@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { DatePickerField } from './DatePickerField'
+import textFieldStyles from '../TextField/TextField.module.css'
 import { getDatePattern, parseDateInput } from './dateUtils'
 
 const toggle = () => screen.getByRole('button', { name: 'Open calendar' })
@@ -13,6 +14,16 @@ describe('DatePickerField', () => {
     render(<DatePickerField label="Birthday" />)
     const input = screen.getByRole('textbox', { name: 'Birthday' })
     expect(input).toHaveAccessibleDescription('MM/DD/YYYY')
+  })
+
+  it('referenceDate sets the opening month and the today marker', async () => {
+    const user = userEvent.setup()
+    render(<DatePickerField referenceDate={new Date(2030, 2, 17)} />)
+    await user.click(toggle())
+    expect(screen.getByRole('grid', { name: 'March 2030' })).toBeInTheDocument()
+    const cell = screen.getByRole('gridcell', { name: /^Today, / })
+    expect(cell.textContent).toBe('17')
+    expect(cell).toHaveFocus()
   })
 
   it('states the locale format', () => {
@@ -242,7 +253,10 @@ describe('DatePickerField', () => {
     // July 2024 starts on a Monday: 30 June fills the first cell.
     const firstWeek = within(screen.getByRole('grid')).getAllByRole('row')[1]
     const first = within(firstWeek).getAllByRole('gridcell')[0]
-    expect(first).toHaveTextContent('30')
+    // The number is decorative CSS generated content (no text node).
+    expect(first.querySelector('[data-day]')).toHaveAttribute('data-day', '30')
+    expect(first.querySelector('[data-day]')).toHaveAttribute('aria-hidden', 'true')
+    expect(first.textContent).toBe('')
     expect(first.tagName).toBe('SPAN')
     expect(first).not.toHaveAccessibleName()
   })
@@ -319,6 +333,19 @@ describe('DatePickerField', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 
+  it('passes labelPlacement / shrinkLabel through to the text field (B37)', async () => {
+    const { container, rerender } = render(<DatePickerField label="Date" labelPlacement="above" />)
+    const input = screen.getByRole('textbox', { name: 'Date' })
+    const labels = container.querySelectorAll('label')
+    expect(labels).toHaveLength(1)
+    // The above label precedes the field container (outside the outline).
+    expect(labels[0].nextElementSibling?.contains(input)).toBe(true)
+    expect(await axe(container)).toHaveNoViolations()
+
+    rerender(<DatePickerField label="Date" shrinkLabel />)
+    expect(container.querySelector(`.${textFieldStyles.shrinkLabel}`)).not.toBeNull()
+  })
+
   it('has no axe violations with the popup open', async () => {
     const user = userEvent.setup()
     const { container } = render(<DatePickerField label="Date" />)
@@ -350,5 +377,38 @@ describe('date input parsing', () => {
       expect(parseDateInput(text, 'en-US')).toBeNull()
     }
     expect(parseDateInput('2/29/2024', 'en-US')).toEqual(new Date(2024, 1, 29))
+  })
+})
+
+describe('DatePickerField input pass-through (#421)', () => {
+  it('forwards inputRef, name and inputProps to the inner input', () => {
+    const inputRef = createRef<HTMLInputElement>()
+    const rootRef = createRef<HTMLDivElement>()
+    render(
+      <DatePickerField
+        ref={rootRef}
+        inputRef={inputRef}
+        name="start"
+        inputProps={{ 'aria-describedby': 'extra', autoComplete: 'off' }}
+      />,
+    )
+    const input = screen.getByRole('textbox', { name: 'Date' })
+    expect(inputRef.current).toBe(input)
+    expect(rootRef.current).not.toBe(input)
+    expect(input).toHaveAttribute('name', 'start')
+    expect(input).toHaveAttribute('autocomplete', 'off')
+    expect(input.getAttribute('aria-describedby')).toContain('extra')
+  })
+
+  it('calls inputProps.onKeyDown and still commits on Enter', async () => {
+    const user = userEvent.setup()
+    const onKeyDown = vi.fn()
+    const onChange = vi.fn()
+    render(<DatePickerField onChange={onChange} inputProps={{ onKeyDown }} />)
+    const input = screen.getByRole('textbox', { name: 'Date' })
+    await user.type(input, '01/15/2026{Enter}')
+    expect(onKeyDown).toHaveBeenCalled()
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect((onChange.mock.calls[0][0] as Date).getDate()).toBe(15)
   })
 })

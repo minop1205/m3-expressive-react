@@ -1,13 +1,16 @@
+'use client'
+
 import {
   forwardRef,
   useEffect,
   useId,
-  useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type KeyboardEvent,
   type ReactNode,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import { IconButton } from '../IconButton'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
@@ -69,6 +72,8 @@ export interface CalendarProps {
   labels: CalendarLabels
   /** Move focus to the roving day cell on mount. */
   autoFocus?: boolean
+  /** Day marked as today; defaults to the client's current date. */
+  referenceDate?: Date
 }
 
 /** Compose `DatePickerDefaults.YearRange` when no min / max narrows it. */
@@ -80,6 +85,22 @@ function addMonths(d: Date, months: number) {
   const target = new Date(d.getFullYear(), d.getMonth() + months, 1)
   const day = Math.min(d.getDate(), daysInMonth(target.getFullYear(), target.getMonth()))
   return new Date(target.getFullYear(), target.getMonth(), day)
+}
+
+const noopSubscribe = () => () => {}
+const clientToday = () => startOfDay(new Date()).getTime()
+const serverToday = () => null
+
+/**
+ * Today's date, resolved on the client only (#410): the server render and
+ * the hydration pass see `null` (no today marker), so a server clock or time
+ * zone that differs from the browser's never causes a hydration mismatch.
+ * Client-only renders read the date immediately, as before.
+ */
+function useToday(referenceDate: Date | undefined): Date | null {
+  const time = useSyncExternalStore(noopSubscribe, clientToday, serverToday)
+  if (referenceDate) return startOfDay(referenceDate)
+  return time == null ? null : new Date(time)
 }
 
 function dateKey(d: Date) {
@@ -148,7 +169,7 @@ function SelectionList({ id, label, variant, options, onPick }: SelectionListPro
   const pendingFocus = useRef<'open' | 'key' | null>('open')
   const columns = variant === 'years' ? 3 : 1
 
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const reason = pendingFocus.current
     if (!reason) return
     pendingFocus.current = null
@@ -248,7 +269,8 @@ function SelectionList({ id, label, variant, options, onPick }: SelectionListPro
  * month (m3 key table), and Enter/Space select.
  *
  * Navigation is bounded by min/max (else Compose's 1900–2100 year range):
- * arrows, years and months that cannot show a selectable day are disabled.
+ * arrows, years and months that cannot show a selectable day are disabled,
+ * and keyboard focus is clamped into that range.
  */
 export function Calendar({
   layout = 'modal',
@@ -264,6 +286,7 @@ export function Calendar({
   onSelect,
   labels,
   autoFocus = false,
+  referenceDate,
 }: CalendarProps) {
   const gridRef = useRef<HTMLDivElement>(null)
   const monthMenuRef = useRef<HTMLButtonElement>(null)
@@ -275,7 +298,7 @@ export function Calendar({
   const menuIdBase = useId()
   const docked = layout === 'docked'
 
-  const today = startOfDay(new Date())
+  const today = useToday(referenceDate)
   const minDay = min ? startOfDay(min) : null
   const maxDay = max ? startOfDay(max) : null
   const firstYear = Math.min(minDay?.getFullYear() ?? DEFAULT_FIRST_YEAR, view.year)
@@ -337,7 +360,19 @@ export function Calendar({
     onViewChange({ year: d.getFullYear(), month: d.getMonth() })
   }
 
-  const moveFocus = (next: Date) => {
+  // Keyboard focus stays within the selectable range: [min, max], else
+  // Compose's fixed 1900–2100 year range (not widened by the view, so paging
+  // can't walk past it). A start date already outside is not pulled back.
+  const keyboardLower = minDay ?? new Date(DEFAULT_FIRST_YEAR, 0, 1)
+  const keyboardUpper = maxDay ?? new Date(DEFAULT_LAST_YEAR, 11, 31)
+  const clampFocus = (next: Date, from: Date) => {
+    const low = from < keyboardLower ? from : keyboardLower
+    const high = from > keyboardUpper ? from : keyboardUpper
+    return next < low ? low : next > high ? high : next
+  }
+
+  const moveFocus = (target: Date, from: Date) => {
+    const next = clampFocus(target, from)
     if (!inView(next)) goTo(next.getFullYear(), next.getMonth())
     setFocusedDate(next)
     pendingFocus.current = true
@@ -386,7 +421,7 @@ export function Calendar({
         return
     }
     event.preventDefault()
-    moveFocus(next)
+    moveFocus(next, date)
   }
 
   const describe = (date: Date) => {
@@ -426,6 +461,7 @@ export function Calendar({
     return (
       <IconButton
         variant="standard"
+        className={styles.navArrow}
         icon={delta < 0 ? <ChevronLeftIcon /> : <ChevronRightIcon />}
         aria-label={label}
         disabled={!monthReachable(target.getFullYear(), target.getMonth())}
@@ -442,7 +478,7 @@ export function Calendar({
         key: year,
         label: yearFormat.format(year),
         selected: year === view.year,
-        current: year === today.getFullYear(),
+        current: year === today?.getFullYear(),
         disabled: year < lower.getFullYear() || year > upper.getFullYear(),
       }
     },
@@ -559,11 +595,21 @@ export function Calendar({
             <div key={r} role="row" className={styles.row}>
               {week.map(({ date, outside }) => {
                 if (outside) {
-                  // Docked shows neighbouring days at 38% (m3 "outside
-                  // month" label text); they are not part of this grid.
+                  // Docked shows neighbouring days at on-surface 38% (m3
+                  // "outside month" label text); they are not part of this
+                  // grid. The number is CSS-generated content on an
+                  // aria-hidden span: decoration, not a text node, so it is
+                  // out of the accessibility tree and of contrast checks
+                  // (WCAG 1.4.3 inactive / decorative — docs/audits/datepicker.md).
                   return (
                     <span key={dateKey(date)} role="gridcell" className={styles.empty}>
-                      {docked && <span aria-hidden="true">{date.getDate()}</span>}
+                      {docked && (
+                        <span
+                          aria-hidden="true"
+                          className={styles.outsideDay}
+                          data-day={date.getDate()}
+                        />
+                      )}
                     </span>
                   )
                 }

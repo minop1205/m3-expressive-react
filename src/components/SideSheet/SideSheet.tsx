@@ -1,6 +1,7 @@
+'use client'
+
 import {
   forwardRef,
-  useEffect,
   useId,
   useRef,
   type HTMLAttributes,
@@ -9,6 +10,7 @@ import {
 import clsx from 'clsx'
 import { IconButton } from '../IconButton/IconButton'
 import { Divider } from '../Divider/Divider'
+import type { ModalCloseEvent } from '../../internal/closeReason'
 import { assignRefs, useModal } from '../../internal/useModal'
 import styles from './SideSheet.module.css'
 
@@ -27,15 +29,27 @@ const BackIcon = (
   </svg>
 )
 
+/**
+ * Why the sheet asked to close (ruling B7 vocabulary). `'escapeKeyDown'` and
+ * `'backdropClick'` only occur on the modal variant.
+ */
+export type SideSheetCloseReason = 'escapeKeyDown' | 'backdropClick' | 'closeButton'
+
 export interface SideSheetProps extends HTMLAttributes<HTMLDivElement> {
   /** Standard (inline) or modal (overlay + scrim). @default 'standard' */
   variant?: SideSheetVariant
-  /** Edge the sheet is anchored to. @default 'right' */
+  /**
+   * Physical edge the sheet is anchored to; it does not flip in RTL.
+   * @default 'right'
+   */
   anchor?: SideSheetAnchor
   /** Whether the sheet is shown. @default true */
   open?: boolean
-  /** Called on close-button click, scrim click, or Escape. */
-  onClose?: () => void
+  /**
+   * Called on close-button click, scrim click, or Escape, with the
+   * triggering event and the `reason`.
+   */
+  onClose?: (event: ModalCloseEvent, reason: SideSheetCloseReason) => void
   /** Title shown in the header. */
   headline?: ReactNode
   /** Show a leading back button (modal). @default false */
@@ -58,7 +72,7 @@ export interface SideSheetProps extends HTMLAttributes<HTMLDivElement> {
 /**
  * Material Design 3 Side sheet (standard or modal).
  *
- * A 400dp max-width panel anchored to the trailing (or leading) edge. Standard
+ * A 400dp max-width panel anchored to the right (or left) edge. Standard
  * = inline Surface panel; modal = SurfaceContainerLow over a 0.32 Scrim with
  * `role="dialog" aria-modal` and Escape-to-close — per m3.material.io specs.
  * Header uses 24dp side padding (16dp with a back icon), 12dp gaps, a Title
@@ -88,7 +102,12 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
   ) {
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLDivElement | null>(null)
-    useModal({ active: variant === 'modal' && open, rootRef, surfaceRef })
+    useModal({
+      active: variant === 'modal' && open,
+      rootRef,
+      surfaceRef,
+      onEscape: (event) => onClose?.(event, 'escapeKeyDown'),
+    })
 
     // Wire the visible headline as the sheet's accessible name; consumer aria
     // props win, and a generic fallback covers headline-less sheets.
@@ -97,15 +116,6 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
     const restLabelledby = (rest as Record<string, unknown>)['aria-labelledby'] as
       | string
       | undefined
-
-    useEffect(() => {
-      if (variant !== 'modal' || !open) return
-      const handle = (event: globalThis.KeyboardEvent) => {
-        if (event.key === 'Escape') onClose?.()
-      }
-      document.addEventListener('keydown', handle)
-      return () => document.removeEventListener('keydown', handle)
-    }, [variant, open, onClose])
 
     const hasHeader = showBackButton || headline != null || showCloseButton
 
@@ -148,7 +158,7 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
                 variant="standard"
                 icon={CloseIcon}
                 aria-label={closeLabel}
-                onClick={onClose}
+                onClick={(event) => onClose?.(event, 'closeButton')}
                 className={styles.headerButton}
               />
             )}
@@ -175,7 +185,11 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
         data-open={open || undefined}
         data-anchor={anchor}
       >
-        <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
+        <div
+          className={styles.scrim}
+          aria-hidden="true"
+          onClick={(event) => onClose?.(event, 'backdropClick')}
+        />
         {panel}
       </div>
     )

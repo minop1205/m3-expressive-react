@@ -181,6 +181,19 @@ an English default (`titleLabel`, `okLabel`, `cancelLabel`,
 <DatePicker locale="ja-JP" titleLabel="日付を選択" okLabel="OK" cancelLabel="キャンセル" />
 ```
 
+## Server rendering
+
+"Today" is read from the browser's clock after hydration, so a server in
+another time zone never causes a hydration mismatch — the today marker
+simply appears once the page hydrates. When nothing is selected, the calendar
+opens on the current month; to make that month identical on the server and
+the client, pass `referenceDate` (it also sets the day marked as today).
+
+```tsx
+// e.g. computed once per request in the user's time zone
+<DatePicker referenceDate={today} />
+```
+
 ## Accessibility
 
 - The day grid is an APG grid with a single Tab stop: arrow keys move by

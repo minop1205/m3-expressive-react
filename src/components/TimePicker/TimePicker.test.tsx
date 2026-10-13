@@ -269,6 +269,33 @@ describe('TimePicker', () => {
     expect(screen.getByRole('group', { name: 'Hour' })).toBeInTheDocument()
   })
 
+  describe('RTL (#428)', () => {
+    it('keeps the dial-mode hour:minute row LTR', () => {
+      render(
+        <div dir="rtl">
+          <TimePicker value={{ hour: 10, minute: 30 }} />
+        </div>,
+      )
+      const hour = screen.getByRole('radio', { name: 'Select hour' })
+      const row = hour.closest('[dir]')
+      expect(row).toHaveAttribute('dir', 'ltr')
+      expect(row).toContainElement(screen.getByRole('radio', { name: 'Select minutes' }))
+      // The AM/PM selector is not part of the pinned row.
+      expect(row).not.toContainElement(screen.getByRole('radio', { name: 'AM' }))
+    })
+
+    it('keeps the input-mode hour:minute fields LTR', () => {
+      render(
+        <div dir="rtl">
+          <TimePicker mode="input" value={{ hour: 10, minute: 30 }} />
+        </div>,
+      )
+      const row = screen.getByRole('textbox', { name: 'Hour' }).closest('[dir]')
+      expect(row).toHaveAttribute('dir', 'ltr')
+      expect(row).toContainElement(screen.getByRole('textbox', { name: 'Minute' }))
+    })
+  })
+
   it('edits the time via input fields', () => {
     const onChange = vi.fn()
     render(<TimePicker mode="input" value={{ hour: 10, minute: 0 }} onChange={onChange} />)
@@ -442,5 +469,110 @@ describe('TimePicker', () => {
   it('has no axe violations', async () => {
     const { container } = render(<TimePicker value={{ hour: 10, minute: 30 }} />)
     expect(await axe(container)).toHaveNoViolations()
+  })
+
+  describe('scroll mode (Compose TimeScroll)', () => {
+    it('shows hour and minute spinbuttons with unit value text', () => {
+      render(<TimePicker defaultMode="scroll" value={{ hour: 13, minute: 5 }} />)
+      const hour = screen.getByRole('spinbutton', { name: 'Select hour' })
+      const minute = screen.getByRole('spinbutton', { name: 'Select minutes' })
+      expect(hour).toHaveAttribute('aria-valuenow', '1')
+      expect(hour).toHaveAttribute('aria-valuemin', '1')
+      expect(hour).toHaveAttribute('aria-valuemax', '12')
+      expect(hour).toHaveAttribute('aria-valuetext', "1 o'clock")
+      expect(minute).toHaveAttribute('aria-valuetext', '5 minutes')
+      expect(screen.getByRole('radio', { name: 'PM' })).toBeChecked()
+      expect(screen.queryByRole('group', { name: 'Hour' })).toBeNull()
+    })
+
+    it('reports wheel steps; 12 → 1 keeps the period', async () => {
+      const user = userEvent.setup()
+      const onChange = vi.fn()
+      render(
+        <TimePicker defaultMode="scroll" defaultValue={{ hour: 12, minute: 59 }} onChange={onChange} />,
+      )
+      const hour = screen.getByRole('spinbutton', { name: 'Select hour' })
+      hour.focus()
+      await user.keyboard('{ArrowUp}')
+      expect(onChange).toHaveBeenLastCalledWith({ hour: 13, minute: 59 })
+      await user.keyboard('{ArrowDown}{ArrowDown}')
+      expect(onChange).toHaveBeenLastCalledWith({ hour: 23, minute: 59 })
+      const minute = screen.getByRole('spinbutton', { name: 'Select minutes' })
+      minute.focus()
+      await user.keyboard('{ArrowUp}')
+      expect(onChange).toHaveBeenLastCalledWith({ hour: 23, minute: 0 })
+    })
+
+    it('uses 0–23 hours on a 24-hour clock, without AM / PM', () => {
+      render(<TimePicker defaultMode="scroll" ampm={false} value={{ hour: 18, minute: 0 }} />)
+      const hour = screen.getByRole('spinbutton', { name: 'Select hour' })
+      expect(hour).toHaveAttribute('aria-valuemin', '0')
+      expect(hour).toHaveAttribute('aria-valuemax', '23')
+      expect(hour).toHaveAttribute('aria-valuetext', '18 hours')
+      expect(screen.queryByRole('radiogroup', { name: 'AM or PM' })).toBeNull()
+    })
+
+    it('toggles scroll ⇄ input (Compose ScrollDisplayModeToggle)', async () => {
+      const user = userEvent.setup()
+      const onModeChange = vi.fn()
+      render(<TimePicker defaultMode="scroll" onModeChange={onModeChange} />)
+      await user.click(screen.getByRole('button', { name: 'Toggle input picker' }))
+      expect(onModeChange).toHaveBeenLastCalledWith('input')
+      expect(screen.getByRole('textbox', { name: 'Hour' })).toBeInTheDocument()
+      await user.click(screen.getByRole('button', { name: 'Switch to scroll mode' }))
+      expect(onModeChange).toHaveBeenLastCalledWith('scroll')
+      expect(screen.getByRole('spinbutton', { name: 'Select hour' })).toBeInTheDocument()
+    })
+
+    it('keeps dial ⇄ input for a dial picker', async () => {
+      const user = userEvent.setup()
+      render(<TimePicker />)
+      await user.click(screen.getByRole('button', { name: 'Toggle input picker' }))
+      expect(screen.getByRole('button', { name: 'Toggle dial picker' })).toBeInTheDocument()
+    })
+
+    it('has no axe violations', async () => {
+      const { container } = render(
+        <TimePicker defaultMode="scroll" value={{ hour: 10, minute: 30 }} onAccept={() => {}} />,
+      )
+      expect(await axe(container)).toHaveNoViolations()
+    })
+  })
+
+  describe('variant and orientation', () => {
+    it('marks the vibrant variant and keeps the headline for the dialog name only', () => {
+      render(<TimePicker variant="vibrant" open onClose={() => {}} />)
+      const dialog = screen.getByRole('dialog', { name: 'Select time' })
+      expect(dialog).toHaveAttribute('data-variant', 'vibrant')
+    })
+
+    it('leaves the standard picker unmarked', () => {
+      render(<TimePicker data-testid="tp" />)
+      const picker = screen.getByTestId('tp')
+      expect(picker).not.toHaveAttribute('data-variant')
+      expect(picker).not.toHaveAttribute('data-orientation')
+    })
+
+    it('lays the dial out horizontally only in dial mode', async () => {
+      const user = userEvent.setup()
+      render(<TimePicker data-testid="tp" orientation="horizontal" />)
+      const picker = screen.getByTestId('tp')
+      expect(picker).toHaveAttribute('data-orientation', 'horizontal')
+      await user.click(screen.getByRole('button', { name: 'Toggle input picker' }))
+      expect(picker).not.toHaveAttribute('data-orientation')
+    })
+
+    it.each([
+      ['vibrant dial', { variant: 'vibrant' as const }],
+      ['vibrant input', { variant: 'vibrant' as const, defaultMode: 'input' as const }],
+      ['vibrant scroll', { variant: 'vibrant' as const, defaultMode: 'scroll' as const }],
+      ['horizontal', { orientation: 'horizontal' as const }],
+      ['vibrant horizontal', { variant: 'vibrant' as const, orientation: 'horizontal' as const }],
+    ])('has no axe violations (%s)', async (_, props) => {
+      const { container } = render(
+        <TimePicker {...props} value={{ hour: 10, minute: 30 }} onAccept={() => {}} />,
+      )
+      expect(await axe(container)).toHaveNoViolations()
+    })
   })
 })

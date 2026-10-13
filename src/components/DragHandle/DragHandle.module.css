@@ -1,0 +1,93 @@
+/* =========================================================================== */
+/* DragHandle — Material Design 3 (Compose VerticalDragHandle)                 */
+/* Values: DragHandleTokens + VerticalDragHandleDefaults (DragHandle.kt:223–344) */
+/* =========================================================================== */
+
+.dragHandle {
+  /* Resting: 4×48dp Outline capsule (CornerFull) */
+  --_container-width: 24px; /* DragHandleTokens.ContainerWidth */
+  --_handle-width: 4px;
+  --_handle-height: 48px;
+  --_handle-color: var(--md-sys-color-outline);
+  --_handle-shape: calc(var(--_handle-width) / 2);
+  /* Pressed / dragged: 12×52dp OnSurface, CornerMedium */
+  --_pressed-handle-width: 12px;
+  --_pressed-handle-height: 52px;
+  --_pressed-handle-color: var(--md-sys-color-on-surface);
+  --_pressed-handle-shape: var(--md-sys-shape-corner-medium);
+  /* Compose ripple() over the clipped handle = LocalContentColor */
+  --_state-layer-color: var(--md-sys-color-on-surface);
+
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--_container-width);
+  min-height: var(--_pressed-handle-height);
+  cursor: col-resize;
+  /* The handle owns horizontal drags (and keeps text from being selected). */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+/* 48dp minimum touch target around the handle (Compose
+   minimumInteractiveComponentSize). */
+.dragHandle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 48px;
+  height: max(48px, var(--_pressed-handle-height));
+  transform: translate(-50%, -50%);
+}
+
+.handle {
+  position: relative;
+  display: block;
+  width: var(--_handle-width);
+  height: var(--_handle-height);
+  border-radius: var(--_handle-shape);
+  background-color: var(--_handle-color);
+  --md-ripple-color: var(--_state-layer-color);
+  pointer-events: none;
+}
+
+/* Compose switches size, shape and color without animation. */
+.dragHandle[data-state] {
+  --_handle-width: var(--_pressed-handle-width);
+  --_handle-height: var(--_pressed-handle-height);
+  --_handle-color: var(--_pressed-handle-color);
+  --_handle-shape: var(--_pressed-handle-shape);
+}
+
+/* The ring hugs the handle capsule, not the 24dp host. */
+.dragHandle[role] .focusRing {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: var(--_handle-width);
+  height: var(--_handle-height);
+  border-radius: var(--_handle-shape);
+  transform: translate(-50%, -50%);
+}
+
+.dragHandle[data-disabled] {
+  cursor: default;
+  --_handle-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+@media (forced-colors: active) {
+  .handle {
+    background-color: CanvasText;
+  }
+
+  .dragHandle[data-disabled] .handle {
+    background-color: GrayText;
+  }
+}

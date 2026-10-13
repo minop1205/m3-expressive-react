@@ -1,16 +1,19 @@
+'use client'
+
 import {
   forwardRef,
   useCallback,
-  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
   type HTMLAttributes,
   type ReactNode,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { cubicBezier } from '../../internal/cubicBezier'
 import { useScrollObserver, type ScrollTarget } from '../../internal/useScrollObserver'
+import { holdsKeyboardFocus, releaseFocus } from '../../internal/barFocus'
 import styles from './AppBar.module.css'
 
 export type { ScrollTarget }
@@ -226,7 +229,11 @@ export const TopAppBar = forwardRef<HTMLElement, TopAppBarProps>(
         if (!twoRow) setScrolledState(top > 0)
         if (enterAlways) {
           const limit = barRef.current?.offsetHeight ?? 0
-          const next = top <= 0 ? 0 : Math.min(limit, Math.max(0, offsetRef.current + delta))
+          // A bar holding keyboard focus stays put (internal/barFocus.ts).
+          const next =
+            top <= 0 || holdsKeyboardFocus(barRef.current)
+              ? 0
+              : Math.min(limit, Math.max(0, offsetRef.current + delta))
           if (next !== offsetRef.current) applyOffset(next, limit, false)
         }
         if (collapsible) {
@@ -255,7 +262,7 @@ export const TopAppBar = forwardRef<HTMLElement, TopAppBarProps>(
 
     // A collapse requested through the state prop needs the row's natural
     // height too (scroll-driven collapses measure in the scroll handler).
-    useLayoutEffect(() => {
+    useIsoLayoutEffect(() => {
       if (!twoRow || collapsedFraction <= 0) return
       const h = expandedRowRef.current?.offsetHeight ?? 0
       if (h > 0 && h !== expandedRowHeight) setExpandedRowHeight(h)
@@ -263,7 +270,9 @@ export const TopAppBar = forwardRef<HTMLElement, TopAppBarProps>(
 
     // Offscreen → out of the focus order and the accessibility tree (B25).
     // Set through the DOM: React 18 has no boolean `inert` prop.
-    useLayoutEffect(() => {
+    useIsoLayoutEffect(() => {
+      // Release focus first so it never sits inside the inert bar.
+      if (fullyHidden) releaseFocus(barRef.current)
       barRef.current?.toggleAttribute('inert', fullyHidden)
     }, [fullyHidden])
 

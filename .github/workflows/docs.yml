@@ -1,7 +1,8 @@
 # Docs site (site/) — the published site tracks the RELEASED library (#379).
 #
-# - push to main (= a release) and manual runs on main: build + deploy to
-#   GitHub Pages, so the live docs always match npm `latest`.
+# - push to main (a release, or a docs-only hotfix — see main-pr-scope.yml)
+#   and manual runs on main: build + deploy to GitHub Pages, so the live docs
+#   always match npm `latest`.
 # - pull requests to develop / main: build only (no deploy), so MDX / broken
 #   link / SSR errors fail the PR instead of surfacing after a release.
 #

@@ -1,11 +1,13 @@
+'use client'
+
 import {
   forwardRef,
   useCallback,
-  useLayoutEffect,
   useRef,
   type ButtonHTMLAttributes,
   type ReactNode,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
@@ -127,7 +129,7 @@ export const Fab = forwardRef<HTMLButtonElement, FabProps>(function Fab(
 
   // Measure the label row's natural width (gap + label + trailing padding) so
   // the morph can scale it without reflowing the text.
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     if (!morph) return
     const btn = buttonRef.current
     if (!btn) return

@@ -1,4 +1,7 @@
-import { useLayoutEffect, useRef, type RefObject } from 'react'
+'use client'
+
+import { useRef, type RefObject } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import {
   prefersReducedMotion,
   readSpring,
@@ -27,14 +30,14 @@ export function useFabMorph(expanded: boolean, ref: RefObject<HTMLElement | null
   const raf = useRef(0)
 
   // Resting values before first paint (no expanded-state flash on mount).
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     if (!enabled) return
     const el = ref.current
     el?.style.setProperty('--_ext', String(ext.current.value))
     el?.style.setProperty('--_label-o', String(opacity.current.value))
   }, [ref, expanded, enabled])
 
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     if (!enabled) return
     const target = expanded ? 1 : 0
     const widthSpec = readSpring(ref.current, 'fast-spatial')

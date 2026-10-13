@@ -217,6 +217,52 @@ describe('TopAppBar scrolling', () => {
     expect(bar).not.toHaveAttribute('inert')
   })
 
+  it('hidden: moves focus out before going inert (#420)', () => {
+    const nav = <button aria-label="Menu">m</button>
+    const { rerender } = render(<TopAppBar title="T" navigationIcon={nav} />)
+    const bar = document.querySelector('header')!
+    const button = screen.getByRole('button', { name: 'Menu' })
+    button.focus()
+    rerender(<TopAppBar title="T" navigationIcon={nav} hidden />)
+    expect(bar).toHaveAttribute('inert')
+    expect(bar.contains(document.activeElement)).toBe(false)
+  })
+
+  it('enterAlways: stays visible while it holds keyboard focus (#420)', async () => {
+    // jsdom never matches :focus-visible; treat focus as keyboard focus.
+    const matches = Element.prototype.matches
+    const spy = vi
+      .spyOn(Element.prototype, 'matches')
+      .mockImplementation(function (this: Element, selector: string) {
+        return selector === ':focus-visible' ? this === document.activeElement : matches.call(this, selector)
+      })
+    try {
+      function FocusScroller() {
+        const ref = useRef<HTMLDivElement>(null)
+        return (
+          <div ref={ref} data-testid="scroller">
+            <TopAppBar
+              title="Title"
+              scrollBehavior="enterAlways"
+              scrollTarget={ref}
+              navigationIcon={<button aria-label="Menu">m</button>}
+            />
+          </div>
+        )
+      }
+      render(<FocusScroller />)
+      const bar = screen.getByRole('banner')
+      screen.getByRole('button', { name: 'Menu' }).focus()
+      scrollTo(screen.getByTestId('scroller'), 200)
+      await new Promise((r) => setTimeout(r, 50))
+      expect(bar).not.toHaveAttribute('inert')
+      expect(bar.style.getPropertyValue('--_hide-offset')).toBe('0px')
+      expect(screen.getByRole('button', { name: 'Menu' })).toHaveFocus()
+    } finally {
+      spy.mockRestore()
+    }
+  })
+
   it('has no axe violations while collapsed', async () => {
     const { container } = render(
       <TopAppBar
@@ -303,6 +349,32 @@ describe('TopAppBar variant="search"', () => {
     expect(input).toHaveAttribute('aria-expanded', 'true')
   })
 
+  it('expands a full-screen SearchBar and collapses it back to the field (#442)', async () => {
+    const user = userEvent.setup()
+    const { container } = render(
+      <TopAppBar
+        variant="search"
+        title="Products"
+        navigationIcon={<button aria-label="Menu">m</button>}
+        searchBar={field({
+          layout: 'fullscreen',
+          children: <button type="button">Recent: Headphones</button>,
+        })}
+      />,
+    )
+    const input = screen.getAllByRole('combobox')[0]
+    await user.click(input)
+    expect(input).toHaveAttribute('aria-expanded', 'true')
+    const dialog = container.querySelector<HTMLElement>('[role="dialog"]')!
+    expect(dialog).toContainElement(document.activeElement as HTMLElement)
+    expect(screen.getByRole('button', { name: 'Menu' }).closest('[inert]')).not.toBeNull()
+    expect(await axe(container)).toHaveNoViolations()
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(input).toHaveAttribute('aria-expanded', 'false')
+    expect(input).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Menu' }).closest('[inert]')).toBeNull()
+  })
+
   it('has no axe violations (closed and with the search view open)', async () => {
     const { container, rerender } = render(
       <TopAppBar
@@ -310,7 +382,10 @@ describe('TopAppBar variant="search"', () => {
         title="Products"
         navigationIcon={<button aria-label="Menu">m</button>}
         actions={<button aria-label="Account">a</button>}
-        searchBar={field({ endIcon: <button aria-label="Voice search">v</button> })}
+        searchBar={field({
+          open: false,
+          endIcon: <button aria-label="Voice search">v</button>,
+        })}
       />,
     )
     expect(await axe(container)).toHaveNoViolations()

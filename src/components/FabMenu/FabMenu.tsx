@@ -1,3 +1,5 @@
+'use client'
+
 import {
   Children,
   createContext,
@@ -6,9 +8,7 @@ import {
   isValidElement,
   useContext,
   useEffect,
-  useLayoutEffect,
   useRef,
-  useState,
   type ButtonHTMLAttributes,
   type CSSProperties,
   type HTMLAttributes,
@@ -16,17 +16,26 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
-import { moveMenuFocus } from '../../internal/menuNavigation'
+import { createMenuTypeahead, handleMenuTypeahead, moveMenuFocus } from '../../internal/menuNavigation'
 import { effectsSprings } from '../../tokens/motion'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './FabMenu.module.css'
 
 export type FabMenuColor = 'primary' | 'secondary' | 'tertiary'
 
 /** Size of the closed FAB (Fab vocabulary). @default 'regular' */
 export type FabMenuSize = 'regular' | 'medium' | 'large'
+
+/**
+ * Horizontal alignment of the items relative to the FAB (logical — mirrored
+ * in RTL). Compose `FloatingActionButtonMenu(horizontalAlignment)`.
+ * @default 'end'
+ */
+export type FabMenuHorizontalAlignment = 'start' | 'center' | 'end'
 
 const CloseIcon = (
   <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -109,6 +118,17 @@ export interface FabMenuProps
    * corner of the FAB's footprint. @default 'regular'
    */
   size?: FabMenuSize
+  /**
+   * Horizontal alignment of the items above the FAB (Compose
+   * `horizontalAlignment`): `end` (the default) aligns them to the FAB's
+   * trailing edge for a FAB at the bottom-trailing corner, `start` to its
+   * leading edge for a bottom-leading FAB, `center` centers them over it.
+   * Items reveal from the same edge (from the middle for `center`). The close
+   * button stays pinned to the top-trailing corner of the FAB's footprint
+   * (Compose `ToggleFloatingActionButton` `contentAlignment = TopEnd`).
+   * Logical — mirrored in RTL. @default 'end'
+   */
+  horizontalAlignment?: FabMenuHorizontalAlignment
   /** Controlled open state. */
   open?: boolean
   /** Uncontrolled initial open state. @default false */
@@ -135,10 +155,11 @@ export interface FabMenuProps
  * Material Design 3 (Expressive) FAB menu.
  *
  * A FAB (regular / medium / large) that opens into a vertical stack of
- * labelled action items anchored to its top-trailing edge. The FAB morphs into
+ * labelled action items above it, aligned to its trailing edge by default
+ * (`horizontalAlignment`: `start` / `center` / `end`). The FAB morphs into
  * a 56dp close button pinned to the top-trailing corner of its footprint
  * (container primaryContainer → primary, icon onPrimaryContainer → onPrimary)
- * and the items reveal from the trailing edge, bottom item first — per
+ * and the items reveal from the aligned edge, bottom item first — per
  * m3.material.io / Compose FloatingActionButtonMenu. Items use the
  * container/on-container roles of the chosen color set (primary / secondary /
  * tertiary). Closes on outside click, Escape, or item selection. Items may be
@@ -147,9 +168,10 @@ export interface FabMenuProps
  * Keyboard / focus (m3.material.io a11y + Compose FloatingActionButtonMenu +
  * WAI-ARIA APG menu): opening keeps focus on the toggle; Tab / ArrowDown from
  * the open toggle move to the top item (ArrowUp: the bottom one); ArrowUp /
- * ArrowDown cycle the items with wrap, Home / End jump; Shift+Tab returns to
- * the toggle; Tab closes and leaves the component; Escape and item selection
- * close and return focus to the toggle. While closed the item list is `inert`
+ * ArrowDown cycle the items with wrap, Home / End jump, printable characters
+ * move focus by typeahead; Shift+Tab returns to the toggle; Tab closes and
+ * leaves the component; Escape and item selection close and return focus to
+ * the toggle. While closed the item list is `inert`
  * and `aria-hidden`, so hidden items are out of the Tab order and the
  * accessibility tree while they still animate out.
  */
@@ -159,6 +181,7 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
     color = 'primary',
     tonal = true,
     size = 'regular',
+    horizontalAlignment = 'end',
     open: controlledOpen,
     defaultOpen = false,
     onOpenChange,
@@ -170,12 +193,16 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
   },
   ref,
 ) {
-  const isControlled = controlledOpen !== undefined
-  const [uncontrolled, setUncontrolled] = useState(defaultOpen)
-  const open = isControlled ? controlledOpen : uncontrolled
+  const [open, setUncontrolled, isControlled] = useControllableState({
+    value: controlledOpen,
+    defaultValue: defaultOpen,
+    name: 'FabMenu',
+    state: 'open',
+  })
   const rootRef = useRef<HTMLDivElement | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const toggleRef = useRef<HTMLButtonElement>(null)
+  const typeahead = useRef(createMenuTypeahead())
 
   useEffect(() => {
     if (closeAriaLabel === undefined || warnedCloseAriaLabel) return
@@ -186,9 +213,13 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
     )
   }, [closeAriaLabel])
 
+  // Read through a ref: the document listeners below are bound once per
+  // open, so they must not call a stale `onOpenChange`.
+  const latest = useRef({ isControlled, onOpenChange })
+  latest.current = { isControlled, onOpenChange }
   const setOpen = (value: boolean) => {
-    if (!isControlled) setUncontrolled(value)
-    onOpenChange?.(value)
+    if (!latest.current.isControlled) setUncontrolled(value)
+    latest.current.onOpenChange?.(value)
   }
 
   const focusToggle = () => toggleRef.current?.focus()
@@ -208,7 +239,7 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
   // the hidden items' semantics). `inert` is set through the DOM because React
   // 18 has no boolean `inert` prop. If the menu closes (e.g. controlled) while
   // an item holds focus, move it to the toggle instead of dropping it.
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const list = listRef.current
     if (!list) return
     list.toggleAttribute('inert', !open)
@@ -217,18 +248,24 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
 
   useEffect(() => {
     if (!open) return
-    const onPointerDown = (event: globalThis.MouseEvent) => {
+    // `pointerdown`, like Tooltip: a page that prevents the default of
+    // pointerdown (drag libraries) suppresses the compatibility mousedown.
+    const onPointerDown = (event: globalThis.PointerEvent) => {
       if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
         setOpen(false)
       }
     }
+    // Escape closes only the menu: preventDefault marks it consumed so an
+    // enclosing modal (useModal, which listens after `document`) ignores it.
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') closeMenu()
+      if (event.key !== 'Escape' || event.defaultPrevented) return
+      event.preventDefault()
+      closeMenu()
     }
-    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('pointerdown', onPointerDown)
     document.addEventListener('keydown', onKeyDown)
     return () => {
-      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('pointerdown', onPointerDown)
       document.removeEventListener('keydown', onKeyDown)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -246,7 +283,9 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
   }
 
   const handleListKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (moveMenuFocus(event, getItems())) return
+    const menuItems = getItems()
+    if (moveMenuFocus(event, menuItems)) return
+    if (handleMenuTypeahead(event, menuItems, typeahead.current)) return
     if (event.key !== 'Tab') return
     if (event.shiftKey) {
       // Shift+Tab goes back to the (close) toggle, keeping the menu open.
@@ -275,6 +314,7 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
       data-color={color}
       data-tonal={tonal || undefined}
       data-size={size}
+      data-alignment={horizontalAlignment === 'end' ? undefined : horizontalAlignment}
       data-open={open || undefined}
       className={clsx(styles.root, className)}
     >

@@ -1,3 +1,5 @@
+'use client'
+
 import {
   forwardRef,
   useEffect,
@@ -21,8 +23,10 @@ import {
   isWithin,
   parseDateInput,
   sameDay,
+  startOfDay,
   type DateInputError,
 } from './dateUtils'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './DatePicker.module.css'
 
 /** `[start, end]` — either may be null while selecting. */
@@ -66,7 +70,7 @@ export interface DatePickerProps
   onAccept?: (value: Date | DateRange) => void
   /**
    * Cancel, Escape or a scrim click: the value reverts to what it was when
-   * the picker opened (or was last accepted) — reported through `onChange`
+   * the picker opened (or was last accepted, or last set from outside) — reported through `onChange`
    * when it can be expressed (a date, or a range) — and this fires.
    */
   onCancel?: () => void
@@ -97,6 +101,15 @@ export interface DatePickerProps
   nextMonthLabel?: string
   /** Accessible name of the year picker list. @default 'Select year' */
   selectYearLabel?: string
+  /**
+   * The date treated as "today": it opens the calendar on its month when no
+   * date is selected and receives the today marker. Defaults to the client's
+   * current date. With server rendering, pass the same date on the server and
+   * the client (e.g. computed once in the user's time zone) so the initially
+   * visible month hydrates identically; without it the today marker appears
+   * only after hydration.
+   */
+  referenceDate?: Date
   /** Prefix announced on today's cell. @default 'Today' */
   todayLabel?: string
   /** Range start: cell prefix, headline placeholder and input label. @default 'Start date' */
@@ -183,6 +196,7 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
       nextMonthLabel = 'Next month',
       selectYearLabel = 'Select year',
       todayLabel = 'Today',
+      referenceDate,
       startDateLabel = 'Start date',
       endDateLabel = 'End date',
       inRangeLabel = 'In range',
@@ -198,11 +212,13 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
     ref,
   ) {
     const titleId = useId()
-    const isControlled = value !== undefined
-    const [internal, setInternal] = useState<Date | DateRange | null>(
-      defaultValue ?? (range ? [null, null] : null),
-    )
-    const currentValue = isControlled ? value ?? null : internal
+    const [stored, setInternal, isControlled] = useControllableState<Date | DateRange | null>({
+      value,
+      defaultValue: defaultValue ?? (range ? [null, null] : null),
+      name: 'DatePicker',
+      state: 'value',
+    })
+    const currentValue = stored ?? null
 
     const [internalMode, setInternalMode] = useState<DatePickerMode>(defaultMode)
     const mode = modeProp ?? internalMode
@@ -213,11 +229,15 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
     const hasActions = modal || onAccept != null || onCancel != null
 
     const single = range ? null : (currentValue as Date | null)
-    const [rStart, rEnd] = range ? asRange(currentValue) : [null, null]
+    // Range endpoints as calendar days, so a time of day on an incoming value
+    // never skews the comparisons (grid picks, in-range, input validation).
+    const [rStart, rEnd] = range
+      ? asRange(currentValue).map((d) => (d ? startOfDay(d) : null))
+      : [null, null]
 
     const anchor = single ?? rStart
     const [view, setView] = useState<CalendarView>(() => {
-      const d = anchor ?? new Date()
+      const d = anchor ?? referenceDate ?? new Date()
       return { year: d.getFullYear(), month: d.getMonth() }
     })
 
@@ -233,13 +253,38 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
     }, [anchorTime])
 
     // The committed value Cancel reverts to: captured when a modal opens,
-    // otherwise on mount and on each accept.
+    // otherwise on mount and on each accept — and whenever the value changes
+    // from outside (not echoing a pick reported through `onChange`), e.g. a
+    // parent that loads the value after mount.
     const committed = useRef<Date | DateRange | null>(currentValue)
     const wasOpen = useRef(false)
+    const lastValue = useRef(currentValue)
+    const emitted = useRef<Date | DateRange | null | undefined>(undefined)
     if (isOpen && !wasOpen.current) committed.current = currentValue
+    else if (
+      !sameValue(currentValue, lastValue.current) &&
+      (emitted.current === undefined || !sameValue(currentValue, emitted.current))
+    ) {
+      committed.current = currentValue
+    }
     wasOpen.current = isOpen
+    lastValue.current = currentValue
+
+    // Each closed → open transition starts on the month of the value.
+    const [prevOpen, setPrevOpen] = useState(isOpen)
+    if (prevOpen !== isOpen) {
+      setPrevOpen(isOpen)
+      if (isOpen) {
+        const d = anchor ?? referenceDate ?? new Date()
+        setView({ year: d.getFullYear(), month: d.getMonth() })
+      }
+    }
+
+    // Bumped on Cancel so input-mode text drafts are dropped with the value.
+    const [cancelCount, setCancelCount] = useState(0)
 
     const commit = (next: Date | DateRange) => {
+      emitted.current = next
       if (!isControlled) setInternal(next)
       onChange?.(next)
     }
@@ -257,8 +302,12 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
         if (!isControlled) setInternal(back)
         // onChange cannot carry "no date" in single mode; a range can.
         const revert = back ?? (range ? ([null, null] as DateRange) : null)
-        if (revert != null) onChange?.(revert)
+        if (revert != null) {
+          emitted.current = revert
+          onChange?.(revert)
+        }
       }
+      setCancelCount((n) => n + 1)
       onCancel?.()
       if (modal) onClose?.(reason)
     }
@@ -289,19 +338,15 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
       onModeChange?.(next)
     }
 
-    // Escape dismisses a modal picker.
-    useEffect(() => {
-      if (!modal || !open) return
-      const handle = (event: globalThis.KeyboardEvent) => {
-        if (event.key === 'Escape') dismissRef.current('escapeKeyDown')
-      }
-      document.addEventListener('keydown', handle)
-      return () => document.removeEventListener('keydown', handle)
-    }, [modal, open])
-
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLDivElement | null>(null)
-    useModal({ active: modal && !!open, rootRef, surfaceRef })
+    // Escape dismisses a modal picker (only when it is the topmost modal).
+    useModal({
+      active: modal && !!open,
+      rootRef,
+      surfaceRef,
+      onEscape: () => dismissRef.current('escapeKeyDown'),
+    })
 
     if (modal && !open) return null
 
@@ -356,6 +401,7 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
         >
           {inputMode ? (
             <DateInputs
+              key={cancelCount}
               range={range}
               single={single}
               rStart={rStart}
@@ -379,6 +425,7 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
               min={min ?? null}
               max={max ?? null}
               locale={locale}
+              referenceDate={referenceDate}
               view={view}
               onViewChange={setView}
               onSelect={selectDay}
@@ -469,6 +516,26 @@ function DateInputs({
     Object.fromEntries(fields.map(([key, , d]) => [key, d ? formatDateInput(d, locale) : ''])),
   )
   const [errors, setErrors] = useState<Partial<Record<InputKey, DateInputError | null>>>({})
+
+  // Re-sync a field's text (and drop its error) when its date changes from
+  // outside — a controlled value, or a revert — not only at mount.
+  const times = fields.map(([, , d]) => d?.getTime() ?? null)
+  const lastTimes = useRef(times)
+  const lastLocale = useRef(locale)
+  useEffect(() => {
+    const changed = fields.filter(
+      ([, , d], i) => locale !== lastLocale.current || (d?.getTime() ?? null) !== lastTimes.current[i],
+    )
+    lastTimes.current = times
+    lastLocale.current = locale
+    if (changed.length === 0) return
+    setText((prev) => ({
+      ...prev,
+      ...Object.fromEntries(changed.map(([key, , d]) => [key, d ? formatDateInput(d, locale) : ''])),
+    }))
+    setErrors((prev) => ({ ...prev, ...Object.fromEntries(changed.map(([key]) => [key, null])) }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [times.join(), locale])
 
   const commitField = (key: InputKey, viaEnter: boolean) => {
     const raw = (text[key] ?? '').trim()

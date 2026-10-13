@@ -19,6 +19,20 @@
   --_label-text-populated-size: var(--md-sys-typescale-body-small-size);
   --_label-text-populated-line-height: var(--md-sys-typescale-body-small-line-height);
 
+  /* Label above the container (labelPlacement="above"): Compose lerps the
+     label style fully to bodySmall (TextFieldImpl DecoratedLabel), pads it
+     4dp start / end / bottom (AboveLabelHorizontalPadding /
+     AboveLabelBottomPadding) and gives it a 16dp minimum line
+     (MinFocusedLabelLineHeight). */
+  --_above-label-text-font: var(--md-sys-typescale-body-small-font);
+  --_above-label-text-size: var(--md-sys-typescale-body-small-size);
+  --_above-label-text-line-height: var(--md-sys-typescale-body-small-line-height);
+  --_above-label-text-weight: var(--md-sys-typescale-body-small-weight);
+  --_above-label-text-tracking: var(--md-sys-typescale-body-small-tracking);
+  --_above-label-horizontal-space: 4px;
+  --_above-label-bottom-space: 4px;
+  --_above-label-min-height: 16px;
+
   /* Spacing */
   --_top-space: 16px;                 /* no-label: vertically centers 24px content in 56px */
   --_bottom-space: 16px;
@@ -93,6 +107,10 @@
   --_effects-easing: var(--md-sys-motion-spring-fast-effects-easing);
   --_show-duration: var(--md-sys-motion-spring-slow-effects-duration);
   --_show-easing: var(--md-sys-motion-spring-slow-effects-easing);
+  /* Show hold: lets the label clear the input line before the content /
+     placeholder fades in. material-web's 67ms (no token or Compose
+     counterpart; documented exception, docs/md3-token-reference.md §5). */
+  --_show-delay: 67ms;
 
   position: relative;
   display: inline-flex;
@@ -134,7 +152,9 @@
   background-color: var(--_hover-state-layer-color);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 150ms;
+  /* Hover state layer: same tween as the Ripple primitive's hover layer. */
+  transition: opacity var(--md-sys-motion-duration-short3)
+    var(--md-sys-motion-easing-standard);
 }
 
 .filled:not(.disabled):hover .stateLayer {
@@ -195,7 +215,7 @@
     border-width var(--_label-duration) var(--_label-easing);
 }
 
-/* Left segment: left + top + bottom borders, left corners rounded */
+/* Start segment: start + top + bottom borders, start corners rounded */
 .outlineStart {
   width: calc(var(--_leading-space) - 4px);
   border: var(--_outline-width) solid var(--_outline-color);
@@ -230,23 +250,38 @@
 }
 
 .outlineNotch::before {
-  left: 0;
+  inset-inline-start: 0;
   transform-origin: left;
 }
 
 .outlineNotch::after {
-  right: 0;
+  inset-inline-end: 0;
   transform-origin: right;
+}
+
+/* transform-origin has no logical keywords: anchor each half at its own
+   inline edge in RTL too, so the notch opens from the centre (#428).
+   RTL rules use `[dir='rtl']`, not `:dir(rtl)`: Lightning CSS (Vite's CSS
+   minifier, here and in consumers' builds) lowers `:dir()` to a `:lang()`
+   list that ignores the `dir` attribute. */
+[dir='rtl'] .outlineNotch::before {
+  transform-origin: right;
+}
+
+[dir='rtl'] .outlineNotch::after {
+  transform-origin: left;
 }
 
 .outlined.focused .outlineNotch::before,
 .outlined.focused .outlineNotch::after,
 .outlined.populated .outlineNotch::before,
-.outlined.populated .outlineNotch::after {
+.outlined.populated .outlineNotch::after,
+.outlined.shrinkLabel .outlineNotch::before,
+.outlined.shrinkLabel .outlineNotch::after {
   transform: scaleX(0);
 }
 
-/* Right segment: right + top + bottom borders, right corners rounded */
+/* End segment: end + top + bottom borders, end corners rounded */
 .outlineEnd {
   flex: 1;
   border: var(--_outline-width) solid var(--_outline-color);
@@ -335,12 +370,12 @@
   /* Resting: vertically centered in 56px container — (56 - 24) / 2 = 16px */
   top: var(--_top-space);
   /* Horizontal: align with input text */
-  left: var(--_leading-space);
-  right: var(--_trailing-space);
+  inset-inline-start: var(--_leading-space);
+  inset-inline-end: var(--_trailing-space);
 
   transition:
     top var(--_label-duration) var(--_label-easing),
-    left var(--_label-duration) var(--_label-easing),
+    inset-inline-start var(--_label-duration) var(--_label-easing),
     font-size var(--_label-duration) var(--_label-easing),
     line-height var(--_label-duration) var(--_label-easing),
     color var(--_effects-duration) var(--_effects-easing);
@@ -348,16 +383,17 @@
 
 /* With icons: adjust label horizontal position */
 .textField.hasLeadingIcon .label {
-  left: 0;
+  inset-inline-start: 0;
 }
 
 .textField.hasTrailingIcon .label {
-  right: 0;
+  inset-inline-end: 0;
 }
 
 /* Filled floating: label at top of container (8px from top) */
 .filled.focused .label,
-.filled.populated .label {
+.filled.populated .label,
+.filled.shrinkLabel .label {
   top: var(--_with-label-top-space);
   font-size: var(--_label-text-populated-size);
   line-height: var(--_label-text-populated-line-height);
@@ -366,24 +402,50 @@
 /* Outlined floating: label centered on top border of field */
 /* Field top = 0. Label (16px tall) centered at 0 → top = -8px */
 .outlined.focused .label,
-.outlined.populated .label {
+.outlined.populated .label,
+.outlined.shrinkLabel .label {
   top: calc(-1 * var(--_label-text-populated-line-height) / 2);
-  left: var(--_leading-space);
+  inset-inline-start: var(--_leading-space);
   font-size: var(--_label-text-populated-size);
   line-height: var(--_label-text-populated-line-height);
 }
 
 /* With leading icon: floating label must stay at the no-icon position (16px from field edge) */
 .outlined.hasLeadingIcon.focused .label,
-.outlined.hasLeadingIcon.populated .label {
-  left: calc(
+.outlined.hasLeadingIcon.populated .label,
+.outlined.hasLeadingIcon.shrinkLabel .label {
+  inset-inline-start: calc(
     var(--_leading-space) - var(--_with-leading-icon-leading-space) - var(--_icon-size) - var(--_icon-input-space)
   );
 }
 
 /* Focused label color */
-.focused:not(.error) .label {
+.focused:not(.error) .label,
+.focused:not(.error) .aboveLabel {
   color: var(--_focus-label-text-color);
+}
+
+/* Label above the container (Compose TextFieldLabelPosition.Above): placed
+   at y = 0, start-aligned across the full width (not inset by the icons),
+   always minimized; the container below lays out like a label-less field.
+   Logical padding / text alignment, so RTL needs no extra rule. */
+.aboveLabel {
+  display: block;
+  box-sizing: border-box;
+  min-height: calc(var(--_above-label-min-height) + var(--_above-label-bottom-space));
+  padding-inline: var(--_above-label-horizontal-space);
+  padding-bottom: var(--_above-label-bottom-space);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: start;
+  font-family: var(--_above-label-text-font);
+  font-size: var(--_above-label-text-size);
+  line-height: var(--_above-label-text-line-height);
+  font-weight: var(--_above-label-text-weight);
+  letter-spacing: var(--_above-label-text-tracking);
+  color: var(--_label-text-color);
+  transition: color var(--_effects-duration) var(--_effects-easing);
 }
 
 /* =========================================================================== */
@@ -418,11 +480,12 @@
 }
 
 .noLabel .content,
+.shrinkLabel .content,
 .focused .content,
 .populated .content {
   opacity: 1;
   /* Short hold so the label clears the input line first (material-web). */
-  transition: opacity var(--_show-duration) var(--_show-easing) 67ms;
+  transition: opacity var(--_show-duration) var(--_show-easing) var(--_show-delay);
 }
 
 .disabled .content {
@@ -476,9 +539,39 @@
 }
 
 .noLabel .input::placeholder,
+.shrinkLabel .input::placeholder,
 .focused .input::placeholder {
   opacity: 1;
-  transition: opacity var(--_show-duration) var(--_show-easing) 67ms;
+  transition: opacity var(--_show-duration) var(--_show-easing) var(--_show-delay);
+}
+
+/* Autofill detection (#432): Chrome's page-load autofill fires no input
+   event, so TextField.tsx listens for these no-op animations (MUI's
+   technique) and treats an autofilled input as populated. The keyframes
+   only touch a private custom property, so nothing renders differently;
+   the animation runs regardless of reduced motion because it is not
+   motion. */
+@keyframes autofillStart {
+  from {
+    --_autofill: 1;
+  }
+}
+
+@keyframes autofillCancel {
+  from {
+    --_autofill: 0;
+  }
+}
+
+.input {
+  animation-name: autofillCancel;
+  animation-duration: 10ms;
+}
+
+.input:-webkit-autofill {
+  animation-name: autofillStart;
+  /* Long enough to outlast any page; the keyframes are invisible. */
+  animation-duration: 5000s;
 }
 
 /* Textarea */
@@ -646,6 +739,7 @@ textarea.input {
 }
 
 .disabled .label,
+.disabled .aboveLabel,
 .disabled .content,
 .disabled .input::placeholder,
 .disabled .leadingIcon,
@@ -654,4 +748,128 @@ textarea.input {
 .disabled .prefix,
 .disabled .suffix {
   color: var(--_disabled-color);
+}
+
+/* =========================================================================== */
+/* Tonal (Expressive, experimental — ruling B44)                               */
+/* Compose TextFieldDefaults.tonalColors() / roundedShape (TextFieldDefaults   */
+/* .kt:75 / :510 / :748) and OutlinedTextFieldDefaults.tonalColors()           */
+/* (:1001 / :1395 / :1636). Upstream still TODO(b/448727879).                  */
+/* Hover is not modelled by Compose: filled keeps the site's state layer,      */
+/* outlined keeps its border color (a hover change would outrank focus).       */
+/* =========================================================================== */
+.tonal {
+  --_container-shape: var(--md-sys-shape-corner-medium);
+  /* focusedLabelColor = OnSurfaceVariant (no primary label on focus) */
+  --_focus-label-text-color: var(--md-sys-color-on-surface-variant);
+}
+
+.tonal:not(.error) {
+  --_supporting-text-color: var(--md-sys-color-on-background);
+}
+
+/* Filled: SurfaceContainer fill, rounded on every corner, no indicator. */
+.tonal.filled {
+  --_container-color: var(--md-sys-color-surface-container);
+}
+
+.tonal.filled.error {
+  --_container-color: var(--md-sys-color-error-container);
+}
+
+.tonal .field {
+  border-radius: var(--_container-shape);
+}
+
+.tonal .activeIndicator {
+  display: none;
+}
+
+.tonal.disabled .background {
+  background-color: color-mix(
+    in srgb,
+    var(--md-sys-color-surface-container) 38%,
+    transparent
+  );
+}
+
+/* Outlined: transparent container, OutlineVariant border in every
+   non-error state (focus still thickens it to 2dp), Error in error. */
+.tonal.outlined,
+.tonal.outlined.disabled,
+.tonal.outlined:not(.disabled):not(.focused):not(.error):hover {
+  --_outline-color: var(--md-sys-color-outline-variant);
+  --_label-text-color: var(--md-sys-color-on-surface-variant);
+}
+
+.tonal.outlined.error,
+.tonal.outlined.error:not(.disabled):hover {
+  --_outline-color: var(--md-sys-color-error);
+  --_label-text-color: var(--md-sys-color-error);
+  --_trailing-icon-color: var(--md-sys-color-error);
+}
+
+/* Compose pairs the outlined tonal colors with TextFieldLabelPosition.Inside:
+   the label floats inside the container as on filled, so no notch. */
+.outlined.tonal .outlineNotch {
+  padding: 0;
+}
+
+.outlined.tonal.focused .label,
+.outlined.tonal.populated .label,
+.outlined.tonal.shrinkLabel .label {
+  top: var(--_with-label-top-space);
+  inset-inline-start: var(--_leading-space);
+}
+
+.outlined.tonal.hasLeadingIcon.focused .label,
+.outlined.tonal.hasLeadingIcon.populated .label,
+.outlined.tonal.hasLeadingIcon.shrinkLabel .label {
+  inset-inline-start: 0;
+}
+
+.outlined.tonal:not(.noLabel) .content {
+  padding-top: calc(var(--_with-label-top-space) + var(--_label-text-populated-line-height));
+  padding-bottom: var(--_with-label-bottom-space);
+}
+
+/* =========================================================================== */
+/* High contrast (forced colors)                                               */
+/* =========================================================================== */
+/* Forced colors replaces the filled container with Canvas (only the bottom
+   indicator line would remain) and reverts the 38% disabled colors to plain
+   text colors, so disabled fields looked enabled. Outline the filled
+   container (inset, no layout change) and paint disabled content GrayText. */
+@media (forced-colors: active) {
+  .filled .background {
+    outline: 1px solid CanvasText;
+    outline-offset: -1px;
+  }
+
+  .filled.disabled .background {
+    outline-color: GrayText;
+  }
+
+  .disabled .activeIndicator::before {
+    border-bottom-color: GrayText;
+  }
+
+  .outlined.disabled,
+  .tonal.outlined.disabled {
+    --_outline-color: GrayText;
+  }
+
+  .disabled .label,
+  .disabled .aboveLabel,
+  .disabled .content,
+  .disabled .input,
+  .disabled .input::placeholder,
+  .disabled .leadingIcon,
+  .disabled .trailingIcon,
+  .disabled .supportingText,
+  .disabled .prefix,
+  .disabled .suffix,
+  .disabled .outlineLabel {
+    color: GrayText;
+  }
 }

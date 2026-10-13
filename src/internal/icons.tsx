@@ -49,6 +49,13 @@ export const SearchIcon = (props: IconProps) => (
   </Icon>
 )
 
+/** Material "arrow_back" — mirror it in RTL (it points to the inline start). */
+export const ArrowBackIcon = (props: IconProps) => (
+  <Icon {...props}>
+    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20z" />
+  </Icon>
+)
+
 export const KeyboardIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="M20 5H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-9 3h2v2h-2zm0 3h2v2h-2zM8 8h2v2H8zm0 3h2v2H8zm-1 2H5v-2h2zm0-3H5V8h2zm9 7H8v-2h8zm0-4h-2v-2h2zm0-3h-2V8h2zm3 3h-2v-2h2zm0-3h-2V8h2z" />
@@ -58,6 +65,13 @@ export const KeyboardIcon = (props: IconProps) => (
 export const ScheduleIcon = (props: IconProps) => (
   <Icon {...props}>
     <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16m.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
+  </Icon>
+)
+
+/** Material Symbols `swipe_vertical` (filled) — Compose Icons.Filled.SwipeVertical. */
+export const SwipeVerticalIcon = (props: IconProps) => (
+  <Icon viewBox="0 -960 960 960" {...props}>
+    <path d="M646-126q-20 8-42 7t-42-11L295-254l7-26q5-19 19-31t34-14l99-8-117-320q-5-12 .5-22.5T355-691q12-5 23 .5t16 17.5l99 272 63-23-47-131q-5-12-1.5-27.5T523-603q12-5 22.5.5T561-585l51 141 62-23-37-103q-5-12 .5-23t17.5-16q12-5 22.5.5T693-591l38 104 63-23-11-28q-5-12 .5-23t17.5-16q12-5 23 .5t16 17.5l61 169q23 63-4.5 122.5T806-185l-160 59ZM80-80v-40h93q-62-78-97.5-169T40-480q0-100 35.5-191T173-840H80v-40h180v180h-40v-133q-65 75-102.5 164.5T80-480q0 99 37.5 188.5T220-127v-133h40v180H80Z" />
   </Icon>
 )
 

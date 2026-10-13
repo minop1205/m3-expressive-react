@@ -1,3 +1,5 @@
+'use client'
+
 import {
   forwardRef,
   type ButtonHTMLAttributes,
@@ -7,7 +9,7 @@ import {
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
-import { useButtonToggle } from '../ButtonGroup/ButtonGroupContext'
+import { useButtonToggle, useGroupDisabled } from '../ButtonGroup/ButtonGroupContext'
 import styles from './IconButton.module.css'
 
 export type IconButtonVariant = 'standard' | 'filled' | 'tonal' | 'outlined'
@@ -68,7 +70,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       defaultSelected = false,
       onChange,
       onClick,
-      disabled = false,
+      disabled: disabledProp = false,
       type = 'button',
       value,
       tabIndex,
@@ -79,7 +81,9 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
     },
     ref,
   ) {
+    const disabled = useGroupDisabled(disabledProp)
     const { isToggle, isSelected, handleClick, a11y } = useButtonToggle({
+      name: 'IconButton',
       value,
       toggle,
       selected,

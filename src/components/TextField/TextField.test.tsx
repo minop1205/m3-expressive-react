@@ -1,9 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'vitest-axe'
 import { describe, expect, it, vi } from 'vitest'
-import { createRef } from 'react'
+import { createRef, useState } from 'react'
+import { IconButton } from '../IconButton'
 import { TextField } from './TextField'
+import styles from './TextField.module.css'
 
 describe('TextField', () => {
   it('renders an input element', () => {
@@ -270,6 +272,43 @@ describe('TextField', () => {
     expect(screen.getByRole('textbox')).toHaveFocus()
   })
 
+  it('leaves clicks on an interactive endIcon to that control (#414)', async () => {
+    const user = userEvent.setup()
+    const onToggle = vi.fn()
+    render(
+      <TextField
+        label="Password"
+        endIcon={
+          <button type="button" onClick={onToggle}>
+            Show
+          </button>
+        }
+      />,
+    )
+    const toggle = screen.getByRole('button', { name: 'Show' })
+    await user.click(toggle)
+    expect(onToggle).toHaveBeenCalledTimes(1)
+    expect(toggle).toHaveFocus()
+  })
+
+  it('keeps focus on an interactive endIcon activated with Enter (#414)', async () => {
+    const user = userEvent.setup()
+    render(
+      <TextField label="Search" endIcon={<button type="button">Clear</button>} />,
+    )
+    const clear = screen.getByRole('button', { name: 'Clear' })
+    clear.focus()
+    await user.keyboard('{Enter}')
+    expect(clear).toHaveFocus()
+  })
+
+  it('still focuses the input when a decorative icon is clicked', async () => {
+    const user = userEvent.setup()
+    render(<TextField label="Search" startIcon={<svg data-testid="icon" />} />)
+    await user.click(screen.getByTestId('icon'))
+    expect(screen.getByRole('textbox')).toHaveFocus()
+  })
+
   it('has no axe violations (filled)', async () => {
     const { container } = render(<TextField label="Name" variant="filled" />)
     const results = await axe(container)
@@ -288,5 +327,295 @@ describe('TextField', () => {
     )
     const results = await axe(container)
     expect(results).toHaveNoViolations()
+  })
+})
+
+describe('TextField native form integration (#432)', () => {
+  const root = (container: HTMLElement) => container.querySelector(`.${styles.textField}`)!
+
+  it('restores an uncontrolled value on form.reset(); label, counter and populated follow', async () => {
+    const user = userEvent.setup()
+    const { container } = render(
+      <form>
+        <TextField label="Name" name="n" defaultValue="a" maxLength={10} />
+      </form>,
+    )
+    const form = container.querySelector('form')!
+    const input = screen.getByRole('textbox') as HTMLInputElement
+
+    await user.type(input, 'bc')
+    expect(input).toHaveValue('abc')
+    expect(screen.getByText('3 / 10')).toBeInTheDocument()
+
+    act(() => form.reset())
+    expect(input).toHaveValue('a')
+    expect(new FormData(form).get('n')).toBe('a')
+    expect(screen.getByText('1 / 10')).toBeInTheDocument()
+    expect(root(container)).toHaveClass(styles.populated)
+  })
+
+  it('clears populated on reset to an empty default and keeps onChange firing', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const { container } = render(
+      <form>
+        <TextField label="Name" maxLength={10} onChange={onChange} />
+      </form>,
+    )
+    const form = container.querySelector('form')!
+    const input = screen.getByRole('textbox')
+
+    await user.type(input, 'x')
+    expect(root(container)).toHaveClass(styles.populated)
+
+    act(() => form.reset())
+    expect(input).toHaveValue('')
+    expect(root(container)).not.toHaveClass(styles.populated)
+    expect(screen.getByText('0 / 10')).toBeInTheDocument()
+
+    // The same value as before the reset must still register as a change.
+    onChange.mockClear()
+    await user.type(input, 'x')
+    expect(onChange).toHaveBeenCalledTimes(1)
+    expect(screen.getByText('1 / 10')).toBeInTheDocument()
+  })
+
+  it('follows the form attribute for reset', async () => {
+    const user = userEvent.setup()
+    const { container } = render(
+      <>
+        <form id="f" />
+        <TextField label="Name" inputProps={{ form: 'f' }} />
+      </>,
+    )
+    const form = container.querySelector('form')!
+    const input = screen.getByRole('textbox')
+    await user.type(input, 'abc')
+    act(() => form.reset())
+    expect(input).toHaveValue('')
+    expect(root(container)).not.toHaveClass(styles.populated)
+  })
+
+  it('keeps the required asterisk out of the accessible name (visual unchanged)', () => {
+    const { rerender } = render(<TextField label="Email" required />)
+    const input = screen.getByRole('textbox', { name: 'Email' })
+    expect(input).toBeRequired()
+    const label = document.querySelector('label')!
+    expect(label).toHaveTextContent('Email*')
+    expect(label.querySelector('[aria-hidden="true"]')).toHaveTextContent(/^\*$/)
+
+    rerender(<TextField label="Email" required variant="outlined" />)
+    expect(screen.getByRole('textbox', { name: 'Email' })).toBeInTheDocument()
+    expect(document.querySelector(`.${styles.outlineLabel}`)).toHaveTextContent('Email*')
+  })
+
+  it('treats partial number input (validity.badInput) as populated', () => {
+    const { container } = render(<TextField label="Amount" type="number" />)
+    const input = screen.getByRole('spinbutton') as HTMLInputElement
+    expect(root(container)).not.toHaveClass(styles.populated)
+
+    // "-" / "1e": the browser reports value === '' but flags badInput.
+    Object.defineProperty(input, 'validity', {
+      configurable: true,
+      value: { ...input.validity, badInput: true },
+    })
+    fireEvent.input(input)
+    expect(root(container)).toHaveClass(styles.populated)
+
+    Object.defineProperty(input, 'validity', {
+      configurable: true,
+      value: { ...input.validity, badInput: false },
+    })
+    fireEvent.input(input)
+    expect(root(container)).not.toHaveClass(styles.populated)
+  })
+
+  it('treats browser autofill as populated (animationstart detection)', () => {
+    const { container } = render(<TextField label="Email" />)
+    const input = screen.getByRole('textbox')
+    expect(root(container)).not.toHaveClass(styles.populated)
+
+    // jsdom has no AnimationEvent / CSS animations: dispatch what the
+    // browser fires when `:-webkit-autofill` starts / stops matching.
+    const animationStart = (animationName: string) => {
+      const event = new Event('animationstart', { bubbles: true })
+      Object.defineProperty(event, 'animationName', { value: animationName })
+      fireEvent(input, event)
+    }
+    animationStart(styles.autofillStart)
+    expect(root(container)).toHaveClass(styles.populated)
+
+    animationStart(styles.autofillCancel)
+    expect(root(container)).not.toHaveClass(styles.populated)
+  })
+
+  it('merges inputProps aria-describedby with the field ids', () => {
+    render(
+      <>
+        <span id="extra">Extra hint</span>
+        <TextField
+          label="Name"
+          supportingText="Help"
+          inputProps={{ 'aria-describedby': 'extra' }}
+        />
+      </>,
+    )
+    expect(screen.getByRole('textbox')).toHaveAccessibleDescription('Help Extra hint')
+  })
+
+  it('keeps inputProps aria-describedby when the field has no ids of its own', () => {
+    render(
+      <>
+        <span id="extra">Extra hint</span>
+        <TextField label="Name" inputProps={{ 'aria-describedby': 'extra' }} />
+      </>,
+    )
+    expect(screen.getByRole('textbox')).toHaveAttribute('aria-describedby', 'extra')
+  })
+})
+
+describe('TextField label placement (B37, #439)', () => {
+  const root = (container: HTMLElement) => container.querySelector(`.${styles.textField}`)!
+
+  it("labelPlacement='above' renders the label outside the container", () => {
+    const { container } = render(<TextField label="Email" labelPlacement="above" required />)
+    const input = screen.getByRole('textbox', { name: 'Email' })
+    const label = container.querySelector(`.${styles.aboveLabel}`)!
+    expect(label.tagName).toBe('LABEL')
+    expect(label).toHaveAttribute('for', input.id)
+    expect(label).toHaveTextContent('Email*')
+    // Before the container, not inside it; no floating label.
+    expect(label.nextElementSibling).toHaveClass(styles.field)
+    expect(container.querySelector(`.${styles.field} label`)).toBeNull()
+    expect(container.querySelectorAll('label')).toHaveLength(1)
+    // The container lays out like a label-less field.
+    expect(root(container)).toHaveClass(styles.noLabel)
+  })
+
+  it("labelPlacement='above' draws no outlined notch", () => {
+    const { container } = render(
+      <TextField variant="outlined" label="Email" labelPlacement="above" />,
+    )
+    expect(container.querySelector(`.${styles.outlineLabel}`)).toBeNull()
+    expect(root(container)).toHaveClass(styles.noLabel)
+  })
+
+  it("labelPlacement='above' clicks on the label focus the input", async () => {
+    const user = userEvent.setup()
+    render(<TextField label="Email" labelPlacement="above" />)
+    await user.click(screen.getByText('Email'))
+    expect(screen.getByRole('textbox')).toHaveFocus()
+  })
+
+  it("labelPlacement='above' without a label renders nothing extra", () => {
+    const { container } = render(<TextField labelPlacement="above" aria-label="x" />)
+    expect(container.querySelector('label')).toBeNull()
+  })
+
+  it('shrinkLabel keeps the floating label minimized (both variants)', () => {
+    const { container, rerender } = render(<TextField label="Amount" shrinkLabel />)
+    expect(root(container)).toHaveClass(styles.shrinkLabel)
+    expect(root(container)).not.toHaveClass(styles.noLabel)
+    expect(container.querySelector(`.${styles.field} .${styles.label}`)).toHaveTextContent('Amount')
+
+    rerender(<TextField variant="outlined" label="Amount" shrinkLabel />)
+    expect(root(container)).toHaveClass(styles.shrinkLabel)
+    expect(container.querySelector(`.${styles.outlineLabel}`)).toHaveTextContent('Amount')
+  })
+
+  it('shrinkLabel has no effect without a label or with the label above', () => {
+    const { container, rerender } = render(<TextField shrinkLabel aria-label="x" />)
+    expect(root(container)).not.toHaveClass(styles.shrinkLabel)
+    rerender(<TextField label="Amount" labelPlacement="above" shrinkLabel />)
+    expect(root(container)).not.toHaveClass(styles.shrinkLabel)
+  })
+
+  it('defaults to the floating placement (no new classes)', () => {
+    const { container } = render(<TextField label="Name" />)
+    expect(root(container)).not.toHaveClass(styles.shrinkLabel)
+    expect(container.querySelector(`.${styles.aboveLabel}`)).toBeNull()
+  })
+
+  it('has no axe violations with the label above or shrunk', async () => {
+    const { container } = render(
+      <>
+        <TextField label="Above filled" labelPlacement="above" supportingText="Help" />
+        <TextField variant="outlined" label="Above outlined" labelPlacement="above" error errorText="Error" />
+        <TextField label="Shrunk filled" shrinkLabel placeholder="Placeholder" />
+        <TextField variant="outlined" label="Shrunk outlined" shrinkLabel prefixText="$" />
+      </>,
+    )
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('TextField tonal style (B44, #444)', () => {
+  const root = (container: HTMLElement) => container.firstElementChild as HTMLElement
+
+  it('adds the tonal class only when requested', () => {
+    const { container, rerender } = render(<TextField label="Name" />)
+    expect(root(container)).not.toHaveClass(styles.tonal)
+    rerender(<TextField label="Name" tonal />)
+    expect(root(container)).toHaveClass(styles.tonal, styles.filled)
+  })
+
+  it('keeps the outlined tonal label inside the container (no notch label)', () => {
+    const { container } = render(<TextField variant="outlined" label="Name" tonal />)
+    expect(container.querySelector(`.${styles.outlineLabel}`)).toBeNull()
+    expect(container.querySelector(`.${styles.label}`)).toHaveTextContent('Name')
+  })
+
+  it('has no axe violations in every tonal state', async () => {
+    const { container } = render(
+      <>
+        <TextField tonal label="Filled" supportingText="Help" />
+        <TextField tonal label="Error" error errorText="Error" defaultValue="x" />
+        <TextField tonal variant="outlined" label="Outlined" startIcon={<span />} />
+        <TextField tonal variant="outlined" label="Disabled" disabled defaultValue="x" />
+      </>,
+    )
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('TextField secure field recipe (B44, #444)', () => {
+  function PasswordField() {
+    const [visible, setVisible] = useState(false)
+    return (
+      <TextField
+        id="pw"
+        label="Password"
+        type={visible ? 'text' : 'password'}
+        endIcon={
+          <IconButton
+            variant="standard"
+            toggle
+            selected={visible}
+            onChange={(_event, next) => setVisible(next)}
+            icon={<span />}
+            aria-label="Show password"
+            aria-controls="pw"
+          />
+        }
+      />
+    )
+  }
+
+  it('toggles the input type with aria-pressed and leaves focus on the toggle', async () => {
+    const user = userEvent.setup()
+    render(<PasswordField />)
+    const input = screen.getByLabelText('Password')
+    const toggle = screen.getByRole('button', { name: 'Show password' })
+    expect(input).toHaveAttribute('type', 'password')
+    expect(toggle).toHaveAttribute('aria-pressed', 'false')
+    await user.click(toggle)
+    expect(input).toHaveAttribute('type', 'text')
+    expect(toggle).toHaveAttribute('aria-pressed', 'true')
+    expect(toggle).toHaveFocus()
+  })
+
+  it('has no axe violations', async () => {
+    const { container } = render(<PasswordField />)
+    expect(await axe(container)).toHaveNoViolations()
   })
 })

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Ripple } from './Ripple'
@@ -90,3 +90,31 @@ describe('Ripple dragged / nested presses', () => {
     expect(count()).toBe(1)
   })
 })
+
+describe('Ripple state reset when disabled (#412)', () => {
+  it('clears the hover layer when the host is disabled and re-enabled', () => {
+    const { container, rerender } = render(<Host />)
+    const host = screen.getByRole('button', { name: 'Label' })
+    fireEvent.pointerEnter(host)
+    expect(stateLayer(container)).toHaveClass(styles.hovered)
+    // Disabled hosts get no pointerleave; the pointer leaves meanwhile.
+    rerender(<Host disabled />)
+    rerender(<Host />)
+    expect(stateLayer(container)).not.toHaveClass(styles.hovered)
+  })
+
+  it('removes the window release listeners when unmounted mid-press', () => {
+    const remove = vi.spyOn(window, 'removeEventListener')
+    const { unmount } = render(<Host />)
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Label' }), {
+      pointerType: 'mouse',
+      button: 0,
+    })
+    unmount()
+    const removed = remove.mock.calls.map(([type]) => type)
+    expect(removed).toContain('pointerup')
+    expect(removed).toContain('pointercancel')
+    remove.mockRestore()
+  })
+})
+

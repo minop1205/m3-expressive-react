@@ -1,18 +1,24 @@
+'use client'
+
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useId,
   useRef,
   useState,
   type FocusEvent,
   type HTMLAttributes,
+  type InputHTMLAttributes,
   type KeyboardEvent,
+  type Ref,
 } from 'react'
 import clsx from 'clsx'
-import { TextField } from '../TextField'
+import { TextField, type TextFieldLabelPlacement } from '../TextField'
 import { IconButton } from '../IconButton'
 import { Calendar, type CalendarView } from './Calendar'
 import { CalendarIcon } from '../../internal/icons'
+import { assignRef } from '../../internal/assignRef'
 import { assignRefs } from '../../internal/useModal'
 import { usePopupPosition } from '../../internal/usePopupPosition'
 import {
@@ -25,6 +31,7 @@ import {
   type DateInputError,
 } from './dateUtils'
 import pickerStyles from './DatePicker.module.css'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './DatePickerField.module.css'
 
 export type { DateInputError } from './dateUtils'
@@ -45,6 +52,18 @@ export interface DatePickerFieldProps
   onChange?: (date: Date | null) => void
   /** Field label. @default 'Date' */
   label?: string
+  /**
+   * Label position, as TextField `labelPlacement`: `'floating'` (in the
+   * outlined border's notch) or `'above'` the field.
+   * @default 'floating'
+   */
+  labelPlacement?: TextFieldLabelPlacement
+  /**
+   * Keep the floating label minimized while the field is empty, as
+   * TextField `shrinkLabel`.
+   * @default false
+   */
+  shrinkLabel?: boolean
   /** Earliest selectable date. */
   min?: Date
   /** Latest selectable date. */
@@ -80,8 +99,29 @@ export interface DatePickerFieldProps
   selectMonthLabel?: string
   /** Accessible name of the year menu list. @default 'Select year' */
   selectYearLabel?: string
+  /**
+   * The date treated as "today": it opens the calendar on its month when no
+   * date is selected and receives the today marker. Defaults to the client's
+   * current date. With server rendering, pass the same date on the server and
+   * the client (e.g. computed once in the user's time zone) so the initially
+   * visible month hydrates identically; without it the today marker appears
+   * only after hydration.
+   */
+  referenceDate?: Date
   /** Prefix announced on today's cell. @default 'Today' */
   todayLabel?: string
+  /** Native input `name` (the typed date text is what a form submits). */
+  name?: string
+  /** Ref to the inner text field's native `<input>` (the forwarded `ref`
+   * points at the root) — e.g. for React Hook Form `register`. */
+  inputRef?: Ref<HTMLInputElement>
+  /**
+   * Extra attributes for the inner text field's native `<input>` (e.g.
+   * `autoFocus`, `aria-*`). Same precedence as TextField `inputProps`: the
+   * field's own wiring wins; an `onKeyDown` runs before the Enter-to-commit
+   * handler.
+   */
+  inputProps?: InputHTMLAttributes<HTMLInputElement>
 }
 
 /**
@@ -107,6 +147,8 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
       defaultValue,
       onChange,
       label = 'Date',
+      labelPlacement,
+      shrinkLabel,
       min,
       max,
       locale = 'en-US',
@@ -123,6 +165,10 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
       selectMonthLabel = 'Select month',
       selectYearLabel = 'Select year',
       todayLabel = 'Today',
+      referenceDate,
+      name,
+      inputRef,
+      inputProps,
       onKeyDown,
       onBlur,
       ...rest
@@ -130,19 +176,28 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
     ref,
   ) {
     const popupId = useId()
-    const isControlled = value !== undefined
-    const [internal, setInternal] = useState<Date | null>(defaultValue ?? null)
-    const current = isControlled ? value ?? null : internal
+    const [stored, setInternal, isControlled] = useControllableState<Date | null>({
+      value,
+      defaultValue: defaultValue ?? null,
+      name: 'DatePickerField',
+      state: 'value',
+    })
+    const current = stored ?? null
     const [open, setOpen] = useState(false)
     const [error, setError] = useState<DateInputError | null>(null)
     const wrapRef = useRef<HTMLDivElement | null>(null)
     const toggleRef = useRef<HTMLButtonElement>(null)
     const popupRef = useRef<HTMLDivElement>(null)
     const pattern = getDatePattern(locale)
+    const setInputRef = useCallback(
+      (node: HTMLInputElement | HTMLTextAreaElement | null) =>
+        assignRef(inputRef, node as HTMLInputElement | null),
+      [inputRef],
+    )
 
     const [text, setText] = useState(current ? formatDateInput(current, locale) : '')
     const [view, setView] = useState<CalendarView>(() => {
-      const d = current ?? new Date()
+      const d = current ?? referenceDate ?? new Date()
       return { year: d.getFullYear(), month: d.getMonth() }
     })
 
@@ -174,7 +229,7 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
     }
 
     const openPopup = () => {
-      const d = current ?? new Date()
+      const d = current ?? referenceDate ?? new Date()
       setView({ year: d.getFullYear(), month: d.getMonth() })
       setOpen(true)
     }
@@ -247,7 +302,11 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
         <TextField
           variant="outlined"
           label={label}
+          labelPlacement={labelPlacement}
+          shrinkLabel={shrinkLabel}
           value={text}
+          name={name}
+          inputRef={setInputRef}
           disabled={disabled}
           supportingText={supportingText ?? pattern}
           error={showError}
@@ -258,7 +317,9 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
           }}
           onBlur={commitText}
           inputProps={{
+            ...inputProps,
             onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => {
+              inputProps?.onKeyDown?.(event)
               if (event.key === 'Enter') commitText()
             },
           }}
@@ -295,10 +356,15 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
               min={min ?? null}
               max={max ?? null}
               locale={locale}
+              referenceDate={referenceDate}
               view={view}
               onViewChange={setView}
               autoFocus
               onSelect={(date) => {
+                // Also when re-picking the current date (no value change to
+                // re-sync from): drop stale typed text and its error.
+                setText(formatDateInput(date, locale))
+                setError(null)
                 commit(date)
                 close(true)
               }}

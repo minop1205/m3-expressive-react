@@ -1,3 +1,5 @@
+'use client'
+
 import {
   forwardRef,
   useEffect,
@@ -110,6 +112,8 @@ function toPath(pts: P[]): string {
   )
 }
 function clampProgress(v: number) {
+  // NaN / ±Infinity would reach aria-valuenow as-is (#423).
+  if (!Number.isFinite(v)) return 0
   return Math.min(1, Math.max(0, v))
 }
 

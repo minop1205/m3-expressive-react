@@ -62,7 +62,7 @@
 }
 
 .wrapper[data-open] {
-  z-index: 20;
+  z-index: var(--md-sys-z-search);
   transition-delay: 0s;
 }
 
@@ -315,6 +315,241 @@
 
   .wrapper {
     transition-delay: var(--md-sys-motion-duration-short2);
+  }
+}
+
+/*
+ * Full-screen search view (layout="fullscreen") — Compose
+ * ExpandedFullScreenContainedSearchBar (SearchBar.kt FullScreenSearchBarLayout,
+ * isContained = true) with rememberContainedSearchBarState:
+ * - the overlay covers the viewport (a `popover="manual"` element in the top
+ *   layer; z-index only matters without Popover API support),
+ * - surface: SurfaceContainerLow (SearchBarDefaults
+ *   .fullScreenContainedSearchBarColor), shape none, alpha = progress,
+ * - field (header): keeps the bar's 56dp stadium and SurfaceContainerHigh
+ *   (collapsedContainedSearchBarColor); moves from the bar's rect
+ *   (--_collapsed-*, written by JS) to 4dp from the top
+ *   (AppBarWithSearchVerticalPadding) and 8dp from both sides
+ *   (FullScreenExpandedHorizontalPadding), full width minus 16dp,
+ * - results: 8dp below the field (SearchBarVerticalPadding), full width, no
+ *   divider; content fade in 100ms after 50ms (standard accelerate) / out
+ *   100ms (standard decelerate) — the same Compose tweens as the docked view,
+ * - expand and collapse: the FastSpatial spring for the whole progress
+ *   (alpha included — Compose drives both from one spatial animatable),
+ * - window insets: safeDrawing → env(safe-area-inset-*).
+ */
+.fullscreen {
+  --_fs-container-color: var(--md-sys-color-surface-container-low);
+  --_fs-header-color: var(--md-sys-color-surface-container-high);
+  --_fs-duration: var(--md-sys-motion-spring-fast-spatial-duration);
+  --_fs-easing: var(--md-sys-motion-spring-fast-spatial-easing);
+  --_fs-top: calc(env(safe-area-inset-top, 0px) + 4px);
+  --_fs-start: calc(env(safe-area-inset-left, 0px) + 8px);
+  --_fs-width: calc(
+    100% - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px) - 16px
+  );
+
+  position: fixed;
+  inset: 0;
+  z-index: var(--md-sys-z-modal);
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--_input-text-color);
+  overflow: hidden;
+  visibility: hidden;
+  transition: visibility 0s linear var(--_fs-duration);
+  /* Keep the top-layer popover rendered through the collapse. */
+  transition:
+    visibility 0s linear var(--_fs-duration),
+    display var(--_fs-duration) allow-discrete,
+    overlay var(--_fs-duration) allow-discrete;
+}
+
+.fullscreen[data-open] {
+  visibility: visible;
+  transition: visibility 0s;
+}
+
+.fsSurface {
+  position: absolute;
+  inset: 0;
+  background-color: var(--_fs-container-color);
+  opacity: 0;
+  transition: opacity var(--_fs-duration) var(--_fs-easing);
+}
+
+.fullscreen[data-open] .fsSurface {
+  opacity: 1;
+}
+
+.fsDialog {
+  position: absolute;
+  inset: 0;
+  outline: none;
+}
+
+/* The field: `.bar` (look, slots, input) placed over the viewport. */
+.fullscreen .fsHeader {
+  --_container-color: var(--_fs-header-color);
+
+  position: absolute;
+  z-index: 1;
+  top: var(--_collapsed-top, var(--_fs-top));
+  left: var(--_collapsed-left, var(--_fs-start));
+  width: var(--_collapsed-width, var(--_fs-width));
+  transition:
+    top var(--_fs-duration) var(--_fs-easing),
+    left var(--_fs-duration) var(--_fs-easing),
+    width var(--_fs-duration) var(--_fs-easing);
+}
+
+.fullscreen[data-open] .fsHeader {
+  top: var(--_fs-top);
+  left: var(--_fs-start);
+  width: var(--_fs-width);
+}
+
+/* arrow_back points to the inline start. */
+[dir='rtl'] .backIcon {
+  transform: scaleX(-1);
+}
+
+.fsResults {
+  position: absolute;
+  top: calc(var(--_collapsed-top, var(--_fs-top)) + 56px + 8px);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  box-sizing: border-box;
+  padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px);
+  padding-block-end: env(safe-area-inset-bottom, 0px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  opacity: 0;
+  transition:
+    top var(--_fs-duration) var(--_fs-easing),
+    opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard-decelerate);
+}
+
+.fullscreen[data-open] .fsResults {
+  top: calc(var(--_fs-top) + 56px + 8px);
+  opacity: 1;
+  transition:
+    top var(--_fs-duration) var(--_fs-easing),
+    opacity var(--md-sys-motion-duration-short2) var(--md-sys-motion-easing-standard-accelerate)
+      var(--md-sys-motion-duration-short1);
+}
+
+/* Entering the top layer starts from `display: none`: start the expand at
+   the bar. */
+@starting-style {
+  .fullscreen[data-open] .fsSurface,
+  .fullscreen[data-open] .fsResults {
+    opacity: 0;
+  }
+
+  .fullscreen[data-open] .fsHeader {
+    top: var(--_collapsed-top, var(--_fs-top));
+    left: var(--_collapsed-left, var(--_fs-start));
+    width: var(--_collapsed-width, var(--_fs-width));
+  }
+
+  .fullscreen[data-open] .fsResults {
+    top: calc(var(--_collapsed-top, var(--_fs-top)) + 56px + 8px);
+  }
+}
+
+/* While the view collapses back onto it, the bar stays hidden so the moving
+   field doesn't double it (Compose AppBarWithSearch: alpha 0 while
+   `isExpanded && targetValue == Collapsed`). Opacity, not visibility: the
+   bar input takes focus back meanwhile, and a hidden element would drop it. */
+@keyframes hide-during-collapse {
+  from,
+  to {
+    opacity: 0;
+  }
+}
+
+.wrapper[data-expanded-once]:not([data-open]) > .bar {
+  animation: hide-during-collapse var(--_fs-collapse-duration) step-end;
+}
+
+.wrapper[data-layout='fullscreen'] {
+  --_fs-collapse-duration: var(--md-sys-motion-spring-fast-spatial-duration);
+}
+
+/* Reduced motion (B3): no spatial expand — the view fades in / out in place,
+   with the field already at the top. */
+@media (prefers-reduced-motion: reduce) {
+  .fullscreen {
+    opacity: 0;
+    transition:
+      opacity var(--md-sys-motion-spring-fast-effects-duration)
+        var(--md-sys-motion-spring-fast-effects-easing),
+      visibility 0s linear var(--md-sys-motion-spring-fast-effects-duration),
+      display var(--md-sys-motion-spring-fast-effects-duration) allow-discrete,
+      overlay var(--md-sys-motion-spring-fast-effects-duration) allow-discrete;
+  }
+
+  .fullscreen[data-open] {
+    opacity: 1;
+    transition:
+      opacity var(--md-sys-motion-spring-fast-effects-duration)
+        var(--md-sys-motion-spring-fast-effects-easing),
+      visibility 0s;
+  }
+
+  .fsSurface,
+  .fullscreen[data-open] .fsSurface,
+  .fsResults,
+  .fullscreen[data-open] .fsResults {
+    opacity: 1;
+    transition: none;
+  }
+
+  .fullscreen .fsHeader,
+  .fullscreen[data-open] .fsHeader {
+    top: var(--_fs-top);
+    left: var(--_fs-start);
+    width: var(--_fs-width);
+    transition: none;
+  }
+
+  .fsResults,
+  .fullscreen[data-open] .fsResults {
+    top: calc(var(--_fs-top) + 56px + 8px);
+  }
+
+  .wrapper[data-layout='fullscreen'] {
+    --_fs-collapse-duration: var(--md-sys-motion-spring-fast-effects-duration);
+  }
+
+  @starting-style {
+    .fullscreen[data-open] {
+      opacity: 0;
+    }
+
+    .fullscreen[data-open] .fsSurface,
+    .fullscreen[data-open] .fsResults {
+      opacity: 1;
+    }
+
+    .fullscreen[data-open] .fsHeader {
+      top: var(--_fs-top);
+      left: var(--_fs-start);
+      width: var(--_fs-width);
+    }
+
+    .fullscreen[data-open] .fsResults {
+      top: calc(var(--_fs-top) + 56px + 8px);
+    }
   }
 }
 

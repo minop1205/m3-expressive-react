@@ -1,7 +1,7 @@
 /**
  * MD3 Tabs. Values from m3.material.io Tabs specs + androidx.compose.material3
  * Primary/SecondaryNavigationTab tokens (see docs/audits/tabs.md): Surface
- * row, TitleSmall labels, 24dp icons, 48dp (label) / 64dp (icon+label)
+ * row, TitleSmall labels, 24dp icons, 48dp (label, leading icon) / 64dp (icon+label)
  * height, 16dp horizontal padding. Fixed tabs are equal width; scrollable tabs
  * size to content (90dp min) with 52dp edge padding. One sliding indicator:
  * primary = content-width (min 24dp) 3dp bar, top corners 3dp; secondary =
@@ -78,7 +78,15 @@
 }
 
 .tab[data-with-icon] {
+  /* Icon stacked above a label (LargeTabHeight); set only when both exist. */
   min-height: 64px;
+}
+
+/* Leading icon (Compose LeadingIconTab, Tab.kt): a 48dp row (SmallTabHeight =
+   PrimaryNavigationTabTokens.ContainerHeight), 16dp horizontal padding, 8dp
+   between the icon and the label (TextDistanceFromLeadingIcon). */
+.tab[data-icon-position='start'] {
+  min-height: 48px;
 }
 
 /* State layer: primary tabs tint with Primary, except inactive hover/focus
@@ -144,6 +152,75 @@
   white-space: nowrap;
 }
 
+/* Leading-icon content box (icon + 8dp + label): one box, so the primary
+   indicator spans both (Compose matchContentSize on the Row). */
+.content {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.content > .icon {
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------- */
+/* Badge — a <Badge> passed through `badge`. It takes no layout space (Compose */
+/* BadgedBox measures the anchor only), so the label stays centered and the    */
+/* indicator keeps following the label / icon.                                */
+/* --------------------------------------------------------------------------- */
+
+/* On the icon: the childless Badge anchor sits on the icon's top-end corner,
+   so Badge's own BadgedBox offsets apply to the 24dp icon (dot inside the
+   corner, Compose BadgeOffset 6dp; large badge 12dp in / 14dp down,
+   BadgeWithContent{Horizontal,Vertical}Offset). */
+.icon > .iconBadge {
+  position: absolute;
+  top: 0;
+  inset-inline-end: 0;
+}
+
+/* Text-only tab: the badge follows the label, 4dp after it, vertically
+   centered on it (m3 tabs anatomy "Badge (optional)", 4dp text–badge gap). */
+.labelGroup {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.labelBadge {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: calc(100% + 4px);
+  display: flex;
+  translate: 0 -50%;
+}
+
+/* The badge sizes the group-relative wrapper instead of offsetting from an
+   anchor (Badge's BadgedBox insets do not apply here). */
+.labelBadge [data-size] {
+  position: static;
+}
+
+/* Badge text read after the label — announced, never painted. */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .tab[data-selected] {
   transition: color var(--md-sys-motion-spring-default-effects-duration)
     var(--md-sys-motion-spring-default-effects-easing);
@@ -183,6 +260,37 @@
 /* Secondary: 2dp full-width square line. */
 .tabs[data-variant='secondary'] > .indicator {
   height: 2px;
+}
+
+/* High contrast (forced colors): the indicator and the bottom divider are
+   background / box-shadow paints, which forced colors drops. Repaint the
+   indicator in Highlight (4dp, so it stands out from the 1dp divider), draw
+   the divider as a CanvasText line (::before, so it paints under the
+   indicator), and pull the focus ring inward past the indicator so the two
+   no longer overlap (the ring was cut where the indicator sat). */
+@media (forced-colors: active) {
+  .tabs::before {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 1px;
+    background-color: CanvasText;
+    pointer-events: none;
+  }
+
+  .tabs[data-variant] > .indicator {
+    height: 4px;
+    background-color: Highlight;
+  }
+
+  .tab {
+    --md-focus-ring-offset: -7px;
+  }
+
+  .tab:disabled {
+    color: GrayText;
+  }
 }
 
 /* Reduced motion (B3): state changes are instant. */

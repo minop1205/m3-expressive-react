@@ -1,3 +1,5 @@
+'use client'
+
 import {
   Children,
   createContext,
@@ -7,7 +9,6 @@ import {
   useContext,
   useEffect,
   useId,
-  useLayoutEffect,
   useRef,
   useState,
   type AnchorHTMLAttributes,
@@ -20,6 +21,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { INTERACTIVE_SELECTOR } from '../../internal/isFromNestedInteractive'
@@ -54,10 +56,22 @@ export interface CarouselProps extends HTMLAttributes<HTMLDivElement> {
    */
   variant?: CarouselVariant
   /**
-   * Preferred (large) item width in px. `multi-browse` / `hero` fit the
-   * actual large size to the container (Compose `preferredItemWidth`);
-   * `uncontained` uses it as-is. @default 260 (`hero`: fills the container
-   * beside its small items)
+   * Preferred (large) item width in px — a **target, not a cap** (Compose
+   * `preferredItemWidth`, renamed from `maxItemWidth`). `multi-browse` /
+   * `hero` pick the arrangement whose large items land closest to it and
+   * resize small (40–56dp), then medium, then large items so a whole number
+   * of items fills the container, so the rendered large width can be wider or
+   * narrower than this value. Large items always stay wider than the small
+   * ones, so values at or below the small-item minimum cannot be honored.
+   * `uncontained` uses it as-is.
+   *
+   * At the end of the list the arrangement shifts so the last item aligns to
+   * the container's end (`multi-browse`: the large item slides to the end;
+   * `hero`: the first / last item aligns to the start / end instead of
+   * centering). A `hero` carousel with fewer than 3 items cannot center and
+   * stays start-aligned (a large item with one small item; a single item is
+   * just large).
+   * @default 260 (`hero`: fills the container beside its small items)
    */
   itemWidth?: number
   /** Item height in px. @default 200 */
@@ -147,11 +161,9 @@ function flingDistance(velocity: number): number {
 }
 
 function usePrefersReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(
-    () =>
-      typeof window !== 'undefined' &&
-      !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
-  )
+  // Starts `false` on both server and client so hydration matches (#410);
+  // the effect below picks up the real preference after mount.
+  const [reduced, setReduced] = useState(false)
   useEffect(() => {
     const mql = window.matchMedia?.('(prefers-reduced-motion: reduce)')
     if (!mql) return
@@ -162,8 +174,6 @@ function usePrefersReducedMotion(): boolean {
   }, [])
   return reduced
 }
-
-const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
 function setRef<T>(ref: Ref<T> | undefined, node: T | null) {
   if (typeof ref === 'function') ref(node)
@@ -261,8 +271,11 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
   const dragCleanupRef = useRef<(() => void) | null>(null)
   const settleCleanupRef = useRef<(() => void) | null>(null)
   const suppressClickRef = useRef(false)
+  /** The slot elements the last layout ran for (#416). */
+  const laidOutSlotsRef = useRef<HTMLElement[]>([])
   const reducedMotion = usePrefersReducedMotion()
   const [hasFocusable, setHasFocusable] = useState(false)
+  const hasFocusableRef = useRef(false)
 
   const mode: Mode =
     variant === 'uncontained' ? 'flow' : reducedMotion ? 'uniform' : 'keylines'
@@ -330,6 +343,7 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
     if (!scroller) return
     const els = slots()
     const count = els.length
+    laidOutSlotsRef.current = els
     rtlRef.current = getComputedStyle(scroller).direction === 'rtl'
     cancelAnimations()
     const clearItems = () =>
@@ -442,13 +456,46 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
     [],
   )
 
-  // Keep the container reachable by keyboard only when nothing inside it is
-  // (m3: "Avoid focusing on the carousel container"; axe
-  // scrollable-region-focusable when the items are not interactive).
+  /**
+   * Re-syncs with the rendered items (#416): re-runs the layout when the set
+   * of slot elements changed even though the count did not (re-keyed items
+   * get no snap offset or mask otherwise, and the scroll-driven animations
+   * stay on the detached nodes), and keeps the container reachable by
+   * keyboard only when nothing inside it is (m3: "Avoid focusing on the
+   * carousel container"; axe scrollable-region-focusable when the items are
+   * not interactive).
+   */
+  const syncItems = useCallback(() => {
+    const scroller = scrollerRef.current
+    if (!scroller) return
+    const els = slots()
+    const prev = laidOutSlotsRef.current
+    if (els.length !== prev.length || els.some((el, i) => el !== prev[i])) applyLayout()
+    const next = !!scroller.querySelector(TABBABLE)
+    if (next !== hasFocusableRef.current) {
+      hasFocusableRef.current = next
+      setHasFocusable(next)
+    }
+  }, [applyLayout])
+
+  // After every render of the carousel…
   useIsoLayoutEffect(() => {
-    const next = !!scrollerRef.current?.querySelector(TABBABLE)
-    if (next !== hasFocusable) setHasFocusable(next)
+    syncItems()
   })
+
+  // …and when an item's own content changes without re-rendering it.
+  useEffect(() => {
+    const scroller = scrollerRef.current
+    if (!scroller || typeof MutationObserver === 'undefined') return
+    const mo = new MutationObserver(() => syncItems())
+    mo.observe(scroller, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['tabindex', 'disabled', 'href', 'contenteditable', 'type'],
+    })
+    return () => mo.disconnect()
+  }, [syncItems])
 
   const isRtl = () =>
     !!scrollerRef.current && getComputedStyle(scrollerRef.current).direction === 'rtl'
@@ -618,6 +665,12 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
 
     const move = (e: PointerEvent) => {
       if (e.pointerId !== state.pointerId) return
+      // No button down: the release was missed (e.g. outside the window) —
+      // drop the stale drag instead of scrolling with a free-moving mouse.
+      if (e.buttons === 0) {
+        end(e)
+        return
+      }
       if (!state.dragging) {
         if (Math.abs(e.clientX - state.startX) < DRAG_SLOP) return
         state.dragging = true
@@ -714,8 +767,9 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
         scrollerRef.current = node
         setRef(ref, node)
       }}
-      {...rest}
+      // Default role first so a consumer `role` can override it (B13 pattern).
       role="group"
+      {...rest}
       aria-roledescription={roleDescriptionLabel}
       data-carousel=""
       data-variant={variant}

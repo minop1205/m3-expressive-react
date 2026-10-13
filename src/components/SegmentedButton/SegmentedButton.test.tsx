@@ -71,6 +71,25 @@ describe('SegmentedButton', () => {
     expect(ref.current).toBeInstanceOf(HTMLDivElement)
   })
 
+  it('lets the consumer override the default role', () => {
+    render(<SegmentedButton role="toolbar" aria-label="View" options={options} defaultValue="w" />)
+    expect(screen.getByRole('toolbar', { name: 'View' })).toBeInTheDocument()
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument()
+  })
+
+  it('types onChange by multiSelect', () => {
+    // Compile-time checks (npm run typecheck); the renders keep them honest.
+    const single = (_e: unknown, v: string) => v.toUpperCase()
+    const multi = (_e: unknown, v: string[]) => v.join()
+    render(<SegmentedButton options={options} defaultValue="w" onChange={single} />)
+    render(<SegmentedButton multiSelect options={options} defaultValue={['w']} onChange={multi} />)
+    // @ts-expect-error a multi-select onChange receives string[]
+    render(<SegmentedButton multiSelect options={options} onChange={single} />)
+    // @ts-expect-error a single-select value is a string
+    render(<SegmentedButton options={options} value={['w']} />)
+    expect(screen.getAllByRole('radiogroup')).toHaveLength(2)
+  })
+
   it('keeps the deprecated SegmentedButtons alias', () => {
     expect(SegmentedButtons).toBe(SegmentedButton)
   })
@@ -131,29 +150,73 @@ describe('SegmentedButton keyboard (single-select radiogroup)', () => {
     expect(screen.getByRole('button', { name: 'After' })).toHaveFocus()
   })
 
-  it('moves focus with the arrow keys (wrapping) without selecting', async () => {
+  it('moves focus and selects with the arrow keys (wrapping, APG radio group)', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<SegmentedButton aria-label="View" options={options} value="w" onChange={onChange} />)
+    render(<SegmentedButton aria-label="View" options={options} defaultValue="d" onChange={onChange} />)
+    const radio = (name: string) => screen.getByRole('radio', { name })
     await user.tab()
     await user.keyboard('{ArrowRight}')
-    expect(screen.getByRole('radio', { name: 'Week' })).toHaveFocus()
+    expect(radio('Week')).toHaveFocus()
+    expect(radio('Week')).toHaveAttribute('aria-checked', 'true')
+    expect(onChange).toHaveBeenLastCalledWith(expect.any(Object), 'w')
     await user.keyboard('{ArrowDown}')
-    expect(screen.getByRole('radio', { name: 'Month' })).toHaveFocus()
+    expect(radio('Month')).toHaveFocus()
+    expect(onChange).toHaveBeenLastCalledWith(expect.any(Object), 'm')
     await user.keyboard('{ArrowRight}')
-    expect(screen.getByRole('radio', { name: 'Day' })).toHaveFocus()
+    expect(radio('Day')).toHaveFocus()
+    expect(onChange).toHaveBeenLastCalledWith(expect.any(Object), 'd')
     await user.keyboard('{ArrowLeft}')
-    expect(screen.getByRole('radio', { name: 'Month' })).toHaveFocus()
+    expect(radio('Month')).toHaveFocus()
     await user.keyboard('{ArrowUp}')
-    expect(screen.getByRole('radio', { name: 'Week' })).toHaveFocus()
+    expect(radio('Week')).toHaveFocus()
     await user.keyboard('{Home}')
-    expect(screen.getByRole('radio', { name: 'Day' })).toHaveFocus()
+    expect(radio('Day')).toHaveFocus()
     await user.keyboard('{End}')
-    expect(screen.getByRole('radio', { name: 'Month' })).toHaveFocus()
-    expect(onChange).not.toHaveBeenCalled()
+    expect(radio('Month')).toHaveFocus()
+    expect(radio('Month')).toHaveAttribute('aria-checked', 'true')
+    expect(onChange).toHaveBeenCalledTimes(7)
     // The roving tab stop follows focus.
-    expect(screen.getByRole('radio', { name: 'Month' })).toHaveAttribute('tabindex', '0')
-    expect(screen.getByRole('radio', { name: 'Day' })).toHaveAttribute('tabindex', '-1')
+    expect(radio('Month')).toHaveAttribute('tabindex', '0')
+    expect(radio('Day')).toHaveAttribute('tabindex', '-1')
+  })
+
+  it('arrow-key selection reports the change to a controlled owner', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SegmentedButton aria-label="View" options={options} value="d" onChange={onChange} />)
+    await user.tab()
+    await user.keyboard('{ArrowRight}')
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'w')
+    // Controlled: the selection stays until the owner updates `value`.
+    expect(screen.getByRole('radio', { name: 'Day' })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('does not fire onChange when the selected segment is activated again', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SegmentedButton aria-label="View" options={options} defaultValue="d" onChange={onChange} />)
+    await user.click(screen.getByRole('radio', { name: 'Day' }))
+    await user.keyboard('{Enter} ')
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.getByRole('radio', { name: 'Day' })).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('does not fire onChange when an arrow key lands on the only enabled segment', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <SegmentedButton
+        aria-label="View"
+        options={[{ value: 'd', label: 'Day' }, { value: 'w', label: 'Week', disabled: true }]}
+        defaultValue="d"
+        onChange={onChange}
+      />,
+    )
+    await user.tab()
+    await user.keyboard('{ArrowRight}{End}')
+    expect(screen.getByRole('radio', { name: 'Day' })).toHaveFocus()
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   it('selects the focused segment with Space and Enter', async () => {
@@ -235,6 +298,16 @@ describe('SegmentedButton keyboard (multi-select)', () => {
     await user.keyboard('{ArrowLeft}')
     expect(screen.getByRole('button', { name: 'Week' })).toHaveFocus()
     expect(screen.getByRole('button', { name: 'Day' })).not.toHaveAttribute('tabindex')
+  })
+
+  it('does not select with the arrow keys', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(<SegmentedButton aria-label="Style" multiSelect options={options} defaultValue={[]} onChange={onChange} />)
+    await user.tab()
+    await user.keyboard('{ArrowRight}{End}{Home}')
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { pressed: true })).not.toBeInTheDocument()
   })
 })
 

@@ -1,0 +1,53 @@
+# Scope guard for pull requests into main.
+#
+# main = the released library (npm `latest`) + the live docs site. Two kinds
+# of PR may target it:
+#
+# - release PRs: head branch `develop` (anything goes — CHANGELOG + version
+#   bump are prepared on develop first).
+# - docs hotfixes: any other head branch, limited to documentation paths, so
+#   a docs-only fix can deploy the site without a library release. The site
+#   builds against main's library, so it still documents what is on npm.
+#   After merging, back-merge main into develop.
+#
+# A hotfix PR that touches library code fails here: ship it through develop
+# as a release instead.
+name: Main PR scope
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  scope:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        if: github.head_ref != 'develop'
+        with:
+          fetch-depth: 0
+      - name: Allow release PRs from develop
+        if: github.head_ref == 'develop'
+        run: echo "Release PR (develop → main) — no path restriction."
+      - name: Docs hotfix may only touch documentation
+        if: github.head_ref != 'develop'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          # Documentation paths: the docs site, repo docs, and top-level guides.
+          allowed='^(site/|docs/|README\.md$|CONTRIBUTING\.md$)'
+          changed=$(git diff --name-only "$BASE...$HEAD")
+          echo "Changed files:"; echo "$changed" | sed 's/^/  /'
+          bad=$(echo "$changed" | grep -Ev "$allowed" || true)
+          if [ -n "$bad" ]; then
+            echo "::error::A docs hotfix to main may only change site/, docs/, README.md or CONTRIBUTING.md."
+            echo "$bad" | sed 's/^/::error::  outside docs scope: /'
+            echo "::error::Target develop and ship it with the next release instead."
+            exit 1
+          fi
+          echo "Docs-only change — OK to merge into main and deploy the site."

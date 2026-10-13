@@ -1,10 +1,12 @@
+'use client'
+
 import {
   createContext,
   useContext,
-  useState,
   type MouseEvent,
   type SyntheticEvent,
 } from 'react'
+import { useControllableState } from '../../internal/useControllableState'
 
 export type ButtonGroupSelectionMode = 'none' | 'single' | 'multiple'
 
@@ -20,7 +22,17 @@ export interface ButtonGroupSelection {
 
 export const ButtonGroupSelectionContext = createContext<ButtonGroupSelection | null>(null)
 
+/** Group-level `disabled` from a wrapping `ButtonGroup` (#421). */
+export const ButtonGroupDisabledContext = createContext(false)
+
+/** An item is disabled when it, or its wrapping `ButtonGroup`, is disabled. */
+export function useGroupDisabled(disabled: boolean): boolean {
+  return useContext(ButtonGroupDisabledContext) || disabled
+}
+
 interface ToggleOptions {
+  /** Component name for the controlled / uncontrolled dev warnings. */
+  name: string
   value: string | number | readonly string[] | undefined
   toggle: boolean
   selected: boolean | undefined
@@ -38,6 +50,7 @@ interface ToggleOptions {
  * `aria-pressed` (Phase B B13).
  */
 export function useButtonToggle({
+  name,
   value,
   toggle,
   selected,
@@ -47,15 +60,19 @@ export function useButtonToggle({
   tabIndex,
 }: ToggleOptions) {
   const group = useContext(ButtonGroupSelectionContext)
-  const [internalSelected, setInternalSelected] = useState(defaultSelected)
+  const [storedSelected, setInternalSelected, isControlled] = useControllableState({
+    value: selected,
+    defaultValue: defaultSelected,
+    name,
+    state: 'selected',
+  })
   const itemValue = value == null ? undefined : String(value)
   const managed = group !== null && itemValue !== undefined
   const isToggle = toggle || managed
-  const isControlled = selected !== undefined
 
   let isSelected = false
   if (managed) isSelected = group.isSelected(itemValue)
-  else if (toggle) isSelected = isControlled ? selected : internalSelected
+  else if (toggle) isSelected = storedSelected
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
     if (managed) {

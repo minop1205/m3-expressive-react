@@ -1,16 +1,19 @@
+'use client'
+
 import {
   Children,
   forwardRef,
   useCallback,
-  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
   type HTMLAttributes,
   type ReactNode,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { getToolbarItems, handleToolbarKeyDown } from '../../internal/toolbarNavigation'
+import { holdsKeyboardFocus, releaseFocus } from '../../internal/barFocus'
 import {
   resolveScrollTarget,
   useScrollObserver,
@@ -83,6 +86,14 @@ export interface ToolbarProps extends Omit<HTMLAttributes<HTMLDivElement>, 'hidd
   scrollBehavior?: ToolbarScrollBehavior
   /** The scroll container observed by `scrollBehavior`. @default window */
   scrollTarget?: ScrollTarget
+  /**
+   * Floating: removes the container shadow. m3 toolbars guidelines: "The
+   * elevation on floating toolbars can be removed if on a visually distinct
+   * background" — keep it when the toolbar floats over content (the Fab
+   * `disableElevation` prop). A docked toolbar has no elevation either way.
+   * @default false
+   */
+  disableElevation?: boolean
 }
 
 // Compose FloatingToolbarDefaults.ScrollDistanceThreshold.
@@ -127,6 +138,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
     hidden: hiddenProp,
     scrollBehavior,
     scrollTarget,
+    disableElevation = false,
     onKeyDown,
     ...rest
   },
@@ -196,7 +208,11 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
     ({ top, delta }) => {
       if (scrollBehavior === 'exitAlways') {
         const limit = measureExitDistance()
-        const next = top <= 0 ? 0 : Math.min(limit, Math.max(0, offsetRef.current + delta))
+        // A bar holding keyboard focus stays put (internal/barFocus.ts).
+        const next =
+          top <= 0 || holdsKeyboardFocus(rootRef.current)
+            ? 0
+            : Math.min(limit, Math.max(0, offsetRef.current + delta))
         if (next !== offsetRef.current) applyOffset(next, limit, false)
       } else if (scrollBehavior === 'collapse' && floating) {
         if (top <= 0) {
@@ -228,7 +244,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
   )
 
   // The `hidden` state prop needs the exit distance as well.
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     if (hiddenProp) setHiddenDistance(measureExitDistance())
   }, [hiddenProp, exitDirection])
 
@@ -241,14 +257,16 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
       ? -1
       : 1
 
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
+    // Release focus first so it never sits inside the inert bar.
+    if (fullyHidden) releaseFocus(rootRef.current)
     rootRef.current?.toggleAttribute('inert', fullyHidden)
   }, [fullyHidden])
 
   // Collapsed content leaves the focus order / accessibility tree; if it held
   // focus, move focus to the first remaining item.
   const collapsed = floating && !expanded
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const slots = [startRef.current, endRef.current]
     const hadFocus = slots.some((s) => s?.contains(document.activeElement))
     for (const s of slots) s?.toggleAttribute('inert', collapsed)
@@ -287,6 +305,7 @@ export const Toolbar = forwardRef<HTMLDivElement, ToolbarProps>(function Toolbar
       data-exit-direction={exiting ? exitDirection : undefined}
       data-hidden={hiddenProp == null ? undefined : String(hiddenProp)}
       data-settling={settling || undefined}
+      data-disable-elevation={(floating && disableElevation) || undefined}
       className={clsx(styles.toolbar, className)}
       onKeyDown={(event) => {
         onKeyDown?.(event)

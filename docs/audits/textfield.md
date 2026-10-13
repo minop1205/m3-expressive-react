@@ -71,8 +71,10 @@ Issue: T1a/T1b → #129、T2/T3 → #130(同じ `aria-describedby` の組み立�
   ブラウザ既定。site にトークンがなく、Compose でもテーマ全体の設定なので、`::selection` を足すかは任意
 - **disabled の prefix/suffix**: Compose は on-surface-variant @38%、実装は on-surface @38%(他の要素と同じ)。
   site にトークンがなく、見た目の差はほぼない
-- **Compose にあって実装にないもの**(機能追加の候補、今回は対象外): `SecureTextField`(難読化モード)、
-  `TextFieldLabelPosition.Above`(ラベルをコンテナの外に常時小さく表示)・`isAlwaysMinimized`、Expressive の
+- **Compose にあって実装にないもの**(機能追加の候補、今回は対象外 → `SecureTextField` / `roundedShape` / `tonalColors()` は
+  #444 で対応済み: secure field はレシピ、`tonal` prop、裁定 B44 — docs/decisions/phase-b-api.md): `SecureTextField`(難読化モード)、
+  `TextFieldLabelPosition.Above`(ラベルをコンテナの外に常時小さく表示)・`isAlwaysMinimized`(→ #439 で実装済み:
+  `labelPlacement="above"` / `shrinkLabel`、裁定 B37 — docs/decisions/phase-b-api.md)、Expressive の
   `roundedShape`(12dp)と `tonalColors()`(Compose 側にまだ `TODO(b/448727879)` が付いており、仕様が流動的)
 - テスト追加候補: hover/focus/error の組み合わせの色(T1)、prefix/suffix とカウンターの a11y 名(T2/T3)、
   multiline の自動伸長、`readOnly` でフォーカススタイルが出ること(Compose と同じ)

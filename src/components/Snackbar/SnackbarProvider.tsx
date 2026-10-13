@@ -1,3 +1,5 @@
+'use client'
+
 import {
   createContext,
   useCallback,
@@ -139,8 +141,20 @@ export function SnackbarProvider({ children, className, style }: SnackbarProvide
   const itemRef = useRef<HTMLDivElement>(null)
   const restoreRef = useRef<Element | null>(null)
   const exitTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  // Hover lives on the host, not the item: a queued snackbar that appears
+  // under a pointer already resting there starts paused (#423) — a freshly
+  // mounted item gets no pointerenter until the pointer moves.
+  const [hovered, setHovered] = useState(false)
 
-  useEffect(() => () => clearTimeout(exitTimer.current), [])
+  // Unmounting settles every pending show() promise (the current snackbar
+  // and the queue) instead of leaving them pending forever (#423).
+  useEffect(
+    () => () => {
+      clearTimeout(exitTimer.current)
+      for (const entry of queueRef.current) entry.resolve('dismiss')
+    },
+    [],
+  )
 
   const closeCurrent = useCallback((reason: SnackbarCloseReason) => {
     const current = queueRef.current[0]
@@ -199,7 +213,16 @@ export function SnackbarProvider({ children, className, style }: SnackbarProvide
   return (
     <SnackbarContext.Provider value={value}>
       {children}
-      <div className={clsx(styles.host, className)} style={style}>
+      {/* Exempt from modal inert: MD3 snackbars sit above dialogs and must
+          stay operable and announced while one is open. */}
+      <div
+        className={clsx(styles.host, className)}
+        style={style}
+        data-md-modal-exempt=""
+        // The host itself is pointer-events: none, so these track the item.
+        onPointerEnter={() => setHovered(true)}
+        onPointerLeave={() => setHovered(false)}
+      >
         {/* Persistent live region: mounted before any message is inserted. */}
         <div role="status" aria-live="polite" className={styles.region}>
           {current != null && (
@@ -208,6 +231,7 @@ export function SnackbarProvider({ children, className, style }: SnackbarProvide
               itemRef={itemRef}
               entry={current}
               exiting={exitingId === current.id}
+              hovered={hovered}
               onClose={closeCurrent}
               onFocus={handleFocus}
             />
@@ -222,14 +246,22 @@ interface HostedSnackbarProps {
   itemRef: Ref<HTMLDivElement>
   entry: Entry
   exiting: boolean
+  /** The pointer is over the host (kept across queued snackbars). */
+  hovered: boolean
   onClose: (reason: SnackbarCloseReason) => void
   onFocus: (event: FocusEvent<HTMLDivElement>) => void
 }
 
-function HostedSnackbar({ itemRef, entry, exiting, onClose, onFocus }: HostedSnackbarProps) {
+function HostedSnackbar({
+  itemRef,
+  entry,
+  exiting,
+  hovered,
+  onClose,
+  onFocus,
+}: HostedSnackbarProps) {
   const { options } = entry
   const total = durationMs(options)
-  const [hovered, setHovered] = useState(false)
   const [focused, setFocused] = useState(false)
   const remaining = useRef(total)
   const onCloseRef = useRef(onClose)
@@ -264,8 +296,6 @@ function HostedSnackbar({ itemRef, entry, exiting, onClose, onFocus }: HostedSna
       ref={itemRef}
       className={styles.item}
       data-state={exiting ? 'exiting' : 'entered'}
-      onPointerEnter={() => setHovered(true)}
-      onPointerLeave={() => setHovered(false)}
       onFocus={(event) => {
         setFocused(true)
         onFocus(event)

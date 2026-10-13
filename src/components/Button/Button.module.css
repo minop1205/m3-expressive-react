@@ -318,6 +318,52 @@
   --_outline-color: color-mix(in srgb, var(--md-sys-color-outline-variant) 10%, transparent);
 }
 
+/* --------------------------------------------------------------------------- */
+/* High contrast (forced colors)                                               */
+/* --------------------------------------------------------------------------- */
+/* Forced colors replaces the container fill with Canvas and drops the shadow,
+   so filled / tonal / elevated buttons would read as plain text. Draw their
+   edge with an inset outline (no layout change — the native focus outline is
+   unused, FocusRing is its own element). Toggle-selected buttons fill with
+   Highlight; their label opts out of the forced palette so the Canvas text
+   backplate does not hide the HighlightText label. */
+@media (forced-colors: active) {
+  .button[data-variant='filled'],
+  .button[data-variant='tonal'],
+  .button[data-variant='elevated'] {
+    outline: 1px solid ButtonText;
+    outline-offset: -1px;
+  }
+
+  .button[data-variant][data-selected='true'] {
+    --_container-color: Highlight;
+    --_label-text-color: HighlightText;
+    --_outline-color: Highlight;
+    outline: 1px solid Highlight;
+    outline-offset: -1px;
+  }
+
+  .button[data-selected='true'] > .label,
+  .button[data-selected='true'] > .icon {
+    forced-color-adjust: none;
+    color: HighlightText;
+  }
+
+  .button:disabled,
+  .button[data-variant]:disabled {
+    --_label-text-color: GrayText;
+    --_container-color: transparent;
+    --_outline-color: GrayText;
+    outline-color: GrayText;
+  }
+
+  .button:disabled > .label,
+  .button:disabled > .icon {
+    forced-color-adjust: auto;
+    color: GrayText;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .button {
     transition: none;

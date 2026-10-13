@@ -1,6 +1,7 @@
+'use client'
+
 import {
   forwardRef,
-  useEffect,
   useId,
   useRef,
   type HTMLAttributes,
@@ -8,15 +9,26 @@ import {
 } from 'react'
 import clsx from 'clsx'
 import { CloseIcon } from '../../internal/icons'
+import type { ModalCloseEvent } from '../../internal/closeReason'
 import { assignRefs, useModal } from '../../internal/useModal'
+import { IconButton } from '../IconButton/IconButton'
 import styles from './Dialog.module.css'
+
+/**
+ * Why the dialog asked to close (ruling B7 vocabulary): Escape, a scrim
+ * click, or the full-screen close button.
+ */
+export type DialogCloseReason = 'escapeKeyDown' | 'backdropClick' | 'closeButton'
 
 export interface DialogProps
   extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
   /** Whether the dialog is shown. */
   open: boolean
-  /** Called on scrim click or Escape. */
-  onClose?: () => void
+  /**
+   * Called on scrim click, Escape, or the full-screen close button, with the
+   * triggering event and the `reason`.
+   */
+  onClose?: (event: ModalCloseEvent, reason: DialogCloseReason) => void
   /** Optional hero icon (Secondary, 24dp, centers the title). */
   icon?: ReactNode
   /** Dialog headline. */
@@ -47,7 +59,12 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
   const titleId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
   const surfaceRef = useRef<HTMLDivElement | null>(null)
-  useModal({ active: open, rootRef, surfaceRef })
+  useModal({
+    active: open,
+    rootRef,
+    surfaceRef,
+    onEscape: (event) => onClose?.(event, 'escapeKeyDown'),
+  })
 
   // Never ship an unnamed dialog (Compose always sets a paneTitle): the title
   // labels it when present, consumer-supplied aria props win, and a generic
@@ -57,15 +74,6 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
     | string
     | undefined
 
-  useEffect(() => {
-    if (!open) return
-    const handle = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') onClose?.()
-    }
-    document.addEventListener('keydown', handle)
-    return () => document.removeEventListener('keydown', handle)
-  }, [open, onClose])
-
   return (
     <div
       ref={rootRef}
@@ -74,7 +82,11 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
       data-full-screen={fullScreen || undefined}
     >
       {!fullScreen && (
-        <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
+        <div
+          className={styles.scrim}
+          aria-hidden="true"
+          onClick={(event) => onClose?.(event, 'backdropClick')}
+        />
       )}
       <div
         ref={(node) => assignRefs(node, surfaceRef, ref)}
@@ -93,14 +105,12 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
         {fullScreen ? (
           <>
             <header className={styles.fsHeader}>
-              <button
-                type="button"
-                className={styles.fsClose}
+              <IconButton
+                variant="standard"
+                icon={<CloseIcon />}
                 aria-label={closeLabel}
-                onClick={onClose}
-              >
-                <CloseIcon />
-              </button>
+                onClick={(event) => onClose?.(event, 'closeButton')}
+              />
               {title != null && (
                 <h2 id={titleId} className={styles.fsTitle}>
                   {title}

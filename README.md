@@ -53,6 +53,35 @@ export function App() {
 > Docusaurus' default minimizer — set `USE_SIMPLE_CSS_MINIFIER=true`),
 > switch to cssnano or Lightning CSS.
 
+### Next.js App Router
+
+Interactive components (and `ThemeProvider`) ship with a `'use client'`
+directive, so you can import them straight into Server Components such as
+`app/layout.tsx` / `app/page.tsx` — no wrapper file needed. The usual React
+Server Components rule applies: event handlers (`onClick`, `onChange`, …)
+can't be passed from a Server Component, so put interactive markup in your
+own `'use client'` component. Presentational `Badge` / `Divider` and the pure
+helpers (`generateColorScheme`, `schemeToCssVars`, `schemeToCssText`, motion
+tokens) stay server-safe.
+
+```tsx
+// app/layout.tsx (Server Component)
+import { ThemeProvider } from 'm3-expressive-react'
+import 'm3-expressive-react/styles.css'
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        <ThemeProvider seedColor="#6750A4" mode="light">
+          {children}
+        </ThemeProvider>
+      </body>
+    </html>
+  )
+}
+```
+
 ## Per-component imports
 
 Every component folder is also its own entry point with a **default
@@ -106,14 +135,16 @@ Buttons & actions — `Button`, `IconButton`, `ButtonGroup`, `SplitButton`,
 `SegmentedButton`, `Fab`, `FabMenu`, `Chip` / `ChipSet`
 
 Selection & input — `Checkbox`, `Radio` / `RadioGroup`, `Switch`, `Slider`,
-`TextField`, `SearchBar`, `DatePicker`, `TimePicker`
+`TextField`, `Select`, `Autocomplete`, `SearchBar`, `DatePicker`,
+`TimePicker`, `ScrollField`
 
 Navigation — `AppBar`, `Toolbar`, `NavigationBar`, `NavigationRail`,
 `NavigationDrawer`, `Tabs`, `Menu`
 
 Containment & communication — `Card`, `List`, `Carousel`, `Dialog`,
 `BottomSheet`, `SideSheet`, `Snackbar`, `Tooltip`, `Badge`, `Divider`,
-`ProgressIndicator`, `LoadingIndicator`, `SwipeToDismiss`
+`ProgressIndicator`, `LoadingIndicator`, `PullToRefresh`, `SwipeToDismiss`,
+`DragHandle`
 
 See the [components page](https://minop1205.github.io/m3-expressive-react/components) of the docs site for live demos
 and prop tables.
@@ -178,7 +209,8 @@ npm run vrt      # visual regression (see CLAUDE.md for baseline rules)
 ```
 
 The docs site lives in [`site/`](site/) (Docusaurus) and deploys to GitHub
-Pages from `develop`:
+Pages from `main` — releases, plus docs-only hotfixes (see
+[CONTRIBUTING.md](CONTRIBUTING.md#documentation-site)):
 
 ```bash
 cd site && npm install && npm start

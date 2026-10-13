@@ -1,0 +1,313 @@
+/**
+ * Shared listbox popup + options of the exposed dropdown menu (Select and
+ * Autocomplete, docs/specs/select.md SE1, docs/specs/autocomplete.md).
+ *
+ * Listbox = Compose `ExposedDropdownMenu` as the ExposedDropdownMenuSample
+ * styles it (MenuDefaults.groupStandardContainerColor / standaloneGroupShape,
+ * SelectableDropdownMenuItem + ExposedDropdownMenuDefaults.ItemContentPadding):
+ * SurfaceContainerLow, CornerLarge (16dp), elevation Level2, 8dp vertical
+ * padding (DropdownMenuVerticalPadding); options 44dp (SegmentedMenuTokens.Item),
+ * 4dp horizontal inset (DropdownMenuSelectableItemPadding), 16dp horizontal
+ * content padding, BodyLarge, 20dp leading icon with 8dp icon–text spacing,
+ * positional corners (MenuDefaults.itemShape), selected TertiaryContainer /
+ * OnTertiaryContainer with the 12dp ItemSelectedShape and a check mark
+ * (StandardMenuTokens.ItemSelected*).
+ */
+
+/* ------------------------------------------------------------------ */
+/* Listbox                                                             */
+
+.listbox {
+  /* Option tokens (md.comp.menu, Expressive standard colors). */
+  --_listbox-container-color: var(--md-sys-color-surface-container-low);
+  --_listbox-container-shape: var(--md-sys-shape-corner-large);
+  --_option-container-height: 44px;
+  --_option-label-text-color: var(--md-sys-color-on-surface);
+  --_option-icon-color: var(--md-sys-color-on-surface-variant);
+  --_option-icon-size: 20px;
+  --_option-leading-space: 16px;
+  --_option-trailing-space: 16px;
+  --_option-between-space: 8px;
+  --_option-state-layer-color: var(--md-sys-color-on-surface);
+  --_selected-option-container-color: var(--md-sys-color-tertiary-container);
+  --_selected-option-label-text-color: var(--md-sys-color-on-tertiary-container);
+  --_selected-option-icon-color: var(--md-sys-color-on-tertiary-container);
+  --_selected-option-state-layer-color: var(--md-sys-color-on-tertiary-container);
+
+  /* Reset the UA [popover] / list box. Position (`top` / `left`, flip +
+     clamp), the anchor's width and `--_popup-available-height` are written
+     inline by the shared popup helper (src/internal/usePopupPosition). */
+  position: fixed;
+  inset: auto;
+  top: 0;
+  left: 0;
+  z-index: var(--md-sys-z-popup);
+  display: none;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 280px;
+  height: auto;
+  /* Compose calculateMaxHeight: the room on the menu's side minus
+     MenuVerticalMargin (48dp); the helper already keeps 8px. */
+  max-height: max(0px, calc(var(--_popup-available-height, calc(100dvh - 16px)) - 40px));
+  margin: 0;
+  border: 0;
+  padding: 8px 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  border-radius: var(--_listbox-container-shape);
+  background-color: var(--_listbox-container-color);
+  color: var(--_option-label-text-color);
+  box-shadow: var(--md-sys-elevation-shadow-level2);
+  outline: none;
+
+  /* Open/close motion = Compose DropdownMenuContent: scale 0.8 → 1 on
+     FastSpatial + fade on FastEffects, from the field's edge (as Menu).
+     Reduced motion (B3): the spatial token is 0ms, so it only fades. */
+  opacity: 0;
+  transform: scale(0.8);
+  transform-origin: top center;
+  transition:
+    opacity var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing),
+    transform var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    display
+      max(
+        var(--md-sys-motion-spring-fast-spatial-duration),
+        var(--md-sys-motion-spring-fast-effects-duration)
+      )
+      allow-discrete,
+    overlay
+      max(
+        var(--md-sys-motion-spring-fast-spatial-duration),
+        var(--md-sys-motion-spring-fast-effects-duration)
+      )
+      allow-discrete;
+}
+
+.listbox[data-open] {
+  display: flex;
+  opacity: 1;
+  transform: none;
+}
+
+@starting-style {
+  .listbox[data-open] {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+.listbox[data-placement='above'] {
+  transform-origin: bottom center;
+}
+
+/* ------------------------------------------------------------------ */
+/* Options                                                             */
+
+.option {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: var(--_option-between-space);
+  box-sizing: border-box;
+  min-height: var(--_option-container-height);
+  margin-inline: 4px;
+  padding-inline: var(--_option-leading-space) var(--_option-trailing-space);
+  /* MenuDefaults.itemShape: middle items CornerExtraSmall. */
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  background-color: transparent;
+  color: var(--_option-label-text-color);
+  cursor: pointer;
+  font-family: var(--md-sys-typescale-body-large-font);
+  font-size: var(--md-sys-typescale-body-large-size);
+  font-weight: var(--md-sys-typescale-body-large-weight);
+  line-height: var(--md-sys-typescale-body-large-line-height);
+  letter-spacing: var(--md-sys-typescale-body-large-tracking);
+  -webkit-tap-highlight-color: transparent;
+
+  --md-ripple-color: var(--_option-state-layer-color);
+  --md-focus-ring-offset: -3px;
+
+  /* Compose DropdownMenuItemContent: container color on FastEffects, the
+     selected-shape morph on FastSpatial. */
+  transition:
+    background-color var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing),
+    color var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing),
+    border-radius var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing);
+}
+
+/* Positional corners (MenuDefaults.leading / trailingItemShape): first item
+   12/4dp, last 4/12dp, a single item 4dp. */
+.option:first-of-type {
+  border-radius: var(--md-sys-shape-corner-medium) var(--md-sys-shape-corner-medium)
+    var(--md-sys-shape-corner-extra-small) var(--md-sys-shape-corner-extra-small);
+}
+
+.option:last-of-type {
+  border-radius: var(--md-sys-shape-corner-extra-small) var(--md-sys-shape-corner-extra-small)
+    var(--md-sys-shape-corner-medium) var(--md-sys-shape-corner-medium);
+}
+
+.option:only-of-type {
+  border-radius: var(--md-sys-shape-corner-extra-small);
+}
+
+/* Selected (StandardMenuTokens.ItemSelected*, ItemSelectedShape 12dp). After
+   the positional rules so they lose at equal specificity. */
+.option[aria-selected='true'] {
+  border-radius: var(--md-sys-shape-corner-medium);
+  background-color: var(--_selected-option-container-color);
+  color: var(--_selected-option-label-text-color);
+  --md-ripple-color: var(--_selected-option-state-layer-color);
+}
+
+.option[aria-disabled='true'] {
+  cursor: default;
+  pointer-events: none;
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}
+
+.option[aria-selected='true'][aria-disabled='true'] {
+  background-color: color-mix(in srgb, var(--_selected-option-container-color) 38%, transparent);
+  color: color-mix(in srgb, var(--_selected-option-label-text-color) 38%, transparent);
+}
+
+.leading {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--_option-icon-size);
+  height: var(--_option-icon-size);
+  color: var(--_option-icon-color);
+  overflow: hidden;
+  /* The check mark expands in (FastSpatial) and fades (FastEffects) when an
+     option without a start icon gets selected (Compose AnimatedVisibility). */
+  transition:
+    width var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    margin-inline-end var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    opacity var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing);
+}
+
+/* No start icon and not selected: the slot (and its gap) collapse. */
+.option:not([aria-selected='true']) .checkOnly {
+  width: 0;
+  margin-inline-end: calc(-1 * var(--_option-between-space));
+  opacity: 0;
+}
+
+.option[aria-selected='true'] .leading {
+  color: var(--_selected-option-icon-color);
+}
+
+.option[aria-disabled='true'] .leading {
+  color: inherit;
+}
+
+.leading svg {
+  width: 100%;
+  height: 100%;
+  flex-shrink: 0;
+  fill: currentColor;
+}
+
+.label {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Keyboard visual focus (aria-activedescendant — DOM focus stays on the
+   combobox): the shared focus ring, SegmentedMenuTokens.ItemFocusIndicatorColor
+   (secondary), inset 3dp. */
+.focusRing {
+  composes: ring fill from '../../primitives/FocusRing/FocusRing.module.css';
+}
+
+.option[data-focus-visible] .focusRing {
+  display: flex;
+}
+
+/* ------------------------------------------------------------------ */
+/* Filtering (Autocomplete)                                            */
+
+/* m3 menus guidelines: "Menu items ease into their new position as the menu
+   is filtered". The listbox plays a FLIP move (an inline translate the
+   component sets, then clears) on DefaultSpatial, and options that appear
+   fade in on DefaultEffects. Reduced motion (B3): the spatial token is 0ms
+   and the component skips the move entirely. */
+.listbox[data-filterable] .option {
+  transition:
+    background-color var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing),
+    color var(--md-sys-motion-spring-fast-effects-duration)
+      var(--md-sys-motion-spring-fast-effects-easing),
+    border-radius var(--md-sys-motion-spring-fast-spatial-duration)
+      var(--md-sys-motion-spring-fast-spatial-easing),
+    transform var(--md-sys-motion-spring-default-spatial-duration)
+      var(--md-sys-motion-spring-default-spatial-easing),
+    opacity var(--md-sys-motion-spring-default-effects-duration)
+      var(--md-sys-motion-spring-default-effects-easing);
+}
+
+/* The "no options" line: an inert, option-sized row of body-large
+   on-surface-variant text (MUI `noOptionsText`). */
+.noOptions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: var(--_option-container-height);
+  margin-inline: 4px;
+  padding-inline: var(--_option-leading-space) var(--_option-trailing-space);
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: default;
+  font-family: var(--md-sys-typescale-body-large-font);
+  font-size: var(--md-sys-typescale-body-large-size);
+  font-weight: var(--md-sys-typescale-body-large-weight);
+  line-height: var(--md-sys-typescale-body-large-line-height);
+  letter-spacing: var(--md-sys-typescale-body-large-tracking);
+}
+
+/* ------------------------------------------------------------------ */
+/* High contrast (forced colors)                                       */
+/* ------------------------------------------------------------------ */
+/* Forced colors drop the surface fill and shadow and the selected option's
+   container color: outline the listbox, fill the selected option with
+   Highlight, and paint disabled options GrayText. */
+@media (forced-colors: active) {
+  .listbox {
+    outline: 1px solid CanvasText;
+  }
+
+  .option[aria-selected='true']:not([aria-disabled='true']) {
+    forced-color-adjust: none;
+    background-color: Highlight;
+    color: HighlightText;
+  }
+
+  .option[aria-selected='true']:not([aria-disabled='true']) .leading {
+    color: HighlightText;
+  }
+
+  .option[aria-disabled='true'] {
+    color: GrayText;
+  }
+}

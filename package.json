@@ -1,6 +1,6 @@
 {
   "name": "m3-expressive-react",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "description": "Material Design 3 (Expressive) component library for React — token-first, spec-driven, MUI-idiomatic API",
   "type": "module",
   "license": "MIT",
@@ -10,19 +10,26 @@
   ],
   "files": [
     "dist",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "THIRD_PARTY_NOTICES.md"
   ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./styles.css": "./dist/styles.css",
     "./tokens.css": "./dist/tokens.css",
+    "./package.json": "./package.json",
     "./AppBar": {
       "import": {
         "types": "./dist/components/AppBar/index.d.ts",
@@ -32,6 +39,17 @@
       "require": {
         "types": "./dist/components/AppBar/index.d.cts",
         "default": "./dist/components/AppBar/index.cjs"
+      }
+    },
+    "./Autocomplete": {
+      "import": {
+        "types": "./dist/components/Autocomplete/index.d.ts",
+        "node": "./dist/components/Autocomplete/index.js",
+        "default": "./dist/Autocomplete/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Autocomplete/index.d.cts",
+        "default": "./dist/components/Autocomplete/index.cjs"
       }
     },
     "./Badge": {
@@ -155,6 +173,17 @@
         "default": "./dist/components/Divider/index.cjs"
       }
     },
+    "./DragHandle": {
+      "import": {
+        "types": "./dist/components/DragHandle/index.d.ts",
+        "node": "./dist/components/DragHandle/index.js",
+        "default": "./dist/DragHandle/index.js"
+      },
+      "require": {
+        "types": "./dist/components/DragHandle/index.d.cts",
+        "default": "./dist/components/DragHandle/index.cjs"
+      }
+    },
     "./Fab": {
       "import": {
         "types": "./dist/components/Fab/index.d.ts",
@@ -265,6 +294,17 @@
         "default": "./dist/components/ProgressIndicator/index.cjs"
       }
     },
+    "./PullToRefresh": {
+      "import": {
+        "types": "./dist/components/PullToRefresh/index.d.ts",
+        "node": "./dist/components/PullToRefresh/index.js",
+        "default": "./dist/PullToRefresh/index.js"
+      },
+      "require": {
+        "types": "./dist/components/PullToRefresh/index.d.cts",
+        "default": "./dist/components/PullToRefresh/index.cjs"
+      }
+    },
     "./Radio": {
       "import": {
         "types": "./dist/components/Radio/index.d.ts",
@@ -276,6 +316,17 @@
         "default": "./dist/components/Radio/index.cjs"
       }
     },
+    "./ScrollField": {
+      "import": {
+        "types": "./dist/components/ScrollField/index.d.ts",
+        "node": "./dist/components/ScrollField/index.js",
+        "default": "./dist/ScrollField/index.js"
+      },
+      "require": {
+        "types": "./dist/components/ScrollField/index.d.cts",
+        "default": "./dist/components/ScrollField/index.cjs"
+      }
+    },
     "./SearchBar": {
       "import": {
         "types": "./dist/components/SearchBar/index.d.ts",
@@ -285,6 +336,17 @@
       "require": {
         "types": "./dist/components/SearchBar/index.d.cts",
         "default": "./dist/components/SearchBar/index.cjs"
+      }
+    },
+    "./Select": {
+      "import": {
+        "types": "./dist/components/Select/index.d.ts",
+        "node": "./dist/components/Select/index.js",
+        "default": "./dist/Select/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Select/index.d.cts",
+        "default": "./dist/components/Select/index.cjs"
       }
     },
     "./SegmentedButton": {
@@ -425,6 +487,9 @@
       "AppBar": [
         "./dist/components/AppBar/index.d.ts"
       ],
+      "Autocomplete": [
+        "./dist/components/Autocomplete/index.d.ts"
+      ],
       "Badge": [
         "./dist/components/Badge/index.d.ts"
       ],
@@ -458,6 +523,9 @@
       "Divider": [
         "./dist/components/Divider/index.d.ts"
       ],
+      "DragHandle": [
+        "./dist/components/DragHandle/index.d.ts"
+      ],
       "Fab": [
         "./dist/components/Fab/index.d.ts"
       ],
@@ -488,11 +556,20 @@
       "ProgressIndicator": [
         "./dist/components/ProgressIndicator/index.d.ts"
       ],
+      "PullToRefresh": [
+        "./dist/components/PullToRefresh/index.d.ts"
+      ],
       "Radio": [
         "./dist/components/Radio/index.d.ts"
       ],
+      "ScrollField": [
+        "./dist/components/ScrollField/index.d.ts"
+      ],
       "SearchBar": [
         "./dist/components/SearchBar/index.d.ts"
+      ],
+      "Select": [
+        "./dist/components/Select/index.d.ts"
       ],
       "SegmentedButton": [
         "./dist/components/SegmentedButton/index.d.ts"
@@ -538,18 +615,19 @@
     "build-storybook": "storybook build",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
+    "check:rsc": "node scripts/check-rsc.mjs",
     "lint:tokens": "! grep -rEn 'var\\(--md-sys-[a-z0-9-]+,' src --include='*.css' && ! grep -rzlE 'var\\(\\s*--md-sys-[a-z0-9-]+\\s*,' src --include='*.css'",
     "prepare": "husky",
     "vrt": "playwright test",
     "vrt:update": "playwright test --update-snapshots"
   },
   "peerDependencies": {
-    "react": ">=18",
-    "react-dom": ">=18"
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
   },
   "dependencies": {
-    "@material/material-color-utilities": "^0.3.0",
     "clsx": "^2.1.1"
   },
   "devDependencies": {
@@ -557,6 +635,7 @@
     "@commitlint/config-conventional": "^21.0.2",
     "@fontsource/roboto": "^5.2.10",
     "@material-symbols/svg-400": "^0.45.5",
+    "@material/material-color-utilities": "^0.3.0",
     "@playwright/test": "^1.63.0",
     "@storybook/addon-a11y": "^10.6.0",
     "@storybook/react-vite": "^10.6.0",
@@ -567,6 +646,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
+    "@vitest/coverage-v8": "^5.0.1",
     "axe-core": "^4.10.0",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
@@ -601,5 +681,8 @@
     "ui",
     "design-system",
     "design-tokens"
-  ]
+  ],
+  "engines": {
+    "node": ">=18"
+  }
 }

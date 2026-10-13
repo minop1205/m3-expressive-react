@@ -1,6 +1,7 @@
+'use client'
+
 import {
   forwardRef,
-  useState,
   type ButtonHTMLAttributes,
   type ReactNode,
 } from 'react'
@@ -14,6 +15,7 @@ import { Menu, type MenuAlign } from '../Menu/Menu'
 // from Button.module.css and cannot drift. SplitButton.module.css only adds
 // the split geometry (paddings, widths, joined corners, chevron).
 import buttonStyles from '../Button/Button.module.css'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './SplitButton.module.css'
 
 export type SplitButtonVariant = 'elevated' | 'filled' | 'tonal' | 'outlined'
@@ -87,9 +89,15 @@ export const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
     },
     ref,
   ) {
-    const isControlled = controlledOpen !== undefined
-    const [uncontrolled, setUncontrolled] = useState(defaultOpen)
-    const open = isControlled ? controlledOpen : uncontrolled
+    const [storedOpen, setUncontrolled, isControlled] = useControllableState({
+      value: controlledOpen,
+      defaultValue: defaultOpen,
+      name: 'SplitButton',
+      state: 'open',
+    })
+    // A disabled split button never shows its menu (its trigger can't be
+    // operated to close it again).
+    const open = !disabled && storedOpen
     const setOpen = (value: boolean) => {
       if (!isControlled) setUncontrolled(value)
       onOpenChange?.(value)

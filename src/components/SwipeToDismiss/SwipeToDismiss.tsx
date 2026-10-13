@@ -1,9 +1,10 @@
+'use client'
+
 import {
   forwardRef,
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -12,8 +13,10 @@ import {
   type PointerEvent,
   type ReactNode,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { ListNavContext, ListParentContext } from '../List/ListContext'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './SwipeToDismiss.module.css'
 
 /**
@@ -179,9 +182,12 @@ export const SwipeToDismiss = forwardRef<HTMLDivElement, SwipeToDismissProps>(
     // ListItem inside is the listbox's option (B17 / B21).
     const listSelection = useContext(ListNavContext)?.selectionMode ?? 'none'
 
-    const [dismissedState, setDismissedState] = useState(defaultDismissed)
-    const controlled = dismissedProp !== undefined
-    const dismissed = controlled ? dismissedProp : dismissedState
+    const [dismissed, setDismissedState, controlled] = useControllableState({
+      value: dismissedProp,
+      defaultValue: defaultDismissed,
+      name: 'SwipeToDismiss',
+      state: 'dismissed',
+    })
 
     /** Logical drag offset while a swipe is active, else null. */
     const [drag, setDrag] = useState<number | null>(null)
@@ -221,7 +227,7 @@ export const SwipeToDismiss = forwardRef<HTMLDivElement, SwipeToDismissProps>(
     }
 
     // Resolve the physical sign of a programmatic / initial dismiss.
-    useLayoutEffect(() => {
+    useIsoLayoutEffect(() => {
       if (dismissed != null) {
         const next = isRtl()
         if (next !== rtl) setRtl(next)
@@ -263,6 +269,16 @@ export const SwipeToDismiss = forwardRef<HTMLDivElement, SwipeToDismissProps>(
         window.clearTimeout(timer)
       }
     }, [drag, dismissed])
+
+    // A dismissed row is off-screen: keep its content out of the tab order
+    // and the accessibility tree (#417). Set via the DOM — React 18 has no
+    // `inert` prop.
+    useEffect(() => {
+      const content = contentRef.current
+      if (!content) return
+      if (dismissed != null) content.setAttribute('inert', '')
+      else content.removeAttribute('inert')
+    }, [dismissed])
 
     const gesturesEnabled = dismissed == null && (enableStartToEnd || enableEndToStart)
 
@@ -307,6 +323,14 @@ export const SwipeToDismiss = forwardRef<HTMLDivElement, SwipeToDismissProps>(
     const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
       const g = gesture.current
       if (!g || event.pointerId !== g.pointerId) return
+      // Pointer capture is only taken past the slop, so a mouse press
+      // released outside the row never delivers its pointerup here: a move
+      // with no button held means that press is over — drop it instead of
+      // dragging the row on hover (#417).
+      if (!g.active && event.pointerType === 'mouse' && event.buttons === 0) {
+        gesture.current = null
+        return
+      }
       const dxPhysical = event.clientX - g.startX
       const dx = g.rtl ? -dxPhysical : dxPhysical
       if (!g.active) {

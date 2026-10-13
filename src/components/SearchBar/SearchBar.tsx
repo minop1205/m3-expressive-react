@@ -1,3 +1,5 @@
+'use client'
+
 import {
   forwardRef,
   useEffect,
@@ -14,10 +16,21 @@ import {
   type Ref,
 } from 'react'
 import clsx from 'clsx'
-import { SearchIcon } from '../../internal/icons'
+import { ArrowBackIcon, SearchIcon } from '../../internal/icons'
 import { Ripple } from '../../primitives/Ripple/Ripple'
-import { usePopupPosition } from '../../internal/usePopupPosition'
+import {
+  hideFromTopLayer,
+  showInTopLayer,
+  usePopupPosition,
+} from '../../internal/usePopupPosition'
+import { useControllableState } from '../../internal/useControllableState'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
+import { useModal } from '../../internal/useModal'
+import { IconButton } from '../IconButton/IconButton'
 import styles from './SearchBar.module.css'
+
+/** Where the search view opens (m3: "two layout options: full-screen and docked"). */
+export type SearchBarLayout = 'docked' | 'fullscreen'
 
 export interface SearchBarProps
   extends Omit<
@@ -45,6 +58,23 @@ export interface SearchBarProps
   endIcon?: ReactNode
   /** Suggestion / result content shown in the open search view. */
   children?: ReactNode
+  /**
+   * How the search view (`children`) opens:
+   * - `'docked'` — a results container pinned 2dp under the bar, over a
+   *   scrim (Compose `ExpandedDockedSearchBarWithGap`; larger screens).
+   * - `'fullscreen'` — a modal view covering the viewport: the field moves
+   *   to the top with a back button in place of the leading icon and the
+   *   results below it (Compose `ExpandedFullScreenContainedSearchBar`, the
+   *   Expressive contained style; compact screens). Focus is trapped inside
+   *   it; Escape or the back button closes it and focus returns to the bar.
+   * @default 'docked'
+   */
+  layout?: SearchBarLayout
+  /**
+   * Accessible name of the full-screen view's back button. Localize it
+   * with the rest of your UI strings. @default 'Back'
+   */
+  backLabel?: string
   /** Controlled open (search-view) state. */
   open?: boolean
   /** Uncontrolled initial open state. @default false */
@@ -106,14 +136,27 @@ const VIEW_GAP_PX = 2
  * announced via `suggestionsLabel`. Keyboard: ArrowDown opens the view /
  * moves into the results, ArrowUp / ArrowDown / Home / End move between the
  * focusable result items (ArrowUp from the first returns to the input),
- * Escape closes the view from anywhere in it and returns focus to the input,
- * and moving focus out of the component closes it. While the view is open,
+ * Escape closes the view from anywhere in it and returns focus to the input
+ * (typing, or pressing the focused input, reopens it), and moving focus out of the component closes it. While the view is open,
  * Escape only closes it (the native `type="search"` clear is suppressed);
  * with the view closed — or without a view — Escape keeps the browser's
  * native behavior (Chromium / Safari clear the query). Enter calls
  * `onSearch`, except while an IME composition is in progress.
  * A consumer `onKeyDown` that calls `preventDefault()` opts out of the
  * built-in key handling for that event.
+ *
+ * `layout="fullscreen"` (Compose `ExpandedFullScreenContainedSearchBar`, the
+ * Expressive contained style) instead opens a modal view over the whole
+ * viewport (`role="dialog"`, drawn in the top layer): a SurfaceContainerLow
+ * surface fades in while the field moves from the bar to the top (4dp from
+ * the top, 8dp from the sides) with a back button in place of the leading
+ * icon, and the results fill the space 8dp below it — no divider. Expand and
+ * collapse run on the FastSpatial spring (reduced motion: a fade). Focus is
+ * trapped in the view (`useModal`); Escape or the back button collapses it
+ * and focus returns to the bar. The bar opens it on a click, typing or
+ * ArrowDown — focus alone (Tab) doesn't (a modal shouldn't open on Tab).
+ * `onChange` / `onSearch` / `onKeyDown` follow the view's field;
+ * `onFocus` / `onBlur` / `inputRef` stay on the bar's input.
  *
  * MUI parity: the forwarded `ref` and any extra props (`{...rest}`) land on
  * the ROOT element (the `role="search"` landmark); input concerns are
@@ -131,6 +174,8 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
       startIcon,
       endIcon,
       children,
+      layout = 'docked',
+      backLabel = 'Back',
       open: controlledOpen,
       defaultOpen = false,
       onOpenChange,
@@ -150,18 +195,40 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
     },
     forwardedRef,
   ) {
-    const isControlled = value !== undefined
-    const [internal, setInternal] = useState(defaultValue ?? '')
-    const current = isControlled ? value : internal
+    const [current, setInternal, isControlled] = useControllableState({
+      value,
+      defaultValue: defaultValue ?? '',
+      name: 'SearchBar',
+      state: 'value',
+    })
 
     const hasView = children != null
-    const openControlled = controlledOpen !== undefined
-    const [uncontrolledOpen, setUncontrolledOpen] = useState(defaultOpen)
-    const open = hasView && (openControlled ? controlledOpen : uncontrolledOpen)
+    const [storedOpen, setUncontrolledOpen, openControlled] = useControllableState({
+      value: controlledOpen,
+      defaultValue: defaultOpen,
+      name: 'SearchBar',
+      state: 'open',
+    })
+    // A disabled bar never shows its view (its input can't take focus or
+    // keys to close it again).
+    const open = hasView && !disabled && storedOpen
+    const fullscreen = layout === 'fullscreen'
     const wrapperRef = useRef<HTMLDivElement>(null)
     const inputElRef = useRef<HTMLInputElement | null>(null)
     const viewRef = useRef<HTMLDivElement>(null)
     const barRef = useRef<HTMLDivElement>(null)
+    // Full-screen view: overlay root (top layer), dialog surface, its own
+    // input (the header field) and results container.
+    const overlayRef = useRef<HTMLDivElement>(null)
+    const dialogRef = useRef<HTMLDivElement>(null)
+    const fsInputRef = useRef<HTMLInputElement>(null)
+    const fsResultsRef = useRef<HTMLDivElement>(null)
+    // Set when the full-screen view closes, until focus is back on the bar.
+    const restoringRef = useRef(false)
+    // After the first full-screen expansion the bar hides while the view
+    // collapses back onto it (Compose AppBarWithSearch `isVisible`).
+    const [expandedOnce, setExpandedOnce] = useState(false)
+    if (fullscreen && open && !expandedOnce) setExpandedOnce(true)
     // Focus modality: the bar's focus ring is keyboard-only, but text inputs
     // match :focus-visible on pointer focus too — so track pointer presses.
     const pointerDownRef = useRef(false)
@@ -169,7 +236,10 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
     // Set while focus is returned to the input programmatically (Escape from
     // the results) so that focus doesn't immediately reopen the view.
     const suppressOpenRef = useRef(false)
-    const viewId = `${useId()}-view`
+    const baseId = useId()
+    const viewId = `${baseId}-view`
+    const dialogId = `${baseId}-dialog`
+    const fsResultsId = `${baseId}-results`
 
     const setInputRefs = (el: HTMLInputElement | null) => {
       inputElRef.current = el
@@ -190,24 +260,76 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
 
     // The closed view stays mounted (for the collapse motion) but must not be
     // reachable. Set `inert` on the DOM so it works across React 18 / 19.
-    useEffect(() => {
-      const view = viewRef.current
+    // Layout effect: the full-screen overlay must be reachable before
+    // useModal (a passive effect) moves focus into it.
+    useIsoLayoutEffect(() => {
+      const view = fullscreen ? overlayRef.current : viewRef.current
       if (!view) return
       if (open) view.removeAttribute('inert')
       else view.setAttribute('inert', '')
-    }, [open, hasView])
+    }, [open, hasView, fullscreen])
+
+    // Full-screen view: start / end the expand motion at the bar's rect,
+    // and draw the overlay in the top layer (ancestors' transform /
+    // overflow / z-index — e.g. a hiding app bar — can't trap or clip it).
+    const fsOpen = fullscreen && open
+    useIsoLayoutEffect(() => {
+      const overlay = overlayRef.current
+      if (!overlay) return
+      const rect = barRef.current?.getBoundingClientRect()
+      if (rect) {
+        overlay.style.setProperty('--_collapsed-top', `${rect.top}px`)
+        overlay.style.setProperty('--_collapsed-left', `${rect.left}px`)
+        overlay.style.setProperty('--_collapsed-width', `${rect.width}px`)
+      }
+      if (fsOpen) showInTopLayer(overlay)
+      else {
+        hideFromTopLayer(overlay)
+        restoringRef.current = true
+      }
+    }, [fsOpen])
+
+    useIsoLayoutEffect(() => {
+      const overlay = overlayRef.current
+      return () => {
+        if (overlay) hideFromTopLayer(overlay)
+      }
+    }, [fullscreen, hasView])
+
+    useModal({
+      active: fsOpen,
+      rootRef: overlayRef,
+      surfaceRef: dialogRef,
+      onEscape: () => setOpen(false),
+    })
+
+    // Runs after useModal's cleanup has returned focus: when nothing outside
+    // took it (opened via `defaultOpen`, or the trigger is gone), put it back
+    // on the bar input. Then let the bar's focus open the view again.
+    useEffect(() => {
+      if (!restoringRef.current) return
+      if (fullscreen && !open) {
+        const active = document.activeElement
+        const lost =
+          !active || active === document.body || overlayRef.current?.contains(active)
+        if (lost && wrapperRef.current?.isConnected) inputElRef.current?.focus()
+      }
+      restoringRef.current = false
+    }, [open, fullscreen])
 
     useEffect(() => {
-      if (!open) return
-      const onDown = (e: globalThis.MouseEvent) => {
+      if (!open || fullscreen) return
+      // `pointerdown`, like Tooltip: a page that prevents the default of
+      // pointerdown (drag libraries) suppresses the compatibility mousedown.
+      const onDown = (e: globalThis.PointerEvent) => {
         if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
           setOpen(false)
         }
       }
-      document.addEventListener('mousedown', onDown)
-      return () => document.removeEventListener('mousedown', onDown)
+      document.addEventListener('pointerdown', onDown)
+      return () => document.removeEventListener('pointerdown', onDown)
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open])
+    }, [open, fullscreen])
 
     // Docked view placement via the shared popup helper (B4): top layer, pinned
     // 2dp under the bar at its width, following scroll / resize / layout
@@ -216,7 +338,7 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
     // capped (2/3 of the viewport) in CSS. The scrim stays in the page, under
     // the in-flow bar: in the top layer it would cover the bar itself.
     usePopupPosition({
-      open,
+      open: open && !fullscreen,
       anchorRef: barRef,
       popupRef: viewRef,
       side: 'bottom',
@@ -229,12 +351,14 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
     const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
       if (!isControlled) setInternal(event.target.value)
       onChange?.(event, event.target.value)
+      // APG combobox: typing reopens a view that Escape closed.
+      if (hasView && !open) setOpen(true)
     }
 
     /** Focusable, enabled elements inside the view, in DOM order. */
     const getItems = () =>
       Array.from(
-        viewRef.current?.querySelectorAll<HTMLElement>(
+        (fullscreen ? fsResultsRef : viewRef).current?.querySelectorAll<HTMLElement>(
           'button, a[href], input, select, textarea, [tabindex]',
         ) ?? [],
       ).filter(
@@ -246,7 +370,7 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
 
     const focusInput = () => {
       suppressOpenRef.current = true
-      inputElRef.current?.focus()
+      ;(fullscreen ? fsInputRef : inputElRef).current?.focus()
       suppressOpenRef.current = false
     }
 
@@ -277,13 +401,36 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
       }
     }
 
+    /** The full-screen view's header input (the bar stays inert under it). */
+    const handleFsKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+      onKeyDown?.(event)
+      if (event.defaultPrevented) return
+      switch (event.key) {
+        case 'Enter':
+          if (event.nativeEvent.isComposing || event.keyCode === 229) return
+          onSearch?.(current)
+          break
+        case 'Escape':
+          // Collapse only — no native `type="search"` clear.
+          event.preventDefault()
+          event.stopPropagation()
+          setOpen(false)
+          break
+        case 'ArrowDown':
+          event.preventDefault()
+          getItems()[0]?.focus()
+          break
+      }
+    }
+
     const handleViewKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
       if (event.defaultPrevented) return
       if (event.key === 'Escape') {
         event.preventDefault()
         event.stopPropagation()
         setOpen(false)
-        focusInput()
+        // The full-screen view returns focus to the bar on close.
+        if (!fullscreen) focusInput()
         return
       }
       const keys = ['ArrowDown', 'ArrowUp', 'Home', 'End']
@@ -307,11 +454,15 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
         role="search"
         data-disabled={disabled || undefined}
         data-open={open || undefined}
+        data-layout={fullscreen && hasView ? 'fullscreen' : undefined}
+        data-expanded-once={(fullscreen && expandedOnce) || undefined}
         className={clsx(styles.wrapper, className)}
-        onPointerDownCapture={() => {
+        onPointerDownCapture={(event) => {
+          rest.onPointerDownCapture?.(event)
           pointerDownRef.current = true
         }}
-        onPointerUpCapture={() => {
+        onPointerUpCapture={(event) => {
+          rest.onPointerUpCapture?.(event)
           // After the press's focus changes have settled.
           setTimeout(() => {
             pointerDownRef.current = false
@@ -321,14 +472,15 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
           // Close when focus leaves the component (Tab-out). Pointer presses
           // inside it (non-focusable result areas, the scrim) and window
           // switches (document loses focus) don't count.
-          if (!open) return
+          // (The full-screen view traps focus itself.)
+          if (!open || fullscreen) return
           const next = event.relatedTarget as Node | null
           if (next && wrapperRef.current?.contains(next)) return
           if (!next && (pointerDownRef.current || !document.hasFocus())) return
           setOpen(false)
         }}
       >
-        {hasView && (
+        {hasView && !fullscreen && (
           <div
             className={styles.scrim}
             aria-hidden="true"
@@ -343,12 +495,17 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
           data-focus-visible={focusVisible || undefined}
           onClick={(event) => {
             // Clicking the bar outside the input / slot controls focuses the
-            // input, like a text field container.
+            // input, like a text field container. With the full-screen
+            // layout, a click on the field (input included) expands it.
             const input = inputElRef.current
-            if (!input || event.target === input) return
+            if (!input) return
             const target = event.target as Element
-            if (target.closest('button, a[href], input, [role="button"], [tabindex]')) return
-            input.focus()
+            const onField =
+              target === input ||
+              !target.closest('button, a[href], input, [role="button"], [tabindex]')
+            if (!onField) return
+            if (target !== input) input.focus()
+            if (fullscreen && hasView && !open && !disabled) setOpen(true)
           }}
         >
           {startIcon !== false && (
@@ -375,13 +532,38 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
             disabled={disabled}
             {...(autoFocus !== undefined && { autoFocus })}
             {...(inputMode !== undefined && { inputMode })}
-            {...(hasView && {
-              role: 'combobox',
-              'aria-expanded': Boolean(open),
-              'aria-controls': viewId,
-              'aria-autocomplete': 'list' as const,
-            })}
+            {...(hasView &&
+              (fullscreen
+                ? {
+                    // Opens a modal search view (the dialog holds its own
+                    // combobox for the results).
+                    role: 'combobox',
+                    'aria-expanded': Boolean(open),
+                    'aria-controls': dialogId,
+                    'aria-haspopup': 'dialog' as const,
+                  }
+                : {
+                    role: 'combobox',
+                    'aria-expanded': Boolean(open),
+                    'aria-controls': viewId,
+                    'aria-autocomplete': 'list' as const,
+                  }))}
             onChange={handleChange}
+            onPointerDown={(event) => {
+              inputProps?.onPointerDown?.(event)
+              // A press on the already-focused input (no focus event) reopens
+              // a view that Escape closed; an unfocused one opens on focus.
+              if (
+                hasView &&
+                !fullscreen &&
+                !open &&
+                !disabled &&
+                event.button === 0 &&
+                document.activeElement === event.currentTarget
+              ) {
+                setOpen(true)
+              }
+            }}
             onKeyDown={handleKeyDown}
             onBlur={(event) => {
               setFocusVisible(false)
@@ -390,7 +572,11 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
             onFocus={(event) => {
               setFocusVisible(!pointerDownRef.current)
               onFocus?.(event)
-              if (hasView && !open && !suppressOpenRef.current) setOpen(true)
+              // The full-screen view is modal: focus alone (Tab, or focus
+              // returning on collapse) never opens it — a click, typing or
+              // ArrowDown does (Compose: in keyboard mode focus doesn't
+              // expand either; a click on the collapsed field does).
+              if (hasView && !open && !suppressOpenRef.current && !fullscreen) setOpen(true)
             }}
           />
           {endIcon != null && (
@@ -399,7 +585,80 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
           <Ripple disabled={disabled} className={styles.stateLayer} />
           <span aria-hidden="true" className={styles.focusRing} />
         </div>
-        {hasView && (
+        {hasView && fullscreen && (
+          <div
+            ref={overlayRef}
+            className={styles.fullscreen}
+            data-open={open || undefined}
+          >
+            <div className={styles.fsSurface} aria-hidden="true" />
+            <div
+              ref={dialogRef}
+              id={dialogId}
+              role="dialog"
+              aria-modal="true"
+              aria-label={inputProps?.['aria-label'] ?? placeholder}
+              tabIndex={-1}
+              className={styles.fsDialog}
+            >
+              <div
+                className={clsx(styles.bar, styles.fsHeader)}
+                data-has-start=""
+                data-has-end={endIcon != null || undefined}
+                onClick={(event) => {
+                  const input = fsInputRef.current
+                  if (!input || event.target === input) return
+                  const target = event.target as Element
+                  if (target.closest('button, a[href], input, [role="button"], [tabindex]')) return
+                  input.focus()
+                }}
+              >
+                <span className={clsx(styles.slot, styles.leading)}>
+                  <IconButton
+                    variant="standard"
+                    aria-label={backLabel}
+                    icon={<ArrowBackIcon className={styles.backIcon} />}
+                    onClick={() => setOpen(false)}
+                  />
+                </span>
+                {/* No `id` / `name` from the bar's input: this field is a
+                    second view of the same query, not a form control. */}
+                <input
+                  {...inputProps}
+                  id={undefined}
+                  ref={fsInputRef}
+                  type="search"
+                  className={styles.input}
+                  value={current}
+                  placeholder={placeholder}
+                  {...(inputMode !== undefined && { inputMode })}
+                  role="combobox"
+                  aria-expanded={open}
+                  aria-controls={fsResultsId}
+                  aria-autocomplete="list"
+                  data-autofocus=""
+                  onChange={handleChange}
+                  onKeyDown={handleFsKeyDown}
+                />
+                {endIcon != null && (
+                  <span className={clsx(styles.slot, styles.trailing)}>{endIcon}</span>
+                )}
+              </div>
+              <div
+                ref={fsResultsRef}
+                id={fsResultsId}
+                className={styles.fsResults}
+                onKeyDown={handleViewKeyDown}
+              >
+                {children}
+              </div>
+              <span role="status" className={styles.visuallyHidden}>
+                {open ? suggestionsLabel : ''}
+              </span>
+            </div>
+          </div>
+        )}
+        {hasView && !fullscreen && (
           <div
             ref={viewRef}
             id={viewId}
@@ -410,7 +669,7 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
             <div className={styles.results}>{children}</div>
           </div>
         )}
-        {hasView && (
+        {hasView && !fullscreen && (
           <span role="status" className={styles.visuallyHidden}>
             {open ? suggestionsLabel : ''}
           </span>

@@ -5,6 +5,8 @@ import { TextField } from './TextField'
 import SearchIcon from '@material-symbols/svg-400/outlined/search.svg?react'
 import ClearIcon from '@material-symbols/svg-400/outlined/close.svg?react'
 import VisibilityIcon from '@material-symbols/svg-400/outlined/visibility.svg?react'
+import VisibilityOffIcon from '@material-symbols/svg-400/outlined/visibility_off.svg?react'
+import { IconButton } from '../IconButton'
 
 const meta = {
   title: 'Components/TextField',
@@ -21,6 +23,12 @@ const meta = {
       control: 'inline-radio',
       options: ['filled', 'outlined'],
     },
+    labelPlacement: {
+      control: 'inline-radio',
+      options: ['floating', 'above'],
+    },
+    shrinkLabel: { control: 'boolean' },
+    tonal: { control: 'boolean' },
     error: { control: 'boolean' },
     disabled: { control: 'boolean' },
     multiline: { control: 'boolean' },
@@ -127,29 +135,30 @@ export const Multiline: Story = {
   },
 }
 
+/** Secure field recipe (Compose `SecureTextField`, ruling B44): a
+ * `type="password"` input with a show / hide `IconButton` toggle in
+ * `endIcon`. The toggle keeps the fixed name "Show password" and reports
+ * its state with `aria-pressed`; `aria-controls` points at the input. */
 export const Password: Story = {
   render: (args) => {
     const [visible, setVisible] = useState(false)
     return (
       <TextField
         {...args}
+        id="password-field"
         type={visible ? 'text' : 'password'}
+        autoComplete="current-password"
         endIcon={
-          <button
-            type="button"
-            onClick={() => setVisible((v) => !v)}
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              cursor: 'pointer',
-              color: 'inherit',
-              display: 'flex',
-            }}
-            aria-label={visible ? 'Hide password' : 'Show password'}
-          >
-            {<VisibilityIcon />}
-          </button>
+          <IconButton
+            variant="standard"
+            toggle
+            selected={visible}
+            onChange={(_event, next) => setVisible(next)}
+            icon={<VisibilityIcon />}
+            selectedIcon={<VisibilityOffIcon />}
+            aria-label="Show password"
+            aria-controls="password-field"
+          />
         }
       />
     )
@@ -158,6 +167,58 @@ export const Password: Story = {
     variant: 'outlined',
     label: 'Password',
   },
+}
+
+/** `labelPlacement="above"` (Compose `TextFieldLabelPosition.Above`): the
+ * label sits minimized above the container, which lays out like a
+ * label-less field — no outlined notch, placeholder always visible. */
+export const LabelAbove: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <TextField {...args} variant="filled" label="Filled" placeholder="Placeholder" />
+      <TextField {...args} variant="outlined" label="Outlined" placeholder="Placeholder" />
+      <TextField {...args} variant="filled" label="With icons" required startIcon={<SearchIcon />} endIcon={<ClearIcon />} defaultValue="Value" />
+      <TextField {...args} variant="outlined" label="With icons" required startIcon={<SearchIcon />} endIcon={<ClearIcon />} defaultValue="Value" supportingText="Supporting text" />
+      <TextField {...args} variant="outlined" label="Error" error errorText="Error message" defaultValue="Invalid" />
+      <TextField {...args} variant="outlined" label="Disabled" disabled defaultValue="Disabled value" />
+    </div>
+  ),
+  args: { labelPlacement: 'above' },
+}
+
+/** `shrinkLabel` (Compose `Inside` / `Cutout(isAlwaysMinimized = true)`):
+ * the floating label stays minimized while empty, so the placeholder and
+ * prefix / suffix show alongside it. */
+export const ShrinkLabel: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <TextField {...args} variant="filled" label="Filled" placeholder="Placeholder" />
+      <TextField {...args} variant="outlined" label="Outlined" placeholder="Placeholder" />
+      <TextField {...args} variant="filled" label="Amount" prefixText="$" suffixText=".00" />
+      <TextField {...args} variant="outlined" label="With icon" startIcon={<SearchIcon />} placeholder="Search" />
+    </div>
+  ),
+  args: { shrinkLabel: true },
+}
+
+/** `tonal` (experimental — Compose `tonalColors()` + `roundedShape`, still
+ * `TODO(b/448727879)` upstream): 12dp rounded container; filled has no
+ * indicator, outlined keeps an outline-variant border with the label
+ * inside the container. */
+export const Tonal: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <TextField {...args} variant="filled" label="Filled tonal" />
+      <TextField {...args} variant="filled" label="With icons" startIcon={<SearchIcon />} endIcon={<ClearIcon />} defaultValue="Value" supportingText="Supporting text" />
+      <TextField {...args} variant="filled" label="Error" error errorText="Error message" defaultValue="Invalid" />
+      <TextField {...args} variant="filled" label="Disabled" disabled defaultValue="Disabled value" />
+      <TextField {...args} variant="outlined" label="Outlined tonal" />
+      <TextField {...args} variant="outlined" label="With icons" startIcon={<SearchIcon />} endIcon={<ClearIcon />} defaultValue="Value" supportingText="Supporting text" />
+      <TextField {...args} variant="outlined" label="Error" error errorText="Error message" defaultValue="Invalid" />
+      <TextField {...args} variant="outlined" label="Disabled" disabled defaultValue="Disabled value" />
+    </div>
+  ),
+  args: { tonal: true },
 }
 
 export const AllVariants: Story = {

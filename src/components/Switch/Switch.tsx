@@ -1,7 +1,9 @@
+'use client'
+
 import {
   forwardRef,
   useCallback,
-  useState,
+  useRef,
   type ChangeEvent,
   type InputHTMLAttributes,
   type KeyboardEvent,
@@ -9,6 +11,9 @@ import {
   type Ref,
 } from 'react'
 import clsx from 'clsx'
+import { assignRef } from '../../internal/assignRef'
+import { syncCheckedToDefault, useFormReset } from '../../internal/useFormReset'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './Switch.module.css'
 
 export interface SwitchProps
@@ -50,15 +55,37 @@ export const Switch = forwardRef<HTMLSpanElement, SwitchProps>(
       icons = false,
       disabled = false,
       className,
+      style,
       onKeyDown,
       inputRef,
       ...rest
     },
     forwardedRef,
   ) {
-    const isControlled = selected !== undefined
-    const [internalSelected, setInternalSelected] = useState(defaultSelected)
-    const isSelected = isControlled ? selected : internalSelected
+    const [isSelected, setInternalSelected, isControlled] = useControllableState({
+      value: selected,
+      defaultValue: defaultSelected,
+      name: 'Switch',
+      state: 'selected',
+    })
+
+    const internalInputRef = useRef<HTMLInputElement | null>(null)
+    const setInputRef = useCallback(
+      (node: HTMLInputElement | null) => {
+        internalInputRef.current = node
+        assignRef(inputRef, node)
+      },
+      [inputRef],
+    )
+
+    // Native form reset (#432): restore the uncontrolled default and resync
+    // React's value tracker so the next click still fires onChange.
+    useFormReset(internalInputRef, () => {
+      const input = internalInputRef.current
+      if (!input || isControlled) return
+      syncCheckedToDefault(input)
+      setInternalSelected(input.defaultChecked)
+    })
 
     const handleChange = useCallback(
       (event: ChangeEvent<HTMLInputElement>) => {
@@ -97,9 +124,10 @@ export const Switch = forwardRef<HTMLSpanElement, SwitchProps>(
           disabled && styles.disabled,
           className,
         )}
+        style={style}
       >
         <input
-          ref={inputRef}
+          ref={setInputRef}
           {...rest}
           type="checkbox"
           role="switch"

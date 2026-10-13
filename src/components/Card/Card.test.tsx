@@ -42,6 +42,30 @@ describe('Card', () => {
     expect(onClick).toHaveBeenCalledTimes(3)
   })
 
+  it('activates on Space keyup, not keydown, and ignores key repeat (#423)', () => {
+    const onClick = vi.fn()
+    render(<Card onClick={onClick}>x</Card>)
+    const card = screen.getByRole('button')
+    card.focus()
+    fireEvent.keyDown(card, { key: ' ' })
+    fireEvent.keyDown(card, { key: ' ', repeat: true })
+    fireEvent.keyDown(card, { key: ' ', repeat: true })
+    expect(onClick).not.toHaveBeenCalled()
+    fireEvent.keyUp(card, { key: ' ' })
+    expect(onClick).toHaveBeenCalledTimes(1)
+  })
+
+  it('still calls a consumer onKeyUp', () => {
+    const onKeyUp = vi.fn()
+    render(
+      <Card onClick={() => {}} onKeyUp={onKeyUp}>
+        x
+      </Card>,
+    )
+    fireEvent.keyUp(screen.getByRole('button'), { key: 'a' })
+    expect(onKeyUp).toHaveBeenCalledTimes(1)
+  })
+
   it('does not fire onClick when disabled', async () => {
     const user = userEvent.setup({ pointerEventsCheck: 0 })
     const onClick = vi.fn()

@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import styles from './FocusRing.module.css'
@@ -24,6 +26,10 @@ export function FocusRing({ className }: FocusRingProps) {
       if (surface.matches(':focus-visible')) setVisible(true)
     }
     const hide = () => setVisible(false)
+    // The listeners attach after mount, so pick up a keyboard focus that is
+    // already there (autoFocus, or a ring remounted on a focused control) —
+    // the same check Ripple does (#412).
+    show()
 
     surface.addEventListener('focus', show)
     surface.addEventListener('blur', hide)

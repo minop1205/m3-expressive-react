@@ -1,0 +1,56 @@
+/**
+ * MD3 Select (non-editable exposed dropdown menu). The field reuses the
+ * TextField module (TextField.module.css: container, label, outline, active
+ * indicator, icons, supporting text); this module adds the select-specific
+ * parts. The listbox and its options are shared with Autocomplete
+ * (src/internal/listbox/Listbox.module.css). Values: docs/specs/select.md.
+ */
+
+.fullWidth {
+  display: flex;
+  width: 100%;
+}
+
+/* The whole field opens the listbox. */
+.select .field {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.select .combobox {
+  display: block;
+  /* An empty field keeps the input line height (a <div>, not an <input>). */
+  min-height: var(--_input-text-line-height);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: inherit;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.placeholder {
+  color: var(--_input-text-placeholder-color);
+}
+
+/* ExposedDropdownMenuDefaults.TrailingIcon: ArrowDropDown, rotate(180f)
+   while expanded — instant, as in Compose. */
+.select[data-open] .arrow svg {
+  transform: rotate(180deg);
+}
+
+/* The form control: invisible, inert, and laid over the bottom edge of the
+   field so the browser's validation bubble points at it. */
+.nativeInput {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  width: 100%;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}

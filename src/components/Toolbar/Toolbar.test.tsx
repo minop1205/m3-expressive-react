@@ -33,6 +33,21 @@ describe('Toolbar', () => {
     expect(bar).toHaveAttribute('aria-orientation', 'vertical')
   })
 
+  it('removes the floating elevation with disableElevation (B41)', async () => {
+    const { container, rerender } = render(
+      <Toolbar variant="floating" disableElevation aria-label="Edit">
+        <IconButton icon={icon} aria-label="Star" />
+      </Toolbar>,
+    )
+    expect(screen.getByRole('toolbar')).toHaveAttribute('data-disable-elevation')
+    expect(await axe(container)).toHaveNoViolations()
+    rerender(<Toolbar variant="floating" aria-label="Edit" />)
+    expect(screen.getByRole('toolbar')).not.toHaveAttribute('data-disable-elevation')
+    // Docked toolbars have no elevation, so the flag is not emitted.
+    rerender(<Toolbar disableElevation aria-label="Edit" />)
+    expect(screen.getByRole('toolbar')).not.toHaveAttribute('data-disable-elevation')
+  })
+
   it('supports the vibrant color scheme', () => {
     render(<Toolbar color="vibrant" aria-label="v" />)
     expect(screen.getByRole('toolbar')).toHaveAttribute('data-color', 'vibrant')
@@ -292,6 +307,80 @@ describe('Toolbar', () => {
       expect(bar).toHaveAttribute('inert')
       expect(bar).toHaveAttribute('data-hidden', 'true')
       expect(bar).not.toHaveAttribute('hidden')
+    })
+
+    it('hidden: moves focus out before going inert (#420)', () => {
+      const { rerender } = render(
+        <Toolbar aria-label="t">
+          <IconButton icon={icon} aria-label="B" variant="standard" />
+        </Toolbar>,
+      )
+      const bar = screen.getByRole('toolbar')
+      screen.getByRole('button', { name: 'B' }).focus()
+      rerender(
+        <Toolbar aria-label="t" hidden>
+          <IconButton icon={icon} aria-label="B" variant="standard" />
+        </Toolbar>,
+      )
+      expect(bar).toHaveAttribute('inert')
+      expect(bar.contains(document.activeElement)).toBe(false)
+    })
+
+    it('exitAlways: stays visible while it holds keyboard focus (#420)', async () => {
+      // jsdom never matches :focus-visible; treat focus as keyboard focus.
+      const matches = Element.prototype.matches
+      const spy = vi
+        .spyOn(Element.prototype, 'matches')
+        .mockImplementation(function (this: Element, selector: string) {
+          return selector === ':focus-visible'
+            ? this === document.activeElement
+            : matches.call(this, selector)
+        })
+      const rect = vi
+        .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+        .mockImplementation(function (this: HTMLElement) {
+          if (this.getAttribute('role') !== 'toolbar') {
+            return { top: 0, bottom: 500, left: 0, right: 400 } as DOMRect
+          }
+          const offset = parseFloat(this.style.getPropertyValue('--_hide-offset')) || 0
+          return { top: 436 + offset, bottom: 500 + offset, left: 0, right: 400 } as DOMRect
+        })
+      try {
+        render(<Scroller variant="docked" scrollBehavior="exitAlways" />)
+        const bar = screen.getByRole('toolbar')
+        screen.getByRole('button', { name: 'B' }).focus()
+        scrollTo(300)
+        await new Promise((r) => setTimeout(r, 50))
+        expect(bar).not.toHaveAttribute('inert')
+        expect(bar.style.getPropertyValue('--_hide-offset')).toBe('0px')
+        expect(screen.getByRole('button', { name: 'B' })).toHaveFocus()
+      } finally {
+        rect.mockRestore()
+        spy.mockRestore()
+      }
+    })
+
+    it('exitAlways: releases pointer focus before hiding (#420)', async () => {
+      const rect = vi
+        .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+        .mockImplementation(function (this: HTMLElement) {
+          if (this.getAttribute('role') !== 'toolbar') {
+            return { top: 0, bottom: 500, left: 0, right: 400 } as DOMRect
+          }
+          const offset = parseFloat(this.style.getPropertyValue('--_hide-offset')) || 0
+          return { top: 436 + offset, bottom: 500 + offset, left: 0, right: 400 } as DOMRect
+        })
+      try {
+        render(<Scroller variant="docked" scrollBehavior="exitAlways" />)
+        const bar = screen.getByRole('toolbar')
+        // Focus without :focus-visible (as after a mouse click).
+        screen.getByRole('button', { name: 'B' }).focus()
+        scrollTo(300)
+        await waitFor(() => expect(bar).toHaveAttribute('inert'))
+        expect(bar.contains(document.activeElement)).toBe(false)
+      } finally {
+        rect.mockRestore()
+      }
     })
   })
 

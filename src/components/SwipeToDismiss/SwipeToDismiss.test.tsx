@@ -205,6 +205,58 @@ describe('SwipeToDismiss', () => {
     })
   })
 
+  describe('stale presses and dismissed content (#417)', () => {
+    /** A mouse pointer event with an explicit `buttons` state. */
+    function mouse(el: HTMLElement, type: string, clientX: number, buttons: number) {
+      const event = new MouseEvent(type, { clientX, buttons, bubbles: true })
+      Object.defineProperty(event, 'pointerType', { value: 'mouse' })
+      fireEvent(el, event)
+    }
+
+    it('drops a mouse press released outside the row instead of dragging on hover', () => {
+      render(
+        <SwipeToDismiss>
+          <span>row</span>
+        </SwipeToDismiss>,
+      )
+      const content = contentOf('row')
+      mouse(content, 'pointerdown', 100, 1)
+      // The button is released outside: no pointerup reaches the row.
+      mouse(content, 'pointermove', 160, 0)
+      expect(content.style.transform).toBe('translateX(0px)')
+      expect(content).not.toHaveAttribute('data-dragging')
+    })
+
+    it('still drags while the mouse button is held', () => {
+      render(
+        <SwipeToDismiss>
+          <span>row</span>
+        </SwipeToDismiss>,
+      )
+      const content = contentOf('row')
+      mouse(content, 'pointerdown', 100, 1)
+      mouse(content, 'pointermove', 130, 1)
+      expect(content.style.transform).toBe('translateX(22px)')
+    })
+
+    it('makes dismissed content inert and restores it when settled back', () => {
+      const { rerender } = render(
+        <SwipeToDismiss dismissed="startToEnd">
+          <span>row</span>
+          <button>action</button>
+        </SwipeToDismiss>,
+      )
+      expect(contentOf('row')).toHaveAttribute('inert')
+      rerender(
+        <SwipeToDismiss dismissed={null}>
+          <span>row</span>
+          <button>action</button>
+        </SwipeToDismiss>,
+      )
+      expect(contentOf('row')).not.toHaveAttribute('inert')
+    })
+  })
+
   describe('lifecycle', () => {
     it('fires onDismissedChange at release and onDismiss after the exit transition', () => {
       transitionMs = 300

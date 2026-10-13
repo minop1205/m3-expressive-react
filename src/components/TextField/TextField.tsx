@@ -1,3 +1,5 @@
+'use client'
+
 import {
   forwardRef,
   useCallback,
@@ -9,6 +11,7 @@ import {
   type ChangeEventHandler,
   type FocusEvent,
   type FocusEventHandler,
+  type InputEvent,
   type HTMLAttributes,
   type InputHTMLAttributes,
   type MouseEvent,
@@ -17,9 +20,20 @@ import {
   type TextareaHTMLAttributes,
 } from 'react'
 import clsx from 'clsx'
+import { INTERACTIVE_SELECTOR } from '../../internal/isFromNestedInteractive'
+import { useFormReset } from '../../internal/useFormReset'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './TextField.module.css'
 
 export type TextFieldVariant = 'filled' | 'outlined'
+
+/**
+ * Where the label sits: `'floating'` — inside the container, resting in the
+ * input line and minimizing on focus / value (outlined: cutting into the
+ * border); `'above'` — always minimized, above the container (Compose
+ * `TextFieldLabelPosition.Above`).
+ */
+export type TextFieldLabelPlacement = 'floating' | 'above'
 
 export interface TextFieldProps
   extends Omit<
@@ -28,8 +42,39 @@ export interface TextFieldProps
   > {
   /** Container style. @default 'filled' */
   variant?: TextFieldVariant
-  /** Floating label; rendered with a trailing `*` when `required`. */
+  /**
+   * Expressive tonal style (Compose `TextFieldDefaults.tonalColors()` /
+   * `OutlinedTextFieldDefaults.tonalColors()` with `roundedShape`): a 12dp
+   * rounded container, no active indicator on `filled` (surface-container
+   * fill, error-container in error) and an outline-variant border on
+   * `outlined` (transparent container, label inside the container rather than
+   * notched into the border). The focused label stays on-surface-variant.
+   *
+   * @experimental Compose still marks these values
+   * `TODO(b/448727879)` (pending real tokens), so the look may change in a
+   * minor release when the spec settles.
+   * @default false
+   */
+  tonal?: boolean
+  /** Field label; rendered with a trailing `*` when `required`. */
   label?: string
+  /**
+   * Label position. `'floating'` keeps the label inside the container (it
+   * rests in the input line and minimizes on focus or value; the outlined
+   * variant notches the border). `'above'` draws it minimized above the
+   * container — no notch — and the field lays out like a label-less one
+   * (Compose `TextFieldLabelPosition.Above`).
+   * @default 'floating'
+   */
+  labelPlacement?: TextFieldLabelPlacement
+  /**
+   * Keep the floating label minimized even while the field is empty and
+   * unfocused, so the placeholder and prefix / suffix show alongside it
+   * (Compose `Inside` / `Cutout(isAlwaysMinimized = true)`; MUI's `shrink`).
+   * No effect with `labelPlacement="above"`, which is always minimized.
+   * @default false
+   */
+  shrinkLabel?: boolean
   /** Helper line below the field. Replaced by `errorText` while in error. */
   supportingText?: string
   /** Shown instead of `supportingText` (with `role="alert"`) when `error` is set. */
@@ -66,7 +111,9 @@ export interface TextFieldProps
    * `inputProps` keys — the controlled `value` / `onChange` / `onFocus` /
    * `onBlur`, `id`, `className`, and every dedicated input prop the
    * component sets (`type`, `name`, `placeholder`, `required`, `readOnly`,
-   * `autoComplete`, `maxLength`, `rows`, …).
+   * `autoComplete`, `maxLength`, `rows`, …). Exceptions: `aria-describedby`
+   * is merged (the field's own ids first), and an `onInput` handler is
+   * called after the component's own.
    */
   inputProps?:
     | InputHTMLAttributes<HTMLInputElement>
@@ -83,7 +130,15 @@ export interface TextFieldProps
   onFocus?: FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>
   /** Blur handler for the input / textarea. */
   onBlur?: FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>
-  /** Native input `type` (single-line only). @default 'text' */
+  /**
+   * Native input `type` (single-line only). For a password field (Compose
+   * `SecureTextField`) use `type="password"` with an `autoComplete` of
+   * `"current-password"` / `"new-password"`, and put a show / hide toggle in
+   * `endIcon`: an `IconButton variant="standard" toggle` labelled
+   * "Show password" (the label stays fixed; `aria-pressed` carries the
+   * state) that switches `type` between `'password'` and `'text'`.
+   * @default 'text'
+   */
   type?: string
   /** Native input `name`. */
   name?: string
@@ -103,11 +158,12 @@ const defaultCounterLabel = (length: number, maxLength: number) =>
   `Character count: ${length} of ${maxLength}`
 
 /**
- * Material Design 3 Text field (filled / outlined).
+ * Material Design 3 Text field (filled / outlined, optionally `tonal`).
  *
  * A single-line `<input>` — or auto-growing `<textarea>` with `multiline` —
  * wrapped in the MD3 field anatomy: floating label (outlined variant notches
- * the border), start/end icons, prefix/suffix text, and a supporting
+ * the border; `shrinkLabel` keeps it minimized, `labelPlacement="above"`
+ * moves it above the container), start/end icons, prefix/suffix text, and a supporting
  * line that holds helper text, the error message, and the `maxLength`
  * counter. Value follows the standard controlled (`value` + `onChange`) or
  * uncontrolled (`defaultValue`) input pattern; clicking anywhere on the
@@ -123,7 +179,10 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
   function TextField(
     {
       variant = 'filled',
+      tonal = false,
       label,
+      labelPlacement = 'floating',
+      shrinkLabel = false,
       supportingText,
       errorText,
       error = false,
@@ -165,10 +224,24 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
     const suffixId = `${inputId}-suffix`
 
     const [focused, setFocused] = useState(false)
-    const [internalValue, setInternalValue] = useState(defaultValue ?? '')
-    const isControlled = controlledValue !== undefined
-    const currentValue = isControlled ? controlledValue : internalValue
-    const populated = currentValue.length > 0
+    const [currentValue, setInternalValue, isControlled] = useControllableState({
+      value: controlledValue,
+      defaultValue: defaultValue ?? '',
+      name: 'TextField',
+      state: 'value',
+    })
+    // Uncontrolled semantics: only the initial `defaultValue` counts. Pinning
+    // it keeps a later prop change from rewriting the native default (and
+    // the shown value of a not-yet-edited input) behind the state's back.
+    const [initialDefaultValue] = useState(defaultValue)
+    // Content the value doesn't report: partial number input ("-", "1e" —
+    // `value` is '' but `validity.badInput` is set) and browser autofill
+    // (Chrome's page-load autofill fires no input event, and its preview
+    // isn't readable from script). Either keeps the label floated and the
+    // content visible (#432).
+    const [badInput, setBadInput] = useState(false)
+    const [autofilled, setAutofilled] = useState(false)
+    const populated = currentValue.length > 0 || badInput || autofilled
 
     const internalRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null)
 
@@ -210,6 +283,58 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
       [isControlled, onChange],
     )
 
+    const inputPropsOnInput = inputProps?.onInput as unknown as
+      | ((event: InputEvent<HTMLInputElement & HTMLTextAreaElement>) => void)
+      | undefined
+    // `input` fires for every edit, including ones React's onChange skips
+    // because `value` stays '' (partial number input).
+    const handleInput = useCallback(
+      (event: InputEvent<HTMLInputElement & HTMLTextAreaElement>) => {
+        setBadInput(event.currentTarget.validity?.badInput ?? false)
+        inputPropsOnInput?.(event)
+      },
+      [inputPropsOnInput],
+    )
+
+    // A value set from outside (controlled update, reset) replaces any
+    // partial number input, so re-read the flag rather than keep it stale.
+    useEffect(() => {
+      const el = internalRef.current
+      if (el) setBadInput(el.validity?.badInput ?? false)
+    }, [currentValue])
+
+    // Autofill detection (MUI's technique): `.input:-webkit-autofill` runs the
+    // no-op `autofillStart` keyframes, and leaving autofill runs
+    // `autofillCancel` (TextField.module.css). A native listener, because
+    // React may bind a vendor-prefixed animation event name.
+    useEffect(() => {
+      const el = internalRef.current
+      if (!el) return
+      const handleAnimationStart = (event: Event) => {
+        const { animationName } = event as globalThis.AnimationEvent
+        if (animationName === styles.autofillStart) setAutofilled(true)
+        else if (animationName === styles.autofillCancel) setAutofilled(false)
+      }
+      el.addEventListener('animationstart', handleAnimationStart)
+      return () => el.removeEventListener('animationstart', handleAnimationStart)
+    }, [multiline])
+
+    // Native form reset (#432). The uncontrolled input is natively
+    // uncontrolled (`defaultValue`), so the browser restores the default;
+    // mirror it in state so the label, counter and `populated` follow.
+    // Assigning the value up front (the reset event precedes the reset)
+    // also resyncs React's value tracker, so retyping the pre-reset value
+    // still fires onChange.
+    useFormReset(internalRef, () => {
+      const el = internalRef.current
+      if (!el) return
+      setBadInput(false)
+      setAutofilled(false)
+      if (isControlled) return
+      el.value = el.defaultValue
+      setInternalValue(el.defaultValue)
+    })
+
     // Auto-resize textarea
     useEffect(() => {
       if (multiline && internalRef.current) {
@@ -222,7 +347,22 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
     const handleContainerClick = useCallback(
       (event: MouseEvent<HTMLDivElement>) => {
         onClick?.(event)
-        internalRef.current?.focus()
+        // Leave clicks (and Enter-generated clicks) on interactive icon slots —
+        // a visibility toggle, a clear button, the date picker toggle — to
+        // those controls instead of pulling focus into the input (#414). The
+        // input itself and the field's own <label> still focus it.
+        const input = internalRef.current
+        const target = event.target instanceof Element ? event.target : null
+        const interactive = target?.closest(INTERACTIVE_SELECTOR)
+        if (
+          interactive != null &&
+          interactive !== input &&
+          interactive.tagName !== 'LABEL' &&
+          event.currentTarget.contains(interactive)
+        ) {
+          return
+        }
+        input?.focus()
       },
       [onClick],
     )
@@ -238,22 +378,41 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
 
     // Prefix/suffix are read with the input (m3 a11y: they need their own
     // ids), followed by the supporting line.
+    // Extra ids from `inputProps` are merged after the field's own (#414).
     const describedBy =
       [
         prefixText && prefixId,
         suffixText && suffixId,
         showSupportingText && supportingId,
+        inputProps?.['aria-describedby'],
       ]
         .filter(Boolean)
         .join(' ') || undefined
 
-    const labelText = label ? `${label}${required ? '*' : ''}` : undefined
+    // The required asterisk is visual only: `required` already exposes
+    // aria-required, so keep the `*` out of the accessible name ("Email",
+    // not "Email star").
+    const labelText = label ? (
+      <>
+        {label}
+        {required && <span aria-hidden="true">*</span>}
+      </>
+    ) : undefined
+
+    // `above`: the label leaves the container, which then lays out exactly
+    // like a label-less field (Compose `contentPaddingWithoutLabel`, no
+    // notch).
+    const labelAbove = labelText !== undefined && labelPlacement === 'above'
+    const fieldLabel = labelAbove ? undefined : labelText
 
     const controlProps = {
       ref: setRefs,
       id: inputId,
       className: styles.input,
-      value: currentValue,
+      // Uncontrolled stays natively uncontrolled so form.reset() restores
+      // `defaultValue` (a React-controlled value would also become the
+      // reset default via React's value-attribute syncing).
+      ...(isControlled ? { value: currentValue } : { defaultValue: initialDefaultValue }),
       disabled,
       name,
       placeholder,
@@ -263,6 +422,7 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
       autoFocus,
       inputMode,
       onChange: handleChange,
+      onInput: handleInput,
       onFocus: handleFocus,
       onBlur: handleBlur,
       'aria-invalid': showError || undefined,
@@ -278,6 +438,14 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
     const definedControlProps = Object.fromEntries(
       Object.entries(controlProps).filter(([, v]) => v !== undefined),
     ) as typeof controlProps
+    // The value always comes from the component (controlled `value` or
+    // uncontrolled `defaultValue`), so an `inputProps` value can't sneak in
+    // where the component now leaves the key unset.
+    const {
+      value: _ignoredValue,
+      defaultValue: _ignoredDefaultValue,
+      ...passthroughInputProps
+    } = (inputProps ?? {}) as InputHTMLAttributes<HTMLInputElement>
 
     return (
       <div
@@ -286,17 +454,25 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
         className={clsx(
           styles.textField,
           styles[variant],
+          tonal && styles.tonal,
           focused && styles.focused,
           populated && styles.populated,
           showError && styles.error,
           disabled && styles.disabled,
           startIcon && styles.hasLeadingIcon,
           endIcon && styles.hasTrailingIcon,
-          !label && styles.noLabel,
+          !fieldLabel && styles.noLabel,
+          fieldLabel && shrinkLabel && styles.shrinkLabel,
           className,
         )}
         onClick={handleContainerClick}
       >
+        {labelAbove && (
+          <label className={styles.aboveLabel} htmlFor={inputId}>
+            {labelText}
+          </label>
+        )}
+
         <div className={styles.field}>
           {/* Filled background */}
           {variant === 'filled' && (
@@ -312,8 +488,11 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
             <div className={styles.outline} aria-hidden="true">
               <div className={styles.outlineStart} />
               <div className={styles.outlineNotch}>
-                {labelText && (
-                  <span className={styles.outlineLabel}>{labelText}</span>
+                {/* Tonal outlined keeps the label inside the container
+                    (Compose: use with `TextFieldLabelPosition.Inside`), so
+                    the border has no notch. */}
+                {fieldLabel && !tonal && (
+                  <span className={styles.outlineLabel}>{fieldLabel}</span>
                 )}
               </div>
               <div className={styles.outlineEnd} />
@@ -328,9 +507,9 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
           {/* Middle section: label + content */}
           <div className={styles.middle}>
             {/* Label (positioned absolutely within middle) */}
-            {labelText && (
+            {fieldLabel && (
               <label className={styles.label} htmlFor={inputId}>
-                {labelText}
+                {fieldLabel}
               </label>
             )}
 
@@ -343,13 +522,13 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
               )}
               {multiline ? (
                 <textarea
-                  {...(inputProps as TextareaHTMLAttributes<HTMLTextAreaElement> | undefined)}
+                  {...(passthroughInputProps as TextareaHTMLAttributes<HTMLTextAreaElement>)}
                   {...(definedControlProps as TextareaHTMLAttributes<HTMLTextAreaElement> & { ref: typeof setRefs })}
                   rows={rows}
                 />
               ) : (
                 <input
-                  {...(inputProps as InputHTMLAttributes<HTMLInputElement> | undefined)}
+                  {...passthroughInputProps}
                   {...(definedControlProps as InputHTMLAttributes<HTMLInputElement> & { ref: typeof setRefs })}
                   type={type}
                 />

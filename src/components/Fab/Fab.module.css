@@ -290,6 +290,21 @@
   box-shadow: none;
 }
 
+/* High contrast (forced colors): the container is a fill + shadow, both of
+   which forced colors removes. Draw the edge with an inset outline (no
+   layout change; FocusRing is its own element). */
+@media (forced-colors: active) {
+  .fab {
+    outline: 1px solid ButtonText;
+    outline-offset: -1px;
+  }
+
+  .fab:disabled {
+    outline-color: GrayText;
+    color: GrayText;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fab {
     transition: none;

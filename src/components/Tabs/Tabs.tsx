@@ -1,25 +1,36 @@
+'use client'
+
 import {
+  cloneElement,
   createContext,
   forwardRef,
+  isValidElement,
   useCallback,
   useContext,
   useEffect,
-  useLayoutEffect,
   useRef,
   type ButtonHTMLAttributes,
   type FocusEvent,
   type HTMLAttributes,
   type KeyboardEvent,
   type MouseEvent,
+  type ReactElement,
   type ReactNode,
   useState,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import { useControllableState } from '../../internal/useControllableState'
+import type { BadgeProps } from '../Badge/Badge'
+import { badgeAccessibleLabel } from '../../internal/badgeLabel'
 import styles from './Tabs.module.css'
 
 export type TabsVariant = 'primary' | 'secondary'
+
+/** Where a `Tab`'s icon sits relative to its label. */
+export type TabIconPosition = 'top' | 'start'
 
 interface TabsContextValue {
   value: string
@@ -52,7 +63,11 @@ export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChang
   value?: string
   /** Uncontrolled initial tab value. */
   defaultValue?: string
-  /** Fires with the triggering event and the newly selected tab value. */
+  /**
+   * Fires with the triggering event and the newly selected tab value. Not
+   * fired when the selected tab is activated again, or when the tab's own
+   * `onClick` called `event.preventDefault()`.
+   */
   onChange?: (event: MouseEvent<HTMLButtonElement>, value: string) => void
   /** Indicator style. @default 'primary' */
   variant?: TabsVariant
@@ -125,9 +140,12 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
     }
     tabs[nextIndex].focus()
   }
-  const isControlled = value !== undefined
-  const [uncontrolled, setUncontrolled] = useState(defaultValue ?? '')
-  const current = isControlled ? value : uncontrolled
+  const [current, setUncontrolled, isControlled] = useControllableState({
+    value,
+    defaultValue: defaultValue ?? '',
+    name: 'Tabs',
+    state: 'value',
+  })
   const preferredStop = focusedValue ?? current
 
   // Fallback tab stop: when the preferred stop matches no enabled tab (no
@@ -143,6 +161,8 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
   }, [])
   const [fallbackStop, setFallbackStop] = useState<string | null>(null)
   const handleChange = (event: MouseEvent<HTMLButtonElement>, v: string) => {
+    // Re-selecting the selected tab is a no-op (MUI / Compose).
+    if (v === current) return
     if (!isControlled) setUncontrolled(v)
     onChange?.(event, v)
   }
@@ -219,11 +239,11 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
     [current],
   )
 
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     layoutIndicator('auto')
   })
 
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     const list = listRef.current
     if (!list) return
     const enabled = Array.from(
@@ -299,13 +319,39 @@ export interface TabProps
   value: string
   /** Tab label. */
   label?: ReactNode
-  /** Optional icon (shown above the label). */
+  /** Optional icon (24dp), above the label or before it (see `iconPosition`). */
   icon?: ReactNode
+  /**
+   * Icon placement: `'top'` stacks the icon above the label (64dp tab),
+   * `'start'` puts it before the label with an 8dp gap (48dp tab, Compose
+   * `LeadingIconTab`).
+   * @default 'top'
+   */
+  iconPosition?: TabIconPosition
+  /**
+   * A `<Badge>` (without children). It is placed on the icon, or next to the
+   * label when the tab has no icon, and takes no layout space (the active
+   * indicator still follows the label / icon). Its accessible text (the
+   * Badge `label`, or the default "New notification" / "{n} new
+   * notifications") is read after the tab label.
+   */
+  badge?: ReactElement<BadgeProps>
 }
 
 /** A single tab; must be rendered inside `Tabs`. */
 export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
-  { value, label, icon, disabled = false, className, onClick, onFocus, ...rest },
+  {
+    value,
+    label,
+    icon,
+    iconPosition = 'top',
+    badge,
+    disabled = false,
+    className,
+    onClick,
+    onFocus,
+    ...rest
+  },
   ref,
 ) {
   const ctx = useContext(TabsContext)
@@ -321,6 +367,44 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
   if (!ctx) throw new Error('Tab must be used within <Tabs>')
   const selected = ctx.value === value
 
+  const hasIcon = icon != null
+  const hasLabel = label != null
+  // Leading icon: icon + 8dp + label form one content box, which the primary
+  // indicator spans (Compose matchContentSize on LeadingIconTab's Row).
+  const leading = hasIcon && iconPosition === 'start'
+  const contentAttr = leading ? undefined : ''
+  const badgeElement =
+    isValidElement<BadgeProps>(badge) && (hasIcon || hasLabel) ? badge : null
+  // The painted badge is hidden from assistive technology; its text is read
+  // after the label instead (m3 badges/accessibility, as NavigationBar #175).
+  const badgeText = badgeElement ? badgeAccessibleLabel(badgeElement.props) : undefined
+
+  const iconNode = hasIcon && (
+    <span className={styles.icon} aria-hidden="true" data-tab-content={contentAttr}>
+      {icon}
+      {badgeElement &&
+        cloneElement(badgeElement, {
+          className: clsx(badgeElement.props.className, styles.iconBadge),
+        })}
+    </span>
+  )
+  const labelSpan = hasLabel && (
+    <span className={styles.label} data-tab-content={contentAttr}>
+      {label}
+    </span>
+  )
+  const labelNode =
+    badgeElement && !hasIcon ? (
+      <span className={styles.labelGroup}>
+        {labelSpan}
+        <span className={styles.labelBadge} aria-hidden="true">
+          {badgeElement}
+        </span>
+      </span>
+    ) : (
+      labelSpan
+    )
+
   return (
     <button
       ref={setRef}
@@ -331,7 +415,11 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
       tabIndex={ctx.tabStop === value ? 0 : -1}
       disabled={disabled}
       data-selected={selected || undefined}
-      data-with-icon={icon != null || undefined}
+      // The 64dp stacked height applies only with both an icon and a label
+      // (Compose TabBaselineLayout: LargeTabHeight vs SmallTabHeight, #484);
+      // an icon-only tab stays 48dp.
+      data-with-icon={(hasIcon && hasLabel) || undefined}
+      data-icon-position={leading ? 'start' : undefined}
       className={clsx(styles.tab, className)}
       onFocus={(event) => {
         onFocus?.(event)
@@ -339,19 +427,23 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
       }}
       onClick={(event) => {
         onClick?.(event)
+        // A consumer onClick can veto the selection with preventDefault().
+        if (event.defaultPrevented) return
         ctx.onChange(event, value)
       }}
     >
-      {icon != null && (
-        <span className={styles.icon} aria-hidden="true" data-tab-content="">
-          {icon}
+      {leading ? (
+        <span className={styles.content} data-tab-content="">
+          {iconNode}
+          {labelNode}
         </span>
+      ) : (
+        <>
+          {iconNode}
+          {labelNode}
+        </>
       )}
-      {label != null && (
-        <span className={styles.label} data-tab-content="">
-          {label}
-        </span>
-      )}
+      {badgeText && <span className={styles.visuallyHidden}>{` ${badgeText}`}</span>}
       {!disabled && <Ripple />}
       {!disabled && <FocusRing />}
     </button>

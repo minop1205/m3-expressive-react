@@ -1,7 +1,8 @@
+'use client'
+
 import {
   forwardRef,
   useImperativeHandle,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -10,14 +11,18 @@ import {
   type ReactNode,
   type SyntheticEvent,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import styles from './ButtonGroup.module.css'
 import { usePressWidth } from './usePressWidth'
+import { getItems } from './getItems'
 import {
+  ButtonGroupDisabledContext,
   ButtonGroupSelectionContext,
   type ButtonGroupSelection,
   type ButtonGroupSelectionMode,
 } from './ButtonGroupContext'
+import { useControllableState } from '../../internal/useControllableState'
 
 export type ButtonGroupVariant = 'standard' | 'connected'
 export type ButtonGroupSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
@@ -34,6 +39,10 @@ interface ButtonGroupBaseProps
   size?: ButtonGroupSize
   /** Layout direction. @default 'horizontal' */
   orientation?: ButtonGroupOrientation
+  /** Disable every `Button` / `IconButton` in the group (MUI
+   * `ToggleButtonGroup` parity); an item's own `disabled` still applies.
+   * @default false */
+  disabled?: boolean
   /** `Button` / `IconButton` children (give them a `value` when the group has
    * a `selectionMode`). */
   children?: ReactNode
@@ -85,13 +94,6 @@ export type ButtonGroupProps =
 
 type SelectionValue = string | null | string[]
 
-/** Items = direct `<button>` children, or buttons one wrapper deep (e.g. a Tooltip span). */
-function getItems(root: HTMLElement): HTMLButtonElement[] {
-  return Array.from(
-    root.querySelectorAll<HTMLButtonElement>(':scope > button, :scope > :not(button) > button'),
-  )
-}
-
 /**
  * Material Design 3 (Expressive) Button group — an invisible container that adds
  * padding between buttons and modifies their shape.
@@ -125,6 +127,7 @@ export const ButtonGroup = forwardRef<HTMLDivElement, ButtonGroupProps>(
       defaultValue,
       onChange,
       selectionRequired = false,
+      disabled = false,
       className,
       children,
       onKeyDown,
@@ -142,18 +145,24 @@ export const ButtonGroup = forwardRef<HTMLDivElement, ButtonGroupProps>(
     usePressWidth(rootRef, variant === 'standard' && orientation === 'horizontal')
 
     const multiple = selectionMode === 'multiple'
-    const [internal, setInternal] = useState<SelectionValue>(() => {
-      if (selectionMode === 'none' || defaultValue === undefined) return multiple ? [] : null
-      return defaultValue
+    const [current, setInternal] = useControllableState<SelectionValue>({
+      value,
+      defaultValue:
+        selectionMode === 'none' || defaultValue === undefined
+          ? multiple
+            ? []
+            : null
+          : defaultValue,
+      name: 'ButtonGroup',
+      state: 'value',
     })
-    const current: SelectionValue = value !== undefined ? value : internal
 
     // single: the selected (enabled) item holds the tab stop, else the first
     // enabled item. Resolved from the DOM so wrapped children work too.
     const [tabStop, setTabStop] = useState<string | null>(
       typeof current === 'string' ? current : null,
     )
-    useLayoutEffect(() => {
+    useIsoLayoutEffect(() => {
       if (selectionMode !== 'single' || !rootRef.current) return
       const items = getItems(rootRef.current).filter((el) => !el.disabled)
       const stop = items.find((el) => el.value === current) ?? items[0]
@@ -183,7 +192,7 @@ export const ButtonGroup = forwardRef<HTMLDivElement, ButtonGroupProps>(
             next = v
           }
           if (next !== current) {
-            if (value === undefined) setInternal(next)
+            setInternal(next)
             onChange?.(event, next)
           }
           return Array.isArray(next) ? next.includes(v) : next === v
@@ -261,9 +270,11 @@ export const ButtonGroup = forwardRef<HTMLDivElement, ButtonGroupProps>(
         data-selection-mode={selectionMode === 'none' ? undefined : selectionMode}
         className={clsx(styles.group, className)}
       >
-        <ButtonGroupSelectionContext.Provider value={selection}>
-          {children}
-        </ButtonGroupSelectionContext.Provider>
+        <ButtonGroupDisabledContext.Provider value={disabled}>
+          <ButtonGroupSelectionContext.Provider value={selection}>
+            {children}
+          </ButtonGroupSelectionContext.Provider>
+        </ButtonGroupDisabledContext.Provider>
       </div>
     )
   },

@@ -24,7 +24,7 @@
   inset: auto;
   top: 0;
   left: 0;
-  z-index: 22;
+  z-index: var(--md-sys-z-popup);
   height: auto;
   margin: 0;
   border: 0;
@@ -39,4 +39,12 @@
    the viewport). */
 .field > .popup {
   max-width: calc(100vw - 16px);
+}
+
+/* High contrast (forced colors): the popup's fill and shadow are dropped, so
+   restore the picker surface outline that the reset above removes. */
+@media (forced-colors: active) {
+  .field > .popup {
+    outline: 1px solid CanvasText;
+  }
 }

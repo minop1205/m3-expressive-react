@@ -1,5 +1,5 @@
 import { createRef, useState } from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
@@ -41,6 +41,86 @@ describe('NavigationDrawer', () => {
     expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true')
     await user.keyboard('{Escape}')
     expect(onClose).toHaveBeenCalled()
+  })
+
+  describe('dismissible (B41)', () => {
+    function Dismissible({ onClose }: { onClose?: () => void }) {
+      const [open, setOpen] = useState(false)
+      return (
+        <div>
+          <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+            Menu
+          </button>
+          <NavigationDrawer
+            variant="dismissible"
+            open={open}
+            onClose={() => {
+              onClose?.()
+              setOpen(false)
+            }}
+            defaultValue="b"
+          >
+            <NavigationDrawerItem value="a" icon={Icon} label="Alpha" />
+            <NavigationDrawerItem value="b" icon={Icon} label="Beta" />
+          </NavigationDrawer>
+        </div>
+      )
+    }
+
+    it('is an inline landmark without a scrim, inert while closed', () => {
+      const { container } = render(<Dismissible />)
+      const drawer = screen.getByRole('complementary', { hidden: true })
+      expect(drawer).toHaveAttribute('data-variant', 'dismissible')
+      expect(drawer).not.toHaveAttribute('data-open')
+      expect(drawer).toHaveAttribute('inert')
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      // Rendered in place: the panel is the drawer root, with no overlay / scrim wrapper.
+      expect(drawer.parentElement).toBe(container.firstElementChild)
+      expect(container.querySelector('[class*="scrim"]')).toBeNull()
+    })
+
+    it('opens with focus on the selected item and Escape closes back to the opener', async () => {
+      const user = userEvent.setup()
+      const onClose = vi.fn()
+      render(<Dismissible onClose={onClose} />)
+      const menu = screen.getByRole('button', { name: 'Menu' })
+      await user.click(menu)
+      const drawer = screen.getByRole('complementary')
+      expect(drawer).toHaveAttribute('data-open')
+      expect(drawer).not.toHaveAttribute('inert')
+      expect(screen.getByRole('button', { name: 'Beta' })).toHaveFocus()
+      await user.keyboard('{Escape}')
+      expect(onClose).toHaveBeenCalledTimes(1)
+      expect(drawer).toHaveAttribute('inert')
+      expect(menu).toHaveFocus()
+    })
+
+    it('ignores Escape while closed or when focus is outside', async () => {
+      const user = userEvent.setup()
+      const onClose = vi.fn()
+      render(<Dismissible onClose={onClose} />)
+      const menu = screen.getByRole('button', { name: 'Menu' })
+      menu.focus()
+      await user.keyboard('{Escape}')
+      expect(onClose).not.toHaveBeenCalled()
+    })
+
+    it('does not move focus when it mounts open', () => {
+      render(
+        <NavigationDrawer variant="dismissible" open defaultValue="a">
+          <NavigationDrawerItem value="a" icon={Icon} label="Alpha" />
+        </NavigationDrawer>,
+      )
+      expect(document.body).toHaveFocus()
+    })
+
+    it('has no axe violations (open and closed)', async () => {
+      const user = userEvent.setup()
+      const { container } = render(<Dismissible />)
+      expect(await axe(container)).toHaveNoViolations()
+      await user.click(screen.getByRole('button', { name: 'Menu' }))
+      expect(await axe(container)).toHaveNoViolations()
+    })
   })
 
   it('forwards a ref', () => {
@@ -134,5 +214,90 @@ describe('NavigationDrawer accessible name', () => {
       </NavigationDrawer>,
     )
     expect(screen.getByRole('complementary')).toHaveAccessibleName('Mail folders')
+  })
+})
+
+describe('NavigationDrawer modal surface element (#429)', () => {
+  it('renders the modal dialog as a div, not an aside, and passes axe', async () => {
+    const { container } = render(
+      <NavigationDrawer variant="modal" open value="a" onChange={() => {}}>
+        <NavigationDrawerItem value="a" icon={Icon} label="Inbox" />
+      </NavigationDrawer>,
+    )
+    const dialog = screen.getByRole('dialog')
+    expect(dialog.tagName).toBe('DIV')
+    expect(container.querySelector('aside')).toBeNull()
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('keeps the standard variant an aside landmark', () => {
+    render(
+      <NavigationDrawer value="a" onChange={() => {}}>
+        <NavigationDrawerItem value="a" icon={Icon} label="Inbox" />
+      </NavigationDrawer>,
+    )
+    expect(screen.getByRole('complementary').tagName).toBe('ASIDE')
+  })
+})
+
+describe('NavigationDrawer uncontrolled selection (#421)', () => {
+  it('selects defaultValue and updates on click, still firing onChange', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <NavigationDrawer defaultValue="a" onChange={onChange}>
+        <NavigationDrawerItem value="a" icon={Icon} label="Alpha" />
+        <NavigationDrawerItem value="b" icon={Icon} label="Beta" />
+      </NavigationDrawer>,
+    )
+    expect(screen.getByRole('button', { name: /Alpha/ })).toHaveAttribute('aria-current', 'page')
+    await user.click(screen.getByRole('button', { name: /Beta/ }))
+    expect(onChange).toHaveBeenCalledWith(expect.any(Object), 'b')
+    expect(screen.getByRole('button', { name: /Beta/ })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('button', { name: /Alpha/ })).not.toHaveAttribute('aria-current')
+  })
+
+  it('works with no value at all (nothing selected until clicked)', async () => {
+    const user = userEvent.setup()
+    render(
+      <NavigationDrawer>
+        <NavigationDrawerItem value="a" icon={Icon} label="Alpha" />
+      </NavigationDrawer>,
+    )
+    const alpha = screen.getByRole('button', { name: /Alpha/ })
+    expect(alpha).not.toHaveAttribute('aria-current')
+    await user.click(alpha)
+    expect(alpha).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('a controlled value wins over clicks', async () => {
+    const user = userEvent.setup()
+    render(
+      <NavigationDrawer value="a" onChange={() => {}}>
+        <NavigationDrawerItem value="a" icon={Icon} label="Alpha" />
+        <NavigationDrawerItem value="b" icon={Icon} label="Beta" />
+      </NavigationDrawer>,
+    )
+    await user.click(screen.getByRole('button', { name: /Beta/ }))
+    expect(screen.getByRole('button', { name: /Alpha/ })).toHaveAttribute('aria-current', 'page')
+  })
+})
+
+describe('NavigationDrawer onClose reason (#407)', () => {
+  it('passes escapeKeyDown and backdropClick', async () => {
+    const user = userEvent.setup()
+    const onClose = vi.fn()
+    const { container } = render(
+      <NavigationDrawer variant="modal" open onClose={onClose}>
+        <NavigationDrawerItem value="a" icon={Icon} label="Alpha" />
+      </NavigationDrawer>,
+    )
+    await user.keyboard('{Escape}')
+    expect(onClose).toHaveBeenLastCalledWith(expect.any(KeyboardEvent), 'escapeKeyDown')
+    fireEvent.click(container.querySelector('[class*="scrim"]')!)
+    expect(onClose).toHaveBeenLastCalledWith(
+      expect.objectContaining({ type: 'click' }),
+      'backdropClick',
+    )
   })
 })

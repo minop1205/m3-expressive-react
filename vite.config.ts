@@ -46,7 +46,24 @@ export default defineConfig({
       fileName: moduleFileName,
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      // clsx is a dual CJS/ESM runtime dependency, so consumers resolve
+      // their own copy (#411). @material/material-color-utilities is
+      // ESM-only and stays bundled (dist/vendor) so require() keeps working;
+      // its Apache-2.0 notice ships in THIRD_PARTY_NOTICES.md.
+      external: ['react', 'react-dom', 'react/jsx-runtime', 'clsx'],
+      // Client modules start with 'use client' (React Server Components,
+      // #409). preserveModules keeps the directive at the top of each emitted
+      // module, so the bundler's "module-level directive" notice is noise.
+      // scripts/check-rsc.mjs verifies the output.
+      onLog(level, log, handler) {
+        if (
+          log.code === 'MODULE_LEVEL_DIRECTIVE' &&
+          log.message.includes('use client')
+        ) {
+          return
+        }
+        handler(level, log)
+      },
       output: {
         // One output file per source module: shared code (primitives,
         // internal hooks, theme) is emitted once and shared by every entry.
@@ -71,5 +88,19 @@ export default defineConfig({
     // can hold agent worktrees (full repo copies incl. their node_modules),
     // and the node_modules/dist patterns must match at ANY depth.
     exclude: ['**/node_modules/**', '**/dist/**', 'vrt/**', '.claude/**'],
+    // `npm run test:coverage`. Report-only for now (#425): no thresholds,
+    // so it measures the weak areas without gating CI.
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'html'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.stories.*',
+        'src/**/*.test.*',
+        'src/**/*.d.ts',
+        'src/test/**',
+      ],
+    },
   },
 })

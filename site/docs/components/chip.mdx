@@ -5,8 +5,13 @@ title: Chip
 import { useState } from 'react'
 import Demo from '@site/src/components/Demo'
 import PropsTable from '@site/src/components/PropsTable'
-import { Chip, ChipSet } from 'm3-expressive-react'
-import { EventIcon, StarIcon, AvatarImage } from '@site/src/components/icons/ActionIcons'
+import { Chip, ChipSet, Menu, MenuItem } from 'm3-expressive-react'
+import {
+  EventIcon,
+  StarIcon,
+  AvatarImage,
+  ArrowDropDownIcon,
+} from '@site/src/components/icons/ActionIcons'
 
 # Chip
 
@@ -101,6 +106,62 @@ swapping it for the check.
 />
 ```
 
+### Opening a menu
+
+A filter chip can open a menu with more filtering options. Pass an
+arrow-drop-down as `endIcon` and use the chip as a `Menu` `trigger`: the
+menu sets `aria-haspopup` / `aria-expanded` on the chip, and the arrow turns
+up while the menu is open. `endIcon` is decorative and sits 8dp from the
+label and the edge; a `removable` chip shows its remove button instead.
+Control `selected` yourself — for example, selected once an option is
+picked.
+
+export function PriceFilterDemo() {
+  const [price, setPrice] = useState(null)
+  return (
+    <ChipSet aria-label="Filters">
+      <Menu
+        trigger={
+          <Chip
+            variant="filter"
+            label={price ?? 'Price'}
+            selected={price !== null}
+            endIcon={<ArrowDropDownIcon />}
+          />
+        }
+      >
+        {['$', '$$', '$$$'].map((p) => (
+          <MenuItem key={p} onClick={() => setPrice(p)}>
+            {p}
+          </MenuItem>
+        ))}
+        <MenuItem onClick={() => setPrice(null)}>Any price</MenuItem>
+      </Menu>
+      <Chip variant="filter" label="Open now" />
+    </ChipSet>
+  )
+}
+
+<Demo>
+  <PriceFilterDemo />
+</Demo>
+
+```tsx
+<Menu
+  trigger={
+    <Chip
+      variant="filter"
+      label={price ?? 'Price'}
+      selected={price !== null}
+      endIcon={<ArrowDropDownIcon />}
+    />
+  }
+>
+  <MenuItem onClick={() => setPrice('$')}>$</MenuItem>
+  <MenuItem onClick={() => setPrice('$$')}>$$</MenuItem>
+</Menu>
+```
+
 ## Input chips
 
 Input chips represent user-entered items. `removable` adds a trailing
@@ -184,6 +245,74 @@ a Tooltip.
 </ChipSet>
 ```
 
+### Selection
+
+Give the set a `selectionMode` and each filter (or input) chip a `value`,
+and the set owns the selection through `value` / `defaultValue` /
+`onChange(event, value)` — the same shape as `ButtonGroup` and `List`.
+
+- `selectionMode="single"`: selecting a chip deselects the others — an
+  alternative to segmented buttons, radio buttons or a single-select menu.
+  The value is a `string | null`; add `selectionRequired` to stop the
+  selected chip from being cleared.
+- `selectionMode="multiple"`: the value is a `string[]`.
+
+Chip-level `selected` / `defaultSelected` are ignored on chips the set
+manages; their own `onChange(event, selected)` still fires. Without a
+`selectionMode`, chips manage their own state as before.
+
+export function SingleSelectDemo() {
+  const [size, setSize] = useState('m')
+  return (
+    <ChipSet
+      aria-label="Size"
+      selectionMode="single"
+      value={size}
+      onChange={(event, next) => setSize(next)}
+    >
+      <Chip variant="filter" label="Small" value="s" />
+      <Chip variant="filter" label="Medium" value="m" />
+      <Chip variant="filter" label="Large" value="l" />
+    </ChipSet>
+  )
+}
+
+export function MultipleSelectDemo() {
+  const [diet, setDiet] = useState(['vegan'])
+  return (
+    <ChipSet
+      aria-label="Dietary filters"
+      selectionMode="multiple"
+      value={diet}
+      onChange={(event, next) => setDiet(next)}
+    >
+      <Chip variant="filter" label="Vegetarian" value="vegetarian" />
+      <Chip variant="filter" label="Vegan" value="vegan" />
+      <Chip variant="filter" label="Gluten-free" value="gluten-free" />
+    </ChipSet>
+  )
+}
+
+<Demo>
+  <SingleSelectDemo />
+</Demo>
+
+<Demo>
+  <MultipleSelectDemo />
+</Demo>
+
+```tsx
+<ChipSet
+  aria-label="Size"
+  selectionMode="single"
+  value={size}
+  onChange={(event, next) => setSize(next)}
+>
+  <Chip variant="filter" label="Small" value="s" />
+  <Chip variant="filter" label="Medium" value="m" />
+</ChipSet>
+```
+
 ## Disabled
 
 <Demo>
@@ -209,7 +338,15 @@ a Tooltip.
   enters the set on the last-focused chip, <kbd>←</kbd> / <kbd>→</kbd>
   (mirrored in RTL) move between chips, <kbd>Home</kbd> / <kbd>End</kbd>
   jump to the ends, and disabled chips are skipped. Give it an accessible
-  name with `aria-label` / `aria-labelledby`.
+  name with `aria-label` / `aria-labelledby`. `selectionMode="multiple"`
+  keeps this toolbar of `aria-pressed` chips.
+- `selectionMode="single"` follows the WAI-ARIA radio group pattern: the set
+  is a `role="radiogroup"` and its chips are `role="radio"` with
+  `aria-checked`. <kbd>Tab</kbd> enters on the selected chip, and
+  <kbd>←</kbd> / <kbd>→</kbd> / <kbd>↑</kbd> / <kbd>↓</kbd> (wrapping) and
+  <kbd>Home</kbd> / <kbd>End</kbd> move focus **and** select.
+- A filter chip that opens a `Menu` is a menu button (`aria-haspopup`,
+  `aria-expanded`); its `endIcon` is hidden from assistive technology.
 - Long labels truncate with an ellipsis; the full label remains the
   accessible name.
 

@@ -1,3 +1,5 @@
+'use client'
+
 import {
   forwardRef,
   type FocusEvent,
@@ -12,11 +14,11 @@ import {
   useCallback,
   useContext,
   useId,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
@@ -31,6 +33,7 @@ import {
   isFromNestedInteractive,
 } from '../../internal/isFromNestedInteractive'
 import { assignRef } from '../../internal/assignRef'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './List.module.css'
 
 export type ListVariant = 'standard' | 'segmented'
@@ -174,11 +177,12 @@ export const List = forwardRef<HTMLUListElement, ListProps>(function List(props,
   const multiple = selectionMode === 'multiple'
   const selecting = selectionMode !== 'none'
 
-  const [inner, setInner] = useState<SelectionValue>(
-    () => (defaultValue as SelectionValue | undefined) ?? (multiple ? [] : null),
-  )
-  const controlled = value !== undefined
-  const current = controlled ? value : inner
+  const [current, setInner, controlled] = useControllableState<SelectionValue>({
+    value,
+    defaultValue: (defaultValue as SelectionValue | undefined) ?? (multiple ? [] : null),
+    name: 'List',
+    state: 'value',
+  })
 
   const [tabStop, setTabStop] = useState<string | null>(null)
   const rootRef = useRef<HTMLUListElement | null>(null)
@@ -220,16 +224,23 @@ export const List = forwardRef<HTMLUListElement, ListProps>(function List(props,
     [multiple, controlled],
   )
 
-  // Resolve the roving Tab stop after every render: keep the current one
-  // while it is an enabled row, else the selected row, else the first.
-  useLayoutEffect(() => {
+  // Whether the user has focused a row; until then the Tab stop follows the
+  // selection (also a controlled `value` changed from outside).
+  const userFocusedRef = useRef(false)
+
+  // Resolve the roving Tab stop after every render: before the user has
+  // focused a row, the selected row; otherwise keep the current one while it
+  // is an enabled row. Fall back to the selected row, else the first.
+  useIsoLayoutEffect(() => {
     const root = rootRef.current
     if (!root) return
     const rows = navItems(root).filter(isEnabled)
-    if (rows.some((el) => el.dataset.listNav === tabStop)) return
-    const next =
-      rows.find((el) => el.getAttribute('aria-selected') === 'true' || el.hasAttribute('data-list-selected')) ??
-      rows[0]
+    const selectedRow = rows.find(
+      (el) => el.getAttribute('aria-selected') === 'true' || el.hasAttribute('data-list-selected'),
+    )
+    const followSelection = !userFocusedRef.current && selectedRow !== undefined
+    if (!followSelection && rows.some((el) => el.dataset.listNav === tabStop)) return
+    const next = selectedRow ?? rows[0]
     const id = next?.dataset.listNav ?? null
     if (id !== tabStop) setTabStop(id)
   })
@@ -238,6 +249,7 @@ export const List = forwardRef<HTMLUListElement, ListProps>(function List(props,
     onFocus?.(event)
     const row = (event.target as HTMLElement).closest?.('[data-list-nav]') as HTMLElement | null
     if (row && row === event.target && rootRef.current?.contains(row)) {
+      userFocusedRef.current = true
       const id = row.dataset.listNav ?? null
       if (id !== tabStop) setTabStop(id)
     }
@@ -325,7 +337,7 @@ function useMeasuredLayout(hasSupporting: boolean) {
   const supportingRef = useRef<HTMLSpanElement>(null)
   const [layout, setLayout] = useState({ multiline: false, tall: false })
 
-  useLayoutEffect(() => {
+  useIsoLayoutEffect(() => {
     if (!item || typeof ResizeObserver === 'undefined') return
     const measure = () => {
       const supporting = supportingRef.current

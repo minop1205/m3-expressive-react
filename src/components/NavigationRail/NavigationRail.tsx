@@ -1,14 +1,15 @@
+'use client'
+
 import {
   forwardRef,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useRef,
   type HTMLAttributes,
   type MouseEvent,
   type ReactNode,
-  useState,
 } from 'react'
+import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import clsx from 'clsx'
 import {
   RailContext,
@@ -16,11 +17,16 @@ import {
   type NavigationRailVariant,
 } from './NavigationRailContext'
 import { useRailMorph } from './useRailMorph'
+import type { ModalCloseEvent } from '../../internal/closeReason'
 import { useModal } from '../../internal/useModal'
+import { useControllableState } from '../../internal/useControllableState'
 import styles from './NavigationRail.module.css'
 
 export type { NavigationRailVariant, NavigationRailArrangement } from './NavigationRailContext'
 export { NavigationRailItem, type NavigationRailItemProps } from './NavigationRailItem'
+
+/** Why the modal rail asked to close (ruling B7 vocabulary): Escape or a scrim click. */
+export type NavigationRailCloseReason = 'escapeKeyDown' | 'backdropClick'
 
 export interface NavigationRailProps
   extends Omit<HTMLAttributes<HTMLElement>, 'onChange'> {
@@ -55,8 +61,11 @@ export interface NavigationRailProps
    * @default false
    */
   hideOnCollapse?: boolean
-  /** With `modal`: called when the scrim is clicked or Escape is pressed. */
-  onClose?: () => void
+  /**
+   * With `modal`: called when the scrim is clicked or Escape is pressed, with
+   * the triggering event and the `reason`.
+   */
+  onClose?: (event: ModalCloseEvent, reason: NavigationRailCloseReason) => void
   /** Accessible name of the open modal rail (a dialog). @default 'Navigation rail' */
   modalLabel?: string
   children?: ReactNode
@@ -108,15 +117,12 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
     const open = modal && expanded
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLDivElement>(null)
-    useModal({ active: open, rootRef, surfaceRef })
-    useEffect(() => {
-      if (!open) return
-      const handle = (event: globalThis.KeyboardEvent) => {
-        if (event.key === 'Escape') onClose?.()
-      }
-      document.addEventListener('keydown', handle)
-      return () => document.removeEventListener('keydown', handle)
-    }, [open, onClose])
+    useModal({
+      active: open,
+      rootRef,
+      surfaceRef,
+      onEscape: (event) => onClose?.(event, 'escapeKeyDown'),
+    })
 
     const setRefs = useCallback(
       (node: HTMLElement | null) => {
@@ -146,11 +152,14 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
     )
     // Items report in their layout effects, which run before this element's
     // ref is attached on mount — apply once more after they have all run.
-    useLayoutEffect(applyExpandedWidth)
+    useIsoLayoutEffect(applyExpandedWidth)
 
-    const isControlled = value !== undefined
-    const [uncontrolled, setUncontrolled] = useState(defaultValue ?? '')
-    const current = isControlled ? value : uncontrolled
+    const [current, setUncontrolled, isControlled] = useControllableState({
+      value,
+      defaultValue: defaultValue ?? '',
+      name: 'NavigationRail',
+      state: 'value',
+    })
     const handleChange = (event: MouseEvent<HTMLButtonElement>, v: string) => {
       if (!isControlled) setUncontrolled(v)
       onChange?.(event, v)
@@ -184,7 +193,11 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
             data-open={open || undefined}
             data-hide-on-collapse={hide || undefined}
           >
-            <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
+            <div
+              className={styles.scrim}
+              aria-hidden="true"
+              onClick={(event) => onClose?.(event, 'backdropClick')}
+            />
             <div
               ref={surfaceRef}
               className={styles.modalSurface}
