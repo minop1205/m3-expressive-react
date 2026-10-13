@@ -41,6 +41,17 @@
         "default": "./dist/components/AppBar/index.cjs"
       }
     },
+    "./Autocomplete": {
+      "import": {
+        "types": "./dist/components/Autocomplete/index.d.ts",
+        "node": "./dist/components/Autocomplete/index.js",
+        "default": "./dist/Autocomplete/index.js"
+      },
+      "require": {
+        "types": "./dist/components/Autocomplete/index.d.cts",
+        "default": "./dist/components/Autocomplete/index.cjs"
+      }
+    },
     "./Badge": {
       "import": {
         "types": "./dist/components/Badge/index.d.ts",
@@ -475,6 +486,9 @@
     "*": {
       "AppBar": [
         "./dist/components/AppBar/index.d.ts"
+      ],
+      "Autocomplete": [
+        "./dist/components/Autocomplete/index.d.ts"
       ],
       "Badge": [
         "./dist/components/Badge/index.d.ts"

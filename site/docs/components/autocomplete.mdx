@@ -1,0 +1,288 @@
+---
+title: Autocomplete
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Autocomplete, Option, Button } from 'm3-expressive-react'
+import CommuteIcon from '@material-symbols/svg-400/outlined/commute.svg'
+import FlightIcon from '@material-symbols/svg-400/outlined/flight.svg'
+import CarIcon from '@material-symbols/svg-400/outlined/directions_car.svg'
+import TrainIcon from '@material-symbols/svg-400/outlined/train.svg'
+import BikeIcon from '@material-symbols/svg-400/outlined/directions_bike.svg'
+
+export const fruits = [
+  'Apple',
+  'Apricot',
+  'Banana',
+  'Blackberry',
+  'Blueberry',
+  { value: 'Cherry', label: 'Cherry', disabled: true },
+  'Grape',
+  'Mango',
+  'Orange',
+  'Pear',
+]
+
+# Autocomplete
+
+The MD3 editable exposed dropdown menu: a text field whose menu of options is
+filtered as you type. The field looks exactly like a
+[TextField](/components/textfield) (filled or outlined), and the list is the
+one [Select](/components/select) uses. As the list is filtered, the options
+that stay ease into their new position.
+
+## Variants
+
+<Demo>
+  <Autocomplete variant="filled" label="Filled" options={fruits} />
+  <Autocomplete variant="outlined" label="Outlined" options={fruits} />
+</Demo>
+
+```tsx
+const fruits = ['Apple', 'Banana', { value: 'Cherry', label: 'Cherry', disabled: true }]
+
+<Autocomplete variant="outlined" label="Fruit" options={fruits} />
+```
+
+`options` takes strings (the value is the label) or `{ value, label, disabled }`
+objects. Typing opens the list with only the options whose label contains the
+text, ignoring case and accents. When nothing matches, the list closes. Pass
+`noOptionsText` to show a message instead.
+
+## Value and input text
+
+An Autocomplete has two pieces of state, each controlled or uncontrolled:
+
+- `value` / `defaultValue` / `onChange(event, value)`: the picked option's
+  value (`''` = nothing picked). `onChange` fires when an option is picked or
+  the text is cleared.
+- `inputValue` / `defaultInputValue` / `onInputChange(event, inputValue)`: the
+  text in the field. It fires on every keystroke and when picking an option
+  puts its label in the field.
+
+If the text no longer matches an option when you leave the field, it goes
+back to the picked option's label.
+
+export function ControlledDemo() {
+  const [value, setValue] = useState('')
+  const [text, setText] = useState('')
+  return (
+    <>
+      <Autocomplete
+        label="Fruit"
+        options={fruits}
+        value={value}
+        onChange={(event, next) => setValue(next)}
+        inputValue={text}
+        onInputChange={(event, next) => setText(next)}
+        noOptionsText="No fruit matches"
+      />
+      <span>
+        Value: {value === '' ? '—' : value} · Text: {text === '' ? '—' : text}
+      </span>
+    </>
+  )
+}
+
+<Demo>
+  <ControlledDemo />
+</Demo>
+
+```tsx
+const [value, setValue] = useState('')
+const [text, setText] = useState('')
+
+<Autocomplete
+  label="Fruit"
+  options={fruits}
+  value={value}
+  onChange={(event, next) => setValue(next)}
+  inputValue={text}
+  onInputChange={(event, next) => setText(next)}
+  noOptionsText="No fruit matches"
+/>
+```
+
+The open state can be controlled too, with `open` / `defaultOpen` /
+`onOpenChange`.
+
+## Free text
+
+With `freeSolo`, any text is a value: <kbd>Enter</kbd> (with no option
+active) or leaving the field commits it. Options are still suggested, and text
+that equals an option's label commits that option's value.
+
+export function FreeSoloDemo() {
+  const [value, setValue] = useState('')
+  return (
+    <>
+      <Autocomplete
+        freeSolo
+        label="Favorite fruit"
+        options={fruits}
+        onChange={(event, next) => setValue(next)}
+      />
+      <span>Value: {value === '' ? '—' : value}</span>
+    </>
+  )
+}
+
+<Demo>
+  <FreeSoloDemo />
+</Demo>
+
+```tsx
+<Autocomplete freeSolo label="Favorite fruit" options={fruits} onChange={(event, value) => save(value)} />
+```
+
+## Custom filtering
+
+`filterOptions(options, { inputValue })` replaces the default filter. It gets
+every option as `{ value, label, disabled }` and returns the ones to show, in
+order. This one matches from the start of the label:
+
+<Demo>
+  <Autocomplete
+    label="Starts with"
+    options={fruits}
+    filterOptions={(options, { inputValue }) =>
+      options.filter((option) =>
+        option.label.toLowerCase().startsWith(inputValue.toLowerCase()),
+      )
+    }
+  />
+</Demo>
+
+```tsx
+<Autocomplete
+  label="Starts with"
+  options={fruits}
+  filterOptions={(options, { inputValue }) =>
+    options.filter((option) => option.label.toLowerCase().startsWith(inputValue.toLowerCase()))
+  }
+/>
+```
+
+## Option children and icons
+
+Instead of `options`, pass `Option` children (the same component Select
+uses), for example to give options a `startIcon`. The text that is matched and
+put in the field is the option's text content. Set `textValue` when the
+children are not plain text.
+
+<Demo>
+  <Autocomplete label="Travel mode" startIcon={<CommuteIcon />} defaultValue="train">
+    <Option value="flight" startIcon={<FlightIcon />}>Flight</Option>
+    <Option value="car" startIcon={<CarIcon />}>Car</Option>
+    <Option value="train" startIcon={<TrainIcon />}>Train</Option>
+    <Option value="bike" startIcon={<BikeIcon />}>Bike</Option>
+  </Autocomplete>
+</Demo>
+
+```tsx
+<Autocomplete label="Travel mode" startIcon={<CommuteIcon />} defaultValue="train">
+  <Option value="flight" startIcon={<FlightIcon />}>Flight</Option>
+  <Option value="train" startIcon={<TrainIcon />}>Train</Option>
+  <Option value="bike" textValue="Bike">
+    <strong>Bike</strong> (fastest in town)
+  </Option>
+</Autocomplete>
+```
+
+## Supporting text, error & states
+
+<Demo>
+  <Autocomplete label="Country" options={['Japan', 'United States']} supportingText="Used for shipping" />
+  <Autocomplete
+    label="Country"
+    options={['Japan', 'United States']}
+    required
+    error
+    errorText="Choose a country"
+  />
+  <Autocomplete label="Country" options={['Japan', 'United States']} disabled defaultValue="Japan" />
+</Demo>
+
+`error` switches to the error colors and sets `aria-invalid`. `errorText`
+replaces `supportingText` while in error and is announced (`role="alert"`).
+`fullWidth` stretches the field, and with it the list, to the container's
+width.
+
+## Forms
+
+As in Select, the value is carried by a visually hidden native `<input>`.
+With `name` it is submitted with its form. `required` takes part in native
+validation, and a form reset puts an uncontrolled Autocomplete back to its
+default value and text. `inputRef` points at the text input you type in.
+
+export function FormDemo() {
+  const [submitted, setSubmitted] = useState('—')
+  return (
+    <form
+      style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}
+      onSubmit={(event) => {
+        event.preventDefault()
+        setSubmitted(new FormData(event.currentTarget).get('fruit') || '(empty)')
+      }}
+    >
+      <Autocomplete label="Fruit" name="fruit" required options={fruits} defaultValue="Mango" />
+      <Button type="submit">Submit</Button>
+      <Button type="reset" variant="outlined">Reset</Button>
+      <span>Submitted: {submitted}</span>
+    </form>
+  )
+}
+
+<Demo>
+  <FormDemo />
+</Demo>
+
+```tsx
+<form onSubmit={handleSubmit}>
+  <Autocomplete label="Fruit" name="fruit" required options={fruits} defaultValue="Mango" />
+  <Button type="submit">Submit</Button>
+  <Button type="reset" variant="outlined">Reset</Button>
+</form>
+```
+
+## Motion
+
+m3: "Menu items ease into their new position as the menu is filtered." The
+options that stay move to their new place on the default spatial spring, and
+options that appear fade in. With `prefers-reduced-motion: reduce` the list
+updates without motion.
+
+## Accessibility
+
+Follows the WAI-ARIA APG
+[editable combobox with list autocomplete](https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-autocomplete-list/)
+pattern:
+
+- The text input is `role="combobox"` with `aria-autocomplete="list"`,
+  `aria-expanded`, `aria-controls`, and `aria-describedby` pointing at the
+  supporting text. It is named by the `label` (or by `aria-label` /
+  `aria-labelledby`). The popup is a `role="listbox"` of `option`s with
+  `aria-selected`.
+- Focus stays in the input. The active option is exposed through
+  `aria-activedescendant` and shown with a focus ring.
+- Typing opens the list without activating an option. <kbd>↓</kbd> /
+  <kbd>↑</kbd> open it and move through the options, wrapping at the ends.
+  <kbd>Alt</kbd>+<kbd>↓</kbd> opens it without moving.
+- <kbd>Enter</kbd> picks the active option. <kbd>Escape</kbd> closes the
+  list, and when it is already closed, clears the field.
+- The arrow at the end is a button that is not in the Tab order. It toggles
+  the list and is named by `toggleLabel` (default "Toggle dropdown menu").
+- Disabled options are announced (`aria-disabled`) but skipped by the
+  keyboard.
+
+## Props
+
+### Autocomplete
+
+<PropsTable component="Autocomplete" />
+
+### Option
+
+<PropsTable component="Option" />

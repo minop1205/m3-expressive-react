@@ -66,6 +66,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B39 | #442 | SearchBar の full-screen レイアウト | **`layout="docked" \| "fullscreen"`(既定 docked)、full-screen は Compose `ExpandedFullScreenContainedSearchBar`(contained)、戻るボタンの名前は `backLabel`** | なし(追加) | 決定(2026-10-13・#442 の API 案どおり) |
 | B37 | #439 | TextField のラベル位置(上置き・常時縮小) | **`labelPlacement?: 'floating' \| 'above'`(既定 `'floating'`)+ `shrinkLabel?: boolean`、DatePickerField も同名で素通し** | なし(追加) | 決定(2026-10-13・#439 の API 案どおり) |
 | B41 | #444 | 小さな構成の不足(FabMenu 配置・Toolbar elevation・dismissible drawer・Carousel 幅) | **FabMenu `horizontalAlignment`、Toolbar `disableElevation`、NavigationDrawer `variant="dismissible"`、Carousel `itemWidth` の JSDoc 修正** | なし(追加) | 決定(2026-10-13) |
+| B42 | #434 | Autocomplete(exposed dropdown menu・編集可) | **専用の `<Autocomplete>`、`options` 配列か `<Option>` 子要素、`value` / `inputValue` の二系統(各 controlled / uncontrolled)、`freeSolo` / `filterOptions` / `noOptionsText`、APG list autocomplete、listbox / Option は Select と共有** | なし(追加) | 決定(2026-10-13・#434 フェーズ 2) |
 | B43 | #444 | TimePicker の vibrant・横向き・スクロールホイール | **`variant="standard" \| "vibrant"`、`orientation="vertical" \| "horizontal"`(dial のみ)、`mode="scroll"`(Compose `TimeScroll`)+ 公開 `ScrollField`(APG spinbutton)** | なし(追加) | 決定(2026-10-13) |
 | B44 | #444 | TextField / Select の tonal・secure field・VerticalDragHandle | **TextField / Select `tonal?: boolean`(`@experimental`、Compose `tonalColors()` + `roundedShape`)、secure field はレシピ(`type="password"` + `IconButton toggle`、名前固定 + `aria-pressed`)、新規 `DragHandle`(APG window splitter、`value` / `onChange(event, value)` / `min` / `max` / `step` / `paneSide`)** | なし(追加) | 決定(2026-10-13) |
 
@@ -1321,6 +1322,71 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 **影響**: 非破壊(新規コンポーネント `Select` / `Option`、サブパス `m3-expressive-react/Select`)。VRT: Select の
 ストーリー 6 件を追加。内部: `menuNavigation` の typeahead を、DOM フォーカスを使わない `matchTypeahead` に切り出した
 (Menu / FabMenu の挙動は変わらない)。
+
+### B42: Autocomplete(exposed dropdown menu・編集可)
+
+- **Issue**: #434(フェーズ 2。フェーズ 1 の Select = B31 と listbox / option を共有)
+- **状態**: 決定(2026-10-13・#434 フェーズ 2 の実装で確定)
+- **背景**: m3「A menu can include a text field to filter options. This pattern is also known as autocomplete.」
+  「Menu items ease into their new position as the menu is filtered.」。Compose は `ExposedDropdownMenuBox` +
+  編集可能な `TextField`(`menuAnchor(PrimaryEditable)`)+ 末尾アイコン(`menuAnchor(SecondaryEditable)`)を
+  利用者が組み立て、絞り込みは利用者のコード(`EditableExposedDropdownMenuSample`)。数値と出典は
+  docs/specs/autocomplete.md。
+
+**選択肢**
+
+- **(a) 専用の `<Autocomplete>`**(MUI `Autocomplete` の prop 名)。選択肢は `options` 配列(文字列か
+  `{ value, label, disabled }`)または Select と同じ `<Option>` 子要素
+  ```tsx
+  <Autocomplete label="Fruit" options={['Apple', 'Banana']} value={v} onChange={(event, value) => setV(value)} />
+  <Autocomplete label="Mode" inputValue={text} onInputChange={(event, text) => setText(text)}>
+    <Option value="train" startIcon={<TrainIcon />}>Train</Option>
+  </Autocomplete>
+  ```
+  - 利点: MUI 利用者がそのまま書ける(`options` / `inputValue` / `onInputChange` / `freeSolo` / `filterOptions` /
+    `noOptionsText`)。子要素の形は Select と同じなので、Select から書き換えやすい
+  - 欠点: 選択肢の渡し方が 2 通りになる(アイコン付きは子要素、単純な一覧は配列)
+- **(b) `<Select editable>`**(Compose の anchor type を prop にする形)
+  - 欠点: Select の DOM は `<div role="combobox">`、編集可は `<input role="combobox">` で、キー操作・値のモデル
+    (`inputValue`、`freeSolo`)も別物。1 コンポーネントに入れると型が `editable` で大きく分岐する
+- **(c) MUI の `renderInput` / `getOptionLabel` / `isOptionEqualToValue` まで含めた汎用形**
+  - 欠点: #434 は lean を求めている。値を文字列に限れば不要
+
+**決定**: **(a)**。補足:
+
+- **公開 API**: `variant`(`'filled' | 'outlined'`)、`label`、`options` / `children`(`Option`。`options` があれば
+  そちらを使う)、`value` / `defaultValue`(文字列、`''` = 未選択。`freeSolo` では任意の文字列)、
+  `onChange(event, value)`(A2。値が変わったときだけ)、`inputValue` / `defaultInputValue`(既定は
+  `defaultValue` のラベル)/ `onInputChange(event, inputValue)`、`open` / `defaultOpen` / `onOpenChange`(A3)、
+  `freeSolo`、`filterOptions(options, { inputValue })`(MUI と同じ引数の形。既定はラベルの部分一致・大文字小文字と
+  アクセントを無視)、`noOptionsText`、`toggleLabel`(末尾ボタンの名前、既定 `'Toggle dropdown menu'` = Compose
+  `Strings.ToggleDropdownMenu`。B1 の `*Label`)、`name` / `form` / `disabled` / `required`、`error` /
+  `errorText` / `supportingText`、`startIcon`、`fullWidth`、`placeholder`、`id`(text input に付く)、`inputRef`
+  (**表示中の text input**。Select の `inputRef` は隠し input だが、Autocomplete では利用者が触る input を指すほうが
+  役に立つ)。`ref` と残りの属性はルート、`aria-label` / `aria-labelledby` / `aria-describedby` は input へ。
+  内部状態は `useControllableState`
+- **`Option`**: Select と同じ部品(`src/internal/listbox` に移した)。`textValue?: string` を追加: 入力欄に入る
+  文字列と絞り込みの対象(既定は children のテキスト)。Select では無視
+- **a11y**: WAI-ARIA APG editable combobox with list autocomplete(自動選択なし)。`<input role="combobox"
+  aria-autocomplete="list" aria-expanded aria-controls aria-activedescendant>`、フォーカスは常に input。
+  入力で開き(アクティブ option なし)、↓ / ↑ で開く・移動(端で折り返す)、Alt+↓ はアクティブなしで開く、
+  Enter はアクティブな option を確定、Escape は開いていれば閉じ、閉じていれば入力と値をクリア(APG)。
+  Compose `SecondaryEditable` に合わせ、末尾の矢印は `tabindex="-1"` の `<button>`(`aria-expanded`)。
+  キー表は docs/specs/autocomplete.md
+- **絞り込み**: 一致なしは閉じる(Compose サンプル)。`noOptionsText` を渡したときだけ inert な 1 行を出す
+  (MUI の既定 'No options' は採らない)。入力が選択中のラベルのままなら全件を出す(MUI `inputPristine`)
+- **確定のタイミング**: `freeSolo` なしは、blur で一致しない入力を選択中のラベルに戻し、入力を空にすると値も空に
+  する(MUI `clearOnBlur`)。`freeSolo` は Enter と **blur** で入力を値として確定する(MUI は blur で確定しない
+  ——`autoSelect` 相当を既定にした。フォーム送信される値と表示を一致させるため)
+- **motion**: m3「ease into their new position」を FLIP で実装(残る option は DefaultSpatial で移動、新たに出る
+  option は DefaultEffects でフェードイン)。reduced motion(B3)では動かさない
+- **共有**: listbox / `Option` / 有効 option の移動ヘルパーを `src/internal/listbox/` に切り出し、Select もそれを
+  使う(Select の DOM・挙動・見た目は不変。option トークンの定義場所がルートから listbox に移っただけ)
+- **見送り**: `multiple`(チップ)、非同期読み込み、グループ、クリアボタン(Escape でクリアできる)、一致部分の
+  強調表示(Compose サンプルは下線)
+
+**影響**: 非破壊(新規コンポーネント `Autocomplete`、サブパス `m3-expressive-react/Autocomplete`、`Option` に
+`textValue` を追加)。VRT: Autocomplete のストーリー 9 件を追加。Select のストーリーは変化なし。
 
 ## 入力系
 

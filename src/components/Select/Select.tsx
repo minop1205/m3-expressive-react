@@ -1,12 +1,7 @@
 'use client'
 
 import {
-  Children,
-  Fragment,
-  createContext,
   forwardRef,
-  isValidElement,
-  useContext,
   useEffect,
   useId,
   useRef,
@@ -15,24 +10,28 @@ import {
   type FocusEvent,
   type HTMLAttributes,
   type KeyboardEvent,
-  type LiHTMLAttributes,
   type MouseEvent,
-  type ReactElement,
   type ReactNode,
   type Ref,
   type SyntheticEvent,
 } from 'react'
 import clsx from 'clsx'
-import { Ripple } from '../../primitives/Ripple/Ripple'
 import { usePopupPosition } from '../../internal/usePopupPosition'
 import { useFormReset } from '../../internal/useFormReset'
 import { assignRef } from '../../internal/assignRef'
-import { ArrowDropDownIcon, CheckIcon } from '../../internal/icons'
+import { ArrowDropDownIcon } from '../../internal/icons'
 import {
   createMenuTypeahead,
   getTypeaheadLabel,
   matchTypeahead,
 } from '../../internal/menuNavigation'
+import {
+  Listbox,
+  collectOptions,
+  firstEnabled as firstEnabledIn,
+  lastEnabled as lastEnabledIn,
+  stepEnabled as stepEnabledIn,
+} from '../../internal/listbox/Listbox'
 import fieldStyles from '../TextField/TextField.module.css'
 import styles from './Select.module.css'
 
@@ -102,35 +101,6 @@ export interface SelectProps
   children?: ReactNode
 }
 
-export interface OptionProps extends Omit<LiHTMLAttributes<HTMLLIElement>, 'value'> {
-  /** The value this option selects (submitted with the form). */
-  value: string
-  /** Visible, inert, and skipped by keyboard navigation. @default false */
-  disabled?: boolean
-  /** Icon at the start of the option (decorative); the check mark replaces it while selected. */
-  startIcon?: ReactNode
-  /** The option's label. Also what the field shows once it is selected. */
-  children?: ReactNode
-}
-
-interface OptionData {
-  value: string
-  disabled: boolean
-  children: ReactNode
-}
-
-interface SelectContextValue {
-  options: OptionData[]
-  selectedValue: string
-  activeIndex: number
-  keyboardActive: boolean
-  idFor: (index: number) => string
-  select: (index: number, event: SyntheticEvent) => void
-  hover: (index: number) => void
-}
-
-const SelectContext = createContext<SelectContextValue | null>(null)
-
 /** Gap between the field and the listbox: none (Compose `topToAnchorBottom`). */
 const ANCHOR_GAP_PX = 0
 
@@ -139,25 +109,6 @@ const VIEWPORT_MARGIN_PX = 8
 
 /** Options PageUp / PageDown move by (APG). */
 const PAGE_STEP = 10
-
-/** `Option` elements in document order, Fragments flattened. */
-function collectOptions(children: ReactNode, out: OptionData[] = []): OptionData[] {
-  Children.forEach(children, (child) => {
-    if (!isValidElement(child)) return
-    const element = child as ReactElement<Record<string, unknown>>
-    if (element.type === Fragment) {
-      collectOptions(element.props.children as ReactNode, out)
-    } else if (element.type === Option) {
-      const props = element.props as unknown as OptionProps
-      out.push({
-        value: props.value,
-        disabled: !!props.disabled,
-        children: props.children,
-      })
-    }
-  })
-  return out
-}
 
 /**
  * Material Design 3 Select — the non-editable exposed dropdown menu
@@ -262,24 +213,10 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
   }
 
   const isEnabled = (index: number) => !!options[index] && !options[index].disabled
-  const firstEnabled = () => options.findIndex((option) => !option.disabled)
-  const lastEnabled = () => {
-    for (let i = options.length - 1; i >= 0; i--) if (!options[i].disabled) return i
-    return -1
-  }
+  const firstEnabled = () => firstEnabledIn(options)
+  const lastEnabled = () => lastEnabledIn(options)
   /** The next enabled option from `from` in `step` direction, clamped at the ends (no wrap). */
-  const stepEnabled = (from: number, step: number) => {
-    const direction = Math.sign(step) || 1
-    let target = -1
-    let remaining = Math.abs(step)
-    for (let i = from + direction; i >= 0 && i < options.length; i += direction) {
-      if (!options[i].disabled) {
-        target = i
-        if (--remaining === 0) break
-      }
-    }
-    return target === -1 ? from : target
-  }
+  const stepEnabled = (from: number, step: number) => stepEnabledIn(options, from, step)
   const initialActive = () => (isEnabled(selectedIndex) ? selectedIndex : firstEnabled())
 
   const openListbox = (target: number, viaKeyboard: boolean) => {
@@ -632,86 +569,34 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
         onFocus={() => comboboxRef.current?.focus()}
       />
 
-      <ul
+      <Listbox
         ref={listboxRef}
         id={listboxId}
-        role="listbox"
-        aria-labelledby={labelledBy}
-        aria-label={labelledBy ? undefined : ariaLabel}
-        tabIndex={-1}
-        className={styles.listbox}
-        data-open={open || undefined}
-        data-placement={side === 'top' ? 'above' : 'below'}
-        // Option presses must not take focus from the combobox.
-        onMouseDown={(event) => event.preventDefault()}
+        open={open}
+        side={side}
+        labelledBy={labelledBy}
+        ariaLabel={ariaLabel}
+        context={{
+          options,
+          selectedValue: value,
+          activeIndex,
+          keyboardActive,
+          idFor: (index) => `${listboxId}-option-${index}`,
+          select: (index, event) => {
+            select(index, event)
+            close()
+          },
+          hover: (index) => {
+            if (index === activeIndex && !keyboardActive) return
+            setActiveIndex(index)
+            setKeyboardActive(false)
+          },
+        }}
       >
-        <SelectContext.Provider
-          value={{
-            options,
-            selectedValue: value,
-            activeIndex,
-            keyboardActive,
-            idFor: (index) => `${listboxId}-option-${index}`,
-            select: (index, event) => {
-              select(index, event)
-              close()
-            },
-            hover: (index) => {
-              if (index === activeIndex && !keyboardActive) return
-              setActiveIndex(index)
-              setKeyboardActive(false)
-            },
-          }}
-        >
-          {children}
-        </SelectContext.Provider>
-      </ul>
+        {children}
+      </Listbox>
     </div>
   )
 })
 
-/**
- * An option of a `Select` (`role="option"`). The selected option shows the
- * tertiary-container colors, a 12dp corner shape and a leading check mark.
- */
-export const Option = forwardRef<HTMLLIElement, OptionProps>(function Option(
-  { value, disabled = false, startIcon, className, children, onClick, onPointerMove, ...rest },
-  ref,
-) {
-  const ctx = useContext(SelectContext)
-  const index = ctx ? ctx.options.findIndex((option) => option.value === value) : -1
-  const selected = !!ctx && ctx.selectedValue === value && index !== -1
-  const active = !!ctx && index !== -1 && ctx.activeIndex === index
-  return (
-    <li
-      ref={ref}
-      {...rest}
-      id={ctx && index !== -1 ? ctx.idFor(index) : rest.id}
-      role="option"
-      aria-selected={selected}
-      aria-disabled={disabled || undefined}
-      data-active={active || undefined}
-      data-focus-visible={(active && ctx?.keyboardActive) || undefined}
-      className={clsx(styles.option, className)}
-      onClick={(event) => {
-        onClick?.(event)
-        if (disabled || event.defaultPrevented || !ctx) return
-        ctx.select(index, event)
-      }}
-      onPointerMove={(event) => {
-        onPointerMove?.(event)
-        if (!disabled && ctx) ctx.hover(index)
-      }}
-    >
-      <span
-        className={clsx(styles.leading, startIcon == null && styles.checkOnly)}
-        aria-hidden="true"
-      >
-        {selected ? <CheckIcon /> : startIcon}
-      </span>
-      <span className={styles.label}>{children}</span>
-      <span className={styles.focusRing} aria-hidden="true" />
-      {!disabled && <Ripple />}
-    </li>
-  )
-})
+export { Option, type OptionProps } from '../../internal/listbox/Listbox'
