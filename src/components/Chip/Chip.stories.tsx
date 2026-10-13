@@ -4,6 +4,8 @@ import { fn } from 'storybook/test'
 import { Chip } from './Chip'
 import { ChipSet } from './ChipSet'
 import CalendarIcon from '@material-symbols/svg-400/outlined/calendar_today.svg?react'
+import ArrowDropDownIcon from '@material-symbols/svg-400/outlined/arrow_drop_down.svg?react'
+import { Menu, MenuItem } from '../Menu/Menu'
 
 const meta = {
   title: 'Components/Chip',
@@ -275,6 +277,96 @@ export const ChipSetKeyboard: Story = {
               }}
             />
           ))}
+        </ChipSet>
+      </div>
+    )
+  },
+}
+
+/**
+ * `ChipSet selectionMode` (B36): `single` is a radio group — selecting a chip
+ * deselects the others, the arrow keys move and select; `multiple` keeps
+ * toggle chips. The set owns `value` / `onChange(event, value)`.
+ */
+export const ChipSetSelection: Story = {
+  render: () => {
+    const [size, setSize] = useState<string | null>('m')
+    const [diet, setDiet] = useState<string[]>(['vegan'])
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 360 }}>
+        <ChipSet
+          aria-label="Size"
+          selectionMode="single"
+          value={size}
+          onChange={(_, next) => setSize(next)}
+        >
+          <Chip variant="filter" label="Small" value="s" />
+          <Chip variant="filter" label="Medium" value="m" />
+          <Chip variant="filter" label="Large" value="l" />
+        </ChipSet>
+        <ChipSet
+          aria-label="Dietary filters"
+          selectionMode="multiple"
+          value={diet}
+          onChange={(_, next) => setDiet(next)}
+        >
+          <Chip variant="filter" label="Vegetarian" value="vegetarian" />
+          <Chip variant="filter" label="Vegan" value="vegan" />
+          <Chip variant="filter" label="Gluten-free" value="gluten-free" />
+        </ChipSet>
+      </div>
+    )
+  },
+}
+
+/** Filter chip `endIcon`: a decorative trailing icon (8dp from the label and the edge). */
+export const FilterEndIcon: Story = {
+  render: () => (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+      <Chip variant="filter" label="Price" endIcon={<ArrowDropDownIcon />} />
+      <Chip variant="filter" label="$$" selected endIcon={<ArrowDropDownIcon />} />
+      <Chip
+        variant="filter"
+        label="Elevated"
+        elevated
+        icon={<CalendarIcon />}
+        endIcon={<ArrowDropDownIcon />}
+      />
+      <Chip variant="filter" label="Disabled" disabled endIcon={<ArrowDropDownIcon />} />
+    </div>
+  ),
+}
+
+/**
+ * A filter chip as a `Menu` trigger ("filter chips can open a menu"): the menu
+ * sets `aria-expanded`, which turns the `endIcon` arrow up. Keep `selected`
+ * controlled (here: selected once a price is picked).
+ */
+export const FilterMenu: Story = {
+  render: () => {
+    const [price, setPrice] = useState<string | null>('$$')
+    return (
+      <div style={{ minHeight: 240 }}>
+        <ChipSet aria-label="Filters">
+          <Menu
+            defaultOpen
+            trigger={
+              <Chip
+                variant="filter"
+                label={price ?? 'Price'}
+                selected={price !== null}
+                endIcon={<ArrowDropDownIcon />}
+              />
+            }
+          >
+            {['$', '$$', '$$$'].map((p) => (
+              <MenuItem key={p} onClick={() => setPrice(p)}>
+                {p}
+              </MenuItem>
+            ))}
+            <MenuItem onClick={() => setPrice(null)}>Any price</MenuItem>
+          </Menu>
+          <Chip variant="filter" label="Open now" />
         </ChipSet>
       </div>
     )

@@ -55,6 +55,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B28 | #265 | Badge のラベルと非表示時の扱い | **visually-hidden の既定英語ラベル + `label` で上書き、`role="status"` 廃止、非表示時は AT からも隠す** | a11y のみ | 決定(2026-09-30・推奨どおり) |
 | B29 | #267 | Divider を既定で装飾扱いに | **既定 decorative(AT から隠す)+ `decorative={false}` で意味付き区切り** | a11y のみ | 決定(2026-09-30・推奨どおり) |
 | B30 | #393 | Search app bar | **`TopAppBar variant="search"` + `searchBar` スロット(SearchBar を合成)、`titleAlignment` で中央揃え、`title` は visually hidden の h1** | なし(追加) | 決定(2026-10-07・#393 の API 案どおり) |
+| B36 | #438 | ChipSet の選択モードと filter chip の `endIcon` | **`ChipSet selectionMode` + `value` / `defaultValue` / `onChange(event, value)` + `selectionRequired`(single = APG radio group)、filter chip に装飾の `endIcon`(Menu の trigger で `aria-expanded` 時に 180° 回転)** | なし(追加) | 決定(2026-10-13・#438 の API 案どおり) |
 | B35 | #437 | BottomSheet の standard variant と detent | **`variant="standard" \| "modal"`(既定 modal)+ `expanded` / `defaultExpanded` / `onExpandedChange` + `skipPartiallyExpanded`、部分展開 = `min(画面/2, シート/2)`(Compose 現行フラグ、TODO 付き)は `skipPartiallyExpanded={false}` で opt-in(既定 true = 従来どおり、切替は v2 候補)、opt-in 時のハンドルは partial ↔ expanded のトグル** | なし(追加) | 決定(2026-10-13) |
 | B31 | #434 | Select(exposed dropdown menu・非編集) | **専用の `<Select>` + `<Option>` 子要素、`value` / `defaultValue` / `onChange(event, value)`、APG select-only combobox + 隠しネイティブ input** | なし(追加) | 決定(2026-10-13・#434 フェーズ 1) |
 | B38 | #440 | Tooltip の配置拡張・rich の既定位置・caret | **`placement` に `'start' \| 'end' \| 'left' \| 'right'`(論理値は RTL で反転、flip あり)、`placement` 未指定の rich は bottom-end の角 + 4 隅の動的配置、`caret?: boolean`(16×8dp)** | 既定値変更(rich の未指定時の位置) | 決定(2026-10-13・#440 の提案どおり) |
@@ -678,6 +679,69 @@ ChipSet のロールは実装時の spec で確定する(起案者の傾き: APG
 m3 ラベル表の `gridcell` は remove ボタン付き input chip で 2 つのフォーカス先を扱うときに再検討)。
 
 **影響**: すべて非破壊(追加・新規)。VRT: 選択 input / avatar / ChipSet のストーリーを追加。対象: Chip、新規 ChipSet。
+
+### B36: ChipSet の単一 / 複数選択と filter chip の trailing icon(`endIcon`)
+
+- **Issue**: #438
+- **状態**: 決定(2026-10-13・#438 の API 案どおり。ARIA は実装時に下記で確定)
+- **背景**: m3 chips/guidelines「filter chip は、1つを選ぶと set 内の他の chip が自動で解除されるように設定できる」
+  「segmented button・radio button・単一選択メニューの代わりになる」。trailing icon は「filter chip では任意で、
+  **メニューを開く**か chip を削除する」「filter chip はさらなる絞り込みのメニューを開ける」(menus/guidelines にも
+  「メニューは filter chip から開ける」)。現状 `ChipSet` は矢印キーのロービングだけで選択モデルがなく、Chip の
+  trailing は `removable` の × だけ。Compose には chip group の選択モデルがない(`FlowRow` + 呼び出し側の状態)。
+  `FilterChip(trailingIcon)` は chip 全体のクリック面の中のスロット(Chip.kt:635–665、`SelectableChip` は
+  `Role.Checkbox` — Chip.kt:3258)、余白は `ContentPadding` 8 + arrangement 8(Chip.kt:2241–2269)、色は
+  `FilterChipTokens.*TrailingIconColor` = 非選択 on-surface-variant / 選択 on-secondary-container / disabled
+  on-surface 0.38(FilterChipTokens.kt:179–210)。ドロップダウン矢印の回転は
+  `ExposedDropdownMenuDefaults.TrailingIcon` の `rotate(if (expanded) 180f else 0f)`(ExposedDropdownMenu.kt:462–463)。
+
+**選択肢**
+
+- (1) 選択モデル
+  - **(a) `ChipSet` に B13(ButtonGroup)/ B17(List)と同じ形を追加**
+    ```tsx
+    <ChipSet aria-label="Size" selectionMode="single" value={size} onChange={(e, v) => setSize(v)}>
+      <Chip variant="filter" label="Small" value="s" />
+      <Chip variant="filter" label="Medium" value="m" />
+    </ChipSet>
+    ```
+    `selectionMode: 'none'(既定) | 'single' | 'multiple'`、値は single = `string | null`・multiple = `string[]`、
+    `selectionRequired`(B13 と同じ)。`value` を持つ filter / input chip を set が管理し、chip 側の `selected` /
+    `defaultSelected` は無視、chip の `onChange(event, selected)` は引き続き発火(Button の B13 実装と同じ)
+  - **(b) 現状維持(各 chip を手で配線)** — 単一選択の排他性が支援技術に伝わらない
+- (2) single の ARIA(APG)
+  - **(c) Radio Group パターン**: set = `role="radiogroup"`、chip = `role="radio"` + `aria-checked`、選択中の chip が
+    Tab 停止、←/→/↑/↓(折り返し)と Home / End でフォーカス移動と同時に選択
+  - (d) Toolbar のまま `aria-pressed` — 排他であることが伝わらない(トグルボタンは独立した状態を表す)
+  - (e) Listbox / option — option の中に remove ボタン等の操作要素を置けず(removable filter chip と両立しない)、
+    m3 が web の chip に `listbox` を挙げていない
+- (3) multiple の ARIA
+  - **(f) 現行の Toolbar + `aria-pressed` のトグル chip を維持**(APG Toolbar はトグルボタンを含められる。
+    ロービング・remove への矢印移動も現行どおり)
+- (4) trailing icon
+  - **(g) `endIcon?: ReactNode`(A5 の `startIcon` / `endIcon` 語彙)**: filter chip のみ、primary の `<button>` の
+    内側に装飾(`aria-hidden`)として描く(Compose と同じく chip 全体が1つのクリック面)。開いているかは
+    `Menu` が trigger に付ける `aria-expanded="true"` を CSS で読み 180° 回転 — Chip 側に `open` prop を足さない。
+    `removable` のときは remove ボタンが trailing を占めるので無視
+  - (h) 別のクリック可能な trailing ボタン — m3 の「メニューを開く」は chip の主アクションで足り、Tab / 矢印の
+    停止点が増えるだけ
+
+**決定**: **(a) + (c) + (f) + (g)**。理由: (a) はライブラリ内の選択グループ(ButtonGroup・List)と同じ形で書けるため。
+(c) は m3 が単一選択 chip を「radio button の代わり」と位置づけ、APG で排他的な単一選択を伝えるのが radio group で
+あり、B13 の single(radiogroup / radio)とも一致するため。(f) は複数選択では各 chip が独立したトグルで、既存の
+toolbar の意味とキー操作を変えずに済むため(非破壊)。(g) は Compose `FilterChip(trailingIcon)` の構造どおりで、
+Menu との合成が `trigger` だけで成り立つため。補足:
+
+- 回転は SplitButton の chevron と同じく FastSpatial のスプリングで遷移させる(Compose の ExposedDropdown は
+  瞬時。ライブラリ内のメニュー矢印の見え方を揃える判断。reduced motion では spatial トークンが 0ms)
+- single で `value` を持たない chip(assist 等)は set の選択に入らず、通常のボタンのまま
+- Menu の trigger にする chip は `selected` を controlled にすることを推奨(uncontrolled だとクリックのたびに
+  選択がトグルする)— ドキュメントで案内
+- docs/audits/chip.md 軽微欄の「chip set 内のロール(gridcell)は CH10 で再判断」「ドロップダウン矢印は将来の
+  API 候補」は本裁定で置き換え(gridcell は採らない: grid パターンは chip の button 意味と `aria-pressed` を失う)
+
+**影響**: 非破壊(既定 `selectionMode` なし = 現行どおり、`endIcon` は新規 prop)。VRT: `ChipSetSelection` /
+`FilterEndIcon` / `FilterMenu` ストーリーを追加(既存ストーリーは不変)。対象: Chip、ChipSet。
 
 ---
 

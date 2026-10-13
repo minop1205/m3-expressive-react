@@ -1,10 +1,11 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { useState } from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe } from 'vitest-axe'
 import { Chip } from './Chip'
 import { ChipSet } from './ChipSet'
+import { Menu, MenuItem } from '../Menu/Menu'
 
 function Filters({ disabledIndex }: { disabledIndex?: number }) {
   return (
@@ -222,6 +223,257 @@ describe('ChipSet group-level disabled (#421)', () => {
         <Chip variant="filter" label="One" />
       </ChipSet>,
     )
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('ChipSet selection (B36 / #438)', () => {
+  const sizes = ['S', 'M', 'L']
+  const radio = (name: string) => screen.getByRole('radio', { name })
+  const sizeChips = sizes.map((l) => (
+    <Chip key={l} variant="filter" label={l} value={l.toLowerCase()} />
+  ))
+
+  it('leaves chips self-managed without a selectionMode', async () => {
+    const user = userEvent.setup()
+    render(
+      <ChipSet aria-label="Sizes">
+        <Chip variant="filter" label="S" value="s" />
+      </ChipSet>,
+    )
+    expect(screen.getByRole('toolbar')).toBeInTheDocument()
+    await user.click(btn('S'))
+    expect(btn('S')).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('single: radiogroup of radio chips, selecting one deselects the others', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <ChipSet aria-label="Size" selectionMode="single" defaultValue="s" onChange={onChange}>
+        {sizeChips}
+      </ChipSet>,
+    )
+    expect(screen.getByRole('radiogroup', { name: 'Size' })).toBeInTheDocument()
+    expect(radio('S')).toHaveAttribute('aria-checked', 'true')
+    expect(radio('S')).not.toHaveAttribute('aria-pressed')
+    await user.click(radio('L'))
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 'l')
+    expect(radio('L')).toHaveAttribute('aria-checked', 'true')
+    expect(radio('S')).toHaveAttribute('aria-checked', 'false')
+    // Re-activating the selected chip clears it (selectionRequired is off).
+    await user.click(radio('L'))
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), null)
+    expect(radio('L')).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('single + selectionRequired keeps the selection', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <ChipSet
+        aria-label="Size"
+        selectionMode="single"
+        defaultValue="s"
+        selectionRequired
+        onChange={onChange}
+      >
+        {sizeChips}
+      </ChipSet>,
+    )
+    await user.click(radio('S'))
+    expect(onChange).not.toHaveBeenCalled()
+    expect(radio('S')).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('single: the selected chip is the Tab stop; arrows wrap and select', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <>
+        <button type="button">Before</button>
+        <ChipSet aria-label="Size" selectionMode="single" defaultValue="m" onChange={onChange}>
+          {sizeChips}
+        </ChipSet>
+      </>,
+    )
+    btn('Before').focus()
+    await user.tab()
+    expect(radio('M')).toHaveFocus()
+    await user.keyboard('{ArrowRight}')
+    expect(radio('L')).toHaveFocus()
+    expect(radio('L')).toHaveAttribute('aria-checked', 'true')
+    await user.keyboard('{ArrowDown}')
+    expect(radio('S')).toHaveFocus()
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 's')
+    await user.keyboard('{ArrowUp}')
+    expect(radio('L')).toHaveFocus()
+    await user.keyboard('{Home}')
+    expect(radio('S')).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('single: Tab returns to the selected chip, not the last focused one', async () => {
+    const user = userEvent.setup()
+    function Sizes() {
+      const [v, setV] = useState<string | null>('l')
+      return (
+        <>
+          <button type="button" onClick={() => setV('s')}>
+            Pick S
+          </button>
+          <ChipSet
+            aria-label="Size"
+            selectionMode="single"
+            value={v}
+            onChange={(_, next) => setV(next)}
+          >
+            {sizeChips}
+          </ChipSet>
+        </>
+      )
+    }
+    render(<Sizes />)
+    radio('L').focus()
+    await user.click(btn('Pick S'))
+    await waitFor(() => expect(radio('S')).toHaveAttribute('tabindex', '0'))
+    await user.tab()
+    expect(radio('S')).toHaveFocus()
+  })
+
+  it('multiple: toggle chips in a toolbar, value is an array', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const chipChange = vi.fn()
+    render(
+      <ChipSet
+        aria-label="Diet"
+        selectionMode="multiple"
+        defaultValue={['veg']}
+        onChange={onChange}
+      >
+        <Chip variant="filter" label="Vegetarian" value="veg" />
+        <Chip variant="filter" label="Vegan" value="vegan" onChange={chipChange} />
+      </ChipSet>,
+    )
+    expect(screen.getByRole('toolbar', { name: 'Diet' })).toBeInTheDocument()
+    expect(btn('Vegetarian')).toHaveAttribute('aria-pressed', 'true')
+    await user.click(btn('Vegan'))
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), ['veg', 'vegan'])
+    expect(chipChange).toHaveBeenLastCalledWith(expect.anything(), true)
+    expect(btn('Vegan')).toHaveAttribute('aria-pressed', 'true')
+    await user.click(btn('Vegetarian'))
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), ['vegan'])
+  })
+
+  it('controlled value wins; chip-level selected is ignored', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    render(
+      <ChipSet aria-label="Size" selectionMode="single" value="s" onChange={onChange}>
+        <Chip variant="filter" label="S" value="s" />
+        <Chip variant="filter" label="M" value="m" selected />
+      </ChipSet>,
+    )
+    expect(radio('M')).toHaveAttribute('aria-checked', 'false')
+    await user.click(radio('M'))
+    expect(onChange).toHaveBeenCalledWith(expect.anything(), 'm')
+    expect(radio('S')).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('chips without a value stay self-managed buttons', () => {
+    render(
+      <ChipSet aria-label="Size" selectionMode="single">
+        <Chip variant="filter" label="S" value="s" />
+        <Chip variant="assist" label="Help" />
+      </ChipSet>,
+    )
+    expect(radio('S')).toBeInTheDocument()
+    expect(btn('Help')).not.toHaveAttribute('role')
+  })
+
+  it('has no axe violations (single and multiple)', async () => {
+    const { container } = render(
+      <>
+        <ChipSet aria-label="Size" selectionMode="single" defaultValue="m">
+          {sizeChips}
+        </ChipSet>
+        <ChipSet aria-label="Diet" selectionMode="multiple" defaultValue={['a']}>
+          <Chip variant="filter" label="A" value="a" />
+          <Chip variant="input" label="B" value="b" removable />
+        </ChipSet>
+      </>,
+    )
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('Filter chip endIcon + Menu (B36 / #438)', () => {
+  function PriceFilter() {
+    const [price, setPrice] = useState<string | null>(null)
+    return (
+      <ChipSet aria-label="Filters">
+        <Menu
+          trigger={
+            <Chip
+              variant="filter"
+              label={price ?? 'Price'}
+              selected={price !== null}
+              endIcon={<svg data-testid="arrow" />}
+            />
+          }
+        >
+          <MenuItem onClick={() => setPrice('$')}>$</MenuItem>
+          <MenuItem onClick={() => setPrice('$$')}>$$</MenuItem>
+        </Menu>
+        <Chip variant="filter" label="Open now" />
+      </ChipSet>
+    )
+  }
+
+  it('renders the end icon hidden inside the chip action', () => {
+    render(<Chip variant="filter" label="Price" endIcon={<svg data-testid="arrow" />} />)
+    const icon = screen.getByTestId('arrow')
+    expect(btn('Price')).toContainElement(icon)
+    expect(icon.parentElement).toHaveAttribute('aria-hidden', 'true')
+  })
+
+  it('is replaced by the remove button on removable chips', () => {
+    render(
+      <Chip variant="filter" label="Price" removable endIcon={<svg data-testid="arrow" />} />,
+    )
+    expect(screen.queryByTestId('arrow')).toBeNull()
+    expect(btn('Remove Price')).toBeInTheDocument()
+  })
+
+  it('opens a Menu as its trigger; the chip reports aria-expanded', async () => {
+    const user = userEvent.setup()
+    render(<PriceFilter />)
+    const chip = btn('Price')
+    expect(chip).toHaveAttribute('aria-haspopup', 'menu')
+    expect(chip).toHaveAttribute('aria-expanded', 'false')
+    await user.click(chip)
+    expect(chip).toHaveAttribute('aria-expanded', 'true')
+    await user.click(screen.getByRole('menuitem', { name: '$$' }))
+    const updated = btn('$$')
+    expect(updated).toHaveAttribute('aria-expanded', 'false')
+    expect(updated).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('stays part of the ChipSet roving focus', async () => {
+    const user = userEvent.setup()
+    render(<PriceFilter />)
+    btn('Price').focus()
+    await user.keyboard('{ArrowRight}')
+    expect(btn('Open now')).toHaveFocus()
+    await user.keyboard('{ArrowLeft}')
+    expect(btn('Price')).toHaveFocus()
+  })
+
+  it('has no axe violations (closed and open)', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<PriceFilter />)
+    expect(await axe(container)).toHaveNoViolations()
+    await user.click(btn('Price'))
     expect(await axe(container)).toHaveNoViolations()
   })
 })
