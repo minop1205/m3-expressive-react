@@ -143,7 +143,8 @@ Navigation — `AppBar`, `Toolbar`, `NavigationBar`, `NavigationRail`,
 
 Containment & communication — `Card`, `List`, `Carousel`, `Dialog`,
 `BottomSheet`, `SideSheet`, `Snackbar`, `Tooltip`, `Badge`, `Divider`,
-`ProgressIndicator`, `LoadingIndicator`, `PullToRefresh`, `SwipeToDismiss`
+`ProgressIndicator`, `LoadingIndicator`, `PullToRefresh`, `SwipeToDismiss`,
+`DragHandle`
 
 See the [components page](https://minop1205.github.io/m3-expressive-react/components) of the docs site for live demos
 and prop tables.
