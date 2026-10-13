@@ -294,6 +294,17 @@
         "default": "./dist/components/Radio/index.cjs"
       }
     },
+    "./ScrollField": {
+      "import": {
+        "types": "./dist/components/ScrollField/index.d.ts",
+        "node": "./dist/components/ScrollField/index.js",
+        "default": "./dist/ScrollField/index.js"
+      },
+      "require": {
+        "types": "./dist/components/ScrollField/index.d.cts",
+        "default": "./dist/components/ScrollField/index.cjs"
+      }
+    },
     "./SearchBar": {
       "import": {
         "types": "./dist/components/SearchBar/index.d.ts",
@@ -522,6 +533,9 @@
       ],
       "Radio": [
         "./dist/components/Radio/index.d.ts"
+      ],
+      "ScrollField": [
+        "./dist/components/ScrollField/index.d.ts"
       ],
       "SearchBar": [
         "./dist/components/SearchBar/index.d.ts"

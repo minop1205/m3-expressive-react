@@ -14,12 +14,13 @@ import {
   type PointerEvent,
 } from 'react'
 import clsx from 'clsx'
-import { KeyboardIcon, ScheduleIcon } from '../../internal/icons'
+import { KeyboardIcon, ScheduleIcon, SwipeVerticalIcon } from '../../internal/icons'
 import { assignRefs, useModal } from '../../internal/useModal'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { Button } from '../Button'
 import { IconButton } from '../IconButton'
+import { ScrollField } from '../ScrollField'
 import { useControllableState } from '../../internal/useControllableState'
 import styles from './TimePicker.module.css'
 
@@ -30,7 +31,21 @@ export interface TimeValue {
   minute: number
 }
 
-export type TimePickerMode = 'dial' | 'input'
+/**
+ * Display mode: the clock `dial`, keyboard `input`, or the Expressive
+ * `scroll` wheels (Compose `TimeScroll`).
+ */
+export type TimePickerMode = 'dial' | 'input' | 'scroll'
+
+/**
+ * `standard` (Compose `TimePicker` / `TimePickerDialog`) or the Expressive
+ * `vibrant` style (Compose `TimePickerDefaults.vibrantColors()` +
+ * `TimePickerShapes` + `VibrantTimePickerDialog`).
+ */
+export type TimePickerVariant = 'standard' | 'vibrant'
+
+/** Dial layout (Compose `TimePickerLayoutType`). */
+export type TimePickerOrientation = 'vertical' | 'horizontal'
 
 /**
  * Why a modal picker closed (shared picker vocabulary, Phase B B7): OK /
@@ -80,8 +95,24 @@ export interface TimePickerProps
   defaultMode?: TimePickerMode
   /** Fires when the toggle switches the display mode. */
   onModeChange?: (mode: TimePickerMode) => void
-  /** Show the dial / input toggle. @default true */
+  /**
+   * Show the mode toggle: dial ⇄ input, or scroll ⇄ input when the picker
+   * started in (or was switched to) `scroll` mode. @default true
+   */
   showModeToggle?: boolean
+  /**
+   * Visual style. `vibrant` is the Expressive style: SurfaceContainer
+   * container, larger SurfaceContainerLowest time fields with a Primary
+   * selection, pill AM / PM toggles and a SurfaceContainerLowest dial.
+   * @default 'standard'
+   */
+  variant?: TimePickerVariant
+  /**
+   * Dial layout: time display above the dial (`vertical`) or beside it
+   * (`horizontal`, for landscape / short containers). The input and scroll
+   * modes have a single layout. @default 'vertical'
+   */
+  orientation?: TimePickerOrientation
   /**
    * 12-hour clock with AM / PM (`true`) or 24-hour clock (`false`).
    * Defaults to the `locale`'s hour cycle.
@@ -109,6 +140,11 @@ export interface TimePickerProps
   switchToInputLabel?: string
   /** Name of the toggle while showing the text input. @default 'Toggle dial picker' */
   switchToDialLabel?: string
+  /**
+   * Name of the toggle while showing the text input after scroll mode.
+   * @default 'Switch to scroll mode'
+   */
+  switchToScrollLabel?: string
   /**
    * Accessible name of an hour on the dial and of the hour selector's value.
    * Receives the displayed hour (1–12 with AM/PM, 0–23 without).
@@ -247,6 +283,12 @@ const defaultMinuteLabel = (minute: number) => `${minute} minutes`
  * reverts to the current value on blur. `onChange` only ever receives valid
  * values.
  *
+ * `mode="scroll"` shows two endless scroll wheels (Compose `TimeScroll`,
+ * built on {@link ScrollField}); its toggle switches scroll ⇄ input.
+ * `variant="vibrant"` is the Expressive style (Compose `vibrantColors()`,
+ * `TimePickerShapes`, `VibrantTimePickerDialog`), and
+ * `orientation="horizontal"` puts the dial beside the time display.
+ *
  * `onAccept` / `onCancel` add the "Select time" headline and Cancel / OK
  * (Compose `TimePickerDialog`), with draft / commit semantics; `open` shows
  * the picker as a modal dialog that reports `onClose(reason)`.
@@ -265,6 +307,8 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
       defaultMode,
       onModeChange,
       showModeToggle = true,
+      variant = 'standard',
+      orientation = 'vertical',
       ampm: ampmProp,
       locale = 'en-US',
       titleLabel,
@@ -277,6 +321,7 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
       pmLabel = 'PM',
       switchToInputLabel = 'Toggle input picker',
       switchToDialLabel = 'Toggle dial picker',
+      switchToScrollLabel = 'Switch to scroll mode',
       getHourLabel = defaultHourLabel,
       getMinuteLabel = defaultMinuteLabel,
       getErrorLabel = defaultErrorLabel,
@@ -308,6 +353,15 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
     )
     const viewMode = modeControlled ? modeProp : internalMode
     const isInput = viewMode === 'input'
+    const isScroll = viewMode === 'scroll'
+    const isDial = viewMode === 'dial'
+    // The touch mode the toggle returns to from input: the last of dial /
+    // scroll shown (Compose pairs DisplayModeToggle dial ⇄ input and
+    // ScrollDisplayModeToggle scroll ⇄ input).
+    const touchMode = useRef<'dial' | 'scroll'>(isScroll ? 'scroll' : 'dial')
+    if (!isInput) touchMode.current = isScroll ? 'scroll' : 'dial'
+    const vibrant = variant === 'vibrant'
+    const horizontal = orientation === 'horizontal' && isDial
 
     const modal = open !== undefined
     const isOpen = modal ? !!open : true
@@ -771,23 +825,7 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
       </span>
     )
 
-    const surface = (
-      <div
-        ref={(node) => assignRefs(node, surfaceRef, ref)}
-        {...(modal
-          ? { role: 'dialog', 'aria-modal': true, 'aria-labelledby': titleId, tabIndex: -1 }
-          : {})}
-        {...rest}
-        data-mode={viewMode}
-        data-24h={!ampm || undefined}
-        className={clsx(styles.picker, modal && styles.modalSurface, className)}
-      >
-        {hasActions && (
-          <span id={titleId} className={styles.headline}>
-            {titleLabel ?? (isInput ? 'Enter time' : 'Select time')}
-          </span>
-        )}
-
+    const fieldsRow = (
         <div className={styles.fields}>
           {/* Clock time reads hour:minute left-to-right in every locale, so the
               row is pinned LTR and an RTL page doesn't show "30 : 10" (#428). */}
@@ -798,6 +836,33 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
                 :
               </span>
               {renderFieldInput('minute')}
+            </div>
+          ) : isScroll ? (
+            // Compose TimeScroll: two endless ScrollFields (100×120).
+            <div className={styles.timeFields} dir="ltr">
+              <ScrollField
+                className={styles.scrollField}
+                min={ampm ? 1 : 0}
+                max={ampm ? 12 : 23}
+                value={displayHour}
+                onChange={(_, h) => setDisplayHour(h)}
+                pageStep={ampm ? 3 : 6}
+                aria-label={selectHourLabel}
+                getValueText={(h) => getHourLabel(h, ampm)}
+                data-autofocus
+              />
+              <span className={styles.separator} aria-hidden="true">
+                :
+              </span>
+              <ScrollField
+                className={styles.scrollField}
+                min={0}
+                max={59}
+                value={current.minute}
+                onChange={(_, m) => setMinute(m)}
+                aria-label={selectMinuteLabel}
+                getValueText={getMinuteLabel}
+              />
             </div>
           ) : (
             <div className={styles.timeFields} role="radiogroup" dir="ltr">
@@ -844,8 +909,9 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
             </div>
           )}
         </div>
+    )
 
-        {!isInput && (
+    const dial = isDial && (
           <div
             className={styles.dial}
             role="group"
@@ -939,6 +1005,41 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
               )
             })}
           </div>
+    )
+
+    const surface = (
+      <div
+        ref={(node) => assignRefs(node, surfaceRef, ref)}
+        {...(modal
+          ? { role: 'dialog', 'aria-modal': true, 'aria-labelledby': titleId, tabIndex: -1 }
+          : {})}
+        {...rest}
+        data-mode={viewMode}
+        data-24h={!ampm || undefined}
+        data-variant={vibrant ? 'vibrant' : undefined}
+        data-orientation={horizontal ? 'horizontal' : undefined}
+        className={clsx(styles.picker, modal && styles.modalSurface, className)}
+      >
+        {hasActions && (
+          // VibrantTimePickerDialog has no title: keep it for the dialog name.
+          <span
+            id={titleId}
+            className={vibrant ? styles.visuallyHidden : styles.headline}
+          >
+            {titleLabel ?? (isInput ? 'Enter time' : 'Select time')}
+          </span>
+        )}
+
+        {horizontal ? (
+          <div className={styles.body}>
+            {fieldsRow}
+            {dial}
+          </div>
+        ) : (
+          <>
+            {fieldsRow}
+            {dial}
+          </>
         )}
 
         {(showModeToggle || hasActions) && (
@@ -946,9 +1047,23 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
             {showModeToggle && (
               <IconButton
                 variant="standard"
-                icon={isInput ? <ScheduleIcon /> : <KeyboardIcon />}
-                aria-label={isInput ? switchToDialLabel : switchToInputLabel}
-                onClick={() => setMode(isInput ? 'dial' : 'input')}
+                icon={
+                  !isInput ? (
+                    <KeyboardIcon />
+                  ) : touchMode.current === 'scroll' ? (
+                    <SwipeVerticalIcon />
+                  ) : (
+                    <ScheduleIcon />
+                  )
+                }
+                aria-label={
+                  !isInput
+                    ? switchToInputLabel
+                    : touchMode.current === 'scroll'
+                      ? switchToScrollLabel
+                      : switchToDialLabel
+                }
+                onClick={() => setMode(isInput ? touchMode.current : 'input')}
               />
             )}
             {hasActions && (
