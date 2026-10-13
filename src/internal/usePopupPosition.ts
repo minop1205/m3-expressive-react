@@ -57,6 +57,13 @@ export interface PopupPositionOptions {
    * popup takes one of the anchor's four corners. @default false
    */
   flipAlign?: boolean
+  /**
+   * Vertical alignment to the anchor for the `left` / `right` / `start` /
+   * `end` sides: `center` (Compose tooltips) or `start` / `end` = top /
+   * bottom edges aligned (a submenu beside its parent item, material-web
+   * `md-sub-menu` menu corner START_START). @default 'center'
+   */
+  inlineAlign?: 'center' | 'start' | 'end'
   /** Gap between the anchor and the popup, px. @default 4 */
   gap?: number
   /** Minimum distance kept from the viewport edges, px. @default 0 */
@@ -140,6 +147,7 @@ export function computePopupPosition(
     side: preferredSide,
     align = 'center',
     flipAlign = false,
+    inlineAlign = 'center',
     gap = 4,
     margin = 0,
     rtl = false,
@@ -149,12 +157,18 @@ export function computePopupPosition(
   const side = physicalPopupSide(preferredSide, rtl)
 
   if (side === 'left' || side === 'right') {
-    // Beside the anchor, vertically centered (Compose left/rightPositioning).
+    // Beside the anchor, vertically centered (Compose left/rightPositioning)
+    // or edge-aligned (`inlineAlign`).
     const resolved = avoidCollisions
       ? resolvePopupInlineSide(anchor, popup.width, viewport.width, side, gap, margin)
       : side
     const left = resolved === 'left' ? anchor.left - gap - popup.width : anchor.right + gap
-    const top = anchor.top + (anchor.height - popup.height) / 2
+    const top =
+      inlineAlign === 'start'
+        ? anchor.top
+        : inlineAlign === 'end'
+          ? anchor.bottom - popup.height
+          : anchor.top + (anchor.height - popup.height) / 2
     if (!avoidCollisions) return { side: resolved, top, left }
     return {
       side: resolved,
@@ -262,8 +276,15 @@ export const RESIZE_HIDE_DELAY_MS = 150
 export interface UsePopupPositionOptions extends PopupPositionOptions {
   /** Whether the popup is shown (positions are only tracked while open). */
   open: boolean
-  /** The element the popup is anchored to. */
-  anchorRef: RefObject<HTMLElement | null>
+  /** The element the popup is anchored to (observed for size changes and moves). */
+  anchorRef?: RefObject<HTMLElement | null>
+  /**
+   * A virtual anchor rect (viewport coordinates) used instead of the anchor
+   * element's — e.g. a point for a context menu, or a submenu's parent item
+   * widened to the parent menu (#436). Keep it stable (`useCallback`): a new
+   * function re-runs the positioning.
+   */
+  getAnchorRect?: () => PopupAnchorRect
   /** The popup (`position: fixed`; made a `popover="manual"` element for the top layer). */
   popupRef: RefObject<HTMLElement | null>
   /** Also size the popup to the anchor's width (inline `width`). @default false */
@@ -352,10 +373,12 @@ function observeMove(element: Element, onMove: () => void): () => void {
 export function usePopupPosition({
   open,
   anchorRef,
+  getAnchorRect,
   popupRef,
   side,
   align = 'center',
   flipAlign = false,
+  inlineAlign = 'center',
   gap = 4,
   margin = 0,
   rtl,
@@ -385,9 +408,9 @@ export function usePopupPosition({
     }
 
     const update = (settled = false) => {
-      const anchorEl = anchorRef.current
-      if (!anchorEl) return
-      const anchor = anchorEl.getBoundingClientRect()
+      const anchorEl = anchorRef?.current ?? null
+      if (!anchorEl && !getAnchorRect) return
+      const anchor = getAnchorRect ? getAnchorRect() : anchorEl!.getBoundingClientRect()
       const viewport = {
         width: document.documentElement.clientWidth || window.innerWidth,
         height: document.documentElement.clientHeight || window.innerHeight,
@@ -412,12 +435,12 @@ export function usePopupPosition({
       cancelResizeCheck()
       applied = { ...viewport, anchorHidden }
       if (matchAnchorWidth) popup.style.width = `${anchor.width}px`
-      const isRtl = rtl ?? getComputedStyle(anchorEl).direction === 'rtl'
+      const isRtl = rtl ?? getComputedStyle(anchorEl ?? popup).direction === 'rtl'
       const position = computePopupPosition(
         anchor,
         { width: popup.offsetWidth, height: popup.offsetHeight },
         viewport,
-        { side, align, flipAlign, gap, margin, rtl: isRtl, avoidCollisions },
+        { side, align, flipAlign, inlineAlign, gap, margin, rtl: isRtl, avoidCollisions },
       )
       popup.style.top = `${position.top}px`
       popup.style.left = `${position.left}px`
@@ -465,7 +488,7 @@ export function usePopupPosition({
     const observer =
       typeof ResizeObserver === 'function' ? new ResizeObserver(onChange) : null
     observer?.observe(popup)
-    const anchorEl = anchorRef.current
+    const anchorEl = anchorRef?.current
     if (anchorEl) observer?.observe(anchorEl)
     const stopMoveObserver = anchorEl ? observeMove(anchorEl, onChange) : () => {}
     return () => {
@@ -481,10 +504,12 @@ export function usePopupPosition({
   }, [
     open,
     anchorRef,
+    getAnchorRect,
     popupRef,
     side,
     align,
     flipAlign,
+    inlineAlign,
     gap,
     margin,
     rtl,

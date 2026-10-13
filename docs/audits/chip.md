@@ -73,6 +73,7 @@ CH4 → #184、CH5 → #185、CH6 → #186、CH7/CH8 → #187(同じ `.action` /
 - **選択可能 chip のロール**: site ラベル表は Web = `gridcell`(chip set 内)、Compose = `Role.Checkbox` + selected。
   実装は `<button aria-pressed>`(トグルボタン)。単独の chip ではトグルボタンは「選択 / 非選択」を正しく伝える
   ネイティブ手段で、axe も通る → **維持**。`gridcell` は CH10 の chip set を作るときに合わせて決める
+  (**→ 置き換え: Phase B B36** — single 選択の ChipSet は radiogroup / radio、それ以外は toolbar + `aria-pressed`。gridcell は採らない)
 - **remove だけの input chip**: site a11y「remove 以外のアクションがない chip は、chip と icon で**1つの**フォーカス
   要素」。実装は常に primary `<button>`(`onClick` なしでは何もしない)+ remove の2要素。CH6 で Backspace/Delete を
   primary 側で受けるなら、primary を「削除対象の chip」として残す形で要件の意図は満たせる。構造変更は CH6 の
@@ -82,7 +83,7 @@ CH4 → #184、CH5 → #185、CH6 → #186、CH7/CH8 → #187(同じ `.action` /
 - **input chip の `removable` が既定 false**: site guidelines は「input chip の trailing icon は**必須**で削除に使う」
   が、Compose `InputChip` の `trailingIcon` は任意。既定値の変更は破壊的なので記録のみ
 - **filter chip の trailing icon はメニューも開ける**(site guidelines)。実装は × の remove 専用。ドロップダウン
-  矢印 + `onClick` の組み合わせは将来の API 候補
+  矢印 + `onClick` の組み合わせは将来の API 候補(**→ 決定: Phase B B36** — filter chip の `endIcon`、Menu の trigger で回転)
 - **`elevated` が input chip にも効く**: site・Compose とも elevated input chip は存在しない(トークンなし)。
   JSDoc で「assist / filter / suggestion のみ」と明記するか無視するか、実装時に判断
 - **横方向のタッチターゲット**: `.action::after` は縦 48 だけ。1文字ラベルの chip は幅 41px 程度で、Compose の

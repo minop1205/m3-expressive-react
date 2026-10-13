@@ -14,7 +14,11 @@ import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { CheckIcon, CloseIcon } from '../../internal/icons'
-import { ChipSetContext, ChipSetDisabledContext } from './ChipSetContext'
+import {
+  ChipSetContext,
+  ChipSetDisabledContext,
+  ChipSetSelectionContext,
+} from './ChipSetContext'
 import { useControllableState } from '../../internal/useControllableState'
 import styles from './Chip.module.css'
 
@@ -50,6 +54,22 @@ export interface ChipProps
   defaultSelected?: boolean
   /** Fires with the triggering event and the next selected state (filter / input chips). */
   onChange?: (event: MouseEvent<HTMLButtonElement>, selected: boolean) => void
+  /**
+   * Trailing icon inside the chip's action (filter chips), e.g. an
+   * arrow-drop-down when the chip opens a `Menu`. Decorative (hidden from
+   * assistive technology); it turns 180° while the chip is an expanded popup
+   * trigger (`aria-expanded="true"`, which `Menu` sets on its trigger).
+   * Ignored when the chip is `removable` (the trailing slot holds the remove
+   * button).
+   */
+  endIcon?: ReactNode
+  /**
+   * The chip's value inside a `ChipSet` with a `selectionMode`: the set then
+   * owns this filter / input chip's selection (`selected` /
+   * `defaultSelected` are ignored). Otherwise it is the native button
+   * `value`.
+   */
+  value?: ButtonHTMLAttributes<HTMLButtonElement>['value']
   /** Whether a trailing remove button is shown (input / filter removable). */
   removable?: boolean
   /**
@@ -77,8 +97,11 @@ const defaultGetRemoveLabel = (label: string) => `Remove ${label}`
  * Supports assist, filter, input, and suggestion variants.
  * Uses a native `<button>` for the primary action. Filter chips toggle
  * selection (`aria-pressed`); input chips opt into the same selection API by
- * passing `selected` / `defaultSelected` / `onChange`. Removable chips have a
- * trailing remove button.
+ * passing `selected` / `defaultSelected` / `onChange`. Inside a `ChipSet` with
+ * a `selectionMode`, chips with a `value` are selected by the set (single →
+ * `role="radio"` + `aria-checked`). Removable chips have a trailing remove
+ * button; other filter chips may show a decorative `endIcon` (e.g. a menu
+ * arrow).
  *
  * Structure mirrors material-web: each action has its own Ripple/FocusRing.
  * Primary Ripple is scoped to the action button. The trailing remove button
@@ -104,6 +127,8 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
       selected: controlledSelected,
       defaultSelected,
       onChange,
+      endIcon,
+      value,
       removable = false,
       onRemove,
       getRemoveLabel = defaultGetRemoveLabel,
@@ -120,7 +145,16 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
 
     // Input chips opt into selection so existing (v1.0) input chips do not
     // start toggling on click.
+    // Inside a selecting ChipSet, a filter / input chip with a `value` is
+    // selected by the set instead (B36).
+    const group = useContext(ChipSetSelectionContext)
+    const itemValue = value == null ? undefined : String(value)
+    const managed =
+      group !== null &&
+      itemValue !== undefined &&
+      (variant === 'filter' || variant === 'input')
     const isSelectable =
+      managed ||
       variant === 'filter' ||
       (variant === 'input' &&
         (controlledSelected !== undefined ||
@@ -132,7 +166,9 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
       name: 'Chip',
       state: 'selected',
     })
-    const selected = isSelectable && storedSelected
+    const selected = managed
+      ? group.isSelected(itemValue)
+      : isSelectable && storedSelected
 
     const hasAvatar = variant === 'input' && avatar != null
     const hasIcon = !hasAvatar && icon != null
@@ -141,6 +177,7 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
     const hasCheckSlot = variant === 'filter' && showSelectedIcon && !hasIcon
     const showCheck = variant === 'filter' && selected && showSelectedIcon
     const hasTrailingAction = removable && (variant === 'input' || variant === 'filter')
+    const hasEndIcon = variant === 'filter' && endIcon != null && !hasTrailingAction
 
     const rootRef = useRef<HTMLSpanElement | null>(null)
     const primaryRef = useRef<HTMLButtonElement>(null)
@@ -158,14 +195,17 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
 
     const handleClick = useCallback(
       (event: MouseEvent<HTMLButtonElement>) => {
-        if (isSelectable) {
+        if (managed) {
+          const next = group.toggle(event, itemValue)
+          if (next !== selected) onChange?.(event, next)
+        } else if (isSelectable) {
           const next = !selected
           if (!isControlled) setUncontrolledSelected(next)
           onChange?.(event, next)
         }
         onClick?.(event)
       },
-      [isSelectable, isControlled, selected, onChange, onClick],
+      [managed, group, itemValue, isSelectable, isControlled, selected, onChange, onClick],
     )
 
     /**
@@ -284,6 +324,7 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
           (hasIcon || hasCheckSlot) && styles.hasLeadingIcon,
           hasAvatar && styles.hasAvatar,
           hasTrailingAction && styles.hasTrailingAction,
+          hasEndIcon && styles.hasEndIcon,
           className,
         )}
         onKeyDown={hasTrailingAction ? handleKeyDown : undefined}
@@ -293,9 +334,12 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
           ref={primaryRef}
           {...rest}
           type="button"
+          value={value}
           className={styles.action}
           disabled={disabled}
-          aria-pressed={isSelectable ? selected : undefined}
+          {...(managed && group.mode === 'single'
+            ? { role: 'radio', 'aria-checked': selected }
+            : { 'aria-pressed': isSelectable ? selected : undefined })}
           onClick={handleClick}
         >
           {hasAvatar && (
@@ -318,6 +362,11 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
             </span>
           )}
           <span className={styles.label}>{label}</span>
+          {hasEndIcon && (
+            <span className={styles.endIcon} aria-hidden="true">
+              {endIcon}
+            </span>
+          )}
           {(!disabled || dragged) && <Ripple disabled={disabled} dragged={dragged} />}
           {!disabled && <FocusRing />}
         </button>

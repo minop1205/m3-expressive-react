@@ -16,6 +16,8 @@ import ItalicIcon from '@material-symbols/svg-400/outlined/format_italic.svg'
 import UnderlineIcon from '@material-symbols/svg-400/outlined/format_underlined.svg'
 import ChevronRightIcon from '@material-symbols/svg-400/outlined/chevron_right.svg'
 import OpenInNewIcon from '@material-symbols/svg-400/outlined/open_in_new.svg'
+import CheckIcon from '@material-symbols/svg-400/outlined/check.svg'
+import DownloadIcon from '@material-symbols/svg-400/outlined/download.svg'
 
 # Menu
 
@@ -172,13 +174,204 @@ export function VerticalDemo({ color }) {
 </Menu>
 ```
 
+## Selection
+
+Give a `MenuGroup` a `selectionMode` and each `MenuItem` a `value`; the group
+owns the state through `value` / `defaultValue` / `onChange(event, value)`.
+
+- `selectionMode="single"` — the items are `menuitemradio`; selecting one
+  closes the menu. Selecting the selected item again keeps it selected.
+- `selectionMode="multiple"` — the items are `menuitemcheckbox` and the menu
+  **stays open** until it is dismissed, so several items can be toggled.
+
+`closeOnSelect` on the group or on an item overrides whether activating an
+item closes the menu. `selectedIcon` shows an icon (usually a check mark)
+while the item is selected: it replaces `startIcon`, or expands into view when
+the item has none. `supportingText` adds a second line below the label.
+
+export function SelectionDemo() {
+  const [sort, setSort] = useState('name')
+  const [show, setShow] = useState(['folders'])
+  return (
+    <>
+      <Menu trigger={<Button variant="outlined">Sort</Button>}>
+        <MenuGroup label="Sort by" selectionMode="single" value={sort} onChange={(e, v) => setSort(v)}>
+          <MenuItem value="name" selectedIcon={<CheckIcon />}>Name</MenuItem>
+          <MenuItem value="modified" selectedIcon={<CheckIcon />} supportingText="Newest first">Last modified</MenuItem>
+          <MenuItem value="size" selectedIcon={<CheckIcon />}>Size</MenuItem>
+        </MenuGroup>
+      </Menu>
+      <Menu variant="vertical" trigger={<Button variant="outlined">Show</Button>}>
+        <MenuGroup label="Show" selectionMode="multiple" value={show} onChange={(e, v) => setShow(v)}>
+          <MenuItem value="folders" selectedIcon={<CheckIcon />}>Folders</MenuItem>
+          <MenuItem value="hidden" selectedIcon={<CheckIcon />} supportingText="Files starting with a dot">Hidden files</MenuItem>
+          <MenuItem value="extensions" selectedIcon={<CheckIcon />}>File extensions</MenuItem>
+        </MenuGroup>
+      </Menu>
+      <span>Sorted by {sort}; showing {show.join(', ') || 'nothing'}</span>
+    </>
+  )
+}
+
+<Demo>
+  <SelectionDemo />
+</Demo>
+
+```tsx
+const [sort, setSort] = useState('name')
+
+<Menu trigger={<Button variant="outlined">Sort</Button>}>
+  <MenuGroup label="Sort by" selectionMode="single" value={sort} onChange={(e, v) => setSort(v)}>
+    <MenuItem value="name" selectedIcon={<CheckIcon />}>Name</MenuItem>
+    <MenuItem value="modified" selectedIcon={<CheckIcon />} supportingText="Newest first">
+      Last modified
+    </MenuItem>
+  </MenuGroup>
+</Menu>
+
+const [show, setShow] = useState(['folders'])
+
+<Menu variant="vertical" trigger={<Button variant="outlined">Show</Button>}>
+  <MenuGroup label="Show" selectionMode="multiple" value={show} onChange={(e, v) => setShow(v)}>
+    <MenuItem value="folders" selectedIcon={<CheckIcon />}>Folders</MenuItem>
+    <MenuItem value="hidden" selectedIcon={<CheckIcon />}>Hidden files</MenuItem>
+  </MenuGroup>
+</Menu>
+```
+
+In a baseline menu a `MenuGroup` only groups and labels its items; in the
+vertical menu it is also a segmented container. A lone `selected` item outside
+a selection group stays a `menuitemcheckbox`.
+
+## Submenus
+
+`submenu` on a `MenuItem` opens a nested menu beside it — on hover (after a
+short delay), click, <kbd>Enter</kbd> / <kbd>Space</kbd> or <kbd>→</kbd>.
+<kbd>←</kbd> or <kbd>Escape</kbd> closes it and returns to the parent item;
+the arrow keys swap in right-to-left layouts. The submenu opens next to the
+parent menu without overlapping it, flipping to the other side when there is
+no room. Choosing an item in a submenu closes the whole menu. Add a chevron
+`endIcon` to show that the item opens a submenu (it mirrors in RTL).
+
+<Demo>
+  <Menu trigger={<Button variant="outlined">File</Button>}>
+    <MenuItem startIcon={<CopyIcon />}>Duplicate</MenuItem>
+    <MenuItem
+      startIcon={<DownloadIcon />}
+      endIcon={<ChevronRightIcon />}
+      submenu={
+        <>
+          <MenuItem>PDF</MenuItem>
+          <MenuItem>PNG</MenuItem>
+          <MenuItem endIcon={<ChevronRightIcon />} submenu={<><MenuItem>Plain</MenuItem><MenuItem>Optimized</MenuItem></>}>SVG</MenuItem>
+        </>
+      }
+    >
+      Export as
+    </MenuItem>
+    <MenuItem startIcon={<ShareIcon />}>Share</MenuItem>
+  </Menu>
+</Demo>
+
+```tsx
+<Menu trigger={<Button variant="outlined">File</Button>}>
+  <MenuItem>Duplicate</MenuItem>
+  <MenuItem
+    endIcon={<ChevronRightIcon />}
+    submenu={
+      <>
+        <MenuItem>PDF</MenuItem>
+        <MenuItem>PNG</MenuItem>
+      </>
+    }
+  >
+    Export as
+  </MenuItem>
+</Menu>
+```
+
+A submenu takes the parent menu's `variant` and `color`; in a vertical menu,
+wrap its items in a `MenuGroup`.
+
+## Context menus
+
+Without a `trigger`, `anchorPosition` opens the menu at a point — viewport
+coordinates such as `{ top: event.clientY, left: event.clientX }`. Handle
+`onContextMenu` on the target: right-click, long-press, <kbd>Shift</kbd> +
+<kbd>F10</kbd> and the <kbd>ContextMenu</kbd> key all fire it. When it comes
+from the keyboard the coordinates can be 0, so fall back to the element's
+position. Control `open` and give the menu an `aria-label`; when it closes,
+focus returns to the element that was focused before.
+
+export function ContextMenuDemo() {
+  const [position, setPosition] = useState(null)
+  const onContextMenu = (event) => {
+    event.preventDefault()
+    const rect = event.currentTarget.getBoundingClientRect()
+    const fromKeyboard = event.clientX === 0 && event.clientY === 0
+    setPosition(fromKeyboard ? { top: rect.bottom, left: rect.left } : { top: event.clientY, left: event.clientX })
+  }
+  return (
+    <>
+      <div
+        tabIndex={0}
+        onContextMenu={onContextMenu}
+        style={{ padding: 32, border: '1px dashed var(--md-sys-color-outline)', borderRadius: 12 }}
+      >
+        Right-click here (or focus and press Shift+F10)
+      </div>
+      <Menu
+        aria-label="Item actions"
+        open={position !== null}
+        onOpenChange={(open) => { if (!open) setPosition(null) }}
+        anchorPosition={position ?? undefined}
+      >
+        <MenuItem startIcon={<CopyIcon />}>Copy</MenuItem>
+        <MenuItem startIcon={<ShareIcon />}>Share</MenuItem>
+        <MenuDivider />
+        <MenuItem startIcon={<DeleteIcon />}>Delete</MenuItem>
+      </Menu>
+    </>
+  )
+}
+
+<Demo>
+  <ContextMenuDemo />
+</Demo>
+
+```tsx
+const [position, setPosition] = useState<{ top: number; left: number } | null>(null)
+
+const onContextMenu = (event: React.MouseEvent<HTMLElement>) => {
+  event.preventDefault()
+  const rect = event.currentTarget.getBoundingClientRect()
+  const fromKeyboard = event.clientX === 0 && event.clientY === 0
+  setPosition(
+    fromKeyboard ? { top: rect.bottom, left: rect.left } : { top: event.clientY, left: event.clientX },
+  )
+}
+
+<div tabIndex={0} onContextMenu={onContextMenu}>…</div>
+<Menu
+  aria-label="Item actions"
+  open={position !== null}
+  onOpenChange={(open) => !open && setPosition(null)}
+  anchorPosition={position ?? undefined}
+>
+  <MenuItem>Copy</MenuItem>
+</Menu>
+```
+
 ## Accessibility
 
 Follows the WAI-ARIA APG menu-button pattern:
 
 - The trigger gets `aria-haspopup` / `aria-expanded`; the popup is
-  `role="menu"` with `menuitem` (or `menuitemcheckbox`) items and
-  `role="group"` for labelled `MenuGroup`s.
+  `role="menu"` with `menuitem` items (`menuitemradio` / `menuitemcheckbox`
+  in selection groups, with `aria-checked`) and `role="group"` for
+  `MenuGroup`s. Supporting text is the item's description.
+- An item with a submenu gets `aria-haspopup="menu"`, `aria-expanded` and
+  `aria-controls`; the submenu is named by that item.
 - <kbd>Enter</kbd> / <kbd>Space</kbd> / <kbd>↓</kbd> on the trigger open the
   menu and focus the first item (<kbd>↑</kbd>: the last). <kbd>↑</kbd> /
   <kbd>↓</kbd> cycle with wrap, <kbd>Home</kbd> / <kbd>End</kbd> jump, and
