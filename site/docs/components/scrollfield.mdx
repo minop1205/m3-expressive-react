@@ -1,0 +1,100 @@
+---
+title: ScrollField
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { ScrollField } from 'm3-expressive-react'
+
+# ScrollField
+
+MD3 Expressive scroll field (Compose's `ScrollField`): a vertical wheel of
+numbers that wraps around endlessly and snaps the selected value to its
+centre. It is the building block of the TimePicker's
+[scroll mode](/components/timepicker#scroll-wheels), and works on its own
+for any small integer range.
+
+## Basic usage
+
+`min` (default `0`) and `max` set the range; `max` wraps back to `min`.
+Use `value` + `onChange(event, value)` for a controlled field or
+`defaultValue` for an uncontrolled one. Values are drawn zero-padded to two
+digits; the centred one is DisplayLarge Emphasized in OnSurface, its
+neighbours DisplayMedium in Outline.
+
+export function MinuteDemo() {
+  const [minute, setMinute] = useState(30)
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <ScrollField
+        aria-label="Minute"
+        max={59}
+        value={minute}
+        onChange={(_, value) => setMinute(value)}
+        getValueText={(value) => `${value} minutes`}
+      />
+      <span>Selected: {minute}</span>
+    </div>
+  )
+}
+
+<Demo>
+  <MinuteDemo />
+</Demo>
+
+```tsx
+const [minute, setMinute] = useState(30)
+
+<ScrollField
+  aria-label="Minute"
+  max={59}
+  value={minute}
+  onChange={(event, value) => setMinute(value)}
+  getValueText={(value) => `${value} minutes`}
+/>
+```
+
+## Size and formatting
+
+The field is 100×200px by default (Compose's `ScrollFieldHeight`); each value
+takes a third of 200px whatever height you give it, so a shorter field shows
+less of the neighbours. Set `width` / `height` with `style` or `className`.
+`formatValue` changes how values are drawn.
+
+<Demo>
+  <ScrollField
+    aria-label="Year"
+    min={2000}
+    max={2030}
+    defaultValue={2026}
+    formatValue={String}
+    style={{ width: 160 }}
+  />
+  <ScrollField aria-label="Hour" min={1} max={12} defaultValue={7} style={{ height: 120 }} />
+  <ScrollField aria-label="Disabled" max={59} defaultValue={15} disabled />
+</Demo>
+
+```tsx
+<ScrollField aria-label="Year" min={2000} max={2030} formatValue={String} style={{ width: 160 }} />
+<ScrollField aria-label="Hour" min={1} max={12} style={{ height: 120 }} />
+<ScrollField aria-label="Disabled" max={59} disabled />
+```
+
+## Accessibility
+
+- The field is an ARIA `spinbutton` with `aria-valuenow`, `aria-valuemin`,
+  `aria-valuemax` and `aria-valuetext`. Give it a name with `aria-label` (or
+  `aria-labelledby`), and pass `getValueText` when the number alone is not
+  enough (for example `"7 o'clock"`).
+- Keyboard: ArrowUp / ArrowDown move by one value and wrap around,
+  PageUp / PageDown by `pageStep` (default 5), Home / End jump to `min` /
+  `max`.
+- The mouse wheel moves one value per notch without scrolling the page.
+  Dragging (touch, mouse or pen) scrolls the wheel and snaps to the nearest
+  value, and tapping a neighbouring value scrolls to it.
+- With reduced motion the wheel jumps instead of animating.
+
+## Props
+
+<PropsTable component="ScrollField" />

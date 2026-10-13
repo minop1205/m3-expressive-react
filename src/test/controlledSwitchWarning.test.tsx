@@ -24,6 +24,7 @@ import {
 import { NavigationRail, NavigationRailItem } from '../components/NavigationRail/NavigationRail'
 import { Radio } from '../components/Radio/Radio'
 import { RadioGroup } from '../components/Radio/RadioGroup'
+import { ScrollField } from '../components/ScrollField/ScrollField'
 import { SearchBar } from '../components/SearchBar/SearchBar'
 import { SegmentedButton } from '../components/SegmentedButton/SegmentedButton'
 import { Slider } from '../components/Slider/Slider'
@@ -158,6 +159,7 @@ const cases: Case[] = [
       </SwipeToDismiss>
     ),
   ],
+  ['ScrollField', 'value', (c) => <ScrollField aria-label="M" max={59} value={pick(c, 5)} />],
   ['Switch', 'selected', (c) => <Switch aria-label="S" selected={pick(c, true)} />],
   [
     'Tabs',

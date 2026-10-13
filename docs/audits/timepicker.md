@@ -18,6 +18,7 @@ Phase B Tier 2。3ソースを突き合わせた:
 別コンポーネントにし、見出し・Cancel/OK・モード切替は `TimePickerDialog` 側が持つ。本ライブラリは1コンポーネント +
 `mode` なので、その差は API 方針どおりで指摘しない(ダイアログ部分の欠落だけを TP8 で扱う)。
 Compose の `Vibrant*` / `TimeScroll`(Expressive の opt-in)は範囲外とし、標準パスだけと照合した。
+(→ 2026-10-13 に #444 / 裁定 **B43** で実装。下記「追加構成」)
 
 ## 結論サマリ
 
@@ -68,7 +69,7 @@ Issue: TP1 → #163、TP2/TP3 → #164(入力/表示部の寸法とタイポの 
   選択ボタンの背景で隠している。見た目は同等(TP4 でハンドルを 48 にすれば差はさらに小さい)
 - **横向き(landscape)レイアウト**: site guidelines は画面の向き・高さに応じて horizontal(AM/PM は 216×38 を下に)へ切り替えるとし、
   Compose も `TimePickerLayoutType`(高さ < 幅で Horizontal、dial は利用可能な高さで 256 / 238 / 200)を持つ。Web では
-  prop(`orientation`)かコンテナクエリかの判断が要るので記録のみ
+  prop(`orientation`)かコンテナクエリかの判断が要るので記録のみ → **B43 で `orientation` prop に決定・実装済み**(下記「追加構成」)
 - **モード切替の名前**: 実装「Switch to keyboard input」/「Switch to dial」、site「Toggle input picker」/「Toggle dial picker」、
   Compose「Switch to text input mode」/「Switch to clock mode」+ tooltip。どれも意味は通じる。TP7 で `IconButton` 化するときに
   site の文言に寄せる(Compose の tooltip も付けるなら Tooltip コンポーネントで)
@@ -190,6 +191,50 @@ Issue: TP1 → #163、TP2/TP3 → #164(入力/表示部の寸法とタイポの 
 | `mode` の互換(B6 付随) | `mode` は `onModeChange` と併用したときだけ controlled。単独指定は v1.0 どおり初期値(`@deprecated`、`defaultMode` へ移行、v2 で常に controlled) | Phase B 裁定の追加条件(v1.1.0 で互換を壊さない) |
 | 見出しの表示条件 | `onAccept` / `onCancel` / `open` のいずれかがあるときだけ(アクション行と同じ) | B6(opt-in、既存ストーリー不変) |
 | Enter の確定 | 入力モードの minute フィールドで有効値のとき `onAccept`(hour は minute へ進む)。dial の Enter は選択のみ | m3 キー表 + Compose `ClockText`(Enter は選択) |
+
+## 追加構成(#444・裁定 B43、2026-10-13)
+
+監査時に範囲外とした Expressive の opt-in 3 点を実装した。API の判断と Compose の行番号は
+`docs/decisions/phase-b-api.md` の **B43**。ここには実装値と Compose の対照だけを置く(Compose androidx-main、
+`TimePicker.kt` / `TimePickerDialog.kt` / `ScrollField.kt`)。
+
+### vibrant(`variant="vibrant"`)
+
+| 項目 | Compose(vibrant) | 実装 |
+|---|---|---|
+| コンテナ | surface-container、CornerExtraLarge、余白 12(横 24)、見出しなし | 同(見出しは visually hidden でダイアログ名に残す)。影は本監査の裁定どおり level3 |
+| 時刻セレクタ | 100×120(縦 24h 132)、CornerLarge、lowest、選択 primary 文字 + 2dp primary 枠 | 同 |
+| 区切り | 16 幅 | 同 |
+| 表示 → dial / dial の下 | 12 / 0(+ ダイアログの内容 → アクション 12) | 同 |
+| dial | surface-container-lowest | 同 |
+| AM/PM | ToggleButton 2 個:丸 → 選択・押下 12dp、lowest / on-surface-variant、選択 primary-container / on-primary-container + 太字。縦 56×120 間 8、横 216×40 間 16、セレクタから 16 / フィールドから 8 | 同(形は FastSpatial) |
+| 入力フィールド | 100×120 display-large、lowest、フォーカス primary 2dp + primary 文字、未フォーカス枠なし、supporting text はエラー時のみ | 同 |
+
+### 横向き(`orientation="horizontal"`、dial のみ)
+
+| 項目 | Compose | 実装 |
+|---|---|---|
+| 構成 | [セレクタ行 + 16 下に AM/PM] — 36(vibrant 52)— [dial] | 同 |
+| AM/PM | 216×38(vibrant 216×40)、左右分割、legacy は 1dp 区切り | 同 |
+| dial | standard は画面の高さで 256 / 238 / 200 | **256 固定**(B43 — Web では利用側がコンテナを選ぶ) |
+| アクション行 | dial の 4 下(landscape) | 同。見出しは上(Compose はタイトルを左上の空きに重ねる — B43) |
+| 24h セレクタ幅 | 96 | 96(114 は縦向きのトークン) |
+
+### スクロール(`mode="scroll"`)と ScrollField
+
+| 項目 | Compose | 実装 |
+|---|---|---|
+| フィールド | ScrollField 100×120、ページ高さ 200/3、無限ページ | 同(ScrollField を公開コンポーネントとして追加) |
+| ScrollField の見た目 | 200dp 既定、ShapeDefaults.Large、lowest、中央 DisplayLargeEmphasized on-surface / 他 DisplayMedium outline(FastSpatial) | 同、既定幅 100 |
+| ARIA | progress(無限ページ番号)+ stateDescription | `role="spinbutton"` + `aria-valuenow` / min / max / `aria-valuetext`(B43) |
+| キー | Down = +1 / Up = −1 | **ArrowUp = +1**(APG spinbutton — B43)、PageUp/Down、Home/End |
+| スナップ / fling | pager `spring()`、`PagerSnapDistance.atMost(1)` | duration-medium1 / easing-standard、fling は最寄り ±1 |
+| standard の色 | (TimeScroll は vibrant のみ) | 配置はスクロールの寸法、色と AM/PM は standard(B43) |
+| モード切替 | `ScrollDisplayModeToggle`(scroll ⇄ input、「Switch to scroll mode」) | 同(`switchToScrollLabel`) |
+
+検証: 既存 5 ストーリー(Default / InputMode / TwentyFourHour / WithActions / ModalDialog)を変更前後の Storybook で同じ
+ブラウザから撮り、light / dark ともバイト一致を確認(standard では新しい `data-*` を出さず、CSS も新しいセレクタだけを足した)。
+テスト: ScrollField 12 件、TimePicker に scroll / variant / orientation の 14 件(axe を各構成で)を追加。
 
 ## 手順メモ(今回わかったこと)
 

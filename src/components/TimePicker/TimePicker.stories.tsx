@@ -88,3 +88,96 @@ export const ModalDialog: Story = {
     )
   },
 }
+
+/**
+ * `variant="vibrant"` — the Expressive style (Compose `vibrantColors()` +
+ * `TimePickerShapes` + `VibrantTimePickerDialog`): SurfaceContainer, 100×120
+ * Lowest fields with a Primary selection, pill AM / PM, no headline.
+ */
+export const Vibrant: Story = {
+  render: () => {
+    const [time, setTime] = useState<TimeValue>({ hour: 10, minute: 30 })
+    return (
+      <TimePicker
+        variant="vibrant"
+        value={time}
+        onChange={setTime}
+        onAccept={() => {}}
+        onCancel={() => {}}
+      />
+    )
+  },
+}
+
+/** Vibrant keyboard input: 100×120 DisplayLarge fields, error text only. */
+export const VibrantInputMode: Story = {
+  render: () => {
+    const [time, setTime] = useState<TimeValue>({ hour: 10, minute: 30 })
+    return <TimePicker variant="vibrant" defaultMode="input" value={time} onChange={setTime} />
+  },
+}
+
+/**
+ * `orientation="horizontal"` (Compose `TimePickerLayoutType.Horizontal`): the
+ * time display and a 216×38 AM / PM beside the dial, for landscape layouts.
+ */
+export const Horizontal: Story = {
+  render: () => {
+    const [time, setTime] = useState<TimeValue>({ hour: 10, minute: 30 })
+    return (
+      <TimePicker
+        orientation="horizontal"
+        value={time}
+        onChange={setTime}
+        onAccept={() => {}}
+        onCancel={() => {}}
+      />
+    )
+  },
+}
+
+/** Vibrant + horizontal: 52 between the display and the dial, 216×40 AM / PM. */
+export const VibrantHorizontal: Story = {
+  render: () => {
+    const [time, setTime] = useState<TimeValue>({ hour: 18, minute: 30 })
+    return (
+      <TimePicker
+        variant="vibrant"
+        orientation="horizontal"
+        value={time}
+        onChange={setTime}
+        onAccept={() => {}}
+        onCancel={() => {}}
+      />
+    )
+  },
+}
+
+/**
+ * `mode="scroll"` (Compose `TimeScroll`): two endless scroll wheels — wheel,
+ * drag, or ArrowUp / ArrowDown. The toggle switches scroll ⇄ input.
+ */
+export const ScrollMode: Story = {
+  render: () => {
+    const [time, setTime] = useState<TimeValue>({ hour: 10, minute: 30 })
+    return <TimePicker defaultMode="scroll" value={time} onChange={setTime} />
+  },
+}
+
+/** Scroll mode in the vibrant style (the Compose default for `TimeScroll`), 24-hour. */
+export const VibrantScrollMode: Story = {
+  render: () => {
+    const [time, setTime] = useState<TimeValue>({ hour: 18, minute: 45 })
+    return (
+      <TimePicker
+        variant="vibrant"
+        defaultMode="scroll"
+        ampm={false}
+        value={time}
+        onChange={setTime}
+        onAccept={() => {}}
+        onCancel={() => {}}
+      />
+    )
+  },
+}

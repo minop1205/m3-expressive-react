@@ -67,6 +67,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B37 | #439 | TextField のラベル位置(上置き・常時縮小) | **`labelPlacement?: 'floating' \| 'above'`(既定 `'floating'`)+ `shrinkLabel?: boolean`、DatePickerField も同名で素通し** | なし(追加) | 決定(2026-10-13・#439 の API 案どおり) |
 | B41 | #444 | 小さな構成の不足(FabMenu 配置・Toolbar elevation・dismissible drawer・Carousel 幅) | **FabMenu `horizontalAlignment`、Toolbar `disableElevation`、NavigationDrawer `variant="dismissible"`、Carousel `itemWidth` の JSDoc 修正** | なし(追加) | 決定(2026-10-13) |
 | B42 | #434 | Autocomplete(exposed dropdown menu・編集可) | **専用の `<Autocomplete>`、`options` 配列か `<Option>` 子要素、`value` / `inputValue` の二系統(各 controlled / uncontrolled)、`freeSolo` / `filterOptions` / `noOptionsText`、APG list autocomplete、listbox / Option は Select と共有** | なし(追加) | 決定(2026-10-13・#434 フェーズ 2) |
+| B43 | #444 | TimePicker の vibrant・横向き・スクロールホイール | **`variant="standard" \| "vibrant"`、`orientation="vertical" \| "horizontal"`(dial のみ)、`mode="scroll"`(Compose `TimeScroll`)+ 公開 `ScrollField`(APG spinbutton)** | なし(追加) | 決定(2026-10-13) |
 | B44 | #444 | TextField / Select の tonal・secure field・VerticalDragHandle | **TextField / Select `tonal?: boolean`(`@experimental`、Compose `tonalColors()` + `roundedShape`)、secure field はレシピ(`type="password"` + `IconButton toggle`、名前固定 + `aria-pressed`)、新規 `DragHandle`(APG window splitter、`value` / `onChange(event, value)` / `min` / `max` / `step` / `paneSide`)** | なし(追加) | 決定(2026-10-13) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
@@ -1617,7 +1618,7 @@ Default / Refreshing / Circular を追加。
 
 ### B41: FabMenu の配置・Toolbar の elevation・dismissible drawer・Carousel の幅(#444 の小項目)
 
-- **Issue**: #444(トラッキング。TimePicker のホイール / vibrant / 横向き、ScrollField、TextField tonal / secure、
+- **Issue**: #444(トラッキング。TimePicker のホイール / vibrant / 横向き・ScrollField は **B43**、TextField tonal / secure、
   VerticalDragHandle は別途。#444 は開いたまま)
 - **状態**: 決定(2026-10-13)
 - **背景**: 2026-10-09 の m3.material.io / Compose androidx-main スイープで見つかった、優先度の低い構成の不足のうち
@@ -1670,6 +1671,103 @@ Default / Refreshing / Circular を追加。
 
 ---
 
+### B43: TimePicker の vibrant・横向き・スクロールホイール + ScrollField(#444 の TimePicker 項目)
+
+- **Issue**: #444(トラッキング。TimePicker の 3 項目。#444 は開いたまま)
+- **状態**: 決定(2026-10-13)
+- **背景**: timepicker 監査(docs/audits/timepicker.md 冒頭)は Compose の `Vibrant*` / `TimeScroll`(Expressive の opt-in)と
+  横向きレイアウトを範囲外としていた。m3 time-pickers/specs の構成一覧は「Vertical orientation and horizontal orientation」を
+  挙げ、Compose androidx-main は次を持つ(いずれも `TimePicker.kt` / `TimePickerDialog.kt` / `ScrollField.kt`):
+  - vibrant: `TimePicker(state, shapes, colors = vibrantColors())`(:289)。`shapes` の有無(`orVibrant`、:4143)で
+    寸法・形も切り替わるので、色だけの差ではない。色は `defaultVibrantTimePickerColors`(:684–709)/
+    `defaultVibrantTimeInputColors`(:894–924)、形は `TimePickerShapes(timeFieldShape = CornerLarge, periodSelectorShape = CornerFull)`
+    (:743)、寸法は `Vibrant*`(:1454–1478)、ダイアログは `VibrantTimePickerDialog`(TimePickerDialog.kt:140 — 見出しなし、
+    `vibrantContainerColor = surfaceContainer` :416、`vibrantShape = CornerExtraLarge` :420、余白 12 :331–346)
+  - 横向き: `TimePicker(layoutType = TimePickerLayoutType.Horizontal)`(:1436 / :1987 `HorizontalTimePicker`、
+    :2383 `HorizontalClockDisplay`)
+  - スクロール: `TimeScroll`(:423 / :454 → `TimeScrollImpl` :2230)= 2 つの `ScrollField`(ScrollField.kt:194 — 公開の
+    `@material3expressive` コンポーネント。`VerticalPager` の無限ページ :64、ページ高さ `ScrollFieldHeight / 3` :261、
+    既定高さ 200dp :357)。モード切替は `ScrollDisplayModeToggle`(TimePickerDialog.kt:481 — scroll ⇄ input、
+    文言「Switch to scroll mode」strings.xml:124)
+
+**選択肢**
+
+- vibrant の API
+  - **(a) `variant?: 'standard' | 'vibrant'`**(既定 `'standard'`)
+  - (b) `colorScheme?: 'standard' | 'vibrant'` — Compose の vibrant は色に加えて形(CornerLarge / CornerFull)・寸法
+    (100×120 のフィールド等)・AM/PM の部品(ToggleButton)・ダイアログの余白と見出しまで変わるので、色の名前では範囲を
+    言い表せない。また `ThemeProvider` の color scheme と紛らわしい
+  - (c) Compose 流の別コンポーネント(`VibrantTimePicker`)— 1 コンポーネント方針に反する
+- 横向き: **`orientation?: 'vertical' | 'horizontal'`**(既定 `'vertical'`)。Compose の既定は画面の縦横から自動判定
+  (`defaultTimePickerLayoutType`)だが、Web ではコンテナと画面が一致しないので明示 prop にする(監査の軽微欄で
+  保留にしていた「prop かコンテナクエリか」はこれで決着)
+- スクロール: **`mode` に `'scroll'` を追加**(`TimePickerMode = 'dial' | 'input' | 'scroll'`)。Compose の
+  `TimePickerDisplayMode.Scroll`(TimePickerDialog.kt:571)と同じ位置づけ
+- ScrollField: **公開する**(`m3-expressive-react/ScrollField`)。Compose で公開の Expressive コンポーネントで、API が
+  きれいに Web の語彙へ写せたため:`min` / `max` / `value` / `defaultValue` / `onChange(event, value)` / `pageStep` /
+  `disabled` / `formatValue` / `getValueText`(+ 標準 HTML 属性)。Compose の index ベース(`itemCount` + `index`)は
+  `min` / `max` の値ベースに、`field` スロットは `formatValue` に、`colors` は CSS(`--_*` トークン)に置き換えた
+
+**決定**: 上記の (a) + `orientation` + `mode="scroll"` + 公開 `ScrollField`。補足:
+
+1. **vibrant(`data-variant="vibrant"`、standard では属性を出さない)**
+   - コンテナ: surface-container、CornerExtraLarge、余白 12(横向きは左右 24 — TimePickerDialog.kt:355)、内容とアクションの間 12
+     (横向きは 24)。影は監査の裁定どおり `shadow-level3` のまま
+   - 見出し: VibrantTimePickerDialog には title がない → **visually hidden で残す**(モーダルのダイアログ名に必要。表示はしない)
+   - 時刻セレクタ: 100×120(縦向き 24h は 132 — :2459–2463)、CornerLarge、surface-container-lowest、選択時は primary の文字 +
+     2dp primary 枠(:3105)、区切り 16 幅(:1460)、表示 → dial 12(`VibrantVerticalTimePickerGap`)、dial の下 0、
+     dial は surface-container-lowest
+   - AM/PM: ToggleButton 2 個(:2978 `ToggleItem`、`shapes != null` で常に新トグル)。丸(`calc(高さ / 2)`)→ 選択時・押下時
+     12dp(`ToggleButtonShapes`、:2999)、FastSpatial で形を補間。未選択 surface-container-lowest / on-surface-variant、
+     選択 primary-container / on-primary-container + 太字(:2868)。縦 56×120 で間 8(セレクタから 16、入力・スクロールの
+     フィールドから 8)、横 216×40 で間 16(:2549–2560)。標準の tertiary + outline 枠(監査の裁定)は standard のみ
+   - 入力: 100×120・display-large、surface-container-lowest、フォーカスで primary 2dp 枠 + primary 文字、未フォーカスは枠なし
+     (:911–918)。「Hour」/「Minute」の supporting text は出さず、エラー時だけフィールドの下に出す(:3913
+     `shapes == null || !isValid`、Compose と同じくレイアウトが伸びる)
+2. **横向き(`data-orientation="horizontal"`、dial モードのときだけ)**
+   - Compose `HorizontalTimePicker`: [時刻表示(セレクタ行 + 16 下に AM/PM 216×38、左右分割・1dp 区切り)] — 36 —
+     [dial]。vibrant は間 52(`VibrantHorizontalTimePickerGap`)、AM/PM 216×40
+   - dial は 256 固定(Compose の standard 横向きは画面の高さで 256 / 238 / 200 に縮む `ClockFaceSizeModifier`、:2007 —
+     Web では利用側がコンテナを選ぶので縮めない)。アクション行は dial の 4 下(TimePickerDialog の landscape
+     `landContentActionsPadding`)。見出しは縦向きと同じく上に置く(Compose landscape はタイトルを左上の空きに重ねる
+     独自レイアウトだが、Web では列の上に置く方が単純で読み順も自然)
+   - 24h の横向きセレクタは 96 幅(site トークン「Time selector 24h **vertical** container width」114 は縦向き専用、
+     Compose も横向きは 96)
+   - input / scroll モードには横向きがない(Compose の `TimeInput` / `TimeScroll` は `layoutType` を取らない)→
+     `orientation` は dial だけに効く
+3. **スクロール(`mode="scroll"`)**
+   - Compose `TimeScrollImpl`: hour / minute の ScrollField を 100×120(`VibrantTimeFieldHeight` — 200dp の既定ではない)、
+     区切り(vibrant 16 / standard 24)、AM/PM(vibrant 56×120・間 8 / standard は 52 幅の outline 枠を行の高さ 120 に)
+   - Compose の `TimeScroll` は vibrant(`shapes` 必須)しかない。standard でも使えるようにし、そのときは
+     **配置はスクロールの寸法のまま、色と AM/PM の部品だけ standard**(コンテナ surface-container-high、tertiary + outline)。
+     Compose の `orVibrant` を standard 側に倒すと高さ 120 のフィールドの横に 72 の AM/PM が並ぶ不揃いな形になるため
+   - 12h の hour は 1–12 で循環(12 → 1 で AM/PM は変わらない、:2236–2258)、24h は 0–23。名前は「Select hour」/
+     「Select minutes」(Compose `contentDescription`)、値の読み上げは `getHourLabel` / `getMinuteLabel`(「7 o'clock」)
+   - モード切替: scroll では keyboard アイコン(`switchToInputLabel`)、そこから入った input では SwipeVertical アイコン +
+     **`switchToScrollLabel`(既定「Switch to scroll mode」)** で scroll へ戻る(Compose `ScrollDisplayModeToggle`)。
+     dial から入った input は従来どおり dial へ戻る。見出しは「Select time」(strings.xml の `m3c_time_scroll_dialog_title`)
+4. **ScrollField**
+   - 見た目: 既定 100×200(幅は Compose に既定がないので TimePicker の 100 を採用)、ShapeDefaults.Large、
+     surface-container-lowest。中央の値は DisplayLargeEmphasized(57/64・Medium・字間 0 — TypeScaleTokens)・on-surface、
+     ほかは DisplayMedium・outline(`ScrollFieldDefaults.Item`、:426–461)で、サイズと色を FastSpatial で補間(Compose と同じ
+     キー)。値の高さは常に 200/3(`PageSize.Fixed`)。disabled は container / content とも 38%
+   - ARIA: `role="spinbutton"` + `aria-valuenow` / `aria-valuemin` / `aria-valuemax` / `aria-valuetext`。Compose は
+     progress(無限ページの番号)と stateDescription で出しているが、Web では値そのものの spinbutton が正しい
+   - キーボード(APG spinbutton): **ArrowUp = +1 / ArrowDown = −1**(循環)、PageUp / PageDown = `pageStep`(既定 5。
+     TimePicker は hour 3 / 24h 6、minute 5)、Home / End = min / max。Compose は Down = 次のページ(+1)だが、
+     spinbutton の役割の約束(上で増える)を優先した。ホイールはスクロールと同じ向き(下へ回すと +1)
+   - ポインタ: ホイールは 1 ノッチ 1 値(トラックパッドの細かい delta は 50px ごとに 1 値)、`passive: false` でページを
+     スクロールさせない。ドラッグは Compose の pager と同じく途中で値が変わり、離すと最寄りへスナップ、fling は最寄りから
+     **最大 1 値**(foundation `PagerDefaults.flingBehavior` の `PagerSnapDistance.atMost(1)`)。隣の値のタップでそこへ
+     スクロール(各項目の `clickable`、ScrollField.kt:271)
+   - モーション: スナップは pager の `spring()`(motion scheme のキーではない)なので `duration-medium1` / `easing-standard`
+     のトゥイーン(PullToRefresh と同じ扱い)。reduced motion では即時(B3)
+   - 外からの `value` の変更は最短経路でアニメーションなしにジャンプ(Compose `scrollToOption`)
+
+**影響**: 非破壊(prop・mode 値・新規コンポーネントの追加のみ)。既定値は不変で、standard の DOM 属性も CSS も
+従来の値のまま(既存ストーリーはピクセル不変 — 変更前後の Storybook を同じブラウザで撮って一致を確認)。VRT:
+`Components/TimePicker` の Vibrant / VibrantInputMode / Horizontal / VibrantHorizontal / ScrollMode / VibrantScrollMode、
+`Components/ScrollField` の Default / CustomRange / Disabled を追加。対象: TimePicker、ScrollField(新規)。
 ### B44: TextField / Select の tonal スタイル・secure field・VerticalDragHandle(#444 の残り)
 
 - **Issue**: #444(トラッキング。TimePicker のホイール / vibrant / 横向きと ScrollField は別途。#444 は開いたまま)
