@@ -1,0 +1,122 @@
+---
+title: DragHandle
+---
+
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { DragHandle, List, ListItem } from 'm3-expressive-react'
+
+export const paneStyle = {
+  minWidth: 0,
+  overflow: 'auto',
+  borderRadius: 16,
+  background: 'var(--md-sys-color-surface-container)',
+  color: 'var(--md-sys-color-on-surface)',
+}
+
+export function ListDetail() {
+  const [width, setWidth] = useState(220)
+  return (
+    <div style={{ display: 'flex', width: '100%', height: 280 }}>
+      <section id="docs-list-pane" aria-label="Inbox" style={{ ...paneStyle, flex: `0 0 ${width}px` }}>
+        <List>
+          <ListItem headline="Ali Connors" supportingText="Brunch this weekend?" />
+          <ListItem headline="Sandra Adams" supportingText="Summer BBQ" />
+          <ListItem headline="Trevor Hansen" supportingText="Oui oui" />
+        </List>
+      </section>
+      <DragHandle
+        aria-label="Inbox"
+        aria-controls="docs-list-pane"
+        min={160}
+        max={400}
+        step={8}
+        shiftStep={40}
+        value={width}
+        onChange={(_event, value) => setWidth(value)}
+        getAriaValueText={(value) => `${value} pixels`}
+        style={{ alignSelf: 'center' }}
+      />
+      <section aria-label="Message" style={{ ...paneStyle, flex: 1, padding: 16 }}>
+        Detail pane
+      </section>
+    </div>
+  )
+}
+
+# DragHandle
+
+MD3 drag handle for resizing panes (Compose `VerticalDragHandle`). It is a
+vertical capsule placed between two side-by-side panes. Drag it sideways, or
+focus it and use the arrow keys, to change how the width is split, for
+example between the list and the detail pane of a list-detail layout.
+
+<Demo>
+  <ListDetail />
+</Demo>
+
+```tsx
+const [width, setWidth] = useState(280)
+
+<div style={{ display: 'flex' }}>
+  <section id="list-pane" aria-label="Inbox" style={{ flex: `0 0 ${width}px` }}>…</section>
+  <DragHandle
+    aria-label="Inbox"
+    aria-controls="list-pane"
+    min={200}
+    max={480}
+    value={width}
+    onChange={(event, value) => setWidth(value)}
+    style={{ alignSelf: 'center' }}
+  />
+  <section style={{ flex: 1 }}>…</section>
+</div>
+```
+
+## Size and layout
+
+The handle only reports a size. Your layout applies it, usually as the
+width of the pane next to the handle.
+
+- `value` / `defaultValue` is the size of the controlled pane in px, kept
+  between `min` and `max`. `onChange(event, value)` fires on every pointer
+  move and on every key press that changes the value.
+- `paneSide` says which side of the handle that pane is on. With `"start"`
+  (the default, like the list in a list-detail layout), dragging toward the
+  inline end makes it bigger. With `"end"`, dragging toward the inline start
+  makes it bigger. Both follow the writing direction, so they flip in RTL.
+- `onDragStart` and `onDragEnd` fire once per pointer drag. Use `onDragEnd`
+  to save the final size, for example to `localStorage`.
+- The handle is 24dp wide (the spacing between panes) and has a 48dp touch
+  target.
+
+## States
+
+At rest the handle is a 4×48dp capsule in the outline color. While it is
+pressed or dragged it becomes a 12×52dp on-surface shape with 12dp corners.
+Like Compose, it switches between the two without animation. Hover, focus and
+press state layers and the focus ring are drawn on the capsule.
+
+## Accessibility
+
+The handle is a [WAI-ARIA window splitter](https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/):
+
+- It has `role="separator"`, `aria-orientation="vertical"`, and
+  `aria-valuenow`, `aria-valuemin` and `aria-valuemax` set from `value`,
+  `min` and `max`. `getAriaValueText` adds a readable `aria-valuetext`, for
+  example "280 pixels".
+- **Give it a name that matches the pane it resizes** (`aria-label` or
+  `aria-labelledby`), and point `aria-controls` at that pane.
+- Keyboard: <kbd>←</kbd> and <kbd>→</kbd> move the handle by `step` (default
+  1), or by `shiftStep` (default 10) with <kbd>Shift</kbd>.
+  <kbd>Page Up</kbd> and <kbd>Page Down</kbd> also change the size by
+  `shiftStep`, and <kbd>Home</kbd> and <kbd>End</kbd> jump to `min` and
+  `max`. <kbd>↑</kbd> makes the pane bigger and <kbd>↓</kbd> makes it
+  smaller.
+- `disabled` sets `aria-disabled`, removes the handle from the tab order and
+  ignores both pointer and keyboard input.
+
+## Props
+
+<PropsTable component="DragHandle" />

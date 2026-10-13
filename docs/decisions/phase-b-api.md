@@ -62,6 +62,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B39 | #442 | SearchBar の full-screen レイアウト | **`layout="docked" \| "fullscreen"`(既定 docked)、full-screen は Compose `ExpandedFullScreenContainedSearchBar`(contained)、戻るボタンの名前は `backLabel`** | なし(追加) | 決定(2026-10-13・#442 の API 案どおり) |
 | B37 | #439 | TextField のラベル位置(上置き・常時縮小) | **`labelPlacement?: 'floating' \| 'above'`(既定 `'floating'`)+ `shrinkLabel?: boolean`、DatePickerField も同名で素通し** | なし(追加) | 決定(2026-10-13・#439 の API 案どおり) |
 | B41 | #444 | 小さな構成の不足(FabMenu 配置・Toolbar elevation・dismissible drawer・Carousel 幅) | **FabMenu `horizontalAlignment`、Toolbar `disableElevation`、NavigationDrawer `variant="dismissible"`、Carousel `itemWidth` の JSDoc 修正** | なし(追加) | 決定(2026-10-13) |
+| B44 | #444 | TextField / Select の tonal・secure field・VerticalDragHandle | **TextField / Select `tonal?: boolean`(`@experimental`、Compose `tonalColors()` + `roundedShape`)、secure field はレシピ(`type="password"` + `IconButton toggle`、名前固定 + `aria-pressed`)、新規 `DragHandle`(APG window splitter、`value` / `onChange(event, value)` / `min` / `max` / `step` / `paneSide`)** | なし(追加) | 決定(2026-10-13) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -1362,6 +1363,103 @@ Default / Refreshing / Circular を追加。
 **影響**: 非破壊(prop と variant 値の追加・JSDoc のみ)。既定値は不変、既存ストーリーはピクセル不変。VRT: FabMenu
 `HorizontalAlignment` / `RightToLeftStart`、Toolbar `FloatingWithoutElevation`、NavigationDrawer `Dismissible` を追加。
 対象: FabMenu、Toolbar、NavigationDrawer、Carousel。
+
+---
+
+### B44: TextField / Select の tonal スタイル・secure field・VerticalDragHandle(#444 の残り)
+
+- **Issue**: #444(トラッキング。TimePicker のホイール / vibrant / 横向きと ScrollField は別途。#444 は開いたまま)
+- **状態**: 決定(2026-10-13)
+- **背景**: 2026-10-09 スイープで残った、TimePicker 以外の 3 件。Compose の出典は androidx-main の
+  `TextFieldDefaults.kt`・`SecureTextField.kt`・`DragHandle.kt`・`tokens/DragHandleTokens.kt`。
+  drag handle の数値は docs/specs/drag-handle.md。m3.material.io にはどれもコンポーネントの寸法表がない
+  (tonal は Compose の Expressive 追加、drag handle は layout の foundations にあるだけ)ため、Compose を正とする。
+
+**選択肢**
+
+1. tonal スタイル
+   - **(a) `tonal?: boolean`**(Fab / FabMenu の `tonal` と同じ形 — A6・B24)。`variant`(filled / outlined)と
+     直交し、どちらにも付く
+   - (b) `variant="tonal"` — Compose は filled 用(`TextFieldDefaults.tonalColors()`)と outlined 用
+     (`OutlinedTextFieldDefaults.tonalColors()`)の 2 つを持つので、1 つの variant 値では片方しか表せない
+   - (c) `shape="rounded"` を別 prop に分ける — Compose の `roundedShape` は「Expressive style の推奨」で
+     tonal と対で使う前提。今は分ける需要がない
+2. secure field
+   - **(a) レシピを文書化**(`type="password"` + `endIcon` に `IconButton` のトグル)
+   - (b) `passwordToggle` のような prop — TextField が IconButton に依存し、トグルの文言 prop(B1 の
+     `*Label`)も増える。Compose の `SecureTextField` 自身もトグルを持たず、サンプルが `trailingIcon` に
+     置いている(SecureTextField.kt:66 `@sample PasswordTextField`、:137 `trailingIcon`)
+3. VerticalDragHandle
+   - **(a) 新規 `DragHandle`(`src/components/DragHandle/`)、値ベースの window splitter**
+     (`value` / `defaultValue` / `onChange(event, value)` + `min` / `max` / `step`)
+   - (b) 見た目だけの部品 + `onDrag(deltaX)` — キーボード操作と `aria-valuenow` を利用者が組む必要があり、
+     APG の window splitter を満たしにくい
+
+**決定**: すべて **(a)**。
+
+1. **TextField / Select `tonal?: boolean`(既定 false、`@experimental`)**
+   - 上流はまだ `TODO(b/448727879)`(TextFieldDefaults.kt:76・:751・:1002・:1639 — 実トークン待ち)。
+     JSDoc に `@experimental` を付け、docs にも「仕様確定時にマイナーで見た目が変わりうる」と明記する
+   - 形: `roundedShape` = **CornerMedium 12dp**(TextFieldDefaults.kt:75、outlined は :1001)。filled も
+     4 隅すべて丸める(indicator がないため)
+   - filled(`tonalColors()`、:510 / :748–833): container **SurfaceContainer**(error 時 **ErrorContainer**、
+     disabled は SurfaceContainer の 38%)、indicator は全状態 **Transparent**(描かない)、focus 時の
+     ラベルは **OnSurfaceVariant のまま**(primary にしない)、error のラベル・trailing icon・supporting は
+     Error、supporting は OnBackground
+   - outlined(`tonalOutlinedTextFieldColors`、:1395 / :1636–1719、androidx f06c082512): container
+     **Transparent**、枠は error 以外の全状態で **OutlineVariant**(disabled も)、error は Error。focus での
+     2dp 化は Compose でも色と独立(`focusedBorderThickness`)なので残す。KDoc「This should be used in
+     conjunction with `TextFieldLabelPosition.Inside`」(:1392。filled 側も :507 で同じ)に従い、**ラベルは container の内側**
+     (filled と同じ浮上位置・余白)に置き、notch は作らない。`labelPlacement="above"` はそのまま使える
+   - hover は Compose にない状態(`TextFieldColors` に hover スロットがない — textfield 監査)。filled は
+     m3 の hover state layer を残し、outlined は枠とラベルの色を変えない(hover の色変化が focus より
+     強く見えるのを避ける)
+   - Select も TextField の CSS(`TextField.module.css`)をそのまま共有しているので同じ `tonal` を足す。
+     DatePickerField への素通しは今回は行わない(必要になれば B37 と同じ形で追加)
+   - **注意(オーナー確認)**: filled tonal は indicator もラベル色の変化もないため、focus の目印は
+     ほぼキャレットだけになる(Compose どおり)。WCAG 2.4.7 の観点で気になる場合は、focus 時に限り
+     枠を出す等の Web 側の調整を別途判断する
+2. **secure field はレシピ(新しい prop なし)**
+   - `type="password"` + `autoComplete="current-password" | "new-password"`。Compose の
+     `textObfuscationMode`(既定 `System`、:143)・`KeyboardType.Password` / autocorrect 無効(:388)は
+     ブラウザ / OS の password 入力がそのまま担う
+   - トグルは `IconButton variant="standard" toggle`(`selected` = 表示中、`selectedIcon` =
+     visibility_off)。名前は **"Show password" で固定**し、状態は `aria-pressed` で伝える(名前と
+     `aria-pressed` を両方切り替えない)。`aria-controls` は input の id。クリックしても input に
+     フォーカスは移らない(#414 の挙動)
+   - TextField の `type` の JSDoc、Storybook の `Password` ストーリー(初期表示はピクセル同一)、
+     docs の「Password (secure) field」節に記載
+3. **`DragHandle`(Compose `VerticalDragHandle`、DragHandle.kt:73)**
+   - API: `value` / `defaultValue`(px、既定 `min`)/ `onChange(event, value)`(A2・ドラッグ中の毎移動と
+     キー操作ごと、値が変わったときだけ)、`onDragStart` / `onDragEnd(event, value)`(ポインタードラッグ
+     1 回につき 1 度)、`min`(0)/ `max`(100)/ `step`(1)/ `shiftStep`(10、MUI Slider と同名)、
+     `paneSide?: 'start' | 'end'`(既定 start — 値が表す pane が handle のどちら側か。論理方向で RTL は
+     反転)、`getAriaValueText`(MUI Slider と同名)、`disabled`。`ref` と残りの属性はルート
+     (`aria-label` / `aria-labelledby` / `aria-controls` もここ)
+   - 名前は `DragHandle`(1 コンポーネント = 1 MD3 コンポーネント)。Compose に横向きはないので
+     `orientation` は持たない(`aria-orientation="vertical"` 固定)
+   - 見た目(DragHandleTokens / `VerticalDragHandleDefaults`): 通常 4×48dp・Outline・CornerFull、
+     pressed / dragged 12×52dp・OnSurface・CornerMedium、優先順位 dragged > pressed > 通常
+     (DH:91–122)。Compose どおり**アニメーションなし**で切り替える(reduced motion の追加ルール不要)。
+     ホストは `ContainerWidth` 24dp 幅、48dp のタッチターゲット(`minimumInteractiveComponentSize`)、
+     state layer は capsule に clip(`ripple()`、DH:125)、FocusRing も capsule に合わせる
+   - a11y(WAI-ARIA APG window splitter): `role="separator"`・フォーカス可能・`aria-valuenow` /
+     `aria-valuemin` / `aria-valuemax`。キーは ←/→(`step`、Shift で `shiftStep`)、PageUp / PageDown
+     (`shiftStep`)、Home / End(min / max)、↑/↓(拡大 / 縮小)。APG の任意キー Enter(折りたたみ /
+     復元)と F6 は、pane の構成をアプリが持つため実装しない。名前がないと dev 警告(pane と同じ名前を
+     付けるよう案内)
+   - pressed はポインター押下(Compose `pressable`、DH:346–358)、dragged は最初の横移動から
+     (Compose は呼び出し側の draggable の `DragInteraction`、DH:82)
+   - disabled は Compose にない Web 側の追加: `aria-disabled`、タブ順から外す、capsule を
+     on-surface 38%
+   - Compose の pane 側の挙動(`material3-adaptive` の `paneExpansionDraggable`・アンカー)は参照範囲外。
+     handle は値を報告するだけで、pane の幅はアプリが適用する
+
+**影響**: 非破壊(prop の追加と新規コンポーネント `DragHandle`・新しい subpath `m3-expressive-react/DragHandle`)。
+既定値は不変、既存ストーリーはピクセル不変(`Password` は toggle 化したが初期状態の見た目は同じ)。VRT: TextField
+`Tonal`、Select `Tonal`、DragHandle `Default` / `Disabled` / `ListDetail` を追加。対象: TextField、Select、DragHandle。
+textfield 監査(docs/audits/textfield.md 軽微欄)の「機能追加の候補」の SecureTextField / tonal / roundedShape は
+本裁定で対応済み(監査側に相互参照を追記)。
 
 ---
 
