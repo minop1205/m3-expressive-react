@@ -1,70 +1,154 @@
 # Changelog
 
-## Unreleased
+## 1.4.0 (2026-10-13)
+
+A quality release: a spec-compliance sweep of every component (issues
+#406–#489) plus the missing MD3 configurations from m3.material.io and Compose.
+Every change is additive or a bug fix. The behavior changes worth checking
+before you upgrade are listed first.
+
+### Behavior changes to check
+
+- **Tooltip** (rich): without `placement`, a rich tooltip now opens at the
+  **bottom-end corner** of its trigger (m3 "bottom right"), moving to the other
+  corners near viewport edges. Pass `placement="bottom"` for the previous
+  centered position (#440, ruling B38).
+- **SegmentedButton** (single-select): arrow keys and Home / End now **select**
+  the focused segment (APG radio group, like ButtonGroup), and clicking the
+  selected segment again no longer fires `onChange`. The props are typed by
+  `multiSelect`, so passing a non-literal `boolean` to `multiSelect` no longer
+  type-checks (#422).
+- **Tabs**: activating the already-selected tab no longer fires `onChange`, and
+  `preventDefault()` in a tab's `onClick` cancels the selection (#422).
+- **Overlays**: one Escape now closes only the topmost modal. A tooltip or menu
+  inside a dialog closes first; the dialog needs a second Escape (#406).
+- **Dialog** `fullScreen`: the close button is now a standard `IconButton`
+  (ripple, pressed state, focus ring) (#423).
+- **Menu** (baseline variant): selected items now show the secondary-container
+  fill from the spec (#435).
+- **Controlled components** (24 of them, via the new shared hook): switching a
+  prop between controlled and uncontrolled now logs a development warning. A
+  controlled prop that becomes `undefined` keeps its last value instead of
+  falling back to stale internal state (#413).
+- **TextField** (uncontrolled) is now a native uncontrolled input, so
+  `form.reset()` works. Switching it to controlled later logs React's standard
+  warning (#432).
+- **FocusRing**: an element that already has keyboard (`:focus-visible`) focus
+  when its ring mounts (e.g. `autoFocus`, a menu's first item) now shows the
+  ring (#412).
+- **Package**: `clsx` is no longer bundled (it is a normal dependency);
+  `@material/material-color-utilities` stays bundled and moves to
+  devDependencies, with its Apache-2.0 notice in `THIRD_PARTY_NOTICES.md`.
+  React peers are now `^18.0.0 || ^19.0.0`, and `engines.node >= 18` (#408,
+  #411).
 
 ### Added
 
-- **Select** / **Option** (new, `m3-expressive-react/Select`): the MD3
-  non-editable exposed dropdown menu. A filled / outlined text field that
-  opens a listbox as wide as the field, with `value` / `defaultValue` /
-  `onChange(event, value)`, `open` / `defaultOpen` / `onOpenChange`, `name` /
-  `required` / `disabled` / `error`, and form submit / reset through a hidden
-  native input. Keyboard and screen-reader behavior follow the WAI-ARIA APG
-  select-only combobox (#434, ruling B31).
-
-- **PullToRefresh** (new, `m3-expressive-react/PullToRefresh`): Compose
-  `PullToRefreshBox` as a scroll container — touch / mouse / pen pull at the
-  top with the 0.5 drag resistance and 80px threshold, a determinate
-  indicator while pulling and an indeterminate one while `refreshing`,
-  `indicator="loading" | "circular"`, `aria-busy` + a polite live region,
-  fade-only under reduced motion (ruling B32, #441).
-- **Dialog / BottomSheet / SideSheet / NavigationDrawer / NavigationRail
-  (modal)**: `onClose` now receives `(event, reason)` with `reason` one of
-  `'escapeKeyDown' | 'backdropClick' | 'closeButton' | 'drag'` as applicable
-  (exported per component, e.g. `DialogCloseReason`). Non-breaking (#407,
-  ruling B7 addendum).
-- **NavigationDrawer**: `defaultValue` for uncontrolled selection, like
-  NavigationBar / NavigationRail (#421).
-
-### Changed
-
-- **Dialog** `fullScreen`: the close button is now a standard `IconButton`
-  (ripple, pressed state layer, focus ring) labelled by `closeLabel` (#423).
+- **New components**
+  - **Select** / **Option** — the non-editable exposed dropdown menu
+    (APG select-only combobox; filled / outlined; form submit and reset)
+    (#434, B31).
+  - **Autocomplete** — the editable variant with list autocomplete, filtering
+    with eased item motion, `freeSolo`, `filterOptions` (#434, B42).
+  - **PullToRefresh** — Compose `PullToRefreshBox` as a scroll container, with
+    the contained loading indicator or the circular indicator (#441, B32).
+  - **DragHandle** — Compose `VerticalDragHandle`, a pane-resize handle
+    (APG window splitter) (#444, B44).
+  - **ScrollField** — Compose `ScrollField`, a wheel picker (ARIA spinbutton),
+    also used by the TimePicker scroll mode (#444, B43).
+- **Menu**: `MenuGroup selectionMode="single" | "multiple"` with
+  `value` / `defaultValue` / `onChange` (`menuitemradio` / `menuitemcheckbox`,
+  multi-select stays open, `closeOnSelect`); `MenuItem supportingText` and
+  `selectedIcon`; submenus (`MenuItem submenu`, APG keyboard, hover intent);
+  context menus via `anchorPosition` (`trigger` is now optional) (#435, #436,
+  B33, B34).
+- **BottomSheet**: `variant="standard"` (non-modal, in the layout) and opt-in
+  partially-expanded / expanded detents (`skipPartiallyExpanded={false}`,
+  `expanded` / `defaultExpanded` / `onExpandedChange`). Sheets still open fully
+  by default (#437, B35).
+- **SearchBar**: `layout="fullscreen"` (Compose contained full-screen search,
+  top layer, focus trapped) and `backLabel` (#442, B39).
+- **ChipSet**: `selectionMode="single" | "multiple"` with `value` /
+  `defaultValue` / `onChange` and `selectionRequired`; filter chip `endIcon`
+  for a dropdown arrow that turns while its menu is open (#438, B36).
+- **TextField**: `labelPlacement="above"` and `shrinkLabel` (Compose
+  `TextFieldLabelPosition`), also on DatePickerField (#439, B37); experimental
+  `tonal` style (also on Select) and a documented password-toggle recipe
+  (#444, B44).
+- **Tooltip**: `placement` `'start' | 'end' | 'left' | 'right'` with flip, and
+  an optional `caret` (#440, B38).
+- **Tabs**: `Tab iconPosition="start"` (Compose `LeadingIconTab`) and a `badge`
+  slot (#443, B40).
+- **TimePicker**: `variant="vibrant"`, `orientation="horizontal"` and
+  `mode="scroll"` (#444, B43).
+- **FabMenu** `horizontalAlignment`, **Toolbar** `disableElevation`,
+  **NavigationDrawer** `variant="dismissible"` (#444, B41).
+- **Overlays**: `onClose(event, reason)` on Dialog, BottomSheet, SideSheet,
+  NavigationDrawer and the modal NavigationRail (`'escapeKeyDown' |
+  'backdropClick' | 'closeButton' | 'drag'`) (#407).
+- **NavigationDrawer** `defaultValue`; **ButtonGroup** / **ChipSet**
+  group-level `disabled`; **DatePickerField** `inputRef` / `inputProps` /
+  `name`; **DatePicker** / **DatePickerField** `referenceDate` for
+  hydration-stable SSR (#421, #410).
+- **Next.js App Router**: interactive modules ship a `'use client'` directive,
+  so the library can be imported from Server Components (#409).
+- **Design tokens**: overlay stacking tokens `--md-sys-z-tooltip | search |
+  popup | modal | snackbar` (#424).
 
 ### Fixed
 
-- **BottomSheet**: a fling followed by a pause no longer dismisses on
-  release (velocity is measured up to the release); `pointercancel` after a
-  drag no longer swallows the next handle activation (#433).
-- **SnackbarProvider**: a queued snackbar that appears under a resting
-  pointer starts paused (#423).
-- **NavigationDrawer** `variant="modal"`: the dialog surface is a `<div>`
-  (`role="dialog"` is not allowed on `<aside>`) (#429).
-- **Modal overlays**: the body scroll lock pads the body by the scrollbar
-  width, so the page no longer shifts sideways on open (#424).
+- **Overlays**: a modal opened from (or beside) another modal is no longer
+  inert; modals close in any order; the Tab wrap skips roving / unchecked
+  radio stops; focus falls back sensibly when the trigger is gone; Snackbar
+  actions stay usable and announced while a dialog is open (#406). Dialog,
+  BottomSheet and SideSheet now play their exit motion (#433); BottomSheet no
+  longer dismisses on a stale fling or swallows activations after
+  `pointercancel` (#433); the scroll lock no longer shifts the page by the
+  scrollbar width (#424).
+- **Popups**: popups hide while their anchor is scrolled out of view, keep focus
+  when they do, and ignore transient viewport resizes (#430, #470, #485);
+  Menu and Tooltip compose in both directions (#419); SearchBar reopens after
+  Escape; typeahead cycles, ignores icon ligatures and is shared with FabMenu;
+  disabled SearchBar / SplitButton never open (#430, #420).
+- **Forced colors (Windows High Contrast)**: state and boundaries stay visible
+  in Slider, Tabs, TimePicker, Chip, buttons, navigation, Badge, TextField,
+  DatePicker and all surfaces (#427).
+- **RTL**: TextField notch / label, TimePicker digit order, NavigationDrawer /
+  SideSheet slide direction, DatePicker chevrons, Slider thumb / label, and
+  every former `:dir(rtl)` rule, which minifiers had compiled to `:lang()`
+  (#428, #460).
+- **Forms**: Checkbox, Switch, Radio, RadioGroup and TextField follow
+  `form.reset()`; required labels no longer read "star"; autofill and partial
+  number input keep the label floated; `inputProps['aria-describedby']` is
+  merged (#432, #414).
+- **Slider**: overlapping range thumbs can be separated; ticks sit on the step
+  grid; `min > max` is normalized; clicks map exactly to the handle; values
+  round to the step; 48dp hit area (#431, #429).
+- **DatePicker / TimePicker**: keyboard focus stays within `min` / `max`;
+  pickers reopen on the value's month / the hour field; years 0–99 parse
+  correctly; same-day ranges with a time of day work; Cancel reverts to the
+  latest value (#415).
+- **Package / SSR**: CommonJS TypeScript consumers no longer get TS1479 from
+  the root entry; no React 18 `useLayoutEffect` server warnings; no
+  hydration-risky render values (#408, #410).
+- **Components**: TextField icon buttons keep focus (#414); Carousel lays out
+  replaced items (#416); SwipeToDismiss drops stale presses and makes dismissed
+  rows inert (#417); ButtonGroup styles Tooltip-wrapped buttons (#418); Card
+  activates Space on keyup; ChipSet keeps focus when its last chip is removed;
+  Snackbar settles promises on unmount and pauses under a resting pointer;
+  progress indicators clamp `NaN` (#423); Ripple hover resets after disable
+  (#412); icon-only tabs are 48dp (#484); ThemeProvider sets `color-scheme`
+  (#424); Checkbox / Radio / Switch `style` goes to the root and Checkbox
+  `error` sets `aria-invalid` (#421); modal NavigationDrawer surface is a
+  `div` (axe) (#429).
+- **Motion tokens**: fixed-millisecond transitions mapped to tokens or
+  documented as exceptions (#424).
 
-- **ButtonGroup** / **ChipSet**: group-level `disabled` that disables every
-  item (#421).
-- **DatePickerField**: `inputRef`, `inputProps` and `name`, passed to the
-  inner text field's `<input>` (form `name`, `autoFocus`, React Hook Form
-  `register`) (#421).
+### Tooling
 
-### Fixed
-
-- **Checkbox** / **Radio** / **Switch**: `style` now goes to the root
-  together with `className`, instead of the visually hidden `<input>` (#421).
-- **Checkbox** `error` sets `aria-invalid` on the input (#421).
-- **Carousel**: a consumer `role` now overrides the default `role="group"`
-  (#421).
-- **NavigationBarItem**: development warning when an item has neither a
-  `label` nor an `aria-label` (no accessible name) (#421).
-
-- **Package**: the root entry's types now resolve per condition
-  (`import` → `index.d.ts`, `require` → `index.d.cts`), so CommonJS
-  TypeScript consumers (`module: node16` / `.cts`) no longer get TS1479
-  "masquerading as ESM" (#408). Added `./package.json` to `exports`,
-  `engines.node >= 18`, and narrowed the React peer range to
-  `^18.0.0 || ^19.0.0`.
+- CI runs publint, `@arethetypeswrong/cli` and an RSC import check; new
+  coverage report (`npm run test:coverage`), a variant-wide axe matrix and an
+  SSR smoke test for every exported component (#408, #409, #410, #425).
 
 ## 1.3.1 (2026-10-08)
 
