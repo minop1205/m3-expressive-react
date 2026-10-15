@@ -78,3 +78,32 @@ export const Vertical: Story = {
 export const Disabled: Story = {
   args: { disabled: true, defaultValue: 30 },
 }
+
+/** `onChange` follows the drag; `onChangeCommitted` fires on release / keyup (B47). */
+export const ChangeCommitted: Story = {
+  args: { onChangeCommitted: fn() },
+  render: (args) => {
+    const [live, setLive] = useState<SliderValue>(40)
+    const [committed, setCommitted] = useState<SliderValue>(40)
+    return (
+      <div style={{ width: 320 }}>
+        <Slider
+          {...args}
+          value={live}
+          onChange={(event, next) => {
+            setLive(next)
+            args.onChange?.(event, next)
+          }}
+          onChangeCommitted={(event, next) => {
+            setCommitted(next)
+            args.onChangeCommitted?.(event, next)
+          }}
+          aria-label="Volume"
+        />
+        <p>
+          Live: {String(live)} · Committed: {String(committed)}
+        </p>
+      </div>
+    )
+  },
+}
