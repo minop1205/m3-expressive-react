@@ -186,6 +186,13 @@ const [draft, setDraft] = useState<TimeValue>({ hour: 8, minute: 0 })
 Passing `onAccept` or `onCancel` without `open` renders the headline and
 action row on an inline picker.
 
+:::warning Upgrading from 1.4 or earlier
+Since 1.5.0 the modal TimePicker shows itself in the browser top layer (#494). If
+your app wrapped it in its own popover or top-layer container (e.g. to lift
+it above other layers), remove that wrapper: the app's layer would be painted
+above the picker and block it.
+:::
+
 ## Localization
 
 Every built-in string is a prop with an English default: `titleLabel`,

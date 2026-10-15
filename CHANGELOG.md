@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Migration notes
+
+- **Modals in the top layer (from 1.5.0)**: since 1.5.0 the modal DatePicker /
+  TimePicker, Dialog and the other modals (BottomSheet, SideSheet,
+  NavigationDrawer, NavigationRail) show themselves in the browser top layer
+  (#494, B45). If your app wrapped one in its own popover / top-layer
+  container, remove that wrapper — otherwise the app's layer is painted above
+  the modal and blocks it.
+
 ## 1.5.0 (2026-10-15)
 
 Follow-ups from a downstream app's report, each decided spec-first: m3.material.io,
