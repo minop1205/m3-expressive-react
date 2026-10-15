@@ -138,6 +138,15 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T) {
  * `role="tooltip"`, or a non-modal `role="dialog"` labelled by its subhead when
  * a rich tooltip has an action (so the action is reachable with Tab).
  */
+/** Whether `el` shows keyboard focus; false where `:focus-visible` is unsupported. */
+function isFocusVisible(el: Element): boolean {
+  try {
+    return el.matches(':focus-visible')
+  } catch {
+    return false
+  }
+}
+
 export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Tooltip(
   {
     children,
@@ -448,9 +457,16 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     // The real trigger: the first tabbable descendant, which is not the
     // wrapper's first child when the trigger is a Menu (#419).
     const triggerEl = triggerElement()
-    // Focus on the trigger opens a transient tooltip, unless it was just
-    // dismissed with Escape (focus returning to the trigger mustn't reopen it).
-    if (!persistent && event.target === triggerEl && !escapeDismissed.current) {
+    // Keyboard focus on the trigger opens a transient tooltip, unless it was
+    // just dismissed with Escape (focus returning to the trigger mustn't
+    // reopen it). Programmatic focus — e.g. a closing Dialog returning focus
+    // to its opener — isn't :focus-visible and doesn't open it.
+    if (
+      !persistent &&
+      event.target === triggerEl &&
+      !escapeDismissed.current &&
+      isFocusVisible(triggerEl)
+    ) {
       setOpen(true)
     }
   }
