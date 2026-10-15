@@ -621,7 +621,9 @@
     "lint:tokens": "! grep -rEn 'var\\(--md-sys-[a-z0-9-]+,' src --include='*.css' && ! grep -rzlE 'var\\(\\s*--md-sys-[a-z0-9-]+\\s*,' src --include='*.css'",
     "prepare": "husky",
     "vrt": "playwright test",
-    "vrt:update": "playwright test --update-snapshots"
+    "vrt:update": "playwright test --update-snapshots",
+    "check:pack": "node scripts/check-pack.mjs",
+    "prepublishOnly": "npm run build && npm run check:pack"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",

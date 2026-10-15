@@ -172,7 +172,10 @@ Reference tokens → System tokens (--md-sys-*) → Component tokens (--_*)
 
 - Feature PRs target `develop`; `main` = released library (npm `latest`) +
   live docs site (deployed on every push to `main`)
-- Releases: `develop` → `main` PR, then tag + GitHub Release
+- Releases: `develop` → `main` PR, then tag + GitHub Release. `npm publish`
+  runs `prepublishOnly` (`npm run build && npm run check:pack`), so the
+  tarball is always built from the checked-out source (v1.4.0 shipped a stale
+  dist/ before this guard existed)
 - **Docs-only fixes do not need a release**: branch from `main`, change only
   `site/` / `docs/` / `README.md` / `CONTRIBUTING.md`, PR to `main` (the
   `Main PR scope` check enforces the paths), then back-merge `main` →
