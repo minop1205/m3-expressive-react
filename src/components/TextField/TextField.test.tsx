@@ -651,3 +651,119 @@ describe('TextField secure field recipe (B44, #444)', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 })
+
+describe('TextField rich label / supporting text (B48)', () => {
+  const richLabel = (
+    <>
+      Email <em>(work)</em>
+    </>
+  )
+
+  it('renders a ReactNode label inside the <label> and keeps the accessible name', () => {
+    const { container } = render(<TextField label={richLabel} required />)
+    const input = screen.getByRole('textbox', { name: 'Email (work)' })
+    const label = container.querySelector(`label.${styles.label}`)!
+    expect(label).toHaveAttribute('for', input.id)
+    expect(label.querySelector('em')).toHaveTextContent('(work)')
+    // The asterisk stays visual-only at the end.
+    expect(label.lastElementChild).toHaveAttribute('aria-hidden', 'true')
+    expect(label.lastElementChild).toHaveTextContent('*')
+    expect(input).toBeRequired()
+  })
+
+  it('measures the outlined notch with the rendered ReactNode label', () => {
+    const { container } = render(
+      <TextField variant="outlined" label={richLabel} required />,
+    )
+    const label = container.querySelector(`label.${styles.label}`)!
+    const notchCopy = container.querySelector(`.${styles.outlineLabel}`)!
+    // The notch is sized by an invisible copy of the same rendered content,
+    // so its width follows whatever the label renders.
+    expect(notchCopy.innerHTML).toBe(label.innerHTML)
+    expect(notchCopy.querySelector('em')).not.toBeNull()
+  })
+
+  it('keeps the DOM unchanged for string values', () => {
+    const { container } = render(
+      <TextField variant="outlined" label="Email" required supportingText="Help" />,
+    )
+    expect(container.querySelector(`label.${styles.label}`)!.innerHTML).toBe(
+      'Email<span aria-hidden="true">*</span>',
+    )
+    expect(container.querySelector(`.${styles.outlineLabel}`)!.innerHTML).toBe(
+      'Email<span aria-hidden="true">*</span>',
+    )
+    expect(container.querySelector(`.${styles.supportingText}`)!.innerHTML).toBe(
+      '<span>Help</span>',
+    )
+  })
+
+  it('keeps a link in supportingText reachable and part of the description', async () => {
+    const user = userEvent.setup()
+    render(
+      <TextField
+        label="Password"
+        supportingText={
+          <>
+            At least 8 characters. <a href="/rules">Password rules</a>
+          </>
+        }
+      />,
+    )
+    const input = screen.getByRole('textbox', { name: 'Password' })
+    expect(input).toHaveAccessibleDescription('At least 8 characters. Password rules')
+    const link = screen.getByRole('link', { name: 'Password rules' })
+    await user.tab()
+    expect(input).toHaveFocus()
+    await user.tab()
+    expect(link).toHaveFocus()
+    // Clicking the link doesn't pull focus back into the input.
+    await user.click(link)
+    expect(input).not.toHaveFocus()
+  })
+
+  it('replaces the supporting node with an errorText node in error', () => {
+    render(
+      <TextField
+        label="Email"
+        error
+        supportingText={<span>We never share it</span>}
+        errorText={
+          <>
+            Invalid address. <a href="/help">Help</a>
+          </>
+        }
+      />,
+    )
+    expect(screen.queryByText('We never share it')).toBeNull()
+    expect(screen.getByRole('alert')).toHaveTextContent('Invalid address. Help')
+    expect(screen.getByRole('textbox')).toHaveAccessibleDescription('Invalid address. Help')
+  })
+
+  it('has no axe violations with rich label, supporting and error text', async () => {
+    const { container } = render(
+      <>
+        <TextField
+          variant="outlined"
+          label={richLabel}
+          required
+          supportingText={
+            <>
+              See <a href="/rules">rules</a>
+            </>
+          }
+        />
+        <TextField
+          label={<strong>Name</strong>}
+          error
+          errorText={
+            <>
+              Required. <a href="/help">Help</a>
+            </>
+          }
+        />
+      </>,
+    )
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})

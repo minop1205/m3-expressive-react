@@ -142,7 +142,9 @@ is parsed in the `locale`'s field order and invalid text shows an error.
 that opens the calendar in a dropdown. Typed dates commit on Enter or blur;
 picking a day commits immediately (no action row). `onChange(date)` receives
 the date, or `null` when the field is cleared. The helper text defaults to
-the locale's format (e.g. `MM/DD/YYYY`).
+the locale's format (e.g. `MM/DD/YYYY`). `label`, `supportingText` and the
+`getErrorLabel` result accept React content too, with the same guidance as
+[TextField](/components/textfield#rich-label--supporting-text).
 
 export function DatePickerFieldDemo() {
   const [date, setDate] = useState(null)

@@ -470,3 +470,48 @@ describe('Autocomplete', () => {
     })
   })
 })
+
+describe('Autocomplete rich label / supporting text (B48)', () => {
+  it('names the input from a ReactNode label and describes it with a rich supporting line', async () => {
+    const { container } = render(
+      <Fruit
+        variant="outlined"
+        required
+        label={
+          <>
+            Fruit <em>(type to filter)</em>
+          </>
+        }
+        supportingText={
+          <>
+            Seasonal. <a href="/fruit">Details</a>
+          </>
+        }
+      />,
+    )
+    expect(input()).toHaveAccessibleName('Fruit (type to filter)')
+    expect(input()).toHaveAccessibleDescription('Seasonal. Details')
+    expect(screen.getByRole('link', { name: 'Details' })).toBeInTheDocument()
+    const notchCopy = container.querySelector('[class*="outlineLabel"]')!
+    expect(notchCopy.querySelector('em')).toHaveTextContent('(type to filter)')
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('replaces the supporting node with an errorText node in error', async () => {
+    const { container } = render(
+      <Fruit
+        error
+        supportingText={<span>Seasonal</span>}
+        errorText={
+          <>
+            Pick a fruit. <a href="/fruit">Help</a>
+          </>
+        }
+      />,
+    )
+    expect(screen.queryByText('Seasonal')).toBeNull()
+    expect(screen.getByRole('alert')).toHaveTextContent('Pick a fruit. Help')
+    expect(input()).toHaveAccessibleDescription('Pick a fruit. Help')
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})

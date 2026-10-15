@@ -11,6 +11,7 @@ import {
   type HTMLAttributes,
   type InputHTMLAttributes,
   type KeyboardEvent,
+  type ReactNode,
   type Ref,
 } from 'react'
 import clsx from 'clsx'
@@ -50,8 +51,17 @@ export interface DatePickerFieldProps
   defaultValue?: Date | null
   /** Fires with the newly selected / committed typed date (or null when cleared). */
   onChange?: (date: Date | null) => void
-  /** Field label. @default 'Date' */
-  label?: string
+  /**
+   * Field label.
+   *
+   * Accepts rich content (text, emphasis, a small icon) — keep it short and
+   * on one line, as m3 asks: the label is a single line (truncated with an
+   * ellipsis), clicks on it go to the field, and the outlined notch draws a
+   * hidden copy of it to measure its width. So no links or buttons in the
+   * label, and no elements with an `id`.
+   * @default 'Date'
+   */
+  label?: ReactNode
   /**
    * Label position, as TextField `labelPlacement`: `'floating'` (in the
    * outlined border's notch) or `'above'` the field.
@@ -75,8 +85,11 @@ export interface DatePickerFieldProps
   /**
    * Helper text under the field. Defaults to the locale's input format
    * (e.g. `MM/DD/YYYY`), as m3 accessibility asks.
+   * Accepts rich content — a short link is fine (it stays reachable and is
+   * part of the field's description via `aria-describedby`); keep it to
+   * about one line, as m3 asks.
    */
-  supportingText?: string
+  supportingText?: ReactNode
   /** Accessible label of the calendar toggle. @default 'Open calendar' */
   openCalendarLabel?: string
   /** Accessible name of the calendar popup (`role="dialog"`). @default 'Choose date' */
@@ -84,9 +97,9 @@ export interface DatePickerFieldProps
   /**
    * Error message for rejected typed text. Defaults to Compose's English
    * strings: "Date does not match expected pattern: MM/DD/YYYY" / "Date not
-   * allowed".
+   * allowed". May return rich content, like `supportingText`.
    */
-  getErrorLabel?: (error: DateInputError, pattern: string) => string
+  getErrorLabel?: (error: DateInputError, pattern: string) => ReactNode
   /** Accessible label of the previous-month button. @default 'Previous month' */
   previousMonthLabel?: string
   /** Accessible label of the next-month button. @default 'Next month' */
