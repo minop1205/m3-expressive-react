@@ -206,6 +206,17 @@
         "default": "./dist/components/FabMenu/index.cjs"
       }
     },
+    "./FocusRing": {
+      "import": {
+        "types": "./dist/primitives/FocusRing/index.d.ts",
+        "node": "./dist/primitives/FocusRing/index.js",
+        "default": "./dist/FocusRing/index.js"
+      },
+      "require": {
+        "types": "./dist/primitives/FocusRing/index.d.cts",
+        "default": "./dist/primitives/FocusRing/index.cjs"
+      }
+    },
     "./IconButton": {
       "import": {
         "types": "./dist/components/IconButton/index.d.ts",
@@ -314,6 +325,17 @@
       "require": {
         "types": "./dist/components/Radio/index.d.cts",
         "default": "./dist/components/Radio/index.cjs"
+      }
+    },
+    "./Ripple": {
+      "import": {
+        "types": "./dist/primitives/Ripple/index.d.ts",
+        "node": "./dist/primitives/Ripple/index.js",
+        "default": "./dist/Ripple/index.js"
+      },
+      "require": {
+        "types": "./dist/primitives/Ripple/index.d.cts",
+        "default": "./dist/primitives/Ripple/index.cjs"
       }
     },
     "./ScrollField": {
@@ -532,6 +554,9 @@
       "FabMenu": [
         "./dist/components/FabMenu/index.d.ts"
       ],
+      "FocusRing": [
+        "./dist/primitives/FocusRing/index.d.ts"
+      ],
       "IconButton": [
         "./dist/components/IconButton/index.d.ts"
       ],
@@ -561,6 +586,9 @@
       ],
       "Radio": [
         "./dist/components/Radio/index.d.ts"
+      ],
+      "Ripple": [
+        "./dist/primitives/Ripple/index.d.ts"
       ],
       "ScrollField": [
         "./dist/components/ScrollField/index.d.ts"
