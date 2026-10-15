@@ -137,6 +137,22 @@ export function FreeSoloDemo() {
 <Autocomplete freeSolo label="Favorite fruit" options={fruits} onChange={(event, value) => save(value)} />
 ```
 
+## Clear on Escape
+
+<kbd>Escape</kbd> with the list open only closes the list. With the list
+closed it does nothing by default, so the key reaches enclosing handlers — an
+enclosing [Dialog](/components/dialog) closes. With `clearOnEscape`, that
+Escape clears the text and the value instead (and the Dialog stays open), as
+the WAI-ARIA combobox pattern allows.
+
+<Demo>
+  <Autocomplete clearOnEscape label="Fruit" options={fruits} defaultValue="Apple" />
+</Demo>
+
+```tsx
+<Autocomplete clearOnEscape label="Fruit" options={fruits} defaultValue="Apple" />
+```
+
 ## Custom filtering
 
 `filterOptions(options, { inputValue })` replaces the default filter. It gets
@@ -274,7 +290,9 @@ pattern:
   <kbd>↑</kbd> open it and move through the options, wrapping at the ends.
   <kbd>Alt</kbd>+<kbd>↓</kbd> opens it without moving.
 - <kbd>Enter</kbd> picks the active option. <kbd>Escape</kbd> closes the
-  list, and when it is already closed, clears the field.
+  list (an enclosing Dialog stays open). When the list is already closed,
+  Escape is left alone — an enclosing Dialog closes — unless you set
+  `clearOnEscape`: then it clears the field.
 - The arrow at the end is a button that is not in the Tab order. It toggles
   the list and is named by `toggleLabel` (default "Toggle dropdown menu").
 - Disabled options are announced (`aria-disabled`) but skipped by the

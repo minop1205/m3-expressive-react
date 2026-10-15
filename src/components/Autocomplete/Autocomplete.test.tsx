@@ -10,6 +10,7 @@ import {
   type AutocompleteOptionItem,
   type AutocompleteProps,
 } from './Autocomplete'
+import { Dialog } from '../Dialog'
 
 const fruits = [
   'Apple',
@@ -158,19 +159,108 @@ describe('Autocomplete', () => {
     expect(option('Cherry')).toHaveAttribute('aria-disabled', 'true')
   })
 
-  it('Escape closes the listbox, then clears the field', async () => {
+  it('Escape with the list open only closes it, and is consumed', async () => {
     const onChange = vi.fn()
     const user = userEvent.setup()
-    render(<Fruit defaultValue="Apple" onChange={onChange} />)
+    render(<Fruit defaultValue="Apple" onChange={onChange} clearOnEscape />)
     input().focus()
     await user.keyboard('{ArrowDown}')
     const escape = fireEvent.keyDown(input(), { key: 'Escape' })
     expect(escape).toBe(false) // consumed (an enclosing modal stays open)
     expect(input()).toHaveAttribute('aria-expanded', 'false')
     expect(input()).toHaveValue('Apple')
-    await user.keyboard('{Escape}')
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('Escape with the list closed does nothing and is not consumed by default (#517)', () => {
+    const onChange = vi.fn()
+    const onKeyDown = vi.fn()
+    render(
+      <div onKeyDown={onKeyDown}>
+        <Fruit defaultValue="Apple" onChange={onChange} />
+      </div>,
+    )
+    input().focus()
+    const escape = fireEvent.keyDown(input(), { key: 'Escape' })
+    expect(escape).toBe(true) // not prevented
+    expect(onKeyDown).toHaveBeenCalledTimes(1) // propagates
+    expect(input()).toHaveValue('Apple')
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('clearOnEscape: Escape with the list closed clears the field and is consumed', async () => {
+    const onChange = vi.fn()
+    const onInputChange = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <Fruit
+        defaultValue="Apple"
+        onChange={onChange}
+        onInputChange={onInputChange}
+        clearOnEscape
+      />,
+    )
+    input().focus()
+    const escape = fireEvent.keyDown(input(), { key: 'Escape' })
+    expect(escape).toBe(false)
     expect(input()).toHaveValue('')
     expect(onChange).toHaveBeenCalledWith(expect.anything(), '')
+    expect(onInputChange).toHaveBeenCalledWith(expect.anything(), '')
+    // Nothing left to clear: the next Escape is left alone.
+    expect(fireEvent.keyDown(input(), { key: 'Escape' })).toBe(true)
+    await user.keyboard('{ArrowDown}')
+    expect(input()).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  describe('inside a Dialog (#517)', () => {
+    const onClose = vi.fn()
+    beforeEach(() => onClose.mockClear())
+    function InDialog(props: Partial<AutocompleteProps>) {
+      return (
+        <Dialog open onClose={onClose} title="Pick">
+          <Fruit defaultValue="Apple" {...props} />
+        </Dialog>
+      )
+    }
+
+    it('Escape with the list open closes only the list', async () => {
+      const user = userEvent.setup()
+      render(<InDialog />)
+      input().focus()
+      await user.keyboard('{ArrowDown}')
+      expect(input()).toHaveAttribute('aria-expanded', 'true')
+      await user.keyboard('{Escape}')
+      expect(input()).toHaveAttribute('aria-expanded', 'false')
+      expect(input()).toHaveValue('Apple')
+      expect(onClose).not.toHaveBeenCalled()
+    })
+
+    it('Escape with the list closed closes the Dialog by default', async () => {
+      const user = userEvent.setup()
+      render(<InDialog />)
+      input().focus()
+      await user.keyboard('{Escape}')
+      expect(input()).toHaveValue('Apple')
+      expect(onClose).toHaveBeenCalledTimes(1)
+      expect(onClose).toHaveBeenCalledWith(expect.anything(), 'escapeKeyDown')
+    })
+
+    it('with clearOnEscape, Escape clears the field and the Dialog stays open', async () => {
+      const user = userEvent.setup()
+      render(<InDialog clearOnEscape />)
+      input().focus()
+      await user.keyboard('{Escape}')
+      expect(input()).toHaveValue('')
+      expect(onClose).not.toHaveBeenCalled()
+      // Cleared: the next Escape closes the Dialog.
+      await user.keyboard('{Escape}')
+      expect(onClose).toHaveBeenCalledTimes(1)
+    })
+
+    it('has no axe violations', async () => {
+      const { container } = render(<InDialog clearOnEscape />)
+      expect(await axe(container)).toHaveNoViolations()
+    })
   })
 
   it('without freeSolo, unmatched text returns to the selected label on blur', async () => {

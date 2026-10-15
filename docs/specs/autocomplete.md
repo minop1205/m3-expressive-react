@@ -57,7 +57,7 @@ Sources:
 | Alt+ArrowDown | opens with no active option | — |
 | Alt+ArrowUp | — | closes |
 | Enter | `freeSolo`: commits the text | picks the active option (value, its label in the input) and closes; with no active option it closes (and `freeSolo` commits the text) |
-| Escape | clears the text and the value | closes, keeping the text. Consumed, so an enclosing modal stays open |
+| Escape | ~~clears the text and the value~~ superseded by the B42 addendum (#517): with `clearOnEscape`, clears the text and the value (consumed); without it (default), nothing — the key propagates, so an enclosing Dialog closes | closes, keeping the text. Consumed, so an enclosing modal stays open |
 | Home / End / ArrowLeft / ArrowRight | move the caret | move the caret; visual focus returns to the input |
 | Tab | normal | closes (the text is committed or reverted as in AC9) and moves on |
 
@@ -66,5 +66,5 @@ Disabled options are announced (`aria-disabled`) and skipped.
 ## Not in phase 2
 
 - Multiple values (chips), async loading, grouping, and the clear button
-  (Escape clears instead). Kept lean per #434.
+  (`clearOnEscape` clears with Escape instead). Kept lean per #434.
 - Highlighting the matched text (the Compose sample underlines it).
