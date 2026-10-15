@@ -15,6 +15,7 @@ import {
   type Ref,
 } from 'react'
 import clsx from 'clsx'
+import { useAboveModalsTopLayer } from '../../internal/useTopLayer'
 import { Snackbar } from './Snackbar'
 import styles from './SnackbarProvider.module.css'
 
@@ -118,8 +119,11 @@ function durationMs(options: SnackbarShowOptions): number {
  *   there is an action. The timer pauses on hover and while focus is inside.
  * - Placement: bottom-center with 12dp margins, filling the width up to 600dp.
  *   The host is `position: fixed` and rendered inside this provider (so it
- *   inherits the theme's color tokens) — keep the provider outside transformed
- *   ancestors.
+ *   inherits the theme's color tokens). While a snackbar shows, the host is
+ *   drawn in the browser top layer and kept above open modals (Dialog,
+ *   sheets…), which are top-layer too (ruling B45); without Popover API
+ *   support it falls back to `z-index` — keep the provider outside
+ *   transformed ancestors there.
  * - A persistent polite live region (`role="status"`) is mounted with the
  *   provider, and only its content changes, so screen readers announce each
  *   message.
@@ -203,6 +207,10 @@ export function SnackbarProvider({ children, className, style }: SnackbarProvide
 
   const current = queue[0]
 
+  // B45: above the (top-layer) modals while a snackbar shows.
+  const hostRef = useRef<HTMLDivElement>(null)
+  useAboveModalsTopLayer(hostRef, current != null)
+
   const handleFocus = (event: FocusEvent<HTMLDivElement>) => {
     const from = event.relatedTarget
     if (from instanceof Element && !event.currentTarget.contains(from)) {
@@ -216,6 +224,7 @@ export function SnackbarProvider({ children, className, style }: SnackbarProvide
       {/* Exempt from modal inert: MD3 snackbars sit above dialogs and must
           stay operable and announced while one is open. */}
       <div
+        ref={hostRef}
         className={clsx(styles.host, className)}
         style={style}
         data-md-modal-exempt=""

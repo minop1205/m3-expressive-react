@@ -14,6 +14,16 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
+  /* Top layer (B45): the open root is a `popover="manual"` element — reset
+     the UA [popover] box (fit-content size, margin: auto, border, overflow,
+     Canvas colors) so it renders the same in and out of the top layer. */
+  width: auto;
+  height: auto;
+  margin: 0;
+  border: 0;
+  overflow: visible;
+  color: inherit;
+  background-color: transparent;
   visibility: hidden;
   pointer-events: none;
   /* Stay visible until the exit motion has played (#433), then hide —
@@ -46,9 +56,13 @@
   flex-direction: column;
   box-sizing: border-box;
   width: 100%;
-  min-width: 280px;
-  max-width: 560px;
+  /* Basic dialog width: m3 / Compose AlertDialog 280–560dp (sizeIn). Host
+     overrides (B46): --md-dialog-container-min-width / -max-width. */
+  min-width: var(--md-dialog-container-min-width, 280px);
+  max-width: var(--md-dialog-container-max-width, 560px);
   max-height: calc(100% - 48px);
+  /* Only the body scrolls (B46); this is a last resort for a viewport too
+     short for the headline and actions themselves. */
   overflow-y: auto;
   padding: 24px;
   border-radius: var(--md-sys-shape-corner-extra-large);
@@ -72,6 +86,7 @@
 
 .icon {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: center;
   margin-bottom: 16px;
@@ -99,6 +114,7 @@
 }
 
 .title {
+  flex-shrink: 0;
   color: var(--md-sys-color-on-surface);
   font-family: var(--md-sys-typescale-headline-small-font);
   font-size: var(--md-sys-typescale-headline-small-size);
@@ -107,7 +123,20 @@
   letter-spacing: var(--md-sys-typescale-headline-small-tracking);
 }
 
+/* The body is the scroll container (B46 — m3 "the dialog title is pinned at
+   the top, with buttons pinned at the bottom"; Compose AlertDialog's text
+   slot is weight(1f, fill = false)): its content height when it fits, and
+   it shrinks and scrolls when it doesn't, while the icon / headline /
+   actions keep their size. The scrollport spans the container's 24dp side
+   padding (the padding moves inside), so focus rings at the content's edges
+   aren't clipped and a classic scrollbar sits at the container edge; the
+   content box is unchanged. */
 .body {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin-inline: -24px;
+  padding-inline: 24px;
   color: var(--md-sys-color-on-surface-variant);
   font-family: var(--md-sys-typescale-body-medium-font);
   font-size: var(--md-sys-typescale-body-medium-size);
@@ -118,6 +147,7 @@
 
 .actions {
   display: flex;
+  flex-shrink: 0;
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
@@ -186,8 +216,11 @@
   flex-shrink: 0;
 }
 
+/* Only the body scrolls under the fixed top bar (B46); min-height: 0 lets
+   the flex item shrink below its content instead of growing the dialog. */
 .fsBody {
   flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   padding: 8px 24px 24px;
 }

@@ -14,6 +14,7 @@ import clsx from 'clsx'
 import type { ModalCloseEvent } from '../../internal/closeReason'
 import { useControllableState } from '../../internal/useControllableState'
 import { assignRefs, useModal } from '../../internal/useModal'
+import { useModalTopLayer } from '../../internal/useTopLayer'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import styles from './BottomSheet.module.css'
 
@@ -209,6 +210,8 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
     const isModal = variant !== 'standard'
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLDivElement | null>(null)
+    // B45: the open modal sheet paints in the top layer.
+    useModalTopLayer(isModal && open, [rootRef])
     useModal({
       active: isModal && open,
       rootRef,

@@ -11,6 +11,7 @@ import clsx from 'clsx'
 import { CloseIcon } from '../../internal/icons'
 import type { ModalCloseEvent } from '../../internal/closeReason'
 import { assignRefs, useModal } from '../../internal/useModal'
+import { useModalTopLayer } from '../../internal/useTopLayer'
 import { IconButton } from '../IconButton/IconButton'
 import styles from './Dialog.module.css'
 
@@ -51,6 +52,15 @@ export interface DialogProps
  * 24dp padding; Secondary icon, OnSurface HeadlineSmall title, OnSurfaceVariant
  * BodyMedium text — per Compose DialogTokens. Modal with a 0.32 Scrim,
  * role="dialog" aria-modal, and Escape-to-close.
+ *
+ * - Long content scrolls inside the body only; the icon, title and actions
+ *   (the full-screen top bar) stay fixed (ruling B46).
+ * - Width: set `--md-dialog-container-min-width` / `--md-dialog-container-max-width`
+ *   (default `280px` / `560px` — the m3 basic dialog range; other values are
+ *   outside the spec) on the dialog (`style` / `className`) or an ancestor.
+ *   Not used by `fullScreen`.
+ * - While open, the dialog is drawn in the browser top layer, above popups
+ *   opened before it, such as the Menu it was opened from (ruling B45).
  */
 export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
   { open, onClose, icon, title, actions, fullScreen = false, closeLabel = 'Close', className, children, ...rest },
@@ -59,6 +69,8 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
   const titleId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
   const surfaceRef = useRef<HTMLDivElement | null>(null)
+  // B45: the open dialog paints in the top layer, above popups opened before it.
+  useModalTopLayer(open, [rootRef])
   useModal({
     active: open,
     rootRef,

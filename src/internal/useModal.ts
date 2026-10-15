@@ -331,7 +331,9 @@ export interface UseModalOptions {
  * ThemeProvider's element — escaping to `document.body` would drop them.
  * Inertness is therefore applied by walking from the overlay root up to
  * `<body>` and inerting the siblings at every level; the scrim stays
- * interactive because it lives inside the overlay root.
+ * interactive because it lives inside the overlay root. Painting order is
+ * separate: the components show their open root in the browser top layer
+ * (`useModalTopLayer`, ruling B45) without moving it in the DOM.
  */
 export function useModal({ active, rootRef, surfaceRef, onEscape }: UseModalOptions) {
   const onEscapeRef = useRef(onEscape)

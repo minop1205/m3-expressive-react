@@ -16,6 +16,7 @@ import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import type { ModalCloseEvent } from '../../internal/closeReason'
 import { assignRefs, useModal } from '../../internal/useModal'
+import { useModalTopLayer } from '../../internal/useTopLayer'
 import { useControllableState } from '../../internal/useControllableState'
 import styles from './NavigationDrawer.module.css'
 
@@ -151,6 +152,8 @@ export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
       event.preventDefault()
       onClose?.(event, 'escapeKeyDown')
     }
+    // B45: the open modal drawer paints in the top layer.
+    useModalTopLayer(variant === 'modal' && open, [rootRef])
     useModal({
       active: variant === 'modal' && open,
       rootRef,

@@ -22,6 +22,18 @@
   inset-inline: 0;
   inset-block-end: 0;
   z-index: var(--md-sys-z-snackbar);
+  /* Top layer (B45): while a snackbar shows, the host is a
+     `popover="manual"` element kept above the modals — reset the UA
+     [popover] box (inset: 0, fit-content size, margin: auto, border,
+     overflow, Canvas colors) so it renders the same in and out of it. */
+  inset-block-start: auto;
+  width: auto;
+  height: auto;
+  margin: 0;
+  border: 0;
+  overflow: visible;
+  color: inherit;
+  background-color: transparent;
   display: flex;
   justify-content: center;
   box-sizing: border-box;
