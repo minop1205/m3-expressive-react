@@ -16,6 +16,7 @@ import { TextField } from '../TextField'
 import { Calendar, type CalendarView } from './Calendar'
 import { CalendarIcon, EditIcon } from '../../internal/icons'
 import { assignRefs, useModal } from '../../internal/useModal'
+import { useModalTopLayer } from '../../internal/useTopLayer'
 import {
   defaultErrorLabel,
   formatDateInput,
@@ -344,6 +345,8 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLDivElement | null>(null)
     // Escape dismisses a modal picker (only when it is the topmost modal).
+    // B45: the open modal picker paints in the top layer.
+    useModalTopLayer(modal && !!open, [rootRef])
     useModal({
       active: modal && !!open,
       rootRef,

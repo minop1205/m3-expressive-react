@@ -70,6 +70,8 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B42 | #434 | Autocomplete(exposed dropdown menu・編集可) | **専用の `<Autocomplete>`、`options` 配列か `<Option>` 子要素、`value` / `inputValue` の二系統(各 controlled / uncontrolled)、`freeSolo` / `filterOptions` / `noOptionsText`、APG list autocomplete、listbox / Option は Select と共有** | なし(追加) | 決定(2026-10-13・#434 フェーズ 2) |
 | B43 | #444 | TimePicker の vibrant・横向き・スクロールホイール | **`variant="standard" \| "vibrant"`、`orientation="vertical" \| "horizontal"`(dial のみ)、`mode="scroll"`(Compose `TimeScroll`)+ 公開 `ScrollField`(APG spinbutton)** | なし(追加) | 決定(2026-10-13) |
 | B44 | #444 | TextField / Select の tonal・secure field・VerticalDragHandle | **TextField / Select `tonal?: boolean`(`@experimental`、Compose `tonalColors()` + `roundedShape`)、secure field はレシピ(`type="password"` + `IconButton toggle`、名前固定 + `aria-pressed`)、新規 `DragHandle`(APG window splitter、`value` / `onChange(event, value)` / `min` / `max` / `step` / `paneSide`)** | なし(追加) | 決定(2026-10-13) |
+| B45 | #494 | モーダル面の重なり順(top layer) | **Dialog / BottomSheet(modal)/ SideSheet(modal)/ NavigationDrawer(modal)/ NavigationRail(modal)/ modal DatePicker・TimePicker を開いている間 Popover API の top layer に置く(`popover="manual"` + `showPopover()`、開くたびに最上位へ、閉じる motion の間は残す)。DOM 位置は不変。Snackbar host も表示中は top layer に置き、modal の後に再 show して上を保つ。Popover API がなければ従来の z-index** | なし(内部・見た目不変) | 決定(2026-10-15) |
+| B46 | #495 | Dialog のスクロール領域と幅 | **本文(supporting content)だけをスクロールコンテナにし、icon / headline / actions(full-screen は上部バー)を固定。幅はホスト CSS 変数 `--md-dialog-container-min-width` / `--md-dialog-container-max-width`(既定 280px / 560px)。divider は足さない** | なし(はみ出さない限り見た目不変) | 決定(2026-10-15) |
 | B48 | #498 | TextField 系の `label` / `supportingText` / `errorText` をリッチ内容に | **TextField / Select / Autocomplete / DatePickerField の `label` / `supportingText` / `errorText`(DatePickerField は `getErrorLabel` の戻り値)を `ReactNode` に拡張。名前・説明の配線と notch の実測は従来の仕組みのまま、文字列のときの DOM と見た目は不変。m3 の内容指針(ラベルは短く 1 行、supporting text のリンクは短く)を JSDoc と docs に記載** | なし(型の拡張) | 決定(2026-10-15) |
 | B49 | #499 | Tabs のリンクタブ・TabPanel・コンテナ色 | **`Tab href` → `<a role="tab">`(見た目・手動アクティベーション・`value` による選択は同じ、遷移は横取りしない、`aria-current` は付けない)+ `TabContext` / `TabPanel value`(APG Tabs の `id` / `aria-controls` / `aria-labelledby` 自動配線、非選択は `hidden`、パネルは `tabIndex=0`)+ ホスト変数 `--md-tabs-container-color`(既定 surface)。自動アクティベーションは実装しない** | なし(追加) | 決定(2026-10-15) |
 | B47 | #497 | Slider の操作終了イベント | **`onChangeCommitted(event, value)`(MUI 名)を追加。Compose `onValueChangeFinished` と同じ時機 — ポインタを離したとき(ドラッグ終了・タップ、1 回の操作で 1 回)、値を動かすキー(矢印・Home / End・PageUp / PageDown)の keyup ごと、支援技術による直接の値変更は即時(値が変わらなければ出さない)。single / range 共通、`onChange` は従来どおり連続** | なし(追加) | 決定(2026-10-15) |
@@ -2228,6 +2230,120 @@ docs/audits/tabs.md の「tabpanel との関連付け」は本裁定で置換(�
   遅延はタッチの長押し(`longPressTimeoutMillis`)と、非 persistent の表示時間 `TooltipDuration` 1500ms のみ
 - 現状: 消える遅延は `HIDE_DELAY_MS = 1500` で m3 と一致、フォーカスでの表示は 1.4.1 で `:focus-visible` のときだけに修正済み
 - **決定**: 表示遅延は追加しない(m3・Compose とも即表示)
+
+---
+
+## モーダル・Dialog(2026-10 利用者報告)
+
+### B45: モーダル面を top layer に置く(重なり順)
+
+- **Issue**: #494(下流アプリ dd_redesign からの報告、1.4.0 採用後)
+- **状態**: 決定(2026-10-15)
+- **背景**: Menu / Select / Tooltip / SearchBar は Popover API の top layer に描くのに(B4)、モーダル系は
+  インラインの `position: fixed` + `z-index: var(--md-sys-z-modal)` のままだった。そのため Menu の項目から開いた
+  Dialog が **Menu の下**に描かれ、アプリ側の stacking context(`transform` / `overflow` / 低い `z-index` の祖先)が
+  モーダルを切り取ったり閉じ込めたりできた(modal-overlays 監査 X1 の「インライン描画で祖先の transform/overflow に脆弱」)。
+
+**仕様**
+
+- m3(dialogs/guidelines): 「A dialog is a modal window that appears in front of app content…」「Dialog containers
+  appear above other screen elements」、Behavior > Position「Dialogs… shouldn't be obscured by other elements」。
+  full-screen dialog は「the only dialogs over which other dialogs can appear」(「allowing simple menus or dialogs to
+  appear above the full-screen dialog」)。menus/guidelines「Menus temporarily appear in front of all other permanent UI
+  elements」。modal bottom sheet は「Like dialogs… appear in front of app content」。**モーダル同士やメニューとの入れ子の
+  z-order は書かれていない**
+- Compose androidx-main: `AlertDialog` / `BasicAlertDialog`(AlertDialog.kt:142 `Dialog(...)`)・`DatePickerDialog`・
+  `ModalBottomSheet` はプラットフォームの**別ウィンドウ**。`DropdownMenu` / Tooltip は Popup ウィンドウ(Menu.kt:118
+  「the menu is displayed in a separate window, on top of other content」)。`ModalNavigationDrawer` はインラインの
+  Box + Scrim(NavigationDrawer.kt:372 / :388 / :410)。material3 に z-order の処理はなく、**後から開いたウィンドウが上**
+  (ウィンドウモデルからの推論)— Menu の項目から開いた Dialog は Menu の上に来る
+
+**決定**
+
+1. **対象の root を、開いている間 top layer に置く**: Dialog・BottomSheet(`variant="modal"`)・SideSheet
+   (`variant="modal"`)・NavigationDrawer(`variant="modal"`)・NavigationRail(`modal`)・`open` 指定の DatePicker /
+   TimePicker。仕組みは B4 と同じ `popover="manual"` + `showPopover()`(既存の `showInTopLayer`、`popover` 属性は
+   クライアントで対応ブラウザのときだけ付く)。`<dialog>.showModal()` は使わない — inert・フォーカス・Escape は
+   `useModal` がすでに持っており(スタック・`data-md-modal-exempt`・入れ子の popup が先に Escape を消費する順序)、
+   二重になるため。**DOM 位置は変えない**ので ThemeProvider のトークンは従来どおり継承され、`useModal` の
+   スタック / inert / Escape / フォーカス復帰は変更なし
+2. **開くたびに最上位へ**: 開くときは一度 top layer から外してから show し直す(top layer は show した順に重なる)。
+   よって**後から開いたものが上**(Compose のウィンドウ順と同じ)— Menu の項目から開いた Dialog は Menu の上、モーダル
+   の中で開いた Menu / Select / Tooltip はモーダルの上。m3 の「dialog は他の要素に隠されない」「full-screen の上には
+   menu / dialog が出せる」とも矛盾しない(後者は開いた順で自然に満たされる)
+3. **閉じる motion の間は top layer に残す**: 閉じた後も、root 自身の delayed visibility(#433 / #458 の
+   `transition: visibility 0s linear <退場の長さ>`)が終わるまで top layer に置き、それから外す(遅延は root の
+   computed `transition` から読む — reduced motion では 0 なので即時)。退場中に stacking context の下へ落ちて
+   アプリバー等の下に潜ることはない。DatePicker / TimePicker は従来どおり閉じると unmount する(退場 motion なし)
+4. **NavigationRail(modal)は root ではなく scrim と surface を昇格する**: rail の root は畳んだ rail の幅(96dp / 0)を
+   ページ内に確保する in-flow の要素で、top layer に入れると流れから外れてページが詰まる。そこで scrim → surface の順に
+   show し、surface は昇格中だけ root の矩形(ビューポート座標)に `position: fixed` で固定する(見た目は不変、
+   開いている間は body スクロールがロックされているので矩形はずれない。リサイズでは測り直す)。閉じるときは畳む
+   motion(DefaultSpatial)が終わるまで残す
+5. **UA の `[popover]` スタイルを打ち消す**: `margin: auto` / `border` / `padding` / `inset: 0` / `width` / `height:
+   fit-content` / `overflow: auto` / `color: CanvasText` / `background-color: Canvas` / 非表示時の `display: none` を
+   各 root(rail は scrim / surface)の基本ルールで明示的に上書きし、top layer の内外でピクセル同一にする
+6. **Popover API がない環境**は従来どおり `z-index: var(--md-sys-z-modal)` の重なり(トークンはフォールバックとして残す)
+7. **Snackbar は modal の上**(z-index の scale `modal < snackbar` と同じ順、`data-md-modal-exempt` で操作可能のまま):
+   SnackbarProvider の host を、snackbar を表示している間 top layer に置き、modal が top layer に入るたびに host を
+   **show し直して最上位に戻す**。host が top layer に入るのは snackbar が出たときなので、それより前から開いている Menu
+   の上にも描かれる(m3 は snackbar とメニューの重なりを書いていない — 後から出たものが上、という 2. と同じ規則)
+8. 公開 API の追加・変更はない
+
+**影響**: 非破壊(公開 API・DOM 構造は不変。対応ブラウザでは root に `popover="manual"` 属性が付く)。見た目は
+top layer の内外で同一(VRT 不変の想定)。docs サイトの「ナビバーより上に出すための z-index ラッパー」(Dialog
+full-screen / SideSheet / BottomSheet のデモ)は不要になったので外した。token reference §8 と modal-overlays 監査に追記。
+対象: Dialog・BottomSheet・SideSheet・NavigationDrawer・NavigationRail・DatePicker・TimePicker・SnackbarProvider
+(内部の `src/internal/useTopLayer.ts`)。
+
+---
+
+### B46: Dialog は本文だけをスクロールし、headline と actions を固定する + 幅の上書き
+
+- **Issue**: #495(下流アプリ dd_redesign からの報告、1.4.0 採用後)
+- **状態**: 決定(2026-10-15)
+- **背景**: `.dialog` 自体が `overflow-y: auto` で、長い本文では **dialog 全体**がスクロールし、headline とアクション
+  行がスクロールで消えていた。幅は `min-width: 280px` / `max-width: 560px` 固定で、変える手段がなかった。
+
+**仕様**
+
+- m3(dialogs/guidelines Behavior > Scrolling): 「Even when scrolling is required, the dialog title is pinned at the
+  top, with buttons pinned at the bottom」、図の説明「the dialog title and buttons remain fixed」。divider は anatomy 上
+  任意で、**スクロール時だけ出す規則はない**。specs: basic の幅は **min 280dp / max 560dp**、full-screen は max 560dp。
+  **任意の幅は規定なし**。full-screen は compact の画面幅向け
+- Compose androidx-main `AlertDialog`: `BasicAlertDialog` が `sizeIn(minWidth = DialogMinWidth, maxWidth =
+  DialogMaxWidth)`(AlertDialog.kt:147、280dp / 560dp は :409–412)。呼び出し側の `modifier` は `sizeIn` より前に
+  付くので、範囲内で狭めることはできる。中身は Column で icon → title → text → buttons、**text の Box だけが
+  `weight(1f, fill = false)`**(:357–358)で縮み、title と buttons は固定。スクロールは呼び出し側が text の中に
+  `verticalScroll` を置く。divider の処理はない
+
+**決定**
+
+1. **basic: 本文(`children` の領域)をスクロールコンテナにする**。dialog は flex column のまま、icon / headline /
+   actions は縮まず(`flex-shrink: 0`)、本文だけが `flex: 0 1 auto; min-height: 0; overflow-y: auto` で縮んで
+   スクロールする(Compose の `weight(1f, fill = false)` と同じ — 収まるときは内容の高さ、はみ出すときだけ縮む)。
+   Compose は利用者に `verticalScroll` を置かせるが、Web では本文がそのままスクロールする方が扱いやすいので、
+   コンテナ側を scroll 領域にする(Compose と同じく本文の Box の境界で切る)
+2. 本文のスクロールポートは dialog の左右 padding(24px)まで広げ、その分の padding を内側に戻す
+   (`margin-inline: -24px; padding-inline: 24px`)。内容の位置と幅は変わらず、本文内の操作要素の focus ring が
+   スクロールポートの左右端で切れず、クラシックスクロールバーは container の端に出る(m3 / Compose はスクロール
+   バーの位置を規定していない — Web の適応)
+3. **full-screen: 上部バー(close / title / actions)を固定し、本文だけをスクロール**。従来も本文は
+   `overflow-y: auto` だったが、flex 子の `min-height: auto` のため縮まず、dialog 全体がスクロールしていた —
+   `min-height: 0` で本文に閉じ込める
+4. **divider は足さない**(m3 は任意で、スクロール時の規則なし。Compose にもない)。必要なら利用者が本文に
+   `<Divider>` を置ける
+5. **幅はホスト CSS 変数で上書き**: `--md-dialog-container-min-width`(既定 `280px`)/
+   `--md-dialog-container-max-width`(既定 `560px`)。Compose 風の `width` / `modifier` prop は足さない
+   (CLAUDE.md の API 方針。SearchBar の `--md-search-bar-width` と同じ形)。Dialog の `style` / `className` か
+   祖先に設定する。docs に「m3 の basic dialog の範囲は 280–560dp。範囲外の値は m3 の規定外」と注記する。
+   full-screen はビューポート全体を覆うので対象外
+6. 公開 prop の追加はない。はみ出さないときの見た目は不変
+
+**影響**: 非破壊(はみ出さない dialog はピクセル不変。長い本文の dialog だけ headline / actions が残る)。VRT:
+`Components/Dialog` の `LongContent` を追加。対象: Dialog。
+
+---
 
 ## 本書で扱わなかった判断候補(次回以降)
 

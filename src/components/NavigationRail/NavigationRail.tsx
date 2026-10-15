@@ -19,12 +19,27 @@ import {
 import { useRailMorph } from './useRailMorph'
 import type { ModalCloseEvent } from '../../internal/closeReason'
 import { useModal } from '../../internal/useModal'
+import { cssTime, useModalTopLayer } from '../../internal/useTopLayer'
 import { useControllableState } from '../../internal/useControllableState'
 import styles from './NavigationRail.module.css'
 import { useLocaleProps } from '../../internal/locale'
 
 export type { NavigationRailVariant, NavigationRailArrangement } from './NavigationRailContext'
 export { NavigationRailItem, type NavigationRailItemProps } from './NavigationRailItem'
+
+/**
+ * Pin the top-layer rail surface (`position: fixed` via CSS) to the root's
+ * viewport rect — where it sits in the page (ruling B45).
+ */
+function pinToRect(root: HTMLElement, surface: HTMLElement) {
+  const rect = root.getBoundingClientRect()
+  const rtl = root.ownerDocument.defaultView?.getComputedStyle(root).direction === 'rtl'
+  const width = root.ownerDocument.documentElement.clientWidth
+  surface.style.setProperty('--_top-layer-top', `${rect.top}px`)
+  surface.style.setProperty('--_top-layer-height', `${rect.height}px`)
+  surface.style.setProperty('--_top-layer-left', rtl ? 'auto' : `${rect.left}px`)
+  surface.style.setProperty('--_top-layer-right', rtl ? `${width - rect.right}px` : 'auto')
+}
 
 /** Why the modal rail asked to close (ruling B7 vocabulary): Escape or a scrim click. */
 export type NavigationRailCloseReason = 'escapeKeyDown' | 'backdropClick'
@@ -116,12 +131,44 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
     const open = modal && expanded
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLDivElement>(null)
+    const scrimRef = useRef<HTMLDivElement>(null)
+
+    // B45: the open rail paints in the top layer. The root keeps the
+    // collapsed rail's place in the page, so it stays in flow; the scrim and
+    // then the surface are promoted instead, the surface pinned
+    // (`position: fixed`, CSS) to the root's viewport rect so it doesn't move.
+    const pinSurface = () => {
+      if (rootRef.current && surfaceRef.current) pinToRect(rootRef.current, surfaceRef.current)
+    }
+    useIsoLayoutEffect(() => {
+      const view = rootRef.current?.ownerDocument.defaultView
+      if (!open || !view) return
+      pinSurface()
+      view.addEventListener('resize', pinSurface)
+      return () => view.removeEventListener('resize', pinSurface)
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open])
+    useModalTopLayer(open, [scrimRef, surfaceRef], {
+      // The surface stays for the collapse (useRailMorph's DefaultSpatial
+      // spring; 0ms under reduced motion).
+      exitDuration: (el) =>
+        el === surfaceRef.current
+          ? cssTime(el, '--md-sys-motion-spring-default-spatial-duration')
+          : 0,
+    })
+
     useModal({
       active: open,
       rootRef,
       surfaceRef,
       onEscape: (event) => onClose?.(event, 'escapeKeyDown'),
     })
+    // Re-measure once useModal's body scroll lock (an effect declared above,
+    // so it has run) has removed the page scrollbar.
+    useEffect(() => {
+      if (open) pinSurface()
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open])
 
     const setRefs = useCallback(
       (node: HTMLElement | null) => {
@@ -193,6 +240,7 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
             data-hide-on-collapse={hide || undefined}
           >
             <div
+              ref={scrimRef}
               className={styles.scrim}
               aria-hidden="true"
               onClick={(event) => onClose?.(event, 'backdropClick')}

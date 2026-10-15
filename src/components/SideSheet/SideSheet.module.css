@@ -12,6 +12,18 @@
   inset: 0;
   z-index: var(--md-sys-z-modal);
   display: flex;
+  /* Top layer (B45): the open modal root is a `popover="manual"` element —
+     reset the UA [popover] box (fit-content size, margin: auto, border,
+     padding, overflow, Canvas colors) so it renders the same in and out of
+     the top layer. */
+  width: auto;
+  height: auto;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  overflow: visible;
+  color: inherit;
+  background-color: transparent;
   pointer-events: none;
   /* Stay visible until the exit motion has played (#433), then hide —
      the same delayed-visibility pattern as NavigationDrawer. */

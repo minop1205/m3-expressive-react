@@ -62,6 +62,17 @@
   inset: 0;
   z-index: var(--md-sys-z-modal);
   display: flex;
+  /* Top layer (B45): the open root is a `popover="manual"` element — reset
+     the UA [popover] box (fit-content size, margin: auto, border, padding,
+     overflow, Canvas colors) so it renders the same in and out of it. */
+  width: auto;
+  height: auto;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  overflow: visible;
+  color: inherit;
+  background-color: transparent;
   visibility: hidden;
   pointer-events: none;
   /* Stay visible for the close motion (FastEffects, below). */

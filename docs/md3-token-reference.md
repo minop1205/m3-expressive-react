@@ -323,8 +323,14 @@ primary-fixed-dim, on-primary-fixed, on-primary-fixed-variant` (+ secondary/tert
 
 Library scale, not an MD3 or Compose token: Android has no shared z-order for
 overlays, but on the web it matters wherever an overlay is not promoted to the
-Popover top layer — the inline modals, the docked SearchBar, and the
-Menu / DatePickerField fallback when the Popover API is missing. Defined in
+Popover top layer — the docked SearchBar, the standard (inline) sheets, and
+every popup / modal / snackbar host when the Popover API is missing. Since
+ruling B45 (#494) the open modals (Dialog, modal BottomSheet / SideSheet /
+NavigationDrawer / NavigationRail, modal DatePicker / TimePicker) and the
+SnackbarProvider host (while a snackbar shows) are top-layer too: there the
+order is the show order (a modal is re-shown on each opening, so it lands
+above the Menu it was opened from), and the snackbar host is re-shown after
+each modal to stay on top — the same order as this scale. Defined in
 `src/styles/tokens.css`; component CSS uses the tokens, never the numbers
 (`src/test/cssHygiene.test.ts` rejects a literal `z-index` of 10 or more in
 `*.module.css`; local stacking 0–9 inside a component is fine).
@@ -338,4 +344,5 @@ Menu / DatePickerField fallback when the Popover API is missing. Defined in
 | `--md-sys-z-snackbar` | 30 | SnackbarProvider |
 
 Higher wins: a snackbar stays above an open modal, a modal above menus, a menu
-above the open search view.
+above the open search view. (In the top layer a menu opened *inside* a modal
+paints above it — shown later.)

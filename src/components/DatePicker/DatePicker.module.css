@@ -537,6 +537,16 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
+  /* Top layer (B45): the root is a `popover="manual"` element — reset the
+     UA [popover] box (fit-content size, margin: auto, border, overflow,
+     Canvas colors) so it renders the same in and out of the top layer. */
+  width: auto;
+  height: auto;
+  margin: 0;
+  border: 0;
+  overflow: visible;
+  color: inherit;
+  background-color: transparent;
 }
 
 .scrim {

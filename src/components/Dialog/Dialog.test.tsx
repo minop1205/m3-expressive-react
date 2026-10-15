@@ -212,3 +212,96 @@ describe('Dialog onClose reason (#407)', () => {
     expect(closed).toBe(true)
   })
 })
+
+/*
+ * Ruling B46: only the body scrolls (headline / icon / actions pinned), and
+ * the basic dialog's width range is a host custom property pair.
+ */
+describe('Dialog scrolling and width (B46)', () => {
+  /** Resolve `var(--name, fallback)` the way the cascade would (jsdom keeps it verbatim). */
+  function resolveVar(el: HTMLElement, value: string): string {
+    const m = /^var\((--[\w-]+),\s*(.+)\)$/.exec(value.trim())
+    if (!m) return value
+    for (let node: HTMLElement | null = el; node; node = node.parentElement) {
+      const own = node.style.getPropertyValue(m[1]).trim()
+      if (own) return own
+    }
+    return m[2].trim()
+  }
+
+  it('makes the body the scroll container and pins the headline, icon and actions', () => {
+    render(
+      <Dialog open icon={<svg />} title="Terms" actions={<button>Accept</button>}>
+        <p>Long body</p>
+      </Dialog>,
+    )
+    const dialog = screen.getByRole('dialog')
+    const body = screen.getByText('Long body').parentElement as HTMLElement
+    expect(body.parentElement).toBe(dialog)
+    const bodyStyle = getComputedStyle(body)
+    expect(bodyStyle.overflowY).toBe('auto')
+    expect(bodyStyle.minHeight).toBe('0px')
+    expect(bodyStyle.flexShrink).toBe('1')
+    // The scrollport spans the 24dp side padding; the content box doesn't move.
+    expect(bodyStyle.getPropertyValue('margin-inline')).toBe('-24px')
+    expect(bodyStyle.getPropertyValue('padding-inline')).toBe('24px')
+    const title = screen.getByRole('heading', { name: 'Terms' })
+    const actions = screen.getByRole('button', { name: 'Accept' }).parentElement as HTMLElement
+    const icon = dialog.firstElementChild as HTMLElement
+    for (const pinned of [icon, title, actions]) {
+      expect(getComputedStyle(pinned).flexShrink).toBe('0')
+      expect(getComputedStyle(pinned).overflowY).toBe('visible')
+    }
+  })
+
+  it('scrolls only the full-screen body under the fixed top bar', () => {
+    render(
+      <Dialog open fullScreen title="New event" actions={<button>Save</button>}>
+        <p>Long body</p>
+      </Dialog>,
+    )
+    const body = screen.getByText('Long body').parentElement as HTMLElement
+    expect(getComputedStyle(body).overflowY).toBe('auto')
+    expect(getComputedStyle(body).minHeight).toBe('0px')
+    const header = screen.getByRole('heading', { name: 'New event' }).parentElement as HTMLElement
+    expect(header.tagName).toBe('HEADER')
+    expect(getComputedStyle(header).flexShrink).toBe('0')
+  })
+
+  it('defaults the width range to 280–560px', () => {
+    render(<Dialog open title="Width" />)
+    const dialog = screen.getByRole('dialog')
+    const style = getComputedStyle(dialog)
+    expect(resolveVar(dialog, style.minWidth)).toBe('280px')
+    expect(resolveVar(dialog, style.maxWidth)).toBe('560px')
+  })
+
+  it('applies --md-dialog-container-min-width / -max-width from the dialog or an ancestor', () => {
+    render(
+      <div style={{ ['--md-dialog-container-max-width' as string]: '720px' }}>
+        <Dialog
+          open
+          title="Wide"
+          style={{ ['--md-dialog-container-min-width' as string]: '320px' }}
+        />
+      </div>,
+    )
+    const dialog = screen.getByRole('dialog')
+    const style = getComputedStyle(dialog)
+    expect(style.minWidth).toContain('--md-dialog-container-min-width')
+    expect(style.maxWidth).toContain('--md-dialog-container-max-width')
+    expect(resolveVar(dialog, style.minWidth)).toBe('320px')
+    expect(resolveVar(dialog, style.maxWidth)).toBe('720px')
+  })
+
+  it('has no axe violations with long scrolling content', async () => {
+    const { container } = render(
+      <Dialog open title="Terms" actions={<button>Accept</button>}>
+        {Array.from({ length: 20 }, (_, i) => (
+          <p key={i}>Paragraph {i + 1}</p>
+        ))}
+      </Dialog>,
+    )
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})

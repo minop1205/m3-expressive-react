@@ -95,6 +95,19 @@ secondary-container・アイテム余白 12+16/24 = Compose 実装値と一致)/
 指定は要望が出たら非破壊で追加する。m3 の「At full-screen height, standard bottom sheets contain a collapse icon in an app
 bar」は利用者側の合成(TopAppBar + IconButton で `onExpandedChange(false)`)で実現でき、組み込みは見送る。
 
+## top layer と Dialog のスクロール(#494・#495・裁定 B45 / B46、2026-10-15 追記)
+
+- **X1 の「全てインライン描画(ポータル未使用)で、祖先の transform/overflow に脆弱」は B45 で解消**: 開いている modal の
+  root(rail は scrim と surface)を Popover API の top layer に置く。DOM 位置はインラインのまま(トークン継承のため。
+  ポータルは引き続き使わない)で、描画だけが祖先の stacking context から抜ける。開くたびに show し直すので、Menu の項目
+  から開いた Dialog は Menu の上に描かれる。Snackbar host は表示中 top layer にあり、modal の後に再 show されて上を保つ。
+  Popover API がない環境は従来の `--md-sys-z-modal` / `--md-sys-z-snackbar`。ND3(z-index の統一)はフォールバック側の
+  順序としてそのまま有効
+- **Dialog の「icon 16→title 16→body 24→actions」は維持しつつ、B46 で本文だけをスクロールコンテナにした**(m3「the dialog
+  title is pinned at the top, with buttons pinned at the bottom」、Compose AlertDialog.kt:357–358 の text スロット
+  `weight(1f, fill = false)`)。以前は `.dialog` 全体がスクロールしていた。幅 280〜560dp は既定値のまま、
+  `--md-dialog-container-min-width` / `--md-dialog-container-max-width` で上書きできる
+
 ## スキルへのフィードバック
 
 - 共通テーマを持つコンポーネント群は**一括監査+統合レポート**が有効(横断欠落が1つの発見として

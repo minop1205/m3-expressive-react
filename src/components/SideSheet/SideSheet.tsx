@@ -12,6 +12,7 @@ import { IconButton } from '../IconButton/IconButton'
 import { Divider } from '../Divider/Divider'
 import type { ModalCloseEvent } from '../../internal/closeReason'
 import { assignRefs, useModal } from '../../internal/useModal'
+import { useModalTopLayer } from '../../internal/useTopLayer'
 import styles from './SideSheet.module.css'
 import { useLocaleLabels, useLocaleProps } from '../../internal/locale'
 
@@ -102,6 +103,8 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
     const { fallbackLabel = 'Side sheet' } = useLocaleLabels('SideSheet')
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLDivElement | null>(null)
+    // B45: the open modal sheet paints in the top layer.
+    useModalTopLayer(variant === 'modal' && open, [rootRef])
     useModal({
       active: variant === 'modal' && open,
       rootRef,
