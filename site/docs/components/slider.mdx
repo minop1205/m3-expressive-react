@@ -59,6 +59,63 @@ const [value, setValue] = useState(30)
 <Slider value={value} onChange={(event, next) => setValue(next as number)} aria-label="Brightness" />
 ```
 
+## Committing a value
+
+`onChange` fires continuously while the value changes — changes take effect
+immediately, as the spec requires. `onChangeCommitted(event, value)` fires
+when an interaction ends, so you can save or fetch once per gesture:
+
+- on pointer release — the end of a drag, or a tap (once per gesture)
+- on the keyup of each value key — arrows, Home / End, PageUp / PageDown
+  (a held key commits once, when released)
+- immediately after a direct value change from assistive technology, only
+  when the value actually changed
+
+`value` is the last value passed to `onChange` (the `[start, end]` pair for a
+range slider).
+
+export function CommittedSliderDemo() {
+  const [value, setValue] = useState(40)
+  const [saved, setSaved] = useState(40)
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <Slider
+        value={value}
+        onChange={(event, next) => setValue(next)}
+        onChangeCommitted={(event, next) => setSaved(next)}
+        aria-label="Volume"
+        style={{ width: 280 }}
+      />
+      <span>
+        {value} (saved: {saved})
+      </span>
+    </div>
+  )
+}
+
+<Demo>
+  <CommittedSliderDemo />
+</Demo>
+
+```tsx
+<Slider
+  value={value}
+  onChange={(event, next) => setValue(next as number)}
+  onChangeCommitted={(event, next) => save(next as number)}
+  aria-label="Volume"
+/>
+```
+
+:::note[Spec notes]
+m3.material.io says slider changes "must take effect immediately" and does
+not define a commit event. The timing follows Compose
+`onValueChangeFinished`: drag end or tap, keyup of each key step, and an
+immediate commit for accessibility actions. Like Compose, a value key commits
+on keyup even when the value is already at a bound. Compose handles only the
+arrows along the slider's orientation; the native range input steps on all
+four arrows, so all four commit.
+:::
+
 ## Sizes
 
 Five Expressive sizes set the track thickness and handle height. `insetIcon`
