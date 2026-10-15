@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.4.1 (2026-10-15)
+
+### Fixed
+
+- **Package**: the 1.4.0 tarball contained a stale pre-1.4 `dist/`. Select,
+  Autocomplete, PullToRefresh, DragHandle and ScrollField were missing, and
+  the 1.4.0 fixes (modal stack, form reset, exit motion, …) were not in it.
+  1.4.1 is built from the 1.4.x source. `npm publish` now always rebuilds
+  first (`prepublishOnly`), and a `check:pack` step fails when any exported
+  file is missing from the tarball (#493).
+- **Modals** (`useModal`): an element focused by React `autoFocus` inside the
+  surface keeps focus on open, and the focus-return target is recorded before
+  children move focus, so closing no longer tries to return to an element
+  inside the closing modal or to an input that has gone (#503).
+- **Tooltip**: opens on focus only for keyboard (`:focus-visible`) focus, not
+  when focus is moved programmatically, e.g. returning after a dialog closes
+  (#503).
+- **TextField**: `inputProps.required` / `readOnly` / `disabled` / `type` /
+  `rows` are no longer overridden by the component's defaults. An explicit
+  top-level prop still wins (#503).
+
+### Added
+
+- **Ripple** / **FocusRing** subpath entries (`m3-expressive-react/Ripple`,
+  `m3-expressive-react/FocusRing`) that load their CSS, for apps that build
+  their own controls with them in per-component (`tokens.css`) mode (#503).
+
 ## 1.4.0 (2026-10-13)
 
 A quality release: a spec-compliance sweep of every component (issues
