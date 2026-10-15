@@ -6,6 +6,10 @@
  * size to content (90dp min) with 52dp edge padding. One sliding indicator:
  * primary = content-width (min 24dp) 3dp bar, top corners 3dp; secondary =
  * full-tab-width 2dp line. Bottom divider OutlineVariant 1dp.
+ *
+ * Host custom property (set on the Tabs element or an ancestor):
+ *   --md-tabs-container-color   row container color (default Surface, both
+ *                               variants; Compose TabRow `containerColor`)
  */
 
 .tabs {
@@ -13,7 +17,8 @@
   display: flex;
   box-sizing: border-box;
   align-items: stretch;
-  background-color: var(--md-sys-color-surface);
+  --_container-color: var(--md-tabs-container-color, var(--md-sys-color-surface));
+  background-color: var(--_container-color);
   box-shadow: inset 0 -1px 0 0 var(--md-sys-color-outline-variant);
 }
 
@@ -51,6 +56,8 @@
   cursor: pointer;
   outline: none;
   -webkit-tap-highlight-color: transparent;
+  /* Link (navigation) tabs render as <a>. */
+  text-decoration: none;
 
   color: var(--_label-text-color);
   font-family: var(--md-sys-typescale-title-small-font);
@@ -119,7 +126,8 @@
   --_label-text-color: var(--md-sys-color-on-surface);
 }
 
-.tab:disabled {
+.tab:disabled,
+.tab[aria-disabled='true'] {
   cursor: default;
   pointer-events: none;
   --_label-text-color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
@@ -288,7 +296,8 @@
     --md-focus-ring-offset: -7px;
   }
 
-  .tab:disabled {
+  .tab:disabled,
+  .tab[aria-disabled='true'] {
     color: GrayText;
   }
 }
