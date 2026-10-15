@@ -1,5 +1,52 @@
 # Changelog
 
+## 1.5.0 (2026-10-15)
+
+Follow-ups from a downstream app's report, each decided spec-first: m3.material.io,
+then Jetpack Compose, with the rulings (B45–B51) recorded in
+`docs/decisions/phase-b-api.md`. All changes are additive or bug fixes.
+
+### Behavior changes to check
+
+- **Modals in the top layer**: open Dialog, modal BottomSheet / SideSheet /
+  NavigationDrawer / NavigationRail and the modal DatePicker / TimePicker are
+  now shown in the browser top layer (`popover="manual"`), so a dialog opened
+  from a menu item paints above the menu and app stacking contexts can no
+  longer clip a modal. The DOM position (and so the theme tokens) is
+  unchanged; the z-index tokens remain the fallback without the Popover API.
+  A snackbar shown while a menu or modal is open paints above it (#494, B45).
+- **Dialog**: long content now scrolls only the body; the icon, headline and
+  actions stay pinned (m3 "the dialog title is pinned at the top, with buttons
+  pinned at the bottom") (#495, B46).
+
+### Added
+
+- **Dialog**: `--md-dialog-container-min-width` / `--md-dialog-container-max-width`
+  custom properties (defaults 280px / 560px, the m3 range) (#495, B46).
+- **Slider**: `onChangeCommitted(event, value)` — fires at the end of an
+  interaction with Compose `onValueChangeFinished` semantics: pointer release
+  (drag end or tap), the keyup of each keyboard step, and assistive-technology
+  value changes (#497, B47).
+- **TextField / Select / Autocomplete / DatePickerField**: `label`,
+  `supportingText` and `errorText` (DatePickerField: `getErrorLabel`) accept
+  React nodes; the outlined notch follows the rendered label. The m3 guidance
+  (short single-line label) is in the docs (#498, B48).
+- **Tabs**: `Tab href` for navigation tabs (`<a role="tab">`, the app's router
+  handles the click); `TabContext` + `TabPanel` link tabs and panels with
+  `id` / `aria-controls` / `aria-labelledby` (WAI-ARIA APG Tabs); the
+  `--md-tabs-container-color` custom property (#499, B49).
+- **LocaleProvider** (new, `m3-expressive-react/LocaleProvider`): one place to
+  set the `locale`, the 12 / 24-hour default and every built-in label
+  (pickers, Snackbar, SearchBar, Chip, Dialog, sheets, Badge, …). Props still
+  override; without a provider nothing changes. `useLocale()` reads the
+  resolved values. New i18n guide with a Japanese example (#500, B50).
+
+### Decided not to add (B51)
+
+- A focusable disabled state for Button / IconButton (#496), a menu-level
+  `onAction` (#501) and a tooltip show delay (#502): neither m3 nor Compose
+  defines them. The ruling documents the alternatives.
+
 ## 1.4.1 (2026-10-15)
 
 ### Fixed

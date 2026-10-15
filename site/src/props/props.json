@@ -142,7 +142,7 @@
     "name": "defaultValue",
     "type": "string",
     "required": false,
-    "defaultValue": "",
+    "defaultValue": "''",
     "description": "Uncontrolled initial value."
    },
    {
@@ -161,10 +161,10 @@
    },
    {
     "name": "errorText",
-    "type": "string",
+    "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Shown instead of `supportingText` (with `role=\"alert\"`) when `error` is set."
+    "description": "Shown instead of `supportingText` (with `role=\"alert\"`) when `error` is set.\nAccepts rich content, like `supportingText`."
    },
    {
     "name": "filterOptions",
@@ -217,10 +217,10 @@
    },
    {
     "name": "label",
-    "type": "string",
+    "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Floating label; also names the input and the listbox. Rendered with a trailing `*` when `required`."
+    "description": "Floating label; also names the input and the listbox. Rendered with a trailing `*` when `required`.\n\nAccepts rich content (text, emphasis, a small icon) — keep it short and\non one line, as m3 asks: the label is a single line (truncated with an\nellipsis), clicks on it go to the field, and the outlined notch draws a\nhidden copy of it to measure its width. So no links or buttons in the\nlabel, and no elements with an `id`."
    },
    {
     "name": "name",
@@ -294,16 +294,16 @@
    },
    {
     "name": "supportingText",
-    "type": "string",
+    "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Helper line below the field. Replaced by `errorText` while in error."
+    "description": "Helper line below the field. Replaced by `errorText` while in error.\nAccepts rich content — a short link is fine (it stays reachable and is\npart of the field's description via `aria-describedby`); keep it to\nabout one line, as m3 asks."
    },
    {
     "name": "toggleLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Toggle dropdown menu",
+    "defaultValue": "'Toggle dropdown menu'",
     "description": "Accessible name of the trailing toggle button (Compose\n`Strings.ToggleDropdownMenu`)."
    },
    {
@@ -317,7 +317,7 @@
     "name": "variant",
     "type": "\"filled\" | \"outlined\"",
     "required": false,
-    "defaultValue": "filled",
+    "defaultValue": "'filled'",
     "description": "Text field container style (the same two as `TextField`)."
    }
   ]
@@ -377,7 +377,7 @@
     "type": "string",
     "required": false,
     "defaultValue": "\"New notification\" for a dot, \"{n} new notifications\" for a count",
-    "description": "Accessible description announced for the badge (rendered as visually\nhidden text right after the anchor content; the visible digits are\nhidden from assistive technology). Override it to localize."
+    "description": "Accessible description announced for the badge (rendered as visually\nhidden text right after the anchor content; the visible digits are\nhidden from assistive technology). Override it to localize, or set\n`LocaleProvider` `labels.Badge.getLabel` for every badge."
    },
    {
     "name": "max",
@@ -406,6 +406,18 @@
     "required": false,
     "defaultValue": "true",
     "description": "Whether the badge is visible. A hidden badge scales out and is then\nremoved from the accessibility tree as well."
+   }
+  ]
+ },
+ "BadgeLabelText": {
+  "description": "The default announced text of a Badge — LocaleProvider\n`labels.Badge.getLabel` (Phase B B50), else the English B28 wording. The\none client part of the otherwise server-safe Badge (#409): it is the only\npiece that reads the locale context, and it takes only serializable props.",
+  "props": [
+   {
+    "name": "count",
+    "type": "string | undefined",
+    "required": true,
+    "defaultValue": null,
+    "description": ""
    }
   ]
  },
@@ -721,7 +733,7 @@
     "name": "getItemLabel",
     "type": "((position: number, count: number) => string)",
     "required": false,
-    "defaultValue": "(position: number, count: number) => `${position} of ${count}`",
+    "defaultValue": "(position, count) => `${position} of ${count}`",
     "description": "Accessible label of each item's position, announced with the item\n(non-interactive items: the slide's name; `onClick` / `href` items: its\ndescription). `position` is 1-based."
    },
    {
@@ -735,7 +747,7 @@
     "name": "itemRoleDescriptionLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "slide",
+    "defaultValue": "'slide'",
     "description": "Role description announced for each non-interactive item\n(`aria-roledescription`)."
    },
    {
@@ -749,7 +761,7 @@
     "name": "roleDescriptionLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "carousel",
+    "defaultValue": "'carousel'",
     "description": "Role description announced for the carousel container\n(`aria-roledescription`)."
    },
    {
@@ -763,7 +775,7 @@
     "name": "variant",
     "type": "\"multi-browse\" | \"uncontained\" | \"hero\"",
     "required": false,
-    "defaultValue": "multi-browse",
+    "defaultValue": "'multi-browse'",
     "description": "Layout (m3.material.io / Compose `HorizontalMultiBrowseCarousel`,\n`HorizontalUncontainedCarousel`, `HorizontalCenteredHeroCarousel`):\n- `multi-browse` — large, medium and small (40–56dp) items, start-snapped;\n- `uncontained` — single-size items flowing past the edge, free scrolling;\n- `hero` — centered hero: a large item with a small item on each side,\n  center-snapped (the first / last item align to the start / end)."
    }
   ]
@@ -876,7 +888,7 @@
     "name": "dragged",
     "type": "boolean",
     "required": false,
-    "defaultValue": "false",
+    "defaultValue": null,
     "description": "Apply the MD3 dragged appearance (state layer + elevation) — for drag-and-drop."
    },
    {
@@ -897,7 +909,7 @@
     "name": "getRemoveLabel",
     "type": "((label: string) => string)",
     "required": false,
-    "defaultValue": "(label: string) => `Remove ${label}`",
+    "defaultValue": "(label) => `Remove ${label}`",
     "description": "Accessible name of the remove button, from the chip label."
    },
    {
@@ -932,7 +944,7 @@
     "name": "removable",
     "type": "boolean",
     "required": false,
-    "defaultValue": "false",
+    "defaultValue": null,
     "description": "Whether a trailing remove button is shown (input / filter removable)."
    },
    {
@@ -960,7 +972,7 @@
     "name": "variant",
     "type": "\"assist\" | \"filter\" | \"input\" | \"suggestion\"",
     "required": false,
-    "defaultValue": "assist",
+    "defaultValue": "'assist'",
     "description": "Visual variant."
    }
   ]
@@ -1123,20 +1135,20 @@
   ]
  },
  "DatePicker": {
-  "description": "Material Design 3 Date picker (modal calendar, with date input).\n\nSurfaceContainerHigh panel, 28dp corners, 360dp wide, elevation 3. Day cells\nare 40dp round; selected fills Primary / OnPrimary, today shows a 1dp Primary\noutline. In `range` mode two dates are picked and the span is highlighted with\nSecondaryContainer — per Compose DatePickerModalTokens. The day grid is an\nAPG grid (single Tab stop, arrow / Page / Home / End keys); the month label\nis a menu button that swaps the grid for a year picker, and the header's\nedit icon switches to text input (m3 \"modal date input\").\n\nDraft / commit (Phase B B6): `onChange` reports every pick; passing\n`onAccept` / `onCancel` adds the Cancel / OK row, and `open` shows the\npicker as a modal dialog — no separate `DatePickerDialog`. For the docked\nvariant use `DatePickerField`.\n\nBuilt-in strings are English by default and can be replaced through the\n`*Label` props.",
+  "description": "Material Design 3 Date picker (modal calendar, with date input).\n\nSurfaceContainerHigh panel, 28dp corners, 360dp wide, elevation 3. Day cells\nare 40dp round; selected fills Primary / OnPrimary, today shows a 1dp Primary\noutline. In `range` mode two dates are picked and the span is highlighted with\nSecondaryContainer — per Compose DatePickerModalTokens. The day grid is an\nAPG grid (single Tab stop, arrow / Page / Home / End keys); the month label\nis a menu button that swaps the grid for a year picker, and the header's\nedit icon switches to text input (m3 \"modal date input\").\n\nDraft / commit (Phase B B6): `onChange` reports every pick; passing\n`onAccept` / `onCancel` adds the Cancel / OK row, and `open` shows the\npicker as a modal dialog — no separate `DatePickerDialog`. For the docked\nvariant use `DatePickerField`.\n\nBuilt-in strings are English by default and can be replaced through the\n`*Label` props, or for the whole app through `LocaleProvider`.",
   "props": [
    {
     "name": "cancelLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Cancel",
+    "defaultValue": "'Cancel'",
     "description": "Dismiss button label."
    },
    {
     "name": "defaultMode",
     "type": "\"calendar\" | \"input\"",
     "required": false,
-    "defaultValue": "calendar",
+    "defaultValue": "'calendar'",
     "description": "Uncontrolled initial display mode."
    },
    {
@@ -1150,7 +1162,7 @@
     "name": "endDateLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "End date",
+    "defaultValue": "'End date'",
     "description": "Range end: cell prefix, headline placeholder and input label."
    },
    {
@@ -1164,21 +1176,21 @@
     "name": "inputLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Date",
+    "defaultValue": "'Date'",
     "description": "Label of the single-date text field in input mode."
    },
    {
     "name": "inRangeLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "In range",
+    "defaultValue": "'In range'",
     "description": "Prefix announced on days inside the range."
    },
    {
     "name": "locale",
     "type": "string",
     "required": false,
-    "defaultValue": "en-US",
+    "defaultValue": "LocaleProvider `locale`, else 'en-US'",
     "description": "BCP-47 locale for month / weekday names, the week's first day and the input format."
    },
    {
@@ -1206,7 +1218,7 @@
     "name": "nextMonthLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Next month",
+    "defaultValue": "'Next month'",
     "description": "Accessible label of the next-month button."
    },
    {
@@ -1220,7 +1232,7 @@
     "name": "okLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "OK",
+    "defaultValue": "'OK'",
     "description": "Confirm button label."
    },
    {
@@ -1269,7 +1281,7 @@
     "name": "previousMonthLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Previous month",
+    "defaultValue": "'Previous month'",
     "description": "Accessible label of the previous-month button."
    },
    {
@@ -1290,7 +1302,7 @@
     "name": "selectYearLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Select year",
+    "defaultValue": "'Select year'",
     "description": "Accessible name of the year picker list."
    },
    {
@@ -1304,21 +1316,21 @@
     "name": "startDateLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Start date",
+    "defaultValue": "'Start date'",
     "description": "Range start: cell prefix, headline placeholder and input label."
    },
    {
     "name": "switchToCalendarLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Switch to calendar input mode",
+    "defaultValue": "'Switch to calendar input mode'",
     "description": "Accessible label of the toggle while showing the text input."
    },
    {
     "name": "switchToInputLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Switch to text input mode",
+    "defaultValue": "'Switch to text input mode'",
     "description": "Accessible label of the toggle while showing the calendar."
    },
    {
@@ -1332,7 +1344,7 @@
     "name": "todayLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Today",
+    "defaultValue": "'Today'",
     "description": "Prefix announced on today's cell."
    },
    {
@@ -1365,7 +1377,7 @@
     "name": "dialogLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Choose date",
+    "defaultValue": "'Choose date'",
     "description": "Accessible name of the calendar popup (`role=\"dialog\"`)."
    },
    {
@@ -1377,10 +1389,10 @@
    },
    {
     "name": "getErrorLabel",
-    "type": "((error: DateInputError, pattern: string) => string)",
+    "type": "((error: DateInputError, pattern: string) => ReactNode)",
     "required": false,
     "defaultValue": null,
-    "description": "Error message for rejected typed text. Defaults to Compose's English\nstrings: \"Date does not match expected pattern: MM/DD/YYYY\" / \"Date not\nallowed\"."
+    "description": "Error message for rejected typed text. Defaults to Compose's English\nstrings: \"Date does not match expected pattern: MM/DD/YYYY\" / \"Date not\nallowed\". May return rich content, like `supportingText`."
    },
    {
     "name": "inputProps",
@@ -1398,10 +1410,10 @@
    },
    {
     "name": "label",
-    "type": "string",
+    "type": "ReactNode",
     "required": false,
-    "defaultValue": "Date",
-    "description": "Field label."
+    "defaultValue": "'Date'",
+    "description": "Field label.\n\nAccepts rich content (text, emphasis, a small icon) — keep it short and\non one line, as m3 asks: the label is a single line (truncated with an\nellipsis), clicks on it go to the field, and the outlined notch draws a\nhidden copy of it to measure its width. So no links or buttons in the\nlabel, and no elements with an `id`."
    },
    {
     "name": "labelPlacement",
@@ -1414,7 +1426,7 @@
     "name": "locale",
     "type": "string",
     "required": false,
-    "defaultValue": "en-US",
+    "defaultValue": "LocaleProvider `locale`, else 'en-US'",
     "description": "BCP-47 locale — display format, typed-date field order, week start."
    },
    {
@@ -1442,14 +1454,14 @@
     "name": "nextMonthLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Next month",
+    "defaultValue": "'Next month'",
     "description": "Accessible label of the next-month button."
    },
    {
     "name": "nextYearLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Next year",
+    "defaultValue": "'Next year'",
     "description": "Accessible label of the next-year button."
    },
    {
@@ -1463,21 +1475,21 @@
     "name": "openCalendarLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Open calendar",
+    "defaultValue": "'Open calendar'",
     "description": "Accessible label of the calendar toggle."
    },
    {
     "name": "previousMonthLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Previous month",
+    "defaultValue": "'Previous month'",
     "description": "Accessible label of the previous-month button."
    },
    {
     "name": "previousYearLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Previous year",
+    "defaultValue": "'Previous year'",
     "description": "Accessible label of the previous-year button."
    },
    {
@@ -1491,14 +1503,14 @@
     "name": "selectMonthLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Select month",
+    "defaultValue": "'Select month'",
     "description": "Accessible name of the month menu list."
    },
    {
     "name": "selectYearLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Select year",
+    "defaultValue": "'Select year'",
     "description": "Accessible name of the year menu list."
    },
    {
@@ -1510,16 +1522,16 @@
    },
    {
     "name": "supportingText",
-    "type": "string",
+    "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Helper text under the field. Defaults to the locale's input format\n(e.g. `MM/DD/YYYY`), as m3 accessibility asks."
+    "description": "Helper text under the field. Defaults to the locale's input format\n(e.g. `MM/DD/YYYY`), as m3 accessibility asks.\nAccepts rich content — a short link is fine (it stays reachable and is\npart of the field's description via `aria-describedby`); keep it to\nabout one line, as m3 asks."
    },
    {
     "name": "todayLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Today",
+    "defaultValue": "'Today'",
     "description": "Prefix announced on today's cell."
    },
    {
@@ -1532,7 +1544,7 @@
   ]
  },
  "Dialog": {
-  "description": "Material Design 3 Dialog (basic / alert).\n\nSurfaceContainerHigh container, 28dp corners, elevation 3, 280–560dp wide,\n24dp padding; Secondary icon, OnSurface HeadlineSmall title, OnSurfaceVariant\nBodyMedium text — per Compose DialogTokens. Modal with a 0.32 Scrim,\nrole=\"dialog\" aria-modal, and Escape-to-close.",
+  "description": "Material Design 3 Dialog (basic / alert).\n\nSurfaceContainerHigh container, 28dp corners, elevation 3, 280–560dp wide,\n24dp padding; Secondary icon, OnSurface HeadlineSmall title, OnSurfaceVariant\nBodyMedium text — per Compose DialogTokens. Modal with a 0.32 Scrim,\nrole=\"dialog\" aria-modal, and Escape-to-close.\n\n- Long content scrolls inside the body only; the icon, title and actions\n  (the full-screen top bar) stay fixed (ruling B46).\n- Width: set `--md-dialog-container-min-width` / `--md-dialog-container-max-width`\n  (default `280px` / `560px` — the m3 basic dialog range; other values are\n  outside the spec) on the dialog (`style` / `className`) or an ancestor.\n  Not used by `fullScreen`.\n- While open, the dialog is drawn in the browser top layer, above popups\n  opened before it, such as the Menu it was opened from (ruling B45).",
   "props": [
    {
     "name": "actions",
@@ -1552,14 +1564,14 @@
     "name": "closeLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Close",
+    "defaultValue": "'Close'",
     "description": "Accessible label of the full-screen close button."
    },
    {
     "name": "fullScreen",
     "type": "boolean",
     "required": false,
-    "defaultValue": "false",
+    "defaultValue": null,
     "description": "Full-screen dialog: a top bar (close + title + action) over full-bleed content."
    },
    {
@@ -2127,6 +2139,32 @@
    }
   ]
  },
+ "LocaleProvider": {
+  "description": "Supplies the locale, hour cycle and built-in strings (Phase B B50) to every\ncomponent inside — so an app translates the library once instead of\npassing `*Label` props to every instance.\n\nPrecedence: a component's own prop > the nearest provider > an outer\nprovider > the English default. Without a provider every component keeps\nits English strings and `'en-US'`; the browser language is never read, so\nserver and client render the same output. Renders no element.",
+  "props": [
+   {
+    "name": "ampm",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "12-hour clock with AM / PM (`true`) or 24-hour clock (`false`) — the\ndefault `ampm` of every TimePicker inside. Without it the hour cycle of\nthe effective `locale` decides (m3: the 24-hour setting is made outside\nthe time picker, typically in system settings)."
+   },
+   {
+    "name": "labels",
+    "type": "LocaleLabels",
+    "required": false,
+    "defaultValue": null,
+    "description": "Built-in strings per component, e.g.\n`{ Snackbar: { dismissLabel: '閉じる' }, Badge: { getLabel: … } }`. Keys\nare the component's label props; a nested provider overrides single\nkeys of a component and inherits the rest."
+   },
+   {
+    "name": "locale",
+    "type": "string",
+    "required": false,
+    "defaultValue": "'en-US' (no provider)",
+    "description": "BCP 47 locale — the default `locale` of DatePicker, DatePickerField and\nTimePicker (month / weekday names, first day of the week, typed-date\norder, the TimePicker's hour cycle). Inherited from an outer provider."
+   }
+  ]
+ },
  "Menu": {
   "description": "Material Design 3 Menu (dropdown).\n\nAnchors a `role=\"menu\"` popup to a trigger. SurfaceContainer container, 4dp\ncorners, elevation 2, 112–280dp wide, 8dp vertical padding — per Compose\nMenuTokens. Closes on outside press, Escape, Tab-out (or any focus move out\nof it), or item selection. The trigger gets `aria-controls`, and the menu\nis named by the trigger (`aria-labelledby`) unless it has its own label.\nThe menu is drawn in the top layer (Popover API) below the trigger — above\nit when it doesn't fit below — and kept inside the viewport, so ancestors'\n`overflow` / `z-index` can't clip it; it follows scrolling and layout shifts.\n\n`variant=\"vertical\"` renders the MD3 Expressive vertical menu (Compose\n`DropdownMenuPopup`/`DropdownMenuGroup`): a transparent popup that stacks\n`MenuGroup` containers (surface-container-low, elevation 2, 2dp gap) with\n44dp items, 20dp icons, positional corner shapes, and a tertiary-based\nselected state with a springy shape morph. `color=\"vibrant\"` switches the\ngroups and items to the tertiary-container based high-emphasis mapping.\n\nSelection (ruling B33): a `MenuGroup` with `selectionMode=\"single\"` exposes\nits items as `menuitemradio`, `\"multiple\"` as `menuitemcheckbox` and keeps\nthe menu open while toggling. Submenus and context menus (ruling B34): a\n`MenuItem` with `submenu` opens a nested menu beside it; `anchorPosition`\nopens the menu at a point (e.g. from `onContextMenu`).\n\nKeyboard (WAI-ARIA APG menu-button pattern): Enter/Space/ArrowDown open and\nfocus the first item (ArrowUp: the last); ArrowUp/Down cycle with wrap;\nHome/End jump; printable characters move focus by typeahead; Escape and\nitem activation close and return focus to the trigger. Items use a roving\ntabindex (-1) so the closed/open menu never pollutes the page Tab order;\ndisabled items are focusable but inert (`aria-disabled`).",
   "props": [
@@ -2531,7 +2569,7 @@
     "name": "arrangement",
     "type": "\"top\" | \"center\" | \"bottom\"",
     "required": false,
-    "defaultValue": "top",
+    "defaultValue": "'top'",
     "description": "Vertical placement of the destinations below the header."
    },
    {
@@ -2566,7 +2604,7 @@
     "name": "modalLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Navigation rail",
+    "defaultValue": "'Navigation rail'",
     "description": "Accessible name of the open modal rail (a dialog)."
    },
    {
@@ -2594,7 +2632,7 @@
     "name": "variant",
     "type": "\"collapsed\" | \"expanded\"",
     "required": false,
-    "defaultValue": "collapsed",
+    "defaultValue": "'collapsed'",
     "description": "`collapsed` (96dp, icon-over-label) or `expanded` (icon beside label in a\npill; the rail is as wide as its widest item, 220–360dp). The change is a\nspring morph."
    }
   ]
@@ -2672,7 +2710,7 @@
     "name": "indicator",
     "type": "\"loading\" | \"circular\"",
     "required": false,
-    "defaultValue": "loading",
+    "defaultValue": "'loading'",
     "description": "Indicator flavor."
    },
    {
@@ -2693,7 +2731,7 @@
     "name": "refreshingLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Refreshing",
+    "defaultValue": "'Refreshing'",
     "description": "Text announced by the polite live region when refreshing starts."
    },
    {
@@ -2860,7 +2898,7 @@
     "name": "backLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Back",
+    "defaultValue": "'Back'",
     "description": "Accessible name of the full-screen view's back button. Localize it\nwith the rest of your UI strings."
    },
    {
@@ -2916,7 +2954,7 @@
     "name": "layout",
     "type": "\"docked\" | \"fullscreen\"",
     "required": false,
-    "defaultValue": "docked",
+    "defaultValue": "'docked'",
     "description": "How the search view (`children`) opens:\n- `'docked'` — a results container pinned 2dp under the bar, over a\n  scrim (Compose `ExpandedDockedSearchBarWithGap`; larger screens).\n- `'fullscreen'` — a modal view covering the viewport: the field moves\n  to the top with a back button in place of the leading icon and the\n  results below it (Compose `ExpandedFullScreenContainedSearchBar`, the\n  Expressive contained style; compact screens). Focus is trapped inside\n  it; Escape or the back button closes it and focus returns to the bar."
    },
    {
@@ -2979,7 +3017,7 @@
     "name": "placeholder",
     "type": "string",
     "required": false,
-    "defaultValue": "Search",
+    "defaultValue": "'Search'",
     "description": "Native input `placeholder`."
    },
    {
@@ -2993,7 +3031,7 @@
     "name": "suggestionsLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Suggestions below",
+    "defaultValue": "'Suggestions below'",
     "description": "Text announced (polite live region) when the search view opens — the\nequivalent of Compose's \"Suggestions below\" state description.\nLocalize it with the rest of your UI strings."
    },
    {
@@ -3160,10 +3198,10 @@
    },
    {
     "name": "errorText",
-    "type": "string",
+    "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Shown instead of `supportingText` (with `role=\"alert\"`) when `error` is set."
+    "description": "Shown instead of `supportingText` (with `role=\"alert\"`) when `error` is set.\nAccepts rich content, like `supportingText`."
    },
    {
     "name": "form",
@@ -3195,10 +3233,10 @@
    },
    {
     "name": "label",
-    "type": "string",
+    "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Floating label; also names the combobox and the listbox. Rendered with a trailing `*` when `required`."
+    "description": "Floating label; also names the combobox and the listbox. Rendered with a trailing `*` when `required`.\n\nAccepts rich content (text, emphasis, a small icon) — keep it short and\non one line, as m3 asks: the label is a single line (truncated with an\nellipsis), clicks on it go to the field, and the outlined notch draws a\nhidden copy of it to measure its width. So no links or buttons in the\nlabel, and no elements with an `id`."
    },
    {
     "name": "name",
@@ -3251,10 +3289,10 @@
    },
    {
     "name": "supportingText",
-    "type": "string",
+    "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Helper line below the field. Replaced by `errorText` while in error."
+    "description": "Helper line below the field. Replaced by `errorText` while in error.\nAccepts rich content — a short link is fine (it stays reachable and is\npart of the field's description via `aria-describedby`); keep it to\nabout one line, as m3 asks."
    },
    {
     "name": "tonal",
@@ -3293,21 +3331,21 @@
     "name": "anchor",
     "type": "\"left\" | \"right\"",
     "required": false,
-    "defaultValue": "right",
+    "defaultValue": "'right'",
     "description": "Physical edge the sheet is anchored to; it does not flip in RTL."
    },
    {
     "name": "backLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Back",
+    "defaultValue": "'Back'",
     "description": "Accessible label for the back button."
    },
    {
     "name": "closeLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Close",
+    "defaultValue": "'Close'",
     "description": "Accessible label for the close button."
    },
    {
@@ -3363,7 +3401,7 @@
     "name": "variant",
     "type": "\"standard\" | \"modal\"",
     "required": false,
-    "defaultValue": "standard",
+    "defaultValue": "'standard'",
     "description": "Standard (inline) or modal (overlay + scrim)."
    }
   ]
@@ -3389,7 +3427,7 @@
     "name": "disabled",
     "type": "boolean",
     "required": false,
-    "defaultValue": "false",
+    "defaultValue": null,
     "description": ""
    },
    {
@@ -3410,14 +3448,14 @@
     "name": "max",
     "type": "number",
     "required": false,
-    "defaultValue": "100",
+    "defaultValue": null,
     "description": ""
    },
    {
     "name": "min",
     "type": "number",
     "required": false,
-    "defaultValue": "0",
+    "defaultValue": null,
     "description": ""
    },
    {
@@ -3428,24 +3466,31 @@
     "description": "Fires with the native event and the new value (same shape as `value`)."
    },
    {
+    "name": "onChangeCommitted",
+    "type": "((event: Event | SyntheticEvent<Element, Event>, value: SliderValue) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires when an interaction ends (Compose `onValueChangeFinished`, ruling\nB47): on pointer release (end of a drag, or a tap), on the keyup of each\nvalue key (arrows, Home / End, PageUp / PageDown), and right after a\ndirect value change from assistive technology (only when the value\nchanged). `value` is the last value reported to `onChange`. `onChange`\nkeeps firing continuously during a drag."
+   },
+   {
     "name": "orientation",
     "type": "\"horizontal\" | \"vertical\"",
     "required": false,
-    "defaultValue": "horizontal",
+    "defaultValue": "'horizontal'",
     "description": "Orientation."
    },
    {
     "name": "rangeEndLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Maximum",
+    "defaultValue": "'Maximum'",
     "description": "Accessible label for the end (maximum) thumb of a range slider."
    },
    {
     "name": "rangeStartLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Minimum",
+    "defaultValue": "'Minimum'",
     "description": "Accessible label for the start (minimum) thumb of a range slider."
    },
    {
@@ -3466,14 +3511,14 @@
     "name": "size",
     "type": "\"xs\" | \"sm\" | \"md\" | \"lg\" | \"xl\"",
     "required": false,
-    "defaultValue": "xs",
+    "defaultValue": "'xs'",
     "description": "Expressive size (track thickness / handle height)."
    },
    {
     "name": "step",
     "type": "number",
     "required": false,
-    "defaultValue": "1",
+    "defaultValue": null,
     "description": ""
    },
    {
@@ -3513,7 +3558,7 @@
     "name": "dismissLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Dismiss",
+    "defaultValue": "'Dismiss'",
     "description": "Accessible label of the dismiss icon button."
    },
    {
@@ -3533,7 +3578,7 @@
   ]
  },
  "SnackbarProvider": {
-  "description": "Hosts snackbars for its subtree (Compose `SnackbarHost` +\n`SnackbarHostState`). Descendants call `useSnackbar().show()`.\n\n- Shows one snackbar at a time; later calls queue behind it.\n- Auto-dismiss: short 4s / long 10s / indefinite; indefinite by default when\n  there is an action. The timer pauses on hover and while focus is inside.\n- Placement: bottom-center with 12dp margins, filling the width up to 600dp.\n  The host is `position: fixed` and rendered inside this provider (so it\n  inherits the theme's color tokens) — keep the provider outside transformed\n  ancestors.\n- A persistent polite live region (`role=\"status\"`) is mounted with the\n  provider, and only its content changes, so screen readers announce each\n  message.\n- Escape dismisses while focus is inside; when a focused snackbar closes,\n  focus returns to the element focused before it.\n- Enter / exit: fade + scale 0.8↔1; fade only under reduced motion.\n\nWeb guidance (m3 a11y): information in an auto-dismissing snackbar must also\nbe available elsewhere in the UI, and apps should offer a documented\nshortcut (e.g. Alt+G) to move focus to a snackbar with an action.",
+  "description": "Hosts snackbars for its subtree (Compose `SnackbarHost` +\n`SnackbarHostState`). Descendants call `useSnackbar().show()`.\n\n- Shows one snackbar at a time; later calls queue behind it.\n- Auto-dismiss: short 4s / long 10s / indefinite; indefinite by default when\n  there is an action. The timer pauses on hover and while focus is inside.\n- Placement: bottom-center with 12dp margins, filling the width up to 600dp.\n  The host is `position: fixed` and rendered inside this provider (so it\n  inherits the theme's color tokens). While a snackbar shows, the host is\n  drawn in the browser top layer and kept above open modals (Dialog,\n  sheets…), which are top-layer too (ruling B45); without Popover API\n  support it falls back to `z-index` — keep the provider outside\n  transformed ancestors there.\n- A persistent polite live region (`role=\"status\"`) is mounted with the\n  provider, and only its content changes, so screen readers announce each\n  message.\n- Escape dismisses while focus is inside; when a focused snackbar closes,\n  focus returns to the element focused before it.\n- Enter / exit: fade + scale 0.8↔1; fade only under reduced motion.\n\nWeb guidance (m3 a11y): information in an auto-dismissing snackbar must also\nbe available elsewhere in the UI, and apps should offer a documented\nshortcut (e.g. Alt+G) to move focus to a snackbar with an action.",
   "props": [
    {
     "name": "className",
@@ -3579,7 +3624,7 @@
     "name": "menuAlign",
     "type": "\"start\" | \"end\"",
     "required": false,
-    "defaultValue": "end",
+    "defaultValue": "'end'",
     "description": "Menu alignment to the trailing button."
    },
    {
@@ -3600,7 +3645,7 @@
     "name": "size",
     "type": "\"xs\" | \"sm\" | \"md\" | \"lg\" | \"xl\"",
     "required": false,
-    "defaultValue": "sm",
+    "defaultValue": "'sm' (40dp)",
     "description": "Container size on the Expressive scale."
    },
    {
@@ -3614,14 +3659,14 @@
     "name": "trailingAriaLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "More options",
+    "defaultValue": "'More options'",
     "description": "Accessible label for the trailing menu button. Prefer a label tied to the\nleading action (e.g. \"More send options\")."
    },
    {
     "name": "variant",
     "type": "\"elevated\" | \"filled\" | \"tonal\" | \"outlined\"",
     "required": false,
-    "defaultValue": "filled",
+    "defaultValue": "'filled'",
     "description": "Visual emphasis (shared by both buttons)."
    }
   ]
@@ -3755,8 +3800,8 @@
    }
   ]
  },
- "Tabs": {
-  "description": "Material Design 3 Tabs (a `role=\"tablist\"` row of `Tab`s).\n\nFixed tabs split the row into equal widths; scrollable tabs size to their\ncontent (90dp minimum) with 52dp edge padding and scroll the selected tab to\nthe center whenever the selection changes. A single active indicator slides\nbetween tabs: primary = content-width (min 24dp) 3dp bar with 3dp top\ncorners, secondary = full-tab-width 2dp line. Both sit above an\nOutlineVariant 1dp divider. Arrow keys move between tabs.",
+ "TabContext": {
+  "description": "Links a `Tabs` row to its `TabPanel`s (WAI-ARIA APG Tabs): holds the\nselection (controlled / uncontrolled) and gives every tab an `id` and an\n`aria-controls` pointing at the `TabPanel` with the same `value`, which is\nin turn `aria-labelledby` its tab. Renders no element. Put `value` /\n`defaultValue` / `onChange` here; the inner `Tabs`' own `onChange` still\nfires.",
   "props": [
    {
     "name": "defaultValue",
@@ -3767,10 +3812,36 @@
    },
    {
     "name": "onChange",
-    "type": "((event: MouseEvent<HTMLButtonElement, MouseEvent>, value: string) => void)",
+    "type": "((event: TabChangeEvent, value: string) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Fires with the triggering event and the newly selected tab value. Not\nfired when the selected tab is activated again, or when the tab's own\n`onClick` called `event.preventDefault()`."
+    "description": "Fires with the triggering event and the newly selected tab value."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected tab value, shared by the `Tabs` and `TabPanel`s inside."
+   }
+  ]
+ },
+ "Tabs": {
+  "description": "Material Design 3 Tabs (a `role=\"tablist\"` row of `Tab`s).\n\nFixed tabs split the row into equal widths; scrollable tabs size to their\ncontent (90dp minimum) with 52dp edge padding and scroll the selected tab to\nthe center whenever the selection changes. A single active indicator slides\nbetween tabs: primary = content-width (min 24dp) 3dp bar with 3dp top\ncorners, secondary = full-tab-width 2dp line. Both sit above an\nOutlineVariant 1dp divider. Arrow keys move focus between tabs; Space /\nEnter select (manual activation, m3 a11y). Tabs with `href` are navigation\nlinks. Inside a `TabContext`, tabs are linked to their `TabPanel`s. The\ncontainer color is the `--md-tabs-container-color` custom property\n(default `--md-sys-color-surface`).",
+  "props": [
+   {
+    "name": "defaultValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Uncontrolled initial tab value."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: TabChangeEvent, value: string) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires with the triggering event and the newly selected tab value. Not\nfired when the selected tab is activated again, or when the tab's own\n`onClick` called `event.preventDefault()`. On a link (`href`) tab it\nfires before the browser follows the link; call `event.preventDefault()`\nhere to navigate with a client-side router instead."
    },
    {
     "name": "scrollable",
@@ -3796,7 +3867,7 @@
   ]
  },
  "Tab": {
-  "description": "A single tab; must be rendered inside `Tabs`.",
+  "description": "A single tab; must be rendered inside `Tabs`. With `href` it is a link tab.",
   "props": [
    {
     "name": "badge",
@@ -3804,6 +3875,20 @@
     "required": false,
     "defaultValue": null,
     "description": "A `<Badge>` (without children). It is placed on the icon, or next to the\nlabel when the tab has no icon, and takes no layout space (the active\nindicator still follows the label / icon). Its accessible text (the\nBadge `label`, or the default \"New notification\" / \"{n} new\nnotifications\") is read after the tab label."
+   },
+   {
+    "name": "download",
+    "type": "any",
+    "required": false,
+    "defaultValue": null,
+    "description": "`<a download>` — only with `href`."
+   },
+   {
+    "name": "href",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Make the tab a navigation link (m3 navigation tab): renders\n`<a role=\"tab\" href>` with the same look, keyboard behavior (arrows move\nfocus, Space / Enter activate) and selection through the `Tabs` value.\nThe browser follows the link; `onChange` fires first (not for\nCtrl / Cmd / Shift / Alt clicks, which open elsewhere), so a client-side\nrouter can `preventDefault()` there and navigate itself. Link tabs have\nno `TabPanel` (no `aria-controls`) and no `aria-current` (the selection\nis `aria-selected`; pass `aria-current` yourself if needed)."
    },
    {
     "name": "icon",
@@ -3817,7 +3902,7 @@
     "type": "\"top\" | \"start\"",
     "required": false,
     "defaultValue": "top",
-    "description": "Icon placement: `'top'` stacks the icon above the label (64dp tab),\n`'start'` puts it before the label with an 8dp gap (48dp tab, Compose\n`LeadingIconTab`)."
+    "description": "Icon placement: `'top'` stacks the icon above the label (64dp tab),\n`'start'` puts it before the label with an 8dp gap (48dp tab, Compose\n`LeadingIconTab`). Available on both variants, but m3 secondary tabs\nnormally have no icon (the secondary anatomy has none)."
    },
    {
     "name": "label",
@@ -3827,11 +3912,44 @@
     "description": "Tab label."
    },
    {
+    "name": "onClick",
+    "type": "((event: TabChangeEvent) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Click handler (button or link tab). `event.preventDefault()` keeps the\nselection (and, on a link tab, the navigation) from happening."
+   },
+   {
+    "name": "rel",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "`<a rel>` — only with `href`."
+   },
+   {
+    "name": "target",
+    "type": "HTMLAttributeAnchorTarget",
+    "required": false,
+    "defaultValue": null,
+    "description": "`<a target>` — only with `href`."
+   },
+   {
     "name": "value",
     "type": "string",
     "required": true,
     "defaultValue": null,
     "description": "Identifies the tab; matched against the parent `Tabs` value."
+   }
+  ]
+ },
+ "TabPanel": {
+  "description": "The content of one tab (`role=\"tabpanel\"`); must be rendered inside a\n`TabContext`. Hidden (`hidden`, still mounted) unless its `value` is\nselected. `tabIndex` defaults to `0` so the panel itself is reachable with\nTab (APG, for panels that do not start with focusable content); pass\n`tabIndex={-1}` when the panel starts with a focusable element.",
+  "props": [
+   {
+    "name": "value",
+    "type": "string",
+    "required": true,
+    "defaultValue": null,
+    "description": "The `Tab` value this panel belongs to."
    }
   ]
  },
@@ -3875,16 +3993,16 @@
    },
    {
     "name": "errorText",
-    "type": "string",
+    "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Shown instead of `supportingText` (with `role=\"alert\"`) when `error` is set."
+    "description": "Shown instead of `supportingText` (with `role=\"alert\"`) when `error` is set.\nAccepts rich content, like `supportingText`."
    },
    {
     "name": "getCounterLabel",
     "type": "((length: number, maxLength: number) => string)",
     "required": false,
-    "defaultValue": "(length: number, maxLength: number) =>\n  `Character count: ${length} of ${maxLength}`",
+    "defaultValue": "(length, maxLength) => `Character count: ${length} of ${maxLength}`",
     "description": "Accessible wording for the `maxLength` counter (the visible `3 / 20` is\nhidden from assistive tech in favor of this text)."
    },
    {
@@ -3899,7 +4017,7 @@
     "type": "InputHTMLAttributes<HTMLInputElement> | TextareaHTMLAttributes<HTMLTextAreaElement>",
     "required": false,
     "defaultValue": null,
-    "description": "Extra attributes spread on the native `<input>` (or `<textarea>` when\n`multiline`) — the escape hatch for attributes without a dedicated prop\n(`pattern`, `min`, `max`, `step`, `onKeyDown`, extra `aria-*`, …).\nPrecedence: the component's own wiring always wins over conflicting\n`inputProps` keys — the controlled `value` / `onChange` / `onFocus` /\n`onBlur`, `id`, `className`, and every dedicated input prop the\ncomponent sets (`type`, `name`, `placeholder`, `required`, `readOnly`,\n`autoComplete`, `maxLength`, `rows`, …). Exceptions: `aria-describedby`\nis merged (the field's own ids first), and an `onInput` handler is\ncalled after the component's own."
+    "description": "Extra attributes spread on the native `<input>` (or `<textarea>` when\n`multiline`) — the escape hatch for attributes without a dedicated prop\n(`pattern`, `min`, `max`, `step`, `onKeyDown`, extra `aria-*`, …).\nPrecedence: the component's own wiring always wins over conflicting\n`inputProps` keys — the controlled `value` / `onChange` / `onFocus` /\n`onBlur`, `id`, `className`, and every dedicated input prop that is\ngiven (`type`, `name`, `placeholder`, `required`, `readOnly`,\n`disabled`, `autoComplete`, `maxLength`, `rows`, …). A dedicated prop\nthat is omitted never overrides `inputProps`, even when it has a\ndefault: `inputProps={{ required: true }}` makes the input required\n(and adds the label `*`) unless `required` is passed explicitly — then\nthe top-level prop wins. The same holds for `readOnly`, `disabled`,\n`type` and `rows`. Exceptions: `aria-describedby` is merged (the field's\nown ids first), and an `onInput` handler is called after the\ncomponent's own."
    },
    {
     "name": "inputRef",
@@ -3910,16 +4028,16 @@
    },
    {
     "name": "label",
-    "type": "string",
+    "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Field label; rendered with a trailing `*` when `required`."
+    "description": "Field label; rendered with a trailing `*` when `required`.\n\nAccepts rich content (text, emphasis, a small icon) — keep it short and\non one line, as m3 asks: the label is a single line (truncated with an\nellipsis), clicks on it go to the field, and the outlined notch draws a\nhidden copy of it to measure its width. So no links or buttons in the\nlabel, and no elements with an `id`."
    },
    {
     "name": "labelPlacement",
     "type": "\"floating\" | \"above\"",
     "required": false,
-    "defaultValue": "floating",
+    "defaultValue": "'floating'",
     "description": "Label position. `'floating'` keeps the label inside the container (it\nrests in the input line and minimizes on focus or value; the outlined\nvariant notches the border). `'above'` draws it minimized above the\ncontainer — no notch — and the field lays out like a label-less one\n(Compose `TextFieldLabelPosition.Above`)."
    },
    {
@@ -4022,10 +4140,10 @@
    },
    {
     "name": "supportingText",
-    "type": "string",
+    "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Helper line below the field. Replaced by `errorText` while in error."
+    "description": "Helper line below the field. Replaced by `errorText` while in error.\nAccepts rich content — a short link is fine (it stays reachable and is\npart of the field's description via `aria-describedby`); keep it to\nabout one line, as m3 asks."
    },
    {
     "name": "tonal",
@@ -4038,7 +4156,7 @@
     "name": "type",
     "type": "string",
     "required": false,
-    "defaultValue": "text",
+    "defaultValue": "'text'",
     "description": "Native input `type` (single-line only). For a password field (Compose\n`SecureTextField`) use `type=\"password\"` with an `autoComplete` of\n`\"current-password\"` / `\"new-password\"`, and put a show / hide toggle in\n`endIcon`: an `IconButton variant=\"standard\" toggle` labelled\n\"Show password\" (the label stays fixed; `aria-pressed` carries the\nstate) that switches `type` between `'password'` and `'text'`."
    },
    {
@@ -4052,7 +4170,7 @@
     "name": "variant",
     "type": "\"filled\" | \"outlined\"",
     "required": false,
-    "defaultValue": "filled",
+    "defaultValue": "'filled'",
     "description": "Container style."
    }
   ]
@@ -4064,7 +4182,7 @@
     "name": "amLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "AM",
+    "defaultValue": "'AM'",
     "description": ""
    },
    {
@@ -4072,13 +4190,13 @@
     "type": "boolean",
     "required": false,
     "defaultValue": null,
-    "description": "12-hour clock with AM / PM (`true`) or 24-hour clock (`false`).\nDefaults to the `locale`'s hour cycle."
+    "description": "12-hour clock with AM / PM (`true`) or 24-hour clock (`false`).\nDefaults to LocaleProvider `ampm`, else the `locale`'s hour cycle."
    },
    {
     "name": "cancelLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Cancel",
+    "defaultValue": "'Cancel'",
     "description": ""
    },
    {
@@ -4099,42 +4217,42 @@
     "name": "getErrorLabel",
     "type": "((field: \"hour\" | \"minute\", ampm: boolean) => string)",
     "required": false,
-    "defaultValue": "(field: Field, ampm: boolean) =>\n  field === 'minute' ? 'Minute must be 0–59' : ampm ? 'Hour must be 1–12' : 'Hour must be 0–23'",
+    "defaultValue": "'Hour must be 1–12' / 'Hour must be 0–23' / 'Minute must be 0–59'",
     "description": "Input-mode error for an out-of-range field."
    },
    {
     "name": "getHourLabel",
     "type": "((hour: number, ampm: boolean) => string)",
     "required": false,
-    "defaultValue": "(hour: number, ampm: boolean) =>\n  ampm ? `${hour} o'clock` : `${hour} hours`",
+    "defaultValue": "(hour, ampm) => ampm ? `${hour} o'clock` : `${hour} hours`",
     "description": "Accessible name of an hour on the dial and of the hour selector's value.\nReceives the displayed hour (1–12 with AM/PM, 0–23 without)."
    },
    {
     "name": "getMinuteLabel",
     "type": "((minute: number) => string)",
     "required": false,
-    "defaultValue": "(minute: number) => `${minute} minutes`",
+    "defaultValue": "(minute) => `${minute} minutes`",
     "description": "Accessible name of a minute on the dial and of the minute selector's value."
    },
    {
     "name": "hourLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Hour",
+    "defaultValue": "'Hour'",
     "description": "Name of the hour input / dial and its supporting text."
    },
    {
     "name": "locale",
     "type": "string",
     "required": false,
-    "defaultValue": "en-US",
+    "defaultValue": "LocaleProvider `locale`, else 'en-US'",
     "description": "Locale whose hour cycle sets the default `ampm`."
    },
    {
     "name": "minuteLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Minute",
+    "defaultValue": "'Minute'",
     "description": "Name of the minute input / dial and its supporting text."
    },
    {
@@ -4148,7 +4266,7 @@
     "name": "okLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "OK",
+    "defaultValue": "'OK'",
     "description": ""
    },
    {
@@ -4197,35 +4315,35 @@
     "name": "orientation",
     "type": "\"vertical\" | \"horizontal\"",
     "required": false,
-    "defaultValue": "vertical",
+    "defaultValue": "'vertical'",
     "description": "Dial layout: time display above the dial (`vertical`) or beside it\n(`horizontal`, for landscape / short containers). The input and scroll\nmodes have a single layout."
    },
    {
     "name": "periodLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "AM or PM",
+    "defaultValue": "'AM or PM'",
     "description": "Name of the AM / PM group."
    },
    {
     "name": "pmLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "PM",
+    "defaultValue": "'PM'",
     "description": ""
    },
    {
     "name": "selectHourLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Select hour",
+    "defaultValue": "'Select hour'",
     "description": "Name of the hour selector."
    },
    {
     "name": "selectMinuteLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Select minutes",
+    "defaultValue": "'Select minutes'",
     "description": "Name of the minute selector."
    },
    {
@@ -4239,21 +4357,21 @@
     "name": "switchToDialLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Toggle dial picker",
+    "defaultValue": "'Toggle dial picker'",
     "description": "Name of the toggle while showing the text input."
    },
    {
     "name": "switchToInputLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Toggle input picker",
+    "defaultValue": "'Toggle input picker'",
     "description": "Name of the toggle while showing the dial."
    },
    {
     "name": "switchToScrollLabel",
     "type": "string",
     "required": false,
-    "defaultValue": "Switch to scroll mode",
+    "defaultValue": "'Switch to scroll mode'",
     "description": "Name of the toggle while showing the text input after scroll mode."
    },
    {
@@ -4274,7 +4392,7 @@
     "name": "variant",
     "type": "\"standard\" | \"vibrant\"",
     "required": false,
-    "defaultValue": "standard",
+    "defaultValue": "'standard'",
     "description": "Visual style. `vibrant` is the Expressive style: SurfaceContainer\ncontainer, larger SurfaceContainerLowest time fields with a Primary\nselection, pill AM / PM toggles and a SurfaceContainerLowest dial."
    }
   ]
@@ -4376,7 +4494,7 @@
   ]
  },
  "Tooltip": {
-  "description": "Material Design 3 Tooltip.\n\nWraps a single trigger element. Plain (InverseSurface, 4dp, BodySmall) or\nrich (SurfaceContainer, 12dp, elevation 2, with a subhead and optional\nactions). The popup is positioned by the shared popup helper (flip + clamp,\ndrawn in the top layer via the Popover API).\n\nBehavior (m3 + WCAG 1.4.13): opens on hover, keyboard focus, or touch\nlong-press; stays open while the pointer is over the trigger or the tooltip\nand while focus is inside either; closes 1.5 s after the pointer / focus\nleaves, on Escape (wherever focus is), or on a press elsewhere. Only one\ntooltip is open at a time. `persistent` rich tooltips toggle on click\ninstead. The trigger gets `aria-describedby` while open; the popup is\n`role=\"tooltip\"`, or a non-modal `role=\"dialog\"` labelled by its subhead when\na rich tooltip has an action (so the action is reachable with Tab).",
+  "description": "",
   "props": [
    {
     "name": "action",
