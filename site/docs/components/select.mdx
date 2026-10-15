@@ -44,8 +44,12 @@ exactly as wide as the field.
 ```
 
 Each `Option` has a string `value`. Its children are the label, and the field
-shows that label once the option is selected. The selected option is shown
-with the tertiary-container colors and a check mark.
+shows that label once the option is selected. The list uses the m3
+"Text field - Select" menu tokens: a surface-container surface with 4dp
+corners and 48dp label-large options, and the selected option is shown with
+the surface-container-highest container. Those tokens have no check mark or
+selected label color, so there is none: the field itself shows the selected
+value, and assistive technology hears it through `aria-selected`.
 
 ## Tonal style (experimental)
 
@@ -115,8 +119,8 @@ skips them. The open state can be controlled too, with `open` /
 ## Icons
 
 `startIcon` on the Select puts a decorative icon at the start of the field.
-`startIcon` on an `Option` puts one at the start of the option; the check
-mark replaces it while that option is selected.
+`startIcon` on an `Option` puts a 24dp icon at the start of the option. It
+stays while that option is selected.
 
 <Demo>
   <Select label="Travel mode" startIcon={<CommuteIcon />} defaultValue="train">
@@ -132,6 +136,76 @@ mark replaces it while that option is selected.
   <Option value="flight" startIcon={<FlightIcon />}>Flight</Option>
   <Option value="train" startIcon={<TrainIcon />}>Train</Option>
 </Select>
+```
+
+## Option supporting text
+
+`supportingText` on an `Option` adds a second line below the label (m3
+menu-item supporting text: body-small, on-surface-variant). Both lines wrap
+instead of being cut off, and the list keeps the width of the field: the
+112–280dp width of a menu item is a menu rule, not a select rule. The
+option's accessible name is its label, and the supporting text is its
+description (`aria-describedby`). The field shows only the label once the
+option is picked, and typeahead matches only the label.
+
+<Demo>
+  <Select label="Plan" defaultValue="team">
+    <Option value="free" supportingText="For one person">Free</Option>
+    <Option value="team" supportingText="Shared projects, roles and a single bill for everyone">Team</Option>
+    <Option value="enterprise" supportingText="SSO and audit logs">Enterprise</Option>
+  </Select>
+</Demo>
+
+```tsx
+<Select label="Plan" defaultValue="team">
+  <Option value="free" supportingText="For one person">Free</Option>
+  <Option value="team" supportingText="Shared projects, roles and a single bill">Team</Option>
+</Select>
+```
+
+## Label placement
+
+`labelPlacement` and `shrinkLabel` work as they do on
+[TextField](/components/textfield): `labelPlacement="above"` puts the label
+above the container, always minimized, and `shrinkLabel` keeps the floating
+label minimized and shows the `placeholder` while nothing is selected. The
+list still opens right below the container. m3 doesn't describe an above
+label for dropdowns. This is the Compose `TextFieldLabelPosition` mapping
+from TextField, applied to the field that anchors the menu.
+
+<Demo>
+  <Select label="Fruit" labelPlacement="above" placeholder="Pick one">
+    <Option value="apple">Apple</Option>
+    <Option value="banana">Banana</Option>
+  </Select>
+  <Select label="Fruit" variant="outlined" shrinkLabel placeholder="Pick one">
+    <Option value="apple">Apple</Option>
+    <Option value="banana">Banana</Option>
+  </Select>
+</Demo>
+
+```tsx
+<Select label="Fruit" labelPlacement="above" placeholder="Pick one">…</Select>
+<Select label="Fruit" variant="outlined" shrinkLabel placeholder="Pick one">…</Select>
+```
+
+## Open on focus
+
+By default the list opens on a click or a key (Enter, Space, the arrow
+keys, typing), never just because the field got focus. Neither m3 nor
+Compose opens a select on focus. `openOnFocus` opts in, for forms that also
+use [Autocomplete `openOnFocus`](/components/autocomplete#open-on-focus): the
+list opens on the selected option when focus enters the field.
+
+<Demo>
+  <Select label="Fruit" openOnFocus>
+    <Option value="apple">Apple</Option>
+    <Option value="banana">Banana</Option>
+  </Select>
+</Demo>
+
+```tsx
+<Select label="Fruit" openOnFocus>…</Select>
 ```
 
 ## Supporting text, error & states

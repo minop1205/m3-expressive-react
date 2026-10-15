@@ -2,7 +2,7 @@
 
 Date: 2026-10-13. Issue #434, phase 2 (the editable combobox). Phase 1, the
 non-editable `Select`, is in docs/specs/select.md, and this sheet only covers
-what differs from it. API ruling: docs/decisions/phase-b-api.md **B42**.
+what differs from it. API ruling: docs/decisions/phase-b-api.md **B42** (and **B52**, #518).
 
 Sources:
 
@@ -36,7 +36,7 @@ Sources:
 
 | # | Topic | Compose | Ours | Why |
 |---|---|---|---|---|
-| AC1 | Listbox and options | the sample uses baseline `DropdownMenuItem`s with no selected state | the shared Select listbox (`src/internal/listbox`): the Expressive options of SE1, with the selected value checked | one look for both exposed dropdown menus. Showing the current value while filtering is the MUI default too |
+| AC1 | Listbox and options | the sample uses baseline `DropdownMenuItem`s with no selected state | ~~the shared Select listbox (`src/internal/listbox`): the Expressive options of SE1, with the selected value checked~~ — **superseded by B52**: the shared listbox follows the m3 `md.comp.{filled,outlined}-autocomplete` `menu.*` tokens (baseline menu, select.md "Ruling B52"); the selected option shows the surface-container-highest container (no check) | one look for both exposed dropdown menus. Showing the current value while filtering is the MUI default too |
 | AC2 | Focus | `PrimaryEditable` keeps focus in the field. Arrow keys / Tab move focus into the menu | focus **always stays in the input**. The active option is exposed through `aria-activedescendant` | APG editable combobox, the web screen-reader contract (as SE2) |
 | AC3 | Filter | the sample matches a subsequence | the default `filterOptions` keeps the options whose label **contains** the text, ignoring case and accents (MUI `createFilterOptions`). `filterOptions` replaces it | the sample's matcher is sample code, not an API default. Substring matching is what web users expect from MUI |
 | AC4 | No match | the menu stays closed | closed, unless `noOptionsText` is given, which shows an inert row in a plain list (no `role="listbox"`, which must own options) | Compose by default; the MUI message is opt-in |
@@ -44,8 +44,10 @@ Sources:
 | AC6 | Toggle button | `SecondaryEditable` icon, `Role.Button` | a `<button tabindex="-1">` named by `toggleLabel` (default `'Toggle dropdown menu'`, the Compose string) with `aria-expanded` / `aria-controls`. 48dp touch target. Presses keep focus in the input | APG (the optional button is not in the Tab order) + Compose semantics |
 | AC7 | Height | 280dp cap in the sample | no fixed cap; the shared listbox's room-minus-48dp rule (SE5) | the cap is sample code. The shared rule already keeps the list on screen |
 | AC8 | Space | types a space; Enter toggles | Space types; Enter picks the active option (it never opens the list). ArrowDown / Alt+ArrowDown open | APG list autocomplete |
-| AC9 | Text after leaving | n/a | without `freeSolo`, unmatched text returns to the selected option's label on blur, and clearing the text clears the value. With `freeSolo`, the text is committed as the value on Enter and on blur (an exact label match commits that option's value) | MUI `clearOnBlur` for the first. Committing on blur keeps the form value and the visible text in sync |
+| AC9 | Text after leaving | n/a | without `freeSolo`, unmatched text returns to the selected option's label on blur, and clearing the text clears the value. With `freeSolo`, the text is committed as the value on Enter and on blur ~~(an exact label match commits that option's value)~~ — superseded by B52: the typed string stays the value even when it equals an option label; an option is selected only by picking it | MUI `clearOnBlur` for the first. Committing on blur keeps the form value and the visible text in sync |
 | AC10 | Showing all on open | n/a | when the text is still the picked option's label, opening shows every option (the selected one checked) | MUI `inputPristine` |
+| AC11 | Open on focus | never (`ExposedDropdownMenu.kt:245`); m3 silent | opt-in `openOnFocus` (default `false`, MUI name): focus opens with no active option, showing every option while the text is the picked label | web parity with MUI (B52) |
+| AC12 | Option supporting text | Expressive `DropdownMenuItem(supportingText)`: label + supporting text in a Column, both wrap | `Option supportingText` / the `options` object's `supportingText`: body-small on-surface-variant (m3 menu-item token), wraps; the name is the label, the text is the option's `aria-describedby`; filtering matches the label only | m3 menu anatomy, APG (B52) |
 
 ## Keyboard (APG list autocomplete, no automatic selection)
 

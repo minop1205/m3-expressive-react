@@ -7,6 +7,7 @@ import {
   forwardRef,
   isValidElement,
   useContext,
+  useId,
   type LiHTMLAttributes,
   type ReactElement,
   type ReactNode,
@@ -14,7 +15,6 @@ import {
 } from 'react'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
-import { CheckIcon } from '../icons'
 import styles from './Listbox.module.css'
 
 /**
@@ -22,7 +22,8 @@ import styles from './Listbox.module.css'
  * (B42): the Compose `ExposedDropdownMenu` surface and its
  * `SelectableDropdownMenuItem`s, exposed as an APG `role="listbox"` whose
  * active option is tracked with `aria-activedescendant` (DOM focus stays on
- * the combobox). Values: docs/specs/select.md SE1.
+ * the combobox). Values: docs/specs/select.md "Ruling B52" (the m3
+ * select / autocomplete menu tokens, superseding SE1).
  *
  * Internal — the public `Option` is re-exported by the components.
  */
@@ -32,8 +33,16 @@ export interface OptionProps extends Omit<LiHTMLAttributes<HTMLLIElement>, 'valu
   value: string
   /** Visible, inert, and skipped by keyboard navigation. @default false */
   disabled?: boolean
-  /** Icon at the start of the option (decorative); the check mark replaces it while selected. */
+  /** Icon at the start of the option (decorative, 24dp). */
   startIcon?: ReactNode
+  /**
+   * A second line below the label (m3 menu-item supporting text: body-small,
+   * on-surface-variant). Both lines wrap. Exposed as the option's
+   * description (`aria-describedby`) — the accessible name stays the label,
+   * and only the label is shown in the field, matched by typeahead, and
+   * matched by Autocomplete filtering.
+   */
+  supportingText?: ReactNode
   /**
    * Plain-text label for an `Autocomplete`: the text the input shows once the
    * option is picked and the text filtering matches. Defaults to the text
@@ -172,15 +181,17 @@ export const Listbox = forwardRef<HTMLUListElement, ListboxProps>(function Listb
 })
 
 /**
- * An option of a `Select` or `Autocomplete` (`role="option"`). The selected
- * option shows the tertiary-container colors, a 12dp corner shape and a
- * leading check mark.
+ * An option of a `Select` or `Autocomplete` (`role="option"`): a 48dp
+ * label-large row with an optional start icon and supporting text. The
+ * selected option takes the surface-container-highest container (m3 select /
+ * autocomplete tokens, ruling B52).
  */
 export const Option = forwardRef<HTMLLIElement, OptionProps>(function Option(
   {
     value,
     disabled = false,
     startIcon,
+    supportingText,
     textValue: _textValue,
     className,
     children,
@@ -194,12 +205,20 @@ export const Option = forwardRef<HTMLLIElement, OptionProps>(function Option(
   const index = ctx ? ctx.options.findIndex((option) => option.value === value) : -1
   const selected = !!ctx && ctx.selectedValue === value && index !== -1
   const active = !!ctx && index !== -1 && ctx.activeIndex === index
+  const autoId = useId()
+  const optionId = ctx && index !== -1 ? ctx.idFor(index) : (rest.id ?? autoId)
+  const hasSupportingText = supportingText != null && supportingText !== false
   return (
     <li
       ref={ref}
       {...rest}
-      id={ctx && index !== -1 ? ctx.idFor(index) : rest.id}
+      id={optionId}
       role="option"
+      // The name is the label alone; the supporting text describes it (APG).
+      aria-labelledby={hasSupportingText ? `${optionId}-label` : rest['aria-labelledby']}
+      aria-describedby={
+        hasSupportingText ? `${optionId}-description` : rest['aria-describedby']
+      }
       aria-selected={selected}
       aria-disabled={disabled || undefined}
       data-active={active || undefined}
@@ -215,13 +234,19 @@ export const Option = forwardRef<HTMLLIElement, OptionProps>(function Option(
         if (!disabled && ctx) ctx.hover(index)
       }}
     >
-      <span
-        className={clsx(styles.leading, startIcon == null && styles.checkOnly)}
-        aria-hidden="true"
-      >
-        {selected ? <CheckIcon /> : startIcon}
+      {startIcon != null && (
+        <span className={styles.leading} aria-hidden="true">
+          {startIcon}
+        </span>
+      )}
+      <span className={styles.text}>
+        <span id={hasSupportingText ? `${optionId}-label` : undefined}>{children}</span>
+        {hasSupportingText && (
+          <span id={`${optionId}-description`} className={styles.supportingText}>
+            {supportingText}
+          </span>
+        )}
       </span>
-      <span className={styles.label}>{children}</span>
       <span className={styles.focusRing} aria-hidden="true" />
       {!disabled && <Ripple />}
     </li>

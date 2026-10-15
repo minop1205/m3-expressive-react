@@ -307,7 +307,7 @@ describe('Autocomplete', () => {
     expect(input()).toHaveValue('Kiwis')
   })
 
-  it('freeSolo text equal to an option label commits that option', async () => {
+  it('freeSolo keeps typed text equal to an option label as typed (B52)', async () => {
     const onChange = vi.fn()
     const user = userEvent.setup()
     render(
@@ -319,6 +319,34 @@ describe('Autocomplete', () => {
       />,
     )
     await user.type(input(), 'Banana{Escape}{Enter}')
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 'Banana')
+    expect(onChange).not.toHaveBeenCalledWith(expect.anything(), 'b')
+    // Not shown as selected: the value is the string, not the option.
+    await user.keyboard('{ArrowDown}')
+    expect(option('Banana')).toHaveAttribute('aria-selected', 'false')
+  })
+
+  it('freeSolo commits the exact-label text as typed on blur too, and picks only on pick (B52)', async () => {
+    const onChange = vi.fn()
+    const user = userEvent.setup()
+    render(
+      <>
+        <Autocomplete
+          label="Fruit"
+          freeSolo
+          options={[{ value: 'b', label: 'Banana' }]}
+          onChange={onChange}
+        />
+        <button type="button">next</button>
+      </>,
+    )
+    await user.type(input(), 'Banana')
+    await user.tab()
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 'Banana')
+    await user.click(input())
+    await user.clear(input())
+    await user.type(input(), 'Ban')
+    await user.click(option('Banana'))
     expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 'b')
   })
 
@@ -477,7 +505,7 @@ describe('Autocomplete', () => {
   })
 
   describe('filtering motion', () => {
-    // jsdom has no layout: place each option 44px below the previous one.
+    // jsdom has no layout: place each option 44px below the previous one (an arbitrary row height).
     const offsetTop = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop')!
     beforeEach(() => {
       Object.defineProperty(HTMLElement.prototype, 'offsetTop', {

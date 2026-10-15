@@ -1,38 +1,39 @@
 /**
  * Shared listbox popup + options of the exposed dropdown menu (Select and
- * Autocomplete, docs/specs/select.md SE1, docs/specs/autocomplete.md).
- *
- * Listbox = Compose `ExposedDropdownMenu` as the ExposedDropdownMenuSample
- * styles it (MenuDefaults.groupStandardContainerColor / standaloneGroupShape,
- * SelectableDropdownMenuItem + ExposedDropdownMenuDefaults.ItemContentPadding):
- * SurfaceContainerLow, CornerLarge (16dp), elevation Level2, 8dp vertical
- * padding (DropdownMenuVerticalPadding); options 44dp (SegmentedMenuTokens.Item),
- * 4dp horizontal inset (DropdownMenuSelectableItemPadding), 16dp horizontal
- * content padding, BodyLarge, 20dp leading icon with 8dp icon–text spacing,
- * positional corners (MenuDefaults.itemShape), selected TertiaryContainer /
- * OnTertiaryContainer with the 12dp ItemSelectedShape and a check mark
- * (StandardMenuTokens.ItemSelected*).
+ * Autocomplete). Ruling B52 (docs/specs/select.md "Ruling B52", superseding
+ * SE1): the m3 "Text field - Select" / "Text field - Autocomplete" token sets
+ * (md.comp.{filled,outlined}-select / -autocomplete, menu.*), which are the
+ * baseline menu — as Compose ExposedDropdownMenu's defaults
+ * (FilledAutocompleteTokens.MenuContainer*):
+ * SurfaceContainer, CornerExtraSmall (4dp), elevation Level2, 8dp vertical
+ * padding (DropdownMenuVerticalPadding); full-width square options, min 48dp
+ * (menu.list-item.container.height), LabelLarge OnSurface, 24dp
+ * OnSurfaceVariant icons with 12dp icon–text spacing, 16dp horizontal content
+ * padding (ExposedDropdownMenuDefaults.ItemContentPadding); the selected
+ * option only takes the SurfaceContainerHighest container (no check mark —
+ * the set has no selected icon / label token). Optional supporting text
+ * (Option supportingText) = m3 md.comp.menus.menu-item.supporting-text:
+ * BodySmall OnSurfaceVariant. Label and supporting text wrap.
  */
 
 /* ------------------------------------------------------------------ */
 /* Listbox                                                             */
 
 .listbox {
-  /* Option tokens (md.comp.menu, Expressive standard colors). */
-  --_listbox-container-color: var(--md-sys-color-surface-container-low);
-  --_listbox-container-shape: var(--md-sys-shape-corner-large);
-  --_option-container-height: 44px;
+  /* md.comp.{filled,outlined}-select / -autocomplete menu tokens (B52). */
+  --_listbox-container-color: var(--md-sys-color-surface-container);
+  --_listbox-container-shape: var(--md-sys-shape-corner-extra-small);
+  --_option-container-height: 48px;
   --_option-label-text-color: var(--md-sys-color-on-surface);
+  --_option-supporting-text-color: var(--md-sys-color-on-surface-variant);
   --_option-icon-color: var(--md-sys-color-on-surface-variant);
-  --_option-icon-size: 20px;
+  --_option-icon-size: 24px;
   --_option-leading-space: 16px;
   --_option-trailing-space: 16px;
-  --_option-between-space: 8px;
+  --_option-between-space: 12px;
+  --_option-vertical-space: 8px;
   --_option-state-layer-color: var(--md-sys-color-on-surface);
-  --_selected-option-container-color: var(--md-sys-color-tertiary-container);
-  --_selected-option-label-text-color: var(--md-sys-color-on-tertiary-container);
-  --_selected-option-icon-color: var(--md-sys-color-on-tertiary-container);
-  --_selected-option-state-layer-color: var(--md-sys-color-on-tertiary-container);
+  --_selected-option-container-color: var(--md-sys-color-surface-container-highest);
 
   /* Reset the UA [popover] / list box. Position (`top` / `left`, flip +
      clamp), the anchor's width and `--_popup-available-height` are written
@@ -116,57 +117,32 @@
   gap: var(--_option-between-space);
   box-sizing: border-box;
   min-height: var(--_option-container-height);
-  margin-inline: 4px;
+  /* Wrapped or two-line options keep the m3 menu-item top / bottom space;
+     a one-line option is still 48dp. */
+  padding-block: var(--_option-vertical-space);
   padding-inline: var(--_option-leading-space) var(--_option-trailing-space);
-  /* MenuDefaults.itemShape: middle items CornerExtraSmall. */
-  border-radius: var(--md-sys-shape-corner-extra-small);
   background-color: transparent;
   color: var(--_option-label-text-color);
   cursor: pointer;
-  font-family: var(--md-sys-typescale-body-large-font);
-  font-size: var(--md-sys-typescale-body-large-size);
-  font-weight: var(--md-sys-typescale-body-large-weight);
-  line-height: var(--md-sys-typescale-body-large-line-height);
-  letter-spacing: var(--md-sys-typescale-body-large-tracking);
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
   -webkit-tap-highlight-color: transparent;
 
   --md-ripple-color: var(--_option-state-layer-color);
   --md-focus-ring-offset: -3px;
 
-  /* Compose DropdownMenuItemContent: container color on FastEffects, the
-     selected-shape morph on FastSpatial. */
-  transition:
-    background-color var(--md-sys-motion-spring-fast-effects-duration)
-      var(--md-sys-motion-spring-fast-effects-easing),
-    color var(--md-sys-motion-spring-fast-effects-duration)
-      var(--md-sys-motion-spring-fast-effects-easing),
-    border-radius var(--md-sys-motion-spring-fast-spatial-duration)
-      var(--md-sys-motion-spring-fast-spatial-easing);
+  /* The selected container color on FastEffects. */
+  transition: background-color var(--md-sys-motion-spring-fast-effects-duration)
+    var(--md-sys-motion-spring-fast-effects-easing);
 }
 
-/* Positional corners (MenuDefaults.leading / trailingItemShape): first item
-   12/4dp, last 4/12dp, a single item 4dp. */
-.option:first-of-type {
-  border-radius: var(--md-sys-shape-corner-medium) var(--md-sys-shape-corner-medium)
-    var(--md-sys-shape-corner-extra-small) var(--md-sys-shape-corner-extra-small);
-}
-
-.option:last-of-type {
-  border-radius: var(--md-sys-shape-corner-extra-small) var(--md-sys-shape-corner-extra-small)
-    var(--md-sys-shape-corner-medium) var(--md-sys-shape-corner-medium);
-}
-
-.option:only-of-type {
-  border-radius: var(--md-sys-shape-corner-extra-small);
-}
-
-/* Selected (StandardMenuTokens.ItemSelected*, ItemSelectedShape 12dp). After
-   the positional rules so they lose at equal specificity. */
+/* Selected (B52): the m3 select / autocomplete set only changes the list
+   item's container (surface-container-highest). */
 .option[aria-selected='true'] {
-  border-radius: var(--md-sys-shape-corner-medium);
   background-color: var(--_selected-option-container-color);
-  color: var(--_selected-option-label-text-color);
-  --md-ripple-color: var(--_selected-option-state-layer-color);
 }
 
 .option[aria-disabled='true'] {
@@ -177,7 +153,6 @@
 
 .option[aria-selected='true'][aria-disabled='true'] {
   background-color: color-mix(in srgb, var(--_selected-option-container-color) 38%, transparent);
-  color: color-mix(in srgb, var(--_selected-option-label-text-color) 38%, transparent);
 }
 
 .leading {
@@ -190,30 +165,10 @@
   width: var(--_option-icon-size);
   height: var(--_option-icon-size);
   color: var(--_option-icon-color);
-  overflow: hidden;
-  /* The check mark expands in (FastSpatial) and fades (FastEffects) when an
-     option without a start icon gets selected (Compose AnimatedVisibility). */
-  transition:
-    width var(--md-sys-motion-spring-fast-spatial-duration)
-      var(--md-sys-motion-spring-fast-spatial-easing),
-    margin-inline-end var(--md-sys-motion-spring-fast-spatial-duration)
-      var(--md-sys-motion-spring-fast-spatial-easing),
-    opacity var(--md-sys-motion-spring-fast-effects-duration)
-      var(--md-sys-motion-spring-fast-effects-easing);
 }
 
-/* No start icon and not selected: the slot (and its gap) collapse. */
-.option:not([aria-selected='true']) .checkOnly {
-  width: 0;
-  margin-inline-end: calc(-1 * var(--_option-between-space));
-  opacity: 0;
-}
-
-.option[aria-selected='true'] .leading {
-  color: var(--_selected-option-icon-color);
-}
-
-.option[aria-disabled='true'] .leading {
+.option[aria-disabled='true'] .leading,
+.option[aria-disabled='true'] .supportingText {
   color: inherit;
 }
 
@@ -224,14 +179,26 @@
   fill: currentColor;
 }
 
-.label {
+/* Label + supporting text, stacked (Compose DropdownMenuItemContent's
+   Column). Both wrap — Compose sets no maxLines and m3 specifies no
+   truncation; the listbox keeps the field's width. */
+.text {
   position: relative;
   z-index: 1;
+  display: flex;
   flex: 1 1 auto;
+  flex-direction: column;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+}
+
+.supportingText {
+  color: var(--_option-supporting-text-color);
+  font-family: var(--md-sys-typescale-body-small-font);
+  font-size: var(--md-sys-typescale-body-small-size);
+  font-weight: var(--md-sys-typescale-body-small-weight);
+  line-height: var(--md-sys-typescale-body-small-line-height);
+  letter-spacing: var(--md-sys-typescale-body-small-tracking);
 }
 
 /* Keyboard visual focus (aria-activedescendant — DOM focus stays on the
@@ -257,17 +224,13 @@
   transition:
     background-color var(--md-sys-motion-spring-fast-effects-duration)
       var(--md-sys-motion-spring-fast-effects-easing),
-    color var(--md-sys-motion-spring-fast-effects-duration)
-      var(--md-sys-motion-spring-fast-effects-easing),
-    border-radius var(--md-sys-motion-spring-fast-spatial-duration)
-      var(--md-sys-motion-spring-fast-spatial-easing),
     transform var(--md-sys-motion-spring-default-spatial-duration)
       var(--md-sys-motion-spring-default-spatial-easing),
     opacity var(--md-sys-motion-spring-default-effects-duration)
       var(--md-sys-motion-spring-default-effects-easing);
 }
 
-/* The "no options" line: an inert, option-sized row of body-large
+/* The "no options" line: an inert, option-sized row of label-large
    on-surface-variant text (MUI `noOptionsText`). */
 .noOptions {
   display: flex;
@@ -275,15 +238,15 @@
   align-items: center;
   box-sizing: border-box;
   min-height: var(--_option-container-height);
-  margin-inline: 4px;
+  padding-block: var(--_option-vertical-space);
   padding-inline: var(--_option-leading-space) var(--_option-trailing-space);
   color: var(--md-sys-color-on-surface-variant);
   cursor: default;
-  font-family: var(--md-sys-typescale-body-large-font);
-  font-size: var(--md-sys-typescale-body-large-size);
-  font-weight: var(--md-sys-typescale-body-large-weight);
-  line-height: var(--md-sys-typescale-body-large-line-height);
-  letter-spacing: var(--md-sys-typescale-body-large-tracking);
+  font-family: var(--md-sys-typescale-label-large-font);
+  font-size: var(--md-sys-typescale-label-large-size);
+  font-weight: var(--md-sys-typescale-label-large-weight);
+  line-height: var(--md-sys-typescale-label-large-line-height);
+  letter-spacing: var(--md-sys-typescale-label-large-tracking);
 }
 
 /* ------------------------------------------------------------------ */
@@ -303,7 +266,8 @@
     color: HighlightText;
   }
 
-  .option[aria-selected='true']:not([aria-disabled='true']) .leading {
+  .option[aria-selected='true']:not([aria-disabled='true']) .leading,
+  .option[aria-selected='true']:not([aria-disabled='true']) .supportingText {
     color: HighlightText;
   }
 
