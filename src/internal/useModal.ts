@@ -277,6 +277,13 @@ function remove(entry: ModalEntry) {
   if (wasTop) restoreFocus(entry)
 }
 
+/** The focused element, or null when focus is on `<body>` / nothing (or there is no DOM). */
+function currentFocus(): HTMLElement | null {
+  if (typeof document === 'undefined') return null
+  const el = document.activeElement
+  return el instanceof HTMLElement && el !== document.body ? el : null
+}
+
 function ancestorsOf(el: HTMLElement | null): HTMLElement[] {
   const result: HTMLElement[] = []
   for (let node = el?.parentElement ?? null; node; node = node.parentElement) result.push(node)
@@ -302,10 +309,13 @@ export interface UseModalOptions {
  * BottomSheet, modal SideSheet, modal NavigationDrawer, modal
  * NavigationRail, modal DatePicker / TimePicker):
  *
- * 1. moves focus into the surface on open (`[data-autofocus]` wins, else the
- *    first tabbable element, else the surface itself — give it tabIndex=-1),
- * 2. returns focus to the previously focused element on close (falling back
- *    to the nearest surviving ancestor's first tabbable element),
+ * 1. moves focus into the surface on open — an element inside it that
+ *    already holds focus (React's `autoFocus`, applied during commit) keeps
+ *    it; otherwise `[data-autofocus]` wins, else the first tabbable element,
+ *    else the surface itself (give it tabIndex=-1),
+ * 2. returns focus to the element focused before the modal opened (captured
+ *    during the opening render, before any child `autoFocus` moves focus),
+ *    falling back to the nearest surviving ancestor's first tabbable element,
  * 3. wraps Tab / Shift+Tab inside the surface,
  * 4. makes the rest of the page `inert` while open (except
  *    `[data-md-modal-exempt]` layers),
@@ -327,16 +337,29 @@ export function useModal({ active, rootRef, surfaceRef, onEscape }: UseModalOpti
   const onEscapeRef = useRef(onEscape)
   onEscapeRef.current = onEscape
 
+  // Capture the restore target during the render that activates the modal:
+  // React applies children's `autoFocus` in the commit, before any effect
+  // runs, so reading `document.activeElement` in the effect could record an
+  // element inside the opening surface (or an input that later disappears).
+  const restoreFocusRef = useRef<HTMLElement | null>(null)
+  /** The element inside the surface that `autoFocus` focused on open. */
+  const autoFocusedRef = useRef<HTMLElement | null>(null)
+  const wasActiveRef = useRef(false)
+  if (active && !wasActiveRef.current) {
+    restoreFocusRef.current = currentFocus()
+    autoFocusedRef.current = null
+  }
+  wasActiveRef.current = active
+
   useEffect(() => {
     if (!active) return
     const surface = surfaceRef.current
     const root = rootRef.current
     if (!surface || !root) return
 
-    const restoreFocusTo =
-      document.activeElement instanceof HTMLElement && document.activeElement !== document.body
-        ? document.activeElement
-        : null
+    // A target inside this surface would trap focus in the closed modal.
+    const captured = restoreFocusRef.current
+    const restoreFocusTo = captured && !surface.contains(captured) ? captured : null
 
     if (scrollLockCount === 0) lockBodyScroll()
     scrollLockCount += 1
@@ -352,9 +375,22 @@ export function useModal({ active, rootRef, surfaceRef, onEscape }: UseModalOpti
     // root was inert under the previous top modal.
     push(entry)
 
-    const initial =
-      surface.querySelector<HTMLElement>('[data-autofocus]') ?? getTabbable(surface)[0] ?? surface
-    initial.focus()
+    // Don't steal focus from an element React already auto-focused inside
+    // the surface. Remember it so a StrictMode effect re-run (whose cleanup
+    // moved focus out again) still lands on it.
+    const focused = currentFocus()
+    if (focused && focused !== surface && surface.contains(focused)) {
+      autoFocusedRef.current = focused
+    }
+    const autoFocused = autoFocusedRef.current
+    if (autoFocused && autoFocused.isConnected && surface.contains(autoFocused)) {
+      if (document.activeElement !== autoFocused) autoFocused.focus()
+    } else {
+      autoFocusedRef.current = null
+      const initial =
+        surface.querySelector<HTMLElement>('[data-autofocus]') ?? getTabbable(surface)[0] ?? surface
+      initial.focus()
+    }
 
     return () => {
       scrollLockCount -= 1

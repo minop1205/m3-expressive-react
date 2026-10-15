@@ -29,8 +29,12 @@ const walk = (dir) =>
     return statSync(path).isDirectory() ? walk(path) : [path]
   })
 const posix = (path) => path.split('\\').join('/')
-const componentNames = readdirSync(join(src, 'components')).filter((name) =>
-  existsSync(join(src, 'components', name, 'index.ts')),
+// Subpath folders: every component plus the public primitives (Ripple,
+// FocusRing) — mirrors subpathFolders() in scripts/vite-plugin-subpath-entries.ts.
+const subpaths = ['components', 'primitives'].flatMap((base) =>
+  readdirSync(join(src, base))
+    .filter((name) => existsSync(join(src, base, name, 'index.ts')))
+    .map((name) => ({ name, base })),
 )
 
 if (process.argv[2] === '--rsc-child') {
@@ -53,7 +57,7 @@ function main() {
       .filter((f) => DIRECTIVE.test(readFileSync(f, 'utf8')))
       .map((f) => posix(relative(src, f)).replace(/\.tsx?$/, '')),
   )
-  const wrappers = new Set(componentNames.map((name) => `${name}/index.js`))
+  const wrappers = new Set(subpaths.map(({ name }) => `${name}/index.js`))
   const seen = new Set()
   for (const file of walk(dist).filter((f) => /\.c?js$/.test(f))) {
     const rel = posix(relative(dist, file))
@@ -79,9 +83,9 @@ function main() {
   const entries = [
     'index.js',
     'index.cjs',
-    ...componentNames.flatMap((name) => [
-      `components/${name}/index.js`,
-      `components/${name}/index.cjs`,
+    ...subpaths.flatMap(({ name, base }) => [
+      `${base}/${name}/index.js`,
+      `${base}/${name}/index.cjs`,
     ]),
   ]
   for (const entry of entries) {

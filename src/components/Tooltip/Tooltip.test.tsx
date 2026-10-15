@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
 import { Tooltip } from './Tooltip'
 
@@ -20,6 +20,21 @@ function advance(ms: number) {
 function isShown(trigger: HTMLElement) {
   return (trigger.getAttribute('aria-describedby') ?? '') !== ''
 }
+
+/** jsdom's :focus-visible heuristic is unreliable — stub it (as FocusRing tests do). */
+function stubFocusVisible(value: boolean) {
+  const original = Element.prototype.matches
+  return vi
+    .spyOn(Element.prototype, 'matches')
+    .mockImplementation(function (this: Element, selector: string) {
+      return selector === ':focus-visible' ? value : original.call(this, selector)
+    })
+}
+
+// Tab-driven tests model keyboard focus; tests of programmatic focus override.
+beforeEach(() => {
+  stubFocusVisible(true)
+})
 
 afterEach(() => {
   vi.useRealTimers()
@@ -151,6 +166,35 @@ describe('Tooltip', () => {
       advance(HIDE_DELAY)
       expect(isShown(trigger)).toBe(false)
     })
+  })
+
+  it('does not open on programmatic (non-focus-visible) focus', () => {
+    vi.restoreAllMocks()
+    stubFocusVisible(false)
+    render(
+      <Tooltip text="Hint">
+        <button>Trigger</button>
+      </Tooltip>,
+    )
+    const trigger = screen.getByRole('button')
+    // e.g. a closing Dialog returning focus to the button that opened it.
+    act(() => trigger.focus())
+    expect(trigger).toHaveFocus()
+    expect(isShown(trigger)).toBe(false)
+  })
+
+  it('still opens on hover when focus is not focus-visible', async () => {
+    vi.restoreAllMocks()
+    stubFocusVisible(false)
+    const user = userEvent.setup()
+    render(
+      <Tooltip text="Hint">
+        <button>Trigger</button>
+      </Tooltip>,
+    )
+    const trigger = screen.getByRole('button')
+    await user.hover(trigger)
+    expect(isShown(trigger)).toBe(true)
   })
 
   it('shows on keyboard focus and hides on Escape', async () => {
