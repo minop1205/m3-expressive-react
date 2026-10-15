@@ -174,6 +174,22 @@ Reference tokens  →  System tokens (--md-sys-*)  →  Component tokens (--_*)
 
 More in the [theming guide](https://minop1205.github.io/m3-expressive-react/theming).
 
+## Localization
+
+Built-in labels are English and the pickers default to `en-US`. Wrap the app
+in `LocaleProvider` to set the locale, the 12 / 24-hour default and every
+built-in label in one place (component props still override):
+
+```tsx
+import { LocaleProvider } from 'm3-expressive-react'
+
+<LocaleProvider locale="ja-JP" labels={{ Snackbar: { dismissLabel: '閉じる' } }}>
+  <App />
+</LocaleProvider>
+```
+
+See the [i18n guide](https://minop1205.github.io/m3-expressive-react/i18n).
+
 ## Icons
 
 The library ships no icons: every icon prop (`icon`, `startIcon`,
