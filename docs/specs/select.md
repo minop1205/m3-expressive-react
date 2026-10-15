@@ -139,6 +139,6 @@ docs/decisions/phase-b-api.md B53.
 | Arrow | not rotated (the picker's open state is not observable) |
 | Clicks | on the field padding, label or arrow focus the `<select>` and call `showPicker()` where supported |
 | Form | `name` / `form` / `required` / `disabled` on the `<select>`; submit, validation and reset are native. Controlled values survive a reset |
-| `ref` / `inputRef` | both the `<select>` (exception to A10) |
+| `ref` / `inputRef` | `ref` = the field root (A10, as in Select / TextField and MUI); `inputRef` = the `<select>` |
 | `onChange` | `(event: ChangeEvent<HTMLSelectElement>, value)` |
 | Not supported | `multiple`, `size` (no text-field sizes in m3), option icons, `open` / `placeholder` |

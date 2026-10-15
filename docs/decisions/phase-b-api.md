@@ -59,7 +59,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B36 | #438 | ChipSet の選択モードと filter chip の `endIcon` | **`ChipSet selectionMode` + `value` / `defaultValue` / `onChange(event, value)` + `selectionRequired`(single = APG radio group)、filter chip に装飾の `endIcon`(Menu の trigger で `aria-expanded` 時に 180° 回転)** | なし(追加) | 決定(2026-10-13・#438 の API 案どおり) |
 | B35 | #437 | BottomSheet の standard variant と detent | **`variant="standard" \| "modal"`(既定 modal)+ `expanded` / `defaultExpanded` / `onExpandedChange` + `skipPartiallyExpanded`、部分展開 = `min(画面/2, シート/2)`(Compose 現行フラグ、TODO 付き)は `skipPartiallyExpanded={false}` で opt-in(既定 true = 従来どおり、切替は v2 候補)、opt-in 時のハンドルは partial ↔ expanded のトグル** | なし(追加) | 決定(2026-10-13) |
 | B31 | #434 | Select(exposed dropdown menu・非編集) | **専用の `<Select>` + `<Option>` 子要素、`value` / `defaultValue` / `onChange(event, value)`、APG select-only combobox + 隠しネイティブ input** | なし(追加) | 決定(2026-10-13・#434 フェーズ 1) |
-| B53 | #519 | Select のネイティブモード(`<select>`) | **`<Select native>` で同じフィールドの見た目のまま本物の `<select>` を描く。子は `<option>` / `<optgroup>`、`ref` / `inputRef` / 残りの属性は `<select>`(`className` / `style` はルート)、`onChange(event, value)` の `event` はネイティブの `ChangeEvent<HTMLSelectElement>`、ポップアップは OS のピッカー。型はオーバーロードで分岐。サイズは対象外** | なし(追加) | 決定(2026-10-16・#519) |
+| B53 | #519 | Select のネイティブモード(`<select>`) | **`<Select native>` で同じフィールドの見た目のまま本物の `<select>` を描く。子は `<option>` / `<optgroup>`、`ref` / `className` / `style` はルート(A10)、`inputRef` と残りの属性は `<select>`、`onChange(event, value)` の `event` はネイティブの `ChangeEvent<HTMLSelectElement>`、ポップアップは OS のピッカー。型はオーバーロードで分岐。サイズは対象外** | なし(追加) | 決定(2026-10-16・#519) |
 | B38 | #440 | Tooltip の配置拡張・rich の既定位置・caret | **`placement` に `'start' \| 'end' \| 'left' \| 'right'`(論理値は RTL で反転、flip あり)、`placement` 未指定の rich は bottom-end の角 + 4 隅の動的配置、`caret?: boolean`(16×8dp)** | 既定値変更(rich の未指定時の位置) | 決定(2026-10-13・#440 の提案どおり) |
 | B32 | #441 | PullToRefresh(新規) | **自身がスクロールコンテナになる `<PullToRefresh refreshing onRefresh indicator disabled threshold>`、touch + pointer、reduced motion はフェードのみ、`aria-busy` + polite live region** | なし(追加) | 決定(2026-10-13・#441 の API 案をもとに確定) |
 | B33 | #435 | Menu の選択項目(単一 / 複数)・supporting text | **`MenuGroup selectionMode="single" \| "multiple"` + `value` / `defaultValue` / `onChange(event, value)`(single = `menuitemradio`、multiple = `menuitemcheckbox` で開いたまま)、`closeOnSelect`(group / item)、`MenuItem supportingText` / `selectedIcon`** | なし(追加。baseline の selected に色が付く) | 決定(2026-10-13・実装時に確定) |
@@ -1456,11 +1456,10 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
   (ピッカーの開閉は OS が持ち、外から知る手段がない。プレースホルダーは空値の `<option value="">` で書く)。
   `multiple` / `size`(ネイティブ属性)も持たない(フィールドではなくリストボックスになるため)
 - **型**: `Select` を呼び出しシグネチャのオーバーロードにする。`native: true` なら `NativeSelectProps`(子は
-  `<option>` / `<optgroup>`、ref は `HTMLSelectElement`)、それ以外は従来の `SelectProps`(`native?: false`、
-  子は `Option`、ref は `HTMLDivElement`)。`native` を途中で切り替えると別の要素として作り直す
-- **ref**: `ref` と `inputRef` はどちらも `<select>`。**A10(ref は常にルート)の例外** — ネイティブモードの目的が
-  「ネイティブの ref」(#519)で、要素そのものが `<select>` だから。`inputRef` も同じ要素を指す(Select から
-  書き換えたコードがそのまま動くように)
+  `<option>` / `<optgroup>`)、それ以外は従来の `SelectProps`(`native?: false`、子は `Option`)。どちらも
+  `ref` は `HTMLDivElement`(ルート)。`native` を途中で切り替えると別の要素として作り直す
+- **ref**: A10 を保つ。`ref` はフィールドのルート(listbox の Select・TextField と同じ)、#519 の「ネイティブの ref」は
+  `inputRef`(`<select>`)で渡す。MUI も `Select native` の `ref` はルート、`inputRef` が `<select>` で、同じ形になる
 - **属性の着地先**: `className` / `style` はルート(他のフィールドと同じくレイアウト用)、それ以外(`autoComplete`、
   `onBlur` / `onFocus`、`aria-*`、`data-*` など)は `<select>`
 - **`onChange(event, value)`**: A2 の形を保ち、`event` はネイティブの `ChangeEvent<HTMLSelectElement>`

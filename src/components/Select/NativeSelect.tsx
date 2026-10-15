@@ -26,8 +26,9 @@ import styles from './NativeSelect.module.css'
 
 /**
  * Props of `<Select native>` (ruling B53): the Select field around a real
- * `<select>`. `ref`, `inputRef` and every attribute other than `className` /
- * `style` go to the `<select>`.
+ * `<select>`. `ref`, `className` and `style` go to the field root (as in
+ * Select / TextField, A10); `inputRef` and every other attribute go to the
+ * `<select>`.
  */
 export interface NativeSelectProps
   extends Omit<
@@ -77,7 +78,7 @@ export interface NativeSelectProps
   className?: string
   /** Applied to the field's root element. */
   style?: CSSProperties
-  /** Also receives the `<select>` (the same element as `ref`). */
+  /** Ref to the native `<select>` (the forwarded `ref` points at the root). */
   inputRef?: Ref<HTMLSelectElement>
   /** Native `<option>` / `<optgroup>` elements. */
   children?: ReactNode
@@ -119,7 +120,7 @@ function firstOptionValue(children: ReactNode, groupDisabled = false): string | 
  * text — drawn around a real `<select>` whose popup is the OS picker. A web
  * adaptation (MUI `Select native`); m3 and Compose have no native select.
  */
-export const NativeSelect = forwardRef<HTMLSelectElement, Omit<NativeSelectProps, 'native'>>(
+export const NativeSelect = forwardRef<HTMLDivElement, Omit<NativeSelectProps, 'native'>>(
   function NativeSelect(
     {
       variant = 'filled',
@@ -182,7 +183,6 @@ export const NativeSelect = forwardRef<HTMLSelectElement, Omit<NativeSelectProps
 
     const setRefs = (node: HTMLSelectElement | null) => {
       selectRef.current = node
-      assignRef(forwardedRef, node)
       assignRef(inputRef, node)
     }
 
@@ -239,6 +239,7 @@ export const NativeSelect = forwardRef<HTMLSelectElement, Omit<NativeSelectProps
           fullWidth && selectStyles.fullWidth,
           className,
         )}
+        ref={forwardedRef}
         style={style}
         data-native=""
         data-empty={!populated || undefined}

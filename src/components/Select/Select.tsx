@@ -625,7 +625,7 @@ const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
 
 /** `Select`: the listbox Select, or `<select>` with `native` (B53). */
 export interface SelectComponent {
-  (props: NativeSelectProps & RefAttributes<HTMLSelectElement>): ReactElement | null
+  (props: NativeSelectProps & RefAttributes<HTMLDivElement>): ReactElement | null
   (props: SelectProps & RefAttributes<HTMLDivElement>): ReactElement | null
   displayName?: string
 }
@@ -634,16 +634,17 @@ export interface SelectComponent {
  * Material Design 3 Select. Without `native`: the exposed dropdown menu
  * described on `ListboxSelect` above (`Option` children, `ref` = root).
  * With `native`: the same field around a real `<select>` (`<option>` /
- * `<optgroup>` children, `ref` = the `<select>`, OS picker) — ruling B53.
+ * `<optgroup>` children, `ref` = root, `inputRef` = the `<select>`, OS
+ * picker) — ruling B53.
  */
-export const Select = forwardRef<HTMLDivElement | HTMLSelectElement, SelectProps | NativeSelectProps>(
+export const Select = forwardRef<HTMLDivElement, SelectProps | NativeSelectProps>(
   function SelectSwitch(props, ref) {
     if (props.native) {
       const { native: _native, ...nativeProps } = props
-      return <NativeSelect {...nativeProps} ref={ref as Ref<HTMLSelectElement>} />
+      return <NativeSelect {...nativeProps} ref={ref} />
     }
     const { native: _native, ...listboxProps } = props
-    return <ListboxSelect {...listboxProps} ref={ref as Ref<HTMLDivElement>} />
+    return <ListboxSelect {...listboxProps} ref={ref} />
   },
 ) as SelectComponent
 Select.displayName = 'Select'

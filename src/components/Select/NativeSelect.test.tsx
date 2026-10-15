@@ -40,15 +40,15 @@ describe('Select native (B53)', () => {
     expect(select()).toHaveAccessibleDescription('Pick one')
   })
 
-  it('forwards ref and inputRef to the <select>', () => {
-    const ref = createRef<HTMLSelectElement>()
+  it('forwards ref to the root and inputRef to the <select> (A10)', () => {
+    const ref = createRef<HTMLDivElement>()
     const inputRef = createRef<HTMLSelectElement>()
     render(
       <Select native label="Fruit" ref={ref} inputRef={inputRef}>
         <option value="a">A</option>
       </Select>,
     )
-    expect(ref.current).toBe(select())
+    expect(ref.current).toBe(root())
     expect(inputRef.current).toBe(select())
   })
 

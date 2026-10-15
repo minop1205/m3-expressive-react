@@ -213,8 +213,9 @@ handy for plain forms and on mobile.
 
 - **Children** are native `<option>` / `<optgroup>` elements, not `Option`
   (TypeScript picks the native props when `native` is set).
-- **`ref` and `inputRef`** both point at the `<select>`. `className` / `style`
-  go to the field's root; every other attribute goes to the `<select>`.
+- **`ref`** points at the field's root (as everywhere else) and **`inputRef`**
+  at the `<select>`. `className` / `style` go to the root; every other
+  attribute goes to the `<select>`.
 - **`onChange(event, value)`**: `event` is the native
   `ChangeEvent<HTMLSelectElement>`, so `event.target.value` works too.
 - **Forms**: `name`, `form`, `required`, `disabled`, `value` / `defaultValue`
