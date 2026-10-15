@@ -70,6 +70,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B43 | #444 | TimePicker の vibrant・横向き・スクロールホイール | **`variant="standard" \| "vibrant"`、`orientation="vertical" \| "horizontal"`(dial のみ)、`mode="scroll"`(Compose `TimeScroll`)+ 公開 `ScrollField`(APG spinbutton)** | なし(追加) | 決定(2026-10-13) |
 | B44 | #444 | TextField / Select の tonal・secure field・VerticalDragHandle | **TextField / Select `tonal?: boolean`(`@experimental`、Compose `tonalColors()` + `roundedShape`)、secure field はレシピ(`type="password"` + `IconButton toggle`、名前固定 + `aria-pressed`)、新規 `DragHandle`(APG window splitter、`value` / `onChange(event, value)` / `min` / `max` / `step` / `paneSide`)** | なし(追加) | 決定(2026-10-13) |
 | B47 | #497 | Slider の操作終了イベント | **`onChangeCommitted(event, value)`(MUI 名)を追加。Compose `onValueChangeFinished` と同じ時機 — ポインタを離したとき(ドラッグ終了・タップ、1 回の操作で 1 回)、値を動かすキー(矢印・Home / End・PageUp / PageDown)の keyup ごと、支援技術による直接の値変更は即時(値が変わらなければ出さない)。single / range 共通、`onChange` は従来どおり連続** | なし(追加) | 決定(2026-10-15) |
+| B51 | #496 #501 #502 | フォーカス可能な無効ボタン・Menu `onAction`・Tooltip の表示遅延 | **いずれも実装しない(仕様に根拠なし)。代替手段をドキュメント化** | なし | 決定(2026-10-15) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -1981,6 +1982,38 @@ WithBadges を追加。対象: Tab(Badge は内部ヘルパーへの切り出し
 `ChangeCommitted`(確定値の表示)を追加。対象: Slider。
 
 ---
+### B51: 仕様に根拠がないため見送る要望(#496・#501・#502)
+
+- **Issue**: #496・#501・#502(利用側アプリの報告 docs/redesign/07-md3.md §7 由来)
+- **状態**: 決定(2026-10-15・スペックファーストの原則で判定)
+- **調査**: m3.material.io(2026-10-15、TOKEN_TABLE revision 2026-10-13_06-10-19)と Compose androidx-main を確認
+
+**#496 フォーカス可能な無効ボタン(`aria-disabled`)**
+
+- m3: icon buttons の accessibility のキーボード表は「Tab — Focus lands on (non-disabled) icon button」
+  「Space or Enter — Activates the (non-disabled) icon button」で、無効なボタンは Tab で飛ばす前提。
+  フォーカス可能な無効状態は menus の「Disabled menu items can receive focus but aren't selectable」だけで、
+  ボタンには定義がない
+- Compose: `Button` / `IconButton` の `enabled = false` は `clickable(enabled = false)` でフォーカスもクリックも外す。
+  フォーカス可能な無効の概念はない
+- **決定**: 実装しない。無効の理由を伝えたい場合は、ボタンの近くの補助テキスト、または包む要素に
+  Tooltip を付ける方法をドキュメントで案内する
+
+**#501 Menu の `onAction(value)`**
+
+- m3: menus は「Selecting an option」で閉じる挙動と単一・複数選択(B33)を定めるが、集約ハンドラーの API はない
+- Compose: `DropdownMenuItem(onClick)` ごとの処理で、メニュー単位のハンドラーはない(閉じるのも呼び出し側)
+- **決定**: 実装しない。データから組み立てるメニューは、各 `MenuItem` の `onClick` で `value` を渡すか、
+  選択グループ(B33 `MenuGroup selectionMode` の `onChange(event, value)`)を使う
+
+**#502 Tooltip の表示遅延**
+
+- m3: 「Both plain and rich tooltips disappear 1.5 seconds after navigating away from the target region」
+  (消える遅延のみ)。表示までの遅延の定義はない
+- Compose: `BasicTooltip` はポインター Enter で即 `show()`、キーボードフォーカスでも即表示。
+  遅延はタッチの長押し(`longPressTimeoutMillis`)と、非 persistent の表示時間 `TooltipDuration` 1500ms のみ
+- 現状: 消える遅延は `HIDE_DELAY_MS = 1500` で m3 と一致、フォーカスでの表示は 1.4.1 で `:focus-visible` のときだけに修正済み
+- **決定**: 表示遅延は追加しない(m3・Compose とも即表示)
 
 ## 本書で扱わなかった判断候補(次回以降)
 
