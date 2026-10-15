@@ -1,0 +1,306 @@
+---
+sidebar_position: 3
+title: Localization (i18n)
+---
+
+import Demo from '@site/src/components/Demo'
+import { Badge, DatePicker, LocaleProvider, Snackbar, TimePicker } from 'm3-expressive-react'
+
+export const ja = {
+  Badge: {
+    getLabel: (count) => (count == null ? '新しい通知' : `新しい通知 ${count} 件`),
+  },
+  DatePicker: {
+    titleLabel: '日付を選択',
+    rangeTitleLabel: '期間を選択',
+    rangeInputTitleLabel: '期間を入力',
+    noSelectionLabel: '日付',
+    inputNoSelectionLabel: '日付',
+    previousMonthLabel: '前の月',
+    nextMonthLabel: '次の月',
+    selectYearLabel: '年を選択',
+    todayLabel: '今日',
+    startDateLabel: '開始日',
+    endDateLabel: '終了日',
+    inRangeLabel: '期間内',
+    inputLabel: '日付',
+    switchToInputLabel: 'テキスト入力に切り替え',
+    switchToCalendarLabel: 'カレンダーに切り替え',
+    okLabel: 'OK',
+    cancelLabel: 'キャンセル',
+  },
+  Snackbar: { dismissLabel: '閉じる' },
+  TimePicker: {
+    titleLabel: '時刻を選択',
+    inputTitleLabel: '時刻を入力',
+    hourLabel: '時',
+    minuteLabel: '分',
+    selectHourLabel: '時を選択',
+    selectMinuteLabel: '分を選択',
+    periodLabel: '午前または午後',
+    amLabel: '午前',
+    pmLabel: '午後',
+    getHourLabel: (hour) => `${hour}時`,
+    getMinuteLabel: (minute) => `${minute}分`,
+    okLabel: 'OK',
+    cancelLabel: 'キャンセル',
+  },
+}
+
+export const MailIcon = () => (
+  <svg viewBox="0 -960 960 960" width={24} height={24} fill="currentColor" role="img" aria-label="メール">
+    <path d="M140-160q-24 0-42-18t-18-42v-520q0-24 18-42t42-18h680q24 0 42 18t18 42v520q0 24-18 42t-42 18H140Zm340-302L140-685v465h680v-465L480-462Zm0-60 336-218H145l335 218ZM140-685v-55 520-465Z" />
+  </svg>
+)
+
+# Localization (i18n)
+
+Every built-in string in the library — picker headlines and buttons, the
+Snackbar dismiss button, the Badge announcement, Chip "Remove …", sheet and
+dialog close buttons, and so on — is English by default and can be replaced
+in two ways:
+
+- **Per instance**, with the component's `*Label` / `get*Label` props
+  (`<Snackbar dismissLabel="閉じる" />`).
+- **For the whole app** (or a subtree), with `LocaleProvider`. It also sets
+  the default `locale` of the date and time pickers.
+
+A prop on a component always wins over the provider.
+
+## LocaleProvider
+
+```tsx
+import { LocaleProvider, ThemeProvider } from 'm3-expressive-react'
+import { ja } from './i18n/ja' // your translations (see below)
+
+export function App() {
+  return (
+    <ThemeProvider seedColor="#6750A4">
+      <LocaleProvider locale="ja-JP" labels={ja}>
+        {/* … */}
+      </LocaleProvider>
+    </ThemeProvider>
+  )
+}
+```
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `locale` | `string` (BCP 47) | `'en-US'` | Default `locale` of `DatePicker`, `DatePickerField` and `TimePicker`: month / weekday names, the first day of the week, the typed-date field order and the TimePicker's hour cycle. |
+| `ampm` | `boolean` | from `locale` | Default `ampm` of every `TimePicker`: `true` = 12-hour clock with AM / PM, `false` = 24-hour. |
+| `labels` | `LocaleLabels` | `{}` | Built-in strings per component — see [the keys](#label-keys). |
+
+`useLocale()` returns the settings in effect — `{ locale, ampm, labels }` —
+so your own formatting can use the same locale:
+
+```tsx
+const { locale } = useLocale()
+const text = new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(date)
+```
+
+`LocaleProvider` is also a subpath entry: `import LocaleProvider from 'm3-expressive-react/LocaleProvider'`.
+
+:::note Next.js App Router
+`LocaleProvider` is a client component. A Server Component can render it
+with `locale` / `ampm` and string labels, but **functions** (`getLabel`,
+`getHourLabel`, …) cannot cross the server → client boundary. Put the
+provider and your translations in your own `'use client'` module:
+
+```tsx
+// app/locale-provider.tsx
+'use client'
+import { LocaleProvider } from 'm3-expressive-react'
+import { ja } from './i18n/ja'
+
+export function AppLocaleProvider({ children }: { children: React.ReactNode }) {
+  return <LocaleProvider locale="ja-JP" labels={ja}>{children}</LocaleProvider>
+}
+```
+:::
+
+### Precedence
+
+1. The component's own prop (`dismissLabel`, `locale`, `ampm`, …)
+2. The nearest `LocaleProvider`
+3. An outer `LocaleProvider` — a nested provider overrides single keys and
+   inherits everything else
+4. The English default (`'en-US'`)
+
+```tsx
+<LocaleProvider locale="ja-JP" labels={ja}>
+  {/* Only this subtree reads "翌月" for the next-month button. */}
+  <LocaleProvider labels={{ DatePicker: { nextMonthLabel: '翌月' } }}>
+    <DatePicker />
+  </LocaleProvider>
+</LocaleProvider>
+```
+
+### Locale, week start and the 24-hour clock
+
+From `locale` the pickers derive, with the platform's `Intl` data:
+
+- **Month and weekday names** and the headline date format.
+- **The first day of the week** — `Intl.Locale(locale).getWeekInfo()` (or
+  `weekInfo`) where the browser supports it, else Sunday. A Unicode
+  extension such as `en-US-u-fw-mon` changes it where supported.
+- **The typed-date field order and the helper text** of the date input
+  (`MM/DD/YYYY` for `en-US`, `YYYY/MM/DD` for `ja-JP`).
+- **The TimePicker's hour cycle** — `Intl.DateTimeFormat(locale, { hour:
+  'numeric' }).resolvedOptions().hourCycle` (`ja-JP`, `en-GB`, `de-DE` →
+  24-hour). MD3 sets the 24-hour preference outside the time picker,
+  typically from system settings; pass `ampm` to follow your app's setting.
+
+The library never reads `navigator.language`: without a provider, server
+and client render the same `en-US` output. To follow the browser, pass the
+language you resolved yourself (e.g. from the `Accept-Language` header on
+the server) to `locale`.
+
+## Japanese example
+
+The library ships English only. This is a Japanese translation of the
+date / time pickers, the Badge announcement and the Snackbar:
+
+<Demo>
+  <LocaleProvider locale="ja-JP" labels={ja}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
+      <DatePicker defaultValue={new Date(2026, 9, 15)} onAccept={() => {}} />
+      <TimePicker defaultValue={{ hour: 18, minute: 30 }} onAccept={() => {}} />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <Badge value={3}>
+          <MailIcon />
+        </Badge>
+        <Snackbar message="保存しました" onDismiss={() => {}} />
+      </div>
+    </div>
+  </LocaleProvider>
+</Demo>
+
+```tsx
+// i18n/ja.ts
+import type { LocaleLabels } from 'm3-expressive-react'
+
+export const ja: LocaleLabels = {
+  Badge: {
+    // count: the text the badge shows ('8', '999+'), undefined for a dot
+    getLabel: (count) => (count == null ? '新しい通知' : `新しい通知 ${count} 件`),
+  },
+  DatePicker: {
+    titleLabel: '日付を選択',
+    rangeTitleLabel: '期間を選択',
+    rangeInputTitleLabel: '期間を入力',
+    noSelectionLabel: '日付',
+    inputNoSelectionLabel: '日付',
+    previousMonthLabel: '前の月',
+    nextMonthLabel: '次の月',
+    selectYearLabel: '年を選択',
+    todayLabel: '今日',
+    startDateLabel: '開始日',
+    endDateLabel: '終了日',
+    inRangeLabel: '期間内',
+    inputLabel: '日付',
+    switchToInputLabel: 'テキスト入力に切り替え',
+    switchToCalendarLabel: 'カレンダーに切り替え',
+    getErrorLabel: (error, pattern) =>
+      error === 'invalid'
+        ? `日付の形式が正しくありません: ${pattern}`
+        : error === 'invalidRange'
+          ? '期間の入力が正しくありません'
+          : 'この日付は選択できません',
+    okLabel: 'OK',
+    cancelLabel: 'キャンセル',
+  },
+  DatePickerField: {
+    label: '日付',
+    openCalendarLabel: 'カレンダーを開く',
+    dialogLabel: '日付を選択',
+    previousMonthLabel: '前の月',
+    nextMonthLabel: '次の月',
+    previousYearLabel: '前の年',
+    nextYearLabel: '次の年',
+    selectMonthLabel: '月を選択',
+    selectYearLabel: '年を選択',
+    todayLabel: '今日',
+  },
+  TimePicker: {
+    titleLabel: '時刻を選択',
+    inputTitleLabel: '時刻を入力',
+    hourLabel: '時',
+    minuteLabel: '分',
+    selectHourLabel: '時を選択',
+    selectMinuteLabel: '分を選択',
+    periodLabel: '午前または午後',
+    amLabel: '午前',
+    pmLabel: '午後',
+    switchToInputLabel: 'キーボード入力に切り替え',
+    switchToDialLabel: '時計の文字盤に切り替え',
+    switchToScrollLabel: 'スクロール入力に切り替え',
+    getHourLabel: (hour) => `${hour}時`,
+    getMinuteLabel: (minute) => `${minute}分`,
+    getErrorLabel: (field, ampm) =>
+      field === 'minute'
+        ? '分は 0〜59 で入力してください'
+        : `時は ${ampm ? '1〜12' : '0〜23'} で入力してください`,
+    okLabel: 'OK',
+    cancelLabel: 'キャンセル',
+  },
+  Snackbar: { dismissLabel: '閉じる' },
+  SearchBar: { placeholder: '検索', backLabel: '戻る', suggestionsLabel: '候補を表示しています' },
+  Chip: { getRemoveLabel: (label) => `${label}を削除` },
+  Dialog: { closeLabel: '閉じる', fallbackLabel: 'ダイアログ' },
+  BottomSheet: { dragHandleLabel: '閉じる', partialDragHandleLabel: 'ドラッグハンドル', fallbackLabel: 'ボトムシート' },
+  SideSheet: { closeLabel: '閉じる', backLabel: '戻る', fallbackLabel: 'サイドシート' },
+  NavigationDrawer: { fallbackLabel: 'ナビゲーション' },
+  NavigationRail: { modalLabel: 'ナビゲーションレール' },
+  Carousel: {
+    getItemLabel: (position, count) => `${count} 件中 ${position} 件目`,
+    roleDescriptionLabel: 'カルーセル',
+    itemRoleDescriptionLabel: 'スライド',
+  },
+  Slider: { rangeStartLabel: '最小値', rangeEndLabel: '最大値' },
+  SplitButton: { trailingAriaLabel: 'その他のオプション' },
+  Autocomplete: { toggleLabel: '候補の表示を切り替え' },
+  TextField: { getCounterLabel: (length, max) => `文字数: ${max} 文字中 ${length} 文字` },
+  PullToRefresh: { refreshingLabel: '更新しています' },
+}
+```
+
+## Label keys
+
+`labels` is keyed by component name. Each key is the component prop of the
+same name — same type, same English default (see each component's props
+table) — except the provider-only keys marked below.
+
+| Component | Keys |
+| --- | --- |
+| `DatePicker` | `titleLabel`, `noSelectionLabel`, `previousMonthLabel`, `nextMonthLabel`, `selectYearLabel`, `todayLabel`, `startDateLabel`, `endDateLabel`, `inRangeLabel`, `inputLabel`, `switchToInputLabel`, `switchToCalendarLabel`, `getErrorLabel`, `okLabel`, `cancelLabel`; provider-only: `rangeTitleLabel` (`'Select dates'`), `rangeInputTitleLabel` (`'Enter dates'`), `inputNoSelectionLabel` (`'Entered date'`) |
+| `DatePickerField` | `label`, `openCalendarLabel`, `dialogLabel`, `getErrorLabel`, `previousMonthLabel`, `nextMonthLabel`, `previousYearLabel`, `nextYearLabel`, `selectMonthLabel`, `selectYearLabel`, `todayLabel` |
+| `TimePicker` | `titleLabel`, `hourLabel`, `minuteLabel`, `selectHourLabel`, `selectMinuteLabel`, `periodLabel`, `amLabel`, `pmLabel`, `switchToInputLabel`, `switchToDialLabel`, `switchToScrollLabel`, `getHourLabel`, `getMinuteLabel`, `getErrorLabel`, `okLabel`, `cancelLabel`; provider-only: `inputTitleLabel` (`'Enter time'`) |
+| `Badge` | provider-only: `getLabel(count)` — also used for the badges of `NavigationBarItem`, `NavigationRailItem` and `Tab` |
+| `Snackbar` | `dismissLabel` (also the dismiss button of `SnackbarProvider` snackbars) |
+| `SearchBar` | `backLabel`, `suggestionsLabel`, `placeholder` |
+| `Chip` | `getRemoveLabel` |
+| `Dialog` | `closeLabel`; provider-only: `fallbackLabel` (`'Dialog'`) |
+| `BottomSheet` | `dragHandleLabel` (`'Close'`); provider-only: `partialDragHandleLabel` (`'Drag handle'`), `fallbackLabel` (`'Bottom sheet'`) |
+| `SideSheet` | `closeLabel`, `backLabel`; provider-only: `fallbackLabel` (`'Side sheet'`) |
+| `NavigationDrawer` | provider-only: `fallbackLabel` (`'Navigation'`) |
+| `NavigationRail` | `modalLabel` |
+| `Carousel` | `getItemLabel`, `roleDescriptionLabel`, `itemRoleDescriptionLabel` |
+| `Slider` | `rangeStartLabel`, `rangeEndLabel` |
+| `SplitButton` | `trailingAriaLabel` |
+| `Autocomplete` | `toggleLabel` |
+| `TextField` | `getCounterLabel` |
+| `PullToRefresh` | `refreshingLabel` |
+
+- **Per-mode headlines.** Where a component shows a different built-in
+  string per mode, each mode has its own provider key (as Compose has one
+  string resource each): `DatePicker` `titleLabel` is the single-date title,
+  `rangeTitleLabel` / `rangeInputTitleLabel` the range titles; `TimePicker`
+  `titleLabel` is the dial / scroll headline, `inputTitleLabel` the input
+  one; `BottomSheet` `dragHandleLabel` names the closing handle,
+  `partialDragHandleLabel` the expand / collapse one. The **props** of the
+  same name still apply to every mode.
+- **`fallbackLabel`** is the accessible name used only when the dialog /
+  sheet / drawer has no title, `aria-label` or `aria-labelledby`.
+- Not covered: strings the app always provides (e.g. `FabMenu` `ariaLabel`),
+  and the DatePickerField helper text, which shows the locale's input
+  pattern (`MM/DD/YYYY`) — set `supportingText` to replace it.

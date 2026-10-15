@@ -5,7 +5,7 @@ title: Tabs
 import { useState } from 'react'
 import Demo from '@site/src/components/Demo'
 import PropsTable from '@site/src/components/PropsTable'
-import { Tabs, Tab, Badge } from 'm3-expressive-react'
+import { Tabs, Tab, TabContext, TabPanel, Badge } from 'm3-expressive-react'
 import FlightIcon from '@material-symbols/svg-400/outlined/flight.svg'
 import HotelIcon from '@material-symbols/svg-400/outlined/hotel.svg'
 import ExploreIcon from '@material-symbols/svg-400/outlined/explore.svg'
@@ -76,6 +76,10 @@ icon and the label.
 <Tab value="flights" icon={<FlightIcon />} iconPosition="start" label="Flights" />
 ```
 
+`iconPosition` works on both variants, but m3 secondary tabs normally have
+no icon (the secondary tab anatomy has none), so prefer text-only secondary
+tabs.
+
 ## Badges
 
 `badge` takes a childless [`<Badge>`](./badge.mdx): it sits on the icon (stacked or
@@ -127,58 +131,148 @@ the center whenever the selection changes.
 
 ## With panels
 
-Tabs are controlled (`value` + `onChange`) or uncontrolled (`defaultValue`).
-There is no panel component — render the panel yourself and link it with
-`id` / `aria-controls` / `aria-labelledby`.
-
-export function PanelDemo() {
-  const [value, setValue] = useState('flights')
-  const tabs = [
-    ['flights', 'Flights', 'Search one-way and round-trip flights.'],
-    ['hotels', 'Hotels', 'Find a place to stay.'],
-    ['explore', 'Explore', 'Discover things to do nearby.'],
-  ]
-  const current = tabs.find(([v]) => v === value)
-  return (
-    <div style={{ width: '100%' }}>
-      <Tabs aria-label="Trip planner" value={value} onChange={(_event, v) => setValue(v)}>
-        {tabs.map(([v, label]) => (
-          <Tab key={v} value={v} label={label} id={`tab-${v}`} aria-controls="trip-panel" />
-        ))}
-      </Tabs>
-      <div role="tabpanel" id="trip-panel" aria-labelledby={`tab-${value}`} tabIndex={0} style={{ padding: 16 }}>
-        {current[2]}
-      </div>
-    </div>
-  )
-}
+Wrap the tabs and their panels in a `TabContext` and give each `TabPanel`
+the `value` of its tab. The tabs and panels are linked automatically
+(`id`, `aria-controls`, `aria-labelledby`, following the WAI-ARIA APG Tabs
+pattern) and only the selected panel is shown (the others stay mounted with
+`hidden`). Put `value` / `defaultValue` / `onChange` on `TabContext`; the
+inner `Tabs` takes its selection from there.
 
 <Demo>
-  <PanelDemo />
+  <div style={{ width: '100%' }}>
+    <TabContext defaultValue="flights">
+      <Tabs aria-label="Trip planner">
+        <Tab value="flights" label="Flights" />
+        <Tab value="hotels" label="Hotels" />
+        <Tab value="explore" label="Explore" />
+      </Tabs>
+      <TabPanel value="flights" style={{ padding: 16 }}>Search one-way and round-trip flights.</TabPanel>
+      <TabPanel value="hotels" style={{ padding: 16 }}>Find a place to stay.</TabPanel>
+      <TabPanel value="explore" style={{ padding: 16 }}>Discover things to do nearby.</TabPanel>
+    </TabContext>
+  </div>
 </Demo>
 
 ```tsx
 const [value, setValue] = useState('flights')
 
-<Tabs aria-label="Trip planner" value={value} onChange={(event, next) => setValue(next)}>
-  <Tab value="flights" label="Flights" id="tab-flights" aria-controls="panel" />
-  <Tab value="hotels" label="Hotels" id="tab-hotels" aria-controls="panel" />
+<TabContext value={value} onChange={(event, next) => setValue(next)}>
+  <Tabs aria-label="Trip planner">
+    <Tab value="flights" label="Flights" />
+    <Tab value="hotels" label="Hotels" />
+  </Tabs>
+  <TabPanel value="flights">…</TabPanel>
+  <TabPanel value="hotels">…</TabPanel>
+</TabContext>
+```
+
+A panel has `tabIndex={0}` by default, so <kbd>Tab</kbd> from the tab list
+moves into it (APG, for panels that do not start with a focusable element).
+Pass `tabIndex={-1}` when the panel starts with a focusable element. m3 and
+Compose do not specify panels; this part follows the WAI-ARIA APG.
+
+## Navigation tabs
+
+`href` makes a tab a link: m3's *navigation tabs* "invoke navigation to a
+new destination". It renders `<a role="tab" href>` with the same look and
+keyboard behavior, and is selected through the `Tabs` `value` (usually
+derived from the current route). The navigation is not intercepted: the
+browser follows the link, and `onChange` fires first, so a client-side
+router can call `event.preventDefault()` there and navigate itself.
+Ctrl / ⌘ / Shift / Alt clicks open the link elsewhere and do not change the
+selection. `target`, `rel` and `download` are passed to the `<a>`.
+
+export function NavigationDemo() {
+  const [path, setPath] = useState('/overview')
+  return (
+    <div style={{ width: '100%' }}>
+      <Tabs
+        aria-label="Documentation"
+        value={path}
+        onChange={(event, next) => {
+          event.preventDefault()
+          setPath(next)
+        }}
+      >
+        <Tab value="/overview" href="#overview" label="Overview" />
+        <Tab value="/guides" href="#guides" label="Guides" />
+        <Tab value="/api" href="#api" label="API" />
+      </Tabs>
+    </div>
+  )
+}
+
+<Demo>
+  <NavigationDemo />
+</Demo>
+
+```tsx
+// React Router
+const { pathname } = useLocation()
+const navigate = useNavigate()
+
+<Tabs
+  aria-label="Account"
+  value={pathname}
+  onChange={(event, next) => {
+    event.preventDefault()
+    navigate(next)
+  }}
+>
+  <Tab value="/account/profile" href="/account/profile" label="Profile" />
+  <Tab value="/account/billing" href="/account/billing" label="Billing" />
 </Tabs>
-<div role="tabpanel" id="panel" aria-labelledby={`tab-${value}`} tabIndex={0}>
-  {panels[value]}
-</div>
+```
+
+Link tabs have no panel (the destination is the page), so they never get
+`aria-controls`. They do not set `aria-current="page"`: in a tab list the
+current item is conveyed by `aria-selected` (ARIA 1.2 advises against using
+`aria-current` in its place), and setting both makes screen readers announce
+it twice. Pass `aria-current` yourself if you need it. For plain site
+navigation without a tab look, a `<nav>` of links with `aria-current` is the
+more common pattern.
+
+## Container color
+
+The row container is `surface` for both variants. Set the
+`--md-tabs-container-color` custom property on the `Tabs` element (or an
+ancestor) to match the surface the tabs sit on, e.g. inside a dialog or a
+card (Compose `TabRow containerColor`).
+
+<Demo>
+  <div style={{ width: '100%', padding: 16, borderRadius: 12, background: 'var(--md-sys-color-surface-container-high)' }}>
+    <Tabs
+      aria-label="On a container"
+      variant="secondary"
+      defaultValue="flights"
+      style={{ '--md-tabs-container-color': 'var(--md-sys-color-surface-container-high)' }}
+    >
+      <Tab value="flights" label="Flights" />
+      <Tab value="hotels" label="Hotels" />
+      <Tab value="explore" label="Explore" />
+    </Tabs>
+  </div>
+</Demo>
+
+```tsx
+<Tabs style={{ '--md-tabs-container-color': 'var(--md-sys-color-surface-container-high)' }}>…</Tabs>
 ```
 
 ## Accessibility
 
-- `role="tablist"` of `role="tab"` buttons with `aria-selected`; label the
-  list with `aria-label` and link panels via `aria-controls`.
+- `role="tablist"` of `role="tab"` buttons (or links, with `href`) with
+  `aria-selected`; label the list with `aria-label`. Inside a `TabContext`,
+  tabs and `TabPanel`s are linked with `aria-controls` / `aria-labelledby`.
 - **Manual activation** (WAI-ARIA APG): <kbd>←</kbd> / <kbd>→</kbd>
   (mirrored in RTL), <kbd>Home</kbd> and <kbd>End</kbd> move focus only;
   <kbd>Space</kbd> / <kbd>Enter</kbd> select the focused tab and fire
   `onChange`. Arrow keys never fire `onChange`, and neither does activating
   the already-selected tab or a tab whose `onClick` called
-  `event.preventDefault()`.
+  `event.preventDefault()`. Link tabs activate with <kbd>Space</kbd> as well
+  as <kbd>Enter</kbd>.
+- Automatic activation (arrows select) is not offered: the m3 accessibility
+  guidance specifies arrows = focus, <kbd>Space</kbd> / <kbd>Enter</kbd> =
+  activate.
 - A `badge` is decorative on screen; its text is appended to the tab's
   accessible name after the label. Localize it with the Badge `label` prop.
   For an icon-only tab named with `aria-label`, include the badge in that
@@ -195,3 +289,11 @@ const [value, setValue] = useState('flights')
 ### Tab
 
 <PropsTable component="Tab" />
+
+### TabContext
+
+<PropsTable component="TabContext" />
+
+### TabPanel
+
+<PropsTable component="TabPanel" />

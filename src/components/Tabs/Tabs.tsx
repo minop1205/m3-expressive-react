@@ -8,7 +8,9 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useId,
   useRef,
+  type AnchorHTMLAttributes,
   type ButtonHTMLAttributes,
   type FocusEvent,
   type HTMLAttributes,
@@ -25,23 +27,51 @@ import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import { useControllableState } from '../../internal/useControllableState'
 import type { BadgeProps } from '../Badge/Badge'
 import { badgeAccessibleLabel } from '../../internal/badgeLabel'
+import { devWarnOnce } from '../../internal/devWarning'
 import styles from './Tabs.module.css'
+import { useLocaleLabels } from '../../internal/locale'
 
 export type TabsVariant = 'primary' | 'secondary'
 
 /** Where a `Tab`'s icon sits relative to its label. */
 export type TabIconPosition = 'top' | 'start'
 
+/** The click event `onChange` receives: from a `<button>` tab or a link (`href`) tab. */
+export type TabChangeEvent = MouseEvent<HTMLButtonElement | HTMLAnchorElement>
+
 interface TabsContextValue {
   value: string
-  onChange: (event: MouseEvent<HTMLButtonElement>, value: string) => void
+  onChange: (event: TabChangeEvent, value: string) => void
   variant: TabsVariant
   /** Value of the tab that currently takes `tabIndex=0`. */
   tabStop: string
   onTabFocus: (value: string) => void
   /** Records each tab element's value so the list can resolve a fallback stop. */
-  registerTab: (el: HTMLButtonElement | null, value: string) => void
+  registerTab: (el: HTMLElement | null, value: string) => void
+  /** The enclosing `TabContext` (tab / panel linking), if any. */
+  group: TabGroupValue | null
 }
+
+interface TabGroupValue {
+  value: string
+  onChange: (event: TabChangeEvent, value: string) => void
+  idBase: string
+  /** Values of the mounted `TabPanel`s (a tab only points `aria-controls` at a rendered panel). */
+  panels: ReadonlySet<string>
+  registerPanel: (value: string) => () => void
+}
+
+const TabGroupContext = createContext<TabGroupValue | null>(null)
+
+// Tab values may hold any characters; ids (IDREF lists) must not contain
+// whitespace, so everything outside [A-Za-z0-9_-] is escaped deterministically.
+const idPart = (value: string) =>
+  value.replace(/[^A-Za-z0-9_-]/g, (c) => `_${c.charCodeAt(0).toString(16)}_`)
+const tabId = (base: string, value: string) => `${base}-tab-${idPart(value)}`
+const panelId = (base: string, value: string) => `${base}-panel-${idPart(value)}`
+
+/** Enabled tabs of a list: native-disabled buttons and `aria-disabled` link tabs are skipped. */
+const ENABLED_TAB = '[role="tab"]:not(:disabled):not([aria-disabled="true"])'
 
 const isRtl = (el: Element) =>
   getComputedStyle(el).direction === 'rtl' ||
@@ -66,9 +96,11 @@ export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChang
   /**
    * Fires with the triggering event and the newly selected tab value. Not
    * fired when the selected tab is activated again, or when the tab's own
-   * `onClick` called `event.preventDefault()`.
+   * `onClick` called `event.preventDefault()`. On a link (`href`) tab it
+   * fires before the browser follows the link; call `event.preventDefault()`
+   * here to navigate with a client-side router instead.
    */
-  onChange?: (event: MouseEvent<HTMLButtonElement>, value: string) => void
+  onChange?(event: TabChangeEvent, value: string): void
   /** Indicator style. @default 'primary' */
   variant?: TabsVariant
   /** Scrollable tabs size to content and scroll horizontally instead of filling. */
@@ -84,7 +116,11 @@ export interface TabsProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChang
  * the center whenever the selection changes. A single active indicator slides
  * between tabs: primary = content-width (min 24dp) 3dp bar with 3dp top
  * corners, secondary = full-tab-width 2dp line. Both sit above an
- * OutlineVariant 1dp divider. Arrow keys move between tabs.
+ * OutlineVariant 1dp divider. Arrow keys move focus between tabs; Space /
+ * Enter select (manual activation, m3 a11y). Tabs with `href` are navigation
+ * links. Inside a `TabContext`, tabs are linked to their `TabPanel`s. The
+ * container color is the `--md-tabs-container-color` custom property
+ * (default `--md-sys-color-surface`).
  */
 export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
   {
@@ -124,9 +160,9 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
       return
     }
     const list = event.currentTarget
-    const tabs = Array.from(
-      list.querySelectorAll<HTMLButtonElement>('[role="tab"]:not(:disabled)'),
-    ).filter((t) => t.closest('[role="tablist"]') === list)
+    const tabs = Array.from(list.querySelectorAll<HTMLElement>(ENABLED_TAB)).filter(
+      (t) => t.closest('[role="tablist"]') === list,
+    )
     const currentIndex = tabs.findIndex((t) => t === document.activeElement)
     if (currentIndex === -1) return
     event.preventDefault()
@@ -140,19 +176,31 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
     }
     tabs[nextIndex].focus()
   }
-  const [current, setUncontrolled, isControlled] = useControllableState({
+  const group = useContext(TabGroupContext)
+  const [ownValue, setUncontrolled, isControlled] = useControllableState({
     value,
     defaultValue: defaultValue ?? '',
     name: 'Tabs',
     state: 'value',
   })
+  const ignoredOwnValue = group !== null && (value !== undefined || defaultValue !== undefined)
+  useEffect(() => {
+    if (ignoredOwnValue) {
+      devWarnOnce(
+        'Tabs inside a TabContext take the selection from the TabContext; ' +
+          'pass value / defaultValue to TabContext instead (Tabs value / defaultValue are ignored).',
+      )
+    }
+  }, [ignoredOwnValue])
+  // Inside a TabContext the selection lives there (shared with the TabPanels).
+  const current = group ? group.value : ownValue
   const preferredStop = focusedValue ?? current
 
   // Fallback tab stop: when the preferred stop matches no enabled tab (no
   // selection, a stale value, or a disabled selected tab), the first enabled
   // tab takes tabIndex=0 so the list stays reachable (WAI-ARIA APG Tabs).
-  const tabValues = useRef(new Map<HTMLButtonElement, string>())
-  const registerTab = useCallback((el: HTMLButtonElement | null, v: string) => {
+  const tabValues = useRef(new Map<HTMLElement, string>())
+  const registerTab = useCallback((el: HTMLElement | null, v: string) => {
     // Called with the element on mount and null on unmount; prune detached ones.
     if (el) tabValues.current.set(el, v)
     tabValues.current.forEach((_, node) => {
@@ -160,10 +208,11 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
     })
   }, [])
   const [fallbackStop, setFallbackStop] = useState<string | null>(null)
-  const handleChange = (event: MouseEvent<HTMLButtonElement>, v: string) => {
+  const handleChange = (event: TabChangeEvent, v: string) => {
     // Re-selecting the selected tab is a no-op (MUI / Compose).
     if (v === current) return
-    if (!isControlled) setUncontrolled(v)
+    if (group) group.onChange(event, v)
+    else if (!isControlled) setUncontrolled(v)
     onChange?.(event, v)
   }
 
@@ -246,9 +295,9 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
   useIsoLayoutEffect(() => {
     const list = listRef.current
     if (!list) return
-    const enabled = Array.from(
-      list.querySelectorAll<HTMLButtonElement>('[role="tab"]:not(:disabled)'),
-    ).filter((t) => t.closest('[role="tablist"]') === list)
+    const enabled = Array.from(list.querySelectorAll<HTMLElement>(ENABLED_TAB)).filter(
+      (t) => t.closest('[role="tablist"]') === list,
+    )
     const values = enabled.map((t) => tabValues.current.get(t))
     const next = values.includes(preferredStop) ? null : (values[0] ?? null)
     if (next !== fallbackStop) setFallbackStop(next)
@@ -294,6 +343,7 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
         tabStop: fallbackStop ?? preferredStop,
         onTabFocus: setFocusedValue,
         registerTab,
+        group,
       }}
     >
       <div
@@ -314,9 +364,31 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
 })
 
 export interface TabProps
-  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'value'> {
+  extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'value' | 'onClick'> {
   /** Identifies the tab; matched against the parent `Tabs` value. */
   value: string
+  /**
+   * Make the tab a navigation link (m3 navigation tab): renders
+   * `<a role="tab" href>` with the same look, keyboard behavior (arrows move
+   * focus, Space / Enter activate) and selection through the `Tabs` value.
+   * The browser follows the link; `onChange` fires first (not for
+   * Ctrl / Cmd / Shift / Alt clicks, which open elsewhere), so a client-side
+   * router can `preventDefault()` there and navigate itself. Link tabs have
+   * no `TabPanel` (no `aria-controls`) and no `aria-current` (the selection
+   * is `aria-selected`; pass `aria-current` yourself if needed).
+   */
+  href?: string
+  /** `<a target>` — only with `href`. */
+  target?: AnchorHTMLAttributes<HTMLAnchorElement>['target']
+  /** `<a rel>` — only with `href`. */
+  rel?: AnchorHTMLAttributes<HTMLAnchorElement>['rel']
+  /** `<a download>` — only with `href`. */
+  download?: AnchorHTMLAttributes<HTMLAnchorElement>['download']
+  /**
+   * Click handler (button or link tab). `event.preventDefault()` keeps the
+   * selection (and, on a link tab, the navigation) from happening.
+   */
+  onClick?(event: TabChangeEvent): void
   /** Tab label. */
   label?: ReactNode
   /** Optional icon (24dp), above the label or before it (see `iconPosition`). */
@@ -324,7 +396,8 @@ export interface TabProps
   /**
    * Icon placement: `'top'` stacks the icon above the label (64dp tab),
    * `'start'` puts it before the label with an 8dp gap (48dp tab, Compose
-   * `LeadingIconTab`).
+   * `LeadingIconTab`). Available on both variants, but m3 secondary tabs
+   * normally have no icon (the secondary anatomy has none).
    * @default 'top'
    */
   iconPosition?: TabIconPosition
@@ -338,10 +411,17 @@ export interface TabProps
   badge?: ReactElement<BadgeProps>
 }
 
-/** A single tab; must be rendered inside `Tabs`. */
-export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
+const isModifiedClick = (event: TabChangeEvent) =>
+  event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0
+
+/** A single tab; must be rendered inside `Tabs`. With `href` it is a link tab. */
+export const Tab = forwardRef<HTMLButtonElement | HTMLAnchorElement, TabProps>(function Tab(
   {
     value,
+    href,
+    target,
+    rel,
+    download,
     label,
     icon,
     iconPosition = 'top',
@@ -350,6 +430,8 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
     className,
     onClick,
     onFocus,
+    onKeyDown,
+    onKeyUp,
     ...rest
   },
   ref,
@@ -357,7 +439,7 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
   const ctx = useContext(TabsContext)
   const registerTab = ctx?.registerTab
   const setRef = useCallback(
-    (node: HTMLButtonElement | null) => {
+    (node: HTMLButtonElement | HTMLAnchorElement | null) => {
       registerTab?.(node, value)
       if (typeof ref === 'function') ref(node)
       else if (ref) ref.current = node
@@ -377,7 +459,16 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
     isValidElement<BadgeProps>(badge) && (hasIcon || hasLabel) ? badge : null
   // The painted badge is hidden from assistive technology; its text is read
   // after the label instead (m3 badges/accessibility, as NavigationBar #175).
-  const badgeText = badgeElement ? badgeAccessibleLabel(badgeElement.props) : undefined
+  const { getLabel: getBadgeLabel } = useLocaleLabels('Badge')
+  const badgeText = badgeElement
+    ? badgeAccessibleLabel(badgeElement.props, getBadgeLabel)
+    : undefined
+  const isLink = href != null
+  // TabContext linking (APG Tabs): id always, aria-controls only when the
+  // matching TabPanel is mounted. Link tabs have no panel.
+  const group = isLink ? null : ctx.group
+  const linkedId = group ? tabId(group.idBase, value) : undefined
+  const controls = group && group.panels.has(value) ? panelId(group.idBase, value) : undefined
 
   const iconNode = hasIcon && (
     <span className={styles.icon} aria-hidden="true" data-tab-content={contentAttr}>
@@ -405,33 +496,38 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
       labelSpan
     )
 
-  return (
-    <button
-      ref={setRef}
-      {...rest}
-      type="button"
-      role="tab"
-      aria-selected={selected}
-      tabIndex={ctx.tabStop === value ? 0 : -1}
-      disabled={disabled}
-      data-selected={selected || undefined}
+  const handleClick = (event: TabChangeEvent) => {
+    onClick?.(event)
+    // A consumer onClick can veto the selection with preventDefault().
+    if (event.defaultPrevented) return
+    // A modified click on a link opens it elsewhere; this page stays put.
+    if (isLink && isModifiedClick(event)) return
+    ctx.onChange(event, value)
+  }
+
+  const common = {
+    // Only set when linked, so an `id` / `aria-controls` passed by the
+    // consumer outside a TabContext still applies.
+    ...(linkedId ? { id: linkedId } : null),
+    ...(controls ? { 'aria-controls': controls } : null),
+    role: 'tab',
+    'aria-selected': selected,
+    tabIndex: ctx.tabStop === value ? 0 : -1,
+    'data-selected': selected || undefined,
       // The 64dp stacked height applies only with both an icon and a label
       // (Compose TabBaselineLayout: LargeTabHeight vs SmallTabHeight, #484);
       // an icon-only tab stays 48dp.
-      data-with-icon={(hasIcon && hasLabel) || undefined}
-      data-icon-position={leading ? 'start' : undefined}
-      className={clsx(styles.tab, className)}
-      onFocus={(event) => {
-        onFocus?.(event)
-        ctx.onTabFocus(value)
-      }}
-      onClick={(event) => {
-        onClick?.(event)
-        // A consumer onClick can veto the selection with preventDefault().
-        if (event.defaultPrevented) return
-        ctx.onChange(event, value)
-      }}
-    >
+    'data-with-icon': (hasIcon && hasLabel) || undefined,
+    'data-icon-position': leading ? 'start' : undefined,
+    className: clsx(styles.tab, className),
+    onFocus: (event: FocusEvent<HTMLButtonElement | HTMLAnchorElement>) => {
+      onFocus?.(event as FocusEvent<HTMLButtonElement>)
+      ctx.onTabFocus(value)
+    },
+  }
+
+  const content = (
+    <>
       {leading ? (
         <span className={styles.content} data-tab-content="">
           {iconNode}
@@ -446,6 +542,140 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
       {badgeText && <span className={styles.visuallyHidden}>{` ${badgeText}`}</span>}
       {!disabled && <Ripple />}
       {!disabled && <FocusRing />}
+    </>
+  )
+
+  if (isLink) {
+    const anchorRest = rest as unknown as AnchorHTMLAttributes<HTMLAnchorElement>
+    return (
+      <a
+        ref={setRef}
+        {...anchorRest}
+        {...common}
+        // A disabled link has no href (not focusable, not followable).
+        href={disabled ? undefined : href}
+        target={target}
+        rel={rel}
+        download={download}
+        aria-disabled={disabled || undefined}
+        onClick={disabled ? undefined : handleClick}
+        onKeyDown={(event) => {
+          onKeyDown?.(event as unknown as KeyboardEvent<HTMLButtonElement>)
+          // m3 a11y: Space activates too. Stop the page scroll on keydown and
+          // activate on keyup, like a native button.
+          if (event.key === ' ' && !event.defaultPrevented) event.preventDefault()
+        }}
+        onKeyUp={(event) => {
+          onKeyUp?.(event as unknown as KeyboardEvent<HTMLButtonElement>)
+          if (event.key === ' ' && !event.defaultPrevented && !disabled) {
+            event.currentTarget.click()
+          }
+        }}
+      >
+        {content}
+      </a>
+    )
+  }
+
+  return (
+    <button
+      ref={setRef}
+      {...rest}
+      {...common}
+      type="button"
+      disabled={disabled}
+      onClick={handleClick}
+      onKeyDown={onKeyDown}
+      onKeyUp={onKeyUp}
+    >
+      {content}
     </button>
+  )
+})
+
+export interface TabContextProps {
+  /** Controlled selected tab value, shared by the `Tabs` and `TabPanel`s inside. */
+  value?: string
+  /** Uncontrolled initial tab value. */
+  defaultValue?: string
+  /** Fires with the triggering event and the newly selected tab value. */
+  onChange?(event: TabChangeEvent, value: string): void
+  children?: ReactNode
+}
+
+/**
+ * Links a `Tabs` row to its `TabPanel`s (WAI-ARIA APG Tabs): holds the
+ * selection (controlled / uncontrolled) and gives every tab an `id` and an
+ * `aria-controls` pointing at the `TabPanel` with the same `value`, which is
+ * in turn `aria-labelledby` its tab. Renders no element. Put `value` /
+ * `defaultValue` / `onChange` here; the inner `Tabs`' own `onChange` still
+ * fires.
+ */
+export function TabContext({ value, defaultValue, onChange, children }: TabContextProps) {
+  const [current, setUncontrolled, isControlled] = useControllableState({
+    value,
+    defaultValue: defaultValue ?? '',
+    name: 'TabContext',
+    state: 'value',
+  })
+  const idBase = useId()
+  const [panels, setPanels] = useState<ReadonlySet<string>>(() => new Set())
+  const registerPanel = useCallback((v: string) => {
+    setPanels((prev) => (prev.has(v) ? prev : new Set(prev).add(v)))
+    return () =>
+      setPanels((prev) => {
+        if (!prev.has(v)) return prev
+        const next = new Set(prev)
+        next.delete(v)
+        return next
+      })
+  }, [])
+  const handleChange = (event: TabChangeEvent, v: string) => {
+    if (!isControlled) setUncontrolled(v)
+    onChange?.(event, v)
+  }
+  return (
+    <TabGroupContext.Provider
+      value={{ value: current, onChange: handleChange, idBase, panels, registerPanel }}
+    >
+      {children}
+    </TabGroupContext.Provider>
+  )
+}
+
+export interface TabPanelProps extends HTMLAttributes<HTMLDivElement> {
+  /** The `Tab` value this panel belongs to. */
+  value: string
+  children?: ReactNode
+}
+
+/**
+ * The content of one tab (`role="tabpanel"`); must be rendered inside a
+ * `TabContext`. Hidden (`hidden`, still mounted) unless its `value` is
+ * selected. `tabIndex` defaults to `0` so the panel itself is reachable with
+ * Tab (APG, for panels that do not start with focusable content); pass
+ * `tabIndex={-1}` when the panel starts with a focusable element.
+ */
+export const TabPanel = forwardRef<HTMLDivElement, TabPanelProps>(function TabPanel(
+  { value, tabIndex = 0, children, ...rest },
+  ref,
+) {
+  const group = useContext(TabGroupContext)
+  const registerPanel = group?.registerPanel
+  useEffect(() => registerPanel?.(value), [registerPanel, value])
+  if (!group) throw new Error('TabPanel must be used within <TabContext>')
+  const selected = group.value === value
+  return (
+    <div
+      ref={ref}
+      {...rest}
+      role="tabpanel"
+      id={panelId(group.idBase, value)}
+      aria-labelledby={tabId(group.idBase, value)}
+      tabIndex={tabIndex}
+      hidden={!selected}
+    >
+      {children}
+    </div>
   )
 })

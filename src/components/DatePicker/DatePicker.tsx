@@ -28,6 +28,7 @@ import {
   type DateInputError,
 } from './dateUtils'
 import { useControllableState } from '../../internal/useControllableState'
+import { useLocaleLabels, useLocaleProps } from '../../internal/locale'
 import styles from './DatePicker.module.css'
 
 /** `[start, end]` — either may be null while selecting. */
@@ -60,7 +61,10 @@ export interface DatePickerProps
   min?: Date
   /** Latest selectable date (inclusive). */
   max?: Date
-  /** BCP-47 locale for month / weekday names, the week's first day and the input format. @default 'en-US' */
+  /**
+   * BCP-47 locale for month / weekday names, the week's first day and the input format.
+   * @default LocaleProvider `locale`, else 'en-US'
+   */
   locale?: string
 
   /**
@@ -171,11 +175,12 @@ function isComplete(v: Date | DateRange | null): v is Date | DateRange {
  * variant use `DatePickerField`.
  *
  * Built-in strings are English by default and can be replaced through the
- * `*Label` props.
+ * `*Label` props, or for the whole app through `LocaleProvider`.
  */
 export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
-  function DatePicker(
-    {
+  function DatePicker(inProps, ref) {
+    const localeLabels = useLocaleLabels('DatePicker')
+    const {
       range = false,
       value,
       defaultValue,
@@ -209,9 +214,7 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
       cancelLabel = 'Cancel',
       className,
       ...rest
-    },
-    ref,
-  ) {
+    } = useLocaleProps('DatePicker', inProps)
     const titleId = useId()
     const [stored, setInternal, isControlled] = useControllableState<Date | DateRange | null>({
       value,
@@ -359,13 +362,23 @@ export const DatePicker = forwardRef<HTMLDivElement, DatePickerProps>(
         month: 'short',
         day: 'numeric',
       }).format(d)
+    // B50: each mode's headline has its own LocaleProvider key; the props
+    // still cover every mode.
     const title =
-      titleLabel ?? (range ? (inputMode ? 'Enter dates' : 'Select dates') : 'Select date')
+      titleLabel ??
+      (range
+        ? inputMode
+          ? (localeLabels.rangeInputTitleLabel ?? 'Enter dates')
+          : (localeLabels.rangeTitleLabel ?? 'Select dates')
+        : (localeLabels.titleLabel ?? 'Select date'))
     const headline = range
       ? `${rStart ? fmt(rStart) : startDateLabel} – ${rEnd ? fmt(rEnd) : endDateLabel}`
       : single
         ? fmt(single)
-        : (noSelectionLabel ?? (inputMode ? 'Entered date' : 'Selected date'))
+        : (noSelectionLabel ??
+          (inputMode
+            ? (localeLabels.inputNoSelectionLabel ?? 'Entered date')
+            : (localeLabels.noSelectionLabel ?? 'Selected date')))
 
     const surface = (
       <div

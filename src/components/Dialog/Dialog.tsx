@@ -14,6 +14,7 @@ import { assignRefs, useModal } from '../../internal/useModal'
 import { useModalTopLayer } from '../../internal/useTopLayer'
 import { IconButton } from '../IconButton/IconButton'
 import styles from './Dialog.module.css'
+import { useLocaleLabels, useLocaleProps } from '../../internal/locale'
 
 /**
  * Why the dialog asked to close (ruling B7 vocabulary): Escape, a scrim
@@ -62,10 +63,20 @@ export interface DialogProps
  * - While open, the dialog is drawn in the browser top layer, above popups
  *   opened before it, such as the Menu it was opened from (ruling B45).
  */
-export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
-  { open, onClose, icon, title, actions, fullScreen = false, closeLabel = 'Close', className, children, ...rest },
-  ref,
-) {
+export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(inProps, ref) {
+  const {
+    open,
+    onClose,
+    icon,
+    title,
+    actions,
+    fullScreen = false,
+    closeLabel = 'Close',
+    className,
+    children,
+    ...rest
+  } = useLocaleProps('Dialog', inProps)
+  const { fallbackLabel = 'Dialog' } = useLocaleLabels('Dialog')
   const titleId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
   const surfaceRef = useRef<HTMLDivElement | null>(null)
@@ -108,7 +119,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
         aria-modal="true"
         aria-labelledby={title != null ? titleId : restLabelledby}
         aria-label={
-          title == null && restLabelledby == null ? (restAriaLabel ?? 'Dialog') : restAriaLabel
+          title == null && restLabelledby == null ? (restAriaLabel ?? fallbackLabel) : restAriaLabel
         }
         data-has-icon={icon != null || undefined}
         data-full-screen={fullScreen || undefined}

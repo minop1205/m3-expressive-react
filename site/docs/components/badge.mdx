@@ -90,7 +90,9 @@ below — MD3 limits a badge to four characters including the `+`.
 
 The badge is announced through visually hidden text: `"New notification"` for
 a dot, `"{n} new notifications"` for a count. Pass `label` to describe it
-differently or to localize.
+differently or to localize. To translate every badge — including the
+badges of navigation items and tabs — set
+[`LocaleProvider`](/i18n) `labels.Badge.getLabel(count)`; `label` still wins.
 
 <Demo>
   <Badge value={5} label="5 unread messages">

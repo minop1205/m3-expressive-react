@@ -494,3 +494,48 @@ describe('Select tonal style (B44, #444)', () => {
     expect(await axe(container)).toHaveNoViolations()
   })
 })
+
+describe('Select rich label / supporting text (B48)', () => {
+  it('names the combobox from a ReactNode label and describes it with a rich supporting line', async () => {
+    const { container } = render(
+      <Fruit
+        variant="outlined"
+        required
+        label={
+          <>
+            Fruit <em>(pick one)</em>
+          </>
+        }
+        supportingText={
+          <>
+            Seasonal. <a href="/fruit">Details</a>
+          </>
+        }
+      />,
+    )
+    expect(combobox()).toHaveAccessibleName('Fruit (pick one)')
+    expect(combobox()).toHaveAccessibleDescription('Seasonal. Details')
+    expect(screen.getByRole('link', { name: 'Details' })).toBeInTheDocument()
+    const notchCopy = container.querySelector('[class*="outlineLabel"]')!
+    expect(notchCopy.querySelector('em')).toHaveTextContent('(pick one)')
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('replaces the supporting node with an errorText node in error', async () => {
+    const { container } = render(
+      <Fruit
+        error
+        supportingText={<span>Seasonal</span>}
+        errorText={
+          <>
+            Pick a fruit. <a href="/fruit">Help</a>
+          </>
+        }
+      />,
+    )
+    expect(screen.queryByText('Seasonal')).toBeNull()
+    expect(screen.getByRole('alert')).toHaveTextContent('Pick a fruit. Help')
+    expect(combobox()).toHaveAccessibleDescription('Pick a fruit. Help')
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})

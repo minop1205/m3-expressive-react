@@ -412,3 +412,36 @@ describe('DatePickerField input pass-through (#421)', () => {
     expect((onChange.mock.calls[0][0] as Date).getDate()).toBe(15)
   })
 })
+
+describe('DatePickerField rich label / supporting text (B48)', () => {
+  it('accepts ReactNode label, supportingText and getErrorLabel', async () => {
+    const user = userEvent.setup()
+    const { container } = render(
+      <DatePickerField
+        label={
+          <>
+            Start date <em>(local)</em>
+          </>
+        }
+        supportingText={
+          <>
+            MM/DD/YYYY. <a href="/dates">Formats</a>
+          </>
+        }
+        getErrorLabel={() => (
+          <>
+            Not a date. <a href="/dates">Formats</a>
+          </>
+        )}
+      />,
+    )
+    const field = screen.getByRole('textbox', { name: 'Start date (local)' })
+    expect(field).toHaveAccessibleDescription('MM/DD/YYYY. Formats')
+    expect(container.querySelector(`.${textFieldStyles.outlineLabel} em`)).not.toBeNull()
+    expect(await axe(container)).toHaveNoViolations()
+
+    await user.type(field, 'nope{Enter}')
+    expect(screen.getByRole('alert')).toHaveTextContent('Not a date. Formats')
+    expect(field).toHaveAccessibleDescription('Not a date. Formats')
+  })
+})

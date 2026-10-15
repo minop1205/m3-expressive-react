@@ -21,6 +21,7 @@ import {
 } from './ChipSetContext'
 import { useControllableState } from '../../internal/useControllableState'
 import styles from './Chip.module.css'
+import { useLocaleProps } from '../../internal/locale'
 
 export type ChipVariant = 'assist' | 'filter' | 'input' | 'suggestion'
 
@@ -117,8 +118,8 @@ const defaultGetRemoveLabel = (label: string) => `Remove ${label}`
  * (`{...rest}`) still land on the primary action `<button>`.
  */
 export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
-  function Chip(
-    {
+  function Chip(inProps, forwardedRef) {
+    const {
       variant = 'assist',
       elevated = false,
       label,
@@ -138,9 +139,7 @@ export const Chip = forwardRef<HTMLSpanElement, ChipProps>(
       className,
       onClick,
       ...rest
-    },
-    forwardedRef,
-  ) {
+    } = useLocaleProps('Chip', inProps)
     const disabled = useContext(ChipSetDisabledContext) || disabledProp
 
     // Input chips opt into selection so existing (v1.0) input chips do not

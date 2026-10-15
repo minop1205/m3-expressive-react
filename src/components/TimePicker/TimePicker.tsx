@@ -23,6 +23,12 @@ import { Button } from '../Button'
 import { IconButton } from '../IconButton'
 import { ScrollField } from '../ScrollField'
 import { useControllableState } from '../../internal/useControllableState'
+import {
+  localeUsesAmPm,
+  useLocaleContext,
+  useLocaleLabels,
+  useLocaleProps,
+} from '../../internal/locale'
 import styles from './TimePicker.module.css'
 
 export interface TimeValue {
@@ -116,10 +122,10 @@ export interface TimePickerProps
   orientation?: TimePickerOrientation
   /**
    * 12-hour clock with AM / PM (`true`) or 24-hour clock (`false`).
-   * Defaults to the `locale`'s hour cycle.
+   * Defaults to LocaleProvider `ampm`, else the `locale`'s hour cycle.
    */
   ampm?: boolean
-  /** Locale whose hour cycle sets the default `ampm`. @default 'en-US' */
+  /** Locale whose hour cycle sets the default `ampm`. @default LocaleProvider `locale`, else 'en-US' */
   locale?: string
   /** Headline. @default 'Select time' ('Enter time' in input mode) */
   titleLabel?: string
@@ -225,19 +231,6 @@ function position(angle: number, radius: number) {
   return { left: CENTER + radius * Math.sin(rad), top: CENTER - radius * Math.cos(rad) }
 }
 
-/** Whether `locale` formats hours with a 12-hour cycle (B8). */
-function localeUsesAmPm(locale: string): boolean {
-  try {
-    const options: { hourCycle?: string; hour12?: boolean } = new Intl.DateTimeFormat(locale, {
-      hour: 'numeric',
-    }).resolvedOptions()
-    if (options.hourCycle) return options.hourCycle === 'h12' || options.hourCycle === 'h11'
-    return options.hour12 ?? true
-  } catch {
-    return true
-  }
-}
-
 /**
  * Status of a time-input field's text:
  * - `valid` — a committable value (`value` is set);
@@ -295,8 +288,10 @@ const defaultMinuteLabel = (minute: number) => `${minute} minutes`
  * the picker as a modal dialog that reports `onClose(reason)`.
  */
 export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
-  function TimePicker(
-    {
+  function TimePicker(inProps, ref) {
+    const localeCtx = useLocaleContext()
+    const localeLabels = useLocaleLabels('TimePicker')
+    const {
       value,
       defaultValue,
       onChange,
@@ -330,9 +325,7 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
       cancelLabel = 'Cancel',
       className,
       ...rest
-    },
-    ref,
-  ) {
+    } = useLocaleProps('TimePicker', inProps)
     const [current, setInternal, isControlled] = useControllableState<TimeValue>({
       value,
       defaultValue: defaultValue ?? { hour: 12, minute: 0 },
@@ -344,7 +337,8 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
     const titleId = `${idBase}-title`
 
     const localeAmPm = useMemo(() => localeUsesAmPm(locale), [locale])
-    const ampm = ampmProp ?? localeAmPm
+    // B50: `ampm` prop > LocaleProvider `ampm` > the effective locale's hour cycle.
+    const ampm = ampmProp ?? localeCtx?.ampm ?? localeAmPm
 
     // `mode` is controlled only together with `onModeChange`; on its own it
     // is the deprecated v1.0 initial-mode prop.
@@ -1029,7 +1023,10 @@ export const TimePicker = forwardRef<HTMLDivElement, TimePickerProps>(
             id={titleId}
             className={vibrant ? styles.visuallyHidden : styles.headline}
           >
-            {titleLabel ?? (isInput ? 'Enter time' : 'Select time')}
+            {titleLabel ??
+              (isInput
+                ? (localeLabels.inputTitleLabel ?? 'Enter time')
+                : (localeLabels.titleLabel ?? 'Select time'))}
           </span>
         )}
 

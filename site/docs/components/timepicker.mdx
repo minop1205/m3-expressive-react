@@ -69,8 +69,11 @@ always be controlled.
 ## 24-hour clock
 
 `ampm={false}` shows a 24-hour dial (an inner 12–23 ring) without AM/PM.
-When `ampm` is omitted it follows the `locale`'s hour cycle (default
-`'en-US'`, 12-hour), so `locale="ja-JP"` or `"de-DE"` gives a 24-hour clock.
+When `ampm` is omitted it follows [`LocaleProvider`](/i18n) `ampm`, else the
+`locale`'s hour cycle (default `'en-US'`, 12-hour), so `locale="ja-JP"` or
+`"de-DE"` gives a 24-hour clock. MD3 sets the 24-hour preference outside the
+time picker (typically in system settings) — `LocaleProvider ampm` is the
+place for your app's setting.
 
 <Demo>
   <TimePicker ampm={false} defaultValue={{ hour: 18, minute: 45 }} />
@@ -188,7 +191,9 @@ action row on an inline picker.
 Every built-in string is a prop with an English default: `titleLabel`,
 `hourLabel`, `minuteLabel`, `amLabel`, `pmLabel`, `okLabel`, `cancelLabel`,
 `switchToInputLabel`, `switchToDialLabel`, `switchToScrollLabel`, and the
-`getHourLabel` / `getMinuteLabel` / `getErrorLabel` functions.
+`getHourLabel` / `getMinuteLabel` / `getErrorLabel` functions. Set them once
+for the app with [`LocaleProvider`](/i18n) `labels.TimePicker` (the input-mode
+headline has its own key there, `inputTitleLabel`).
 
 <Demo>
   <TimePicker

@@ -25,7 +25,8 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 
 | ID | Issue | 論点 | 推奨 | 破壊的変更 | 状態 |
 |---|---|---|---|---|---|
-| B1 | 横断(#265 #251 #161 ほか) | 組み込み文言の i18n | **prop ごとのラベル(`*Label` / `get*Label`)を正とし、`LocaleProvider` は後から既定値供給として追加** | なし | 決定(2026-09-30・推奨どおり) |
+| B1 | 横断(#265 #251 #161 ほか) | 組み込み文言の i18n | **prop ごとのラベル(`*Label` / `get*Label`)を正とし、`LocaleProvider` は後から既定値供給として追加** | なし | 決定(2026-09-30・推奨どおり。Provider は **B50** で実装) |
+| B50 | #500 | locale と組み込み文言の一括指定(B1 の拡張) | **独立した `<LocaleProvider locale ampm labels>` + `useLocale()`、`labels` はコンポーネント名ごとに prop 名のキー(モード別見出し・名前の代替・Badge `getLabel` は Provider だけのキー)、優先順位は prop > 近い Provider > 英語既定、Provider なしは従来どおり** | なし(追加) | 決定(2026-10-15・#500 の提案をもとに確定) |
 | B2 | 横断(button B5・nav 監査) | 既定の motion scheme | **expressive を既定、`ThemeProvider motionScheme="standard"` で切替** | 挙動のみ(bounce 量) | 決定(2026-09-30・推奨どおり) |
 | B3 | 横断(PI5・CR4 ほか) | reduced motion の方針 | **状態遷移は即時/フェードのみ、不定進捗だけ最小の動きで継続** | 挙動のみ | 決定(2026-09-30・推奨どおり) |
 | B4 | 横断(#259 #54) | ポップアップ位置決めの共通化 | **内製の `src/internal` ヘルパー(flip + clamp)+ Popover API の top layer** | なし(内部) | 決定(2026-09-30・推奨どおり) |
@@ -71,6 +72,8 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B44 | #444 | TextField / Select の tonal・secure field・VerticalDragHandle | **TextField / Select `tonal?: boolean`(`@experimental`、Compose `tonalColors()` + `roundedShape`)、secure field はレシピ(`type="password"` + `IconButton toggle`、名前固定 + `aria-pressed`)、新規 `DragHandle`(APG window splitter、`value` / `onChange(event, value)` / `min` / `max` / `step` / `paneSide`)** | なし(追加) | 決定(2026-10-13) |
 | B45 | #494 | モーダル面の重なり順(top layer) | **Dialog / BottomSheet(modal)/ SideSheet(modal)/ NavigationDrawer(modal)/ NavigationRail(modal)/ modal DatePicker・TimePicker を開いている間 Popover API の top layer に置く(`popover="manual"` + `showPopover()`、開くたびに最上位へ、閉じる motion の間は残す)。DOM 位置は不変。Snackbar host も表示中は top layer に置き、modal の後に再 show して上を保つ。Popover API がなければ従来の z-index** | なし(内部・見た目不変) | 決定(2026-10-15) |
 | B46 | #495 | Dialog のスクロール領域と幅 | **本文(supporting content)だけをスクロールコンテナにし、icon / headline / actions(full-screen は上部バー)を固定。幅はホスト CSS 変数 `--md-dialog-container-min-width` / `--md-dialog-container-max-width`(既定 280px / 560px)。divider は足さない** | なし(はみ出さない限り見た目不変) | 決定(2026-10-15) |
+| B48 | #498 | TextField 系の `label` / `supportingText` / `errorText` をリッチ内容に | **TextField / Select / Autocomplete / DatePickerField の `label` / `supportingText` / `errorText`(DatePickerField は `getErrorLabel` の戻り値)を `ReactNode` に拡張。名前・説明の配線と notch の実測は従来の仕組みのまま、文字列のときの DOM と見た目は不変。m3 の内容指針(ラベルは短く 1 行、supporting text のリンクは短く)を JSDoc と docs に記載** | なし(型の拡張) | 決定(2026-10-15) |
+| B49 | #499 | Tabs のリンクタブ・TabPanel・コンテナ色 | **`Tab href` → `<a role="tab">`(見た目・手動アクティベーション・`value` による選択は同じ、遷移は横取りしない、`aria-current` は付けない)+ `TabContext` / `TabPanel value`(APG Tabs の `id` / `aria-controls` / `aria-labelledby` 自動配線、非選択は `hidden`、パネルは `tabIndex=0`)+ ホスト変数 `--md-tabs-container-color`(既定 surface)。自動アクティベーションは実装しない** | なし(追加) | 決定(2026-10-15) |
 | B47 | #497 | Slider の操作終了イベント | **`onChangeCommitted(event, value)`(MUI 名)を追加。Compose `onValueChangeFinished` と同じ時機 — ポインタを離したとき(ドラッグ終了・タップ、1 回の操作で 1 回)、値を動かすキー(矢印・Home / End・PageUp / PageDown)の keyup ごと、支援技術による直接の値変更は即時(値が変わらなければ出さない)。single / range 共通、`onChange` は従来どおり連続** | なし(追加) | 決定(2026-10-15) |
 | B51 | #496 #501 #502 | フォーカス可能な無効ボタン・Menu `onAction`・Tooltip の表示遅延 | **いずれも実装しない(仕様に根拠なし)。代替手段をドキュメント化** | なし | 決定(2026-10-15) |
 
@@ -93,7 +96,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 ### B1: 組み込み文言の i18n
 
 - **Issue**: 横断(#265 Badge、#251 / SN 軽微欄 "Dismiss"、#161 DatePicker、TextField の `getCounterLabel`)
-- **状態**: 決定(2026-09-30・推奨どおり)
+- **状態**: 決定(2026-09-30・推奨どおり)。`LocaleProvider` は **B50**(#500)で実装 — 形と優先順位は B50 を参照
 - **背景**: 英語が直書きの文言が散在する — Snackbar "Dismiss"、Dialog "Close"、DatePickerField "Open calendar"、
   DatePicker "Previous month" / "Next month" / "Select date"、TimePicker "Hour" / "Minute" / "AM or PM" / "Switch to dial"、
   Chip `Remove ${label}`、Badge `${n} notifications`。一方で一部は既に prop 化済み(SideSheet `closeLabel` / `backLabel`、
@@ -127,6 +130,90 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 
 **影響**: 非破壊(追加のみ、既定文言は現状の英語のまま)。VRT なし。対象: Snackbar / Dialog / DatePicker / DatePickerField /
 TimePicker / Chip / Badge ほか。
+
+### B50: `LocaleProvider` — locale と組み込み文言の一括指定(B1 の段階導入の後半)
+
+- **Issue**: #500(下流アプリ dd_redesign の MD3 ブランチ docs/redesign/07-md3.md §7 から。1.4.0 採用後の報告)
+- **状態**: 決定(2026-10-15・#500 の提案をもとに確定)。**B1 を拡張する**(B1 の「`LocaleProvider` は v1.x で非破壊追加」の実施)
+- **背景**: B1 で全文言を prop 化した(`*Label` / `get*Label`)が、アプリ全体を訳すには全インスタンスに渡す必要がある。
+  ピッカーは `locale="en-US"` 既定、Badge は "n new notifications" と英語で読む。
+- **仕様の根拠**:
+  - **m3**(優先 1): time picker「24 時間制は time picker の外、通常はシステム設定で決める」(set outside of the time picker
+    component, typically through system settings)。AM/PM は 12 時間制のときだけ。date input の helper text の既定
+    「MM/DD/YYYY」は変更可能、区切りはダッシュ / スペース / スラッシュ / ドットを受け付け、入力マスクなし。badge の読み上げは
+    数字、数えない badge は「New notification」。**locale の設定方法・週の始まりは m3 に記載なし**。
+  - **Compose**(優先 2): locale はプラットフォームから(`defaultLocale()` = `LocalLocale.current.platformLocale` —
+    CalendarLocale.android.kt:27。DatePicker.kt:397 / :709 が既定に使う)。週の始まりは locale から
+    (`CalendarModel.firstDayOfWeek` — CalendarModel.kt:71、Android 実装は `WeekFields`。DatePicker.kt:1893 で曜日見出しを回す)。
+    `is24Hour` の既定はシステム設定(`is24HourFormat` — TimeFormat.android.kt:24-25、TimePicker.kt:1415)。組み込み文言は
+    約 80 個の `Strings` キー(internal/Strings.kt:28-107)をプラットフォームの翻訳リソースから引く — `DatePickerTitle` /
+    `DateRangePickerTitle` / `DateRangeInputTitle`、`TimePickerDialogTitle` / `TimeInputDialogTitle`、
+    `BottomSheetDragHandleDescription` / `BottomSheetDismissDescription` のように**モード別の文言は別キー**。
+    `DatePickerFormatter` の skeleton は `yMMMM` / `yMMMd` / `yMMMMEEEEd`(DatePicker.kt:803-812)。Badge 自体は文言を持たない。
+  - **Web での適応(仕様が黙っている部分)**: Web には「プラットフォームの locale / 翻訳リソース」に相当する決定的な入力がない。
+    `navigator.language` は実行環境依存で SSR とハイドレーションが食い違う(B8 で不採用にした理由と同じ)。そこで Compose の
+    「locale・時刻制・文言は外から供給」を **React context で明示的に供給する**形に置き換える。
+
+**選択肢**
+
+- 置き場所
+  - **(a) 独立した `<LocaleProvider>`**(MUI X `LocalizationProvider` / MUI core のロケールと同じく、テーマとは別の層)
+  - (b) `ThemeProvider` の `locale` / `labels` prop — 色・モーションと文言は独立に変わる(画面の一部だけ別言語、テーマなしの
+    利用)ので結合しない。ThemeProvider は DOM ラッパー(CSS 変数)を描くが、locale は純粋な context でよい
+- 文言の形
+  - **(c) コンポーネント名ごとの入れ子 `labels={{ Snackbar: { dismissLabel }, DatePicker: { … } }}`、キーは各 prop 名**
+    (MUI の `components.MuiX.defaultProps` と同じ発想。prop と Provider で同じ名前)
+  - (d) フラットな `localeText`(MUI X)— キー名を別途覚える必要があり、同名 prop(`okLabel` など)の衝突を接頭辞で避けることになる
+
+**決定**: **(a) + (c)**。`ThemeProvider` には足さない(併用は入れ子にする)。
+
+- **API**: `<LocaleProvider locale? ampm? labels?>{children}</LocaleProvider>`(新しい subpath `m3-expressive-react/LocaleProvider`、
+  ルートからも export)。`useLocale()` が解決済みの `{ locale, ampm, labels }` を返す(アプリ側の書式にも使える)
+  - `locale`(BCP 47): DatePicker / DatePickerField / TimePicker の `locale` の既定。月・曜日名、週の始まり、入力の並び / パターンは
+    従来どおりこの locale から求める(週の始まりは `Intl.Locale(locale).getWeekInfo()` / `weekInfo`、無ければ日曜 —
+    既存の `getFirstDayOfWeek`。`-u-fw-mon` などの Unicode 拡張も engine が対応していれば効く)
+  - `ampm`: TimePicker の `ampm` の既定。省略時は locale の `Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hourCycle`
+    から導出(B8 と同じ)。m3 の「24 時間制は外で決める」の Web 版
+  - `labels`: コンポーネントごとの文言。値は prop と同じ型(文字列、または値に依存する `get*Label` 関数)
+- **優先順位**: **prop > 最も近い Provider > 外側の Provider > 英語の既定**。入れ子の Provider は親を継承し、`labels` は
+  コンポーネント単位で浅くマージ(`labels.DatePicker` の一部だけ上書きできる)、`locale` / `ampm` は指定したものだけ上書き。
+  TimePicker の 24 時間制は `ampm` prop > Provider `ampm` > 実効 locale(prop の `locale` を含む)から導出
+- **Provider なしは完全に従来どおり**(`'en-US'`・英語)。`navigator.language` は読まない(SSR で決定的)
+- **対象の文言(棚卸し)** — キーは prop 名:
+  - DatePicker: `titleLabel` `noSelectionLabel` `previousMonthLabel` `nextMonthLabel` `selectYearLabel` `todayLabel`
+    `startDateLabel` `endDateLabel` `inRangeLabel` `inputLabel` `switchToInputLabel` `switchToCalendarLabel` `getErrorLabel`
+    `okLabel` `cancelLabel`
+  - DatePickerField: `label` `openCalendarLabel` `dialogLabel` `getErrorLabel` `previousMonthLabel` `nextMonthLabel`
+    `previousYearLabel` `nextYearLabel` `selectMonthLabel` `selectYearLabel` `todayLabel`
+  - TimePicker: `titleLabel` `hourLabel` `minuteLabel` `selectHourLabel` `selectMinuteLabel` `periodLabel` `amLabel` `pmLabel`
+    `switchToInputLabel` `switchToDialLabel` `switchToScrollLabel` `getHourLabel` `getMinuteLabel` `getErrorLabel` `okLabel` `cancelLabel`
+  - Snackbar(SnackbarProvider 経由の表示も): `dismissLabel` / SearchBar: `backLabel` `suggestionsLabel` `placeholder` /
+    Chip: `getRemoveLabel` / Dialog: `closeLabel` / BottomSheet: `dragHandleLabel` / SideSheet: `closeLabel` `backLabel` /
+    NavigationRail: `modalLabel` / Carousel: `getItemLabel` `roleDescriptionLabel` `itemRoleDescriptionLabel` /
+    Slider: `rangeStartLabel` `rangeEndLabel` / SplitButton: `trailingAriaLabel` / Autocomplete: `toggleLabel` /
+    TextField: `getCounterLabel` / PullToRefresh: `refreshingLabel`
+  - **Provider だけのキー**(prop にない組み込み文言。Compose が別キーにしているもの):
+    - モード別の見出し: DatePicker `rangeTitleLabel`('Select dates')・`rangeInputTitleLabel`('Enter dates')・
+      `inputNoSelectionLabel`('Entered date')、TimePicker `inputTitleLabel`('Enter time')、BottomSheet
+      `partialDragHandleLabel`('Drag handle'、`skipPartiallyExpanded={false}` のとき)。Provider の `titleLabel` 等は
+      基本モード(単一日付 / dial)だけに効き、各モードはそれぞれのキーで訳す。**prop の `titleLabel` / `noSelectionLabel` /
+      `dragHandleLabel` は従来どおり全モードに効き、Provider より優先**
+    - 名前の代替(`title` / `aria-label` / `aria-labelledby` が無いときの accessible name): Dialog / BottomSheet / SideSheet /
+      NavigationDrawer の `fallbackLabel`('Dialog' / 'Bottom sheet' / 'Side sheet' / 'Navigation')
+    - Badge `getLabel(count)`: `count` は表示する文字列('8'、'999+')、dot / 数えない badge は `undefined`。既定は B28 の
+      "New notification" / "{n} new notification(s)"。Badge の `label` prop が優先。NavigationBar / NavigationRail の項目の
+      バッジ(`badgeLabel` が優先)と Tab の `badge` の読み上げも同じ関数を使う(m3 badges/accessibility)
+  - 対象外: 利用者が必ず渡す文言(FabMenu `ariaLabel` など既定なし)、DatePickerField の helper text(既定は locale の
+    パターン文字 `MM/DD/YYYY` 等で m3 の既定どおり — 訳すなら `supportingText`)、数値だけの `aria-valuetext`
+- **英語の既定だけ同梱**(翻訳パックは出さない)。日本語の例はドキュメント(`site/docs/i18n.mdx`)に載せる
+- **RSC**: Badge は**サーバーコンポーネントのまま**(#409 の保証)。context を読む既定文言だけを小さな client 子
+  `BadgeLabelText`(直列化できる `count` だけを受け取る)に分け、Badge 本体は directive なしで client 境界を描く
+  (`src/test/useClient.test.ts` に「client 子を描くサーバーモジュール」として明示)。`LocaleProvider` は client コンポーネントで、関数のラベル(`getLabel` など)は
+  サーバー → クライアント境界を越えられないため、App Router では利用側の `'use client'` モジュールで Provider を描く(docs に記載)
+
+**影響**: 非破壊(新しいコンポーネント `LocaleProvider` / フック `useLocale` / 型 `LocaleLabels` と subpath の追加。Provider なしの
+出力は不変)。VRT: `Components/LocaleProvider` の `Japanese`(DatePicker / TimePicker / Badge / Snackbar を ja-JP で)を追加。
+既存ストーリーは不変。対象: 上記の各コンポーネント(内部の `badgeLabel` / `navBadge` ヘルパーは getter を受け取るだけ)。
 
 ### B2: 既定の motion scheme(standard / expressive)
 
@@ -1867,6 +1954,56 @@ Default / Refreshing / Circular を追加。
 textfield 監査(docs/audits/textfield.md 軽微欄)の「機能追加の候補」の SecureTextField / tonal / roundedShape は
 本裁定で対応済み(監査側に相互参照を追記)。
 
+### B48: TextField 系のラベル・supporting text をリッチ内容に(#498)
+
+- **Issue**: #498(下流アプリ dd_redesign の MD3 ブランチ、1.4.0 採用後の報告)
+- **状態**: 決定(2026-10-15)
+- **背景**: `label` / `supportingText` / `errorText` が `string` のみで、リンク・ツールチップ用アイコン・
+  強調などを入れられない。
+
+**仕様の位置づけ**
+
+- **m3.material.io**(優先 1): 内容の指針だけがある — ラベルは「Label text shouldn't be truncated or take up
+  multiple lines. Keep it short」、required の `*` はラベル末尾で「The accessibility label must include the
+  asterisk」、supporting text は理想は 1 行(折り返しは可)、error text は supporting text を**置き換える**
+  (error icon 推奨)、a11y はエラーを alert で通知し、ラベル → supporting → error の順で読む。ラベルや
+  supporting text に**リッチ内容を入れてよいか**は書かれていない(沈黙)
+- **Compose**(優先 2): `label` / `placeholder` / `leadingIcon` / `prefix` / `suffix` / `supportingText` は
+  すべて `@Composable` スロットで、任意の内容を置ける(TextField.kt:212–219。`label` は
+  `TextFieldLabelScope`)。outlined の切り欠きは**計測したラベルの大きさ**で決まる(TextFieldImpl.kt:247–270)。
+  error 専用スロットはなく、呼び出し側が `supportingText` を差し替える
+- m3 が沈黙している「内容の型」は Compose のスロット = 任意内容に合わせ、Web では `ReactNode` とする。m3 の
+  内容指針は型では強制できないので、JSDoc と docs の注意として残す
+
+**選択肢**
+
+1. **(a) `label` / `supportingText` / `errorText` を `ReactNode` に広げる**(MUI TextField の `label` /
+   `helperText` と同じ形)
+2. (b) 別の slot prop(`labelSlot` など)を足す — 同じ役割の prop が 2 つになり、どちらが優先かの規則が増える
+3. (c) `string` のまま、リンク等は利用者が TextField の外に置く — 説明(`aria-describedby`)の対象から外れる
+
+**決定**: **(a)**。
+
+- 対象: **TextField / Select / Autocomplete** の `label` / `supportingText` / `errorText`、
+  **DatePickerField** の `label` / `supportingText` と、error text を作る `getErrorLabel` の戻り値
+  (DatePickerField には `errorText` prop がなく、これが同じ役割)
+- 名前と説明は今の仕組みのまま: ラベルは TextField / DatePickerField / Autocomplete では `<label htmlFor>`、
+  Select では `aria-labelledby` が指す要素に入る。required の `*` は従来どおり末尾に `aria-hidden` で付ける
+  (`aria-required` が必須を伝える)。supporting / error の要素は `aria-describedby` で参照し、error 時は
+  error text が supporting text を置き換えて `role="alert"` を持つ(m3)
+- outlined の notch は、ラベルと同じ内容を不可視(`visibility: hidden`)の計測用コピーとして notch に描く
+  既存の仕組みで、**描画されたラベルの幅**に追従する(Compose の計測と同じ結果)。コピーは
+  `visibility: hidden` なのでフォーカスも読み上げも受けない
+- 文字列のときの DOM と見た目は変えない(型の拡張のみ)
+- 内容の指針(JSDoc と docs): ラベルは短い 1 行の phrasing content(テキスト・強調・小さなアイコン)。
+  ラベルは 1 行で省略表示され、クリックは入力に渡るので、**ラベルにリンクやボタンを入れない**。
+  notch のコピーと 2 回描かれるので `id` を持つ要素も避ける。supporting text のリンクは可、ただし短く。
+  error text は supporting text を置き換える
+- Web 側の判断: 内容の制限は型では課さない(MUI と同じ)。m3 の指針を守るのは利用者の責任とし、docs に明記する
+
+**影響**: 非破壊(公開型の拡張のみ。既定値・DOM・見た目は文字列のとき不変)。VRT: TextField `RichContent` を追加、
+既存ストーリーはピクセル不変。対象: TextField、Select、Autocomplete、DatePickerField。
+
 ---
 
 ## Phase A 裁定への追補
@@ -1932,6 +2069,83 @@ textfield 監査(docs/audits/textfield.md 軽微欄)の「機能追加の候補�
 
 **影響**: 非破壊(prop の追加のみ。既存ストーリーは DOM・CSS とも不変)。VRT: `Components/Tabs` の LeadingIcons /
 WithBadges を追加。対象: Tab(Badge は内部ヘルパーへの切り出しのみ、出力不変)。
+
+
+### B49: Tabs のリンクタブ(navigation tab)・TabPanel・コンテナ色
+
+- **Issue**: #499(下流アプリ dd_redesign からの報告。docs/audits/tabs.md 軽微欄「tabpanel との関連付け」の後続)
+- **状態**: 決定(2026-10-15)
+- **背景**: Tab は常に `<button>` で、ルートへのリンクとして使えない。`TabPanel` がなく、`id` / `aria-controls` は
+  利用側が `...rest` で手配線する。コンテナは surface 固定で、dialog や白いパネルの上では帯に見える。
+- **スペック**:
+  - m3(tabs/specs・/accessibility):トークン名は **`md.comp.primary-navigation-tab.*` / `secondary-navigation-tab.*`**、
+    a11y は「Arrow — Focus lands on the next available navigation destination」「Space / Enter — Activates」
+    「Don't use Space/Enter for navigating tabs」、タブは「invoke navigation to a new destination」。コンテナ色は
+    primary / secondary とも `md.sys.color.surface`、上書きの記述はない。primary の anatomy は Icon (optional)、
+    **secondary の anatomy にアイコンはない**。tabpanel / `aria-controls` の記述は**ない**
+  - Compose(androidx-main):`Tab` / `LeadingIconTab` は `Role.Tab`、TabRow は `selectableGroup`。
+    `Primary/Secondary(Scrollable)TabRow` に `containerColor` 引数(既定 `TabRowDefaults.primaryContainerColor` /
+    `secondaryContainerColor` = Surface — TabRow.kt:998-1003)。`LeadingIconTab`(インライン 8dp)は secondary に限らない。
+    pager / タブパネルとの関連付けは**ない**(Compose はセマンティクスツリーにパネルの概念を持たない)
+
+**選択肢**
+
+- リンクタブ
+  - **(a) `Tab href`(+ `target` / `rel` / `download`)で `<a role="tab">` を描く**(B5・Card と同じ「`href` → `<a>`」)
+  - (b) ポリモーフィック `component` prop — ライブラリ全体の方針が未決(本書末尾「扱わなかった判断候補」)なので見送り
+- パネル
+  - **(c) `TabContext`(状態と id の範囲)+ `TabPanel value`**(MUI Lab の `TabContext` / `TabPanel` と同名)。`Tabs` は
+    `TabContext` の中にあれば状態をそこから読む
+  - (d) `TabPanel` だけを足し、`Tabs` の `id` から id を組み立てる — 自動にならず、SSR で選択中のパネルを決められない
+- コンテナ色
+  - **(e) ホストのカスタムプロパティ `--md-tabs-container-color`**(SearchBar の `--md-search-bar-container-color` と同じ形)
+  - (f) `color` / `containerColor` prop — Compose 流の色 prop は API 方針で避ける
+
+**決定**: **(a) + (c) + (e)**。補足:
+
+- **リンクタブ(`href`)**: m3 の navigation tab(トークン名・「新しい行き先へ移動する」)の Web 版。
+  - 見た目・roving tabindex・矢印 / Home / End のフォーカス移動・`Tabs value` による選択(`aria-selected`)は `<button>` の
+    タブと同じ。**遷移は横取りしない**: クリックはブラウザの通常の遷移で、`onChange(event, value)` は遷移の前に呼ばれる。
+    クライアントルーターを使う場合は `onChange`(または Tab の `onClick`)で `event.preventDefault()` してから
+    `navigate()` する(Tab の `onClick` で `preventDefault()` すると従来どおり `onChange` も止まる)。選択はふつう現在の
+    ルートから `value` を controlled で渡す
+  - 修飾キー付きクリック(Ctrl / ⌘ / Shift / Alt。新しいタブ・ウィンドウで開く)は**選択を変えない**(`onChange` を呼ばない)
+    — 現在のページは変わらないため。中クリックは `click` が発火しないので同じ
+  - m3 の「Space / Enter — Activates」に合わせ、リンクタブでも **Space で活性化**する(`<a>` は Enter しかネイティブに
+    扱わないため、Space は keyup で `click()` を呼び、keydown のページスクロールを止める)
+  - disabled のリンクタブは `href` を外し `aria-disabled="true"`(Card / Carousel と同じ)。矢印キーでは飛ばす
+  - **`aria-current="page"` は付けない**。ARIA 1.2 は aria-current について「aria-selected が同じ意味を持つウィジェット
+    (例: tablist)では aria-selected の代わりに使うべきでない」とし、tab の現在状態は `aria-selected` で伝わる。両方付けると
+    「選択、現在のページ」と二重に読まれる。必要なら利用側が `aria-current` を渡せる(`...rest` でそのまま出る)
+  - リンクタブはパネルを持たない(行き先はページそのもの)ので、`TabContext` の中でも `id` / `aria-controls` を付けない。
+    ページ遷移のナビゲーションで tablist を使いたくない場合は、`<nav>` + リンク + `aria-current` のほうが適切である旨を
+    ドキュメントに書く(APG)
+- **`TabContext` / `TabPanel`**(**Web 固有の要件**: m3・Compose とも記述がないので WAI-ARIA APG Tabs パターンに従う)
+  - `TabContext` は `value` / `defaultValue` / `onChange(event, value)`(controlled / uncontrolled)と id の基点(`useId`)を
+    持つ。中の `Tabs` はその状態を使い(`Tabs` の `value` / `defaultValue` は無視して開発時に警告、`Tabs` の `onChange`
+    も従来どおり呼ぶ)、各 `Tab` に `id` と、対応する `TabPanel` が描画されている場合だけ `aria-controls` を付ける
+    (存在しない id を指さない)
+  - `TabPanel value` は `role="tabpanel"`、`id`、`aria-labelledby`(対応する Tab の id)。**選択中でないパネルは `hidden`**
+    (中身はマウントしたまま — 状態を保つ。遅延マウントは提供しない)
+  - **`tabIndex=0` を既定にする**: APG は「パネルにフォーカス可能な要素がない、または先頭にない場合は tabindex=0」とする。
+    中身を静的に判定できないため常に 0(APG の例と同じ)、先頭がフォーカス可能な場合は `tabIndex={-1}` などで上書きできる。
+    フォーカス表示はブラウザ既定の outline(パネルは操作要素ではないので FocusRing は使わない)
+  - `TabContext` を使わない `Tabs` は従来どおり(`id` / `aria-controls` を付けない。DOM 不変)
+- **コンテナ色**: `.tabs` の背景を `--md-tabs-container-color`(既定 `var(--md-sys-color-surface)`)にする。primary /
+  secondary 共通(m3 は両方 surface、Compose の `containerColor` も TabRow 単位)。値の変更はホスト要素か祖先に指定する
+- **実装しないもの**:
+  - **自動アクティベーション**(`activationMode="automatic"`、#499 の提案): m3 a11y は「矢印 = フォーカス移動、Space / Enter =
+    活性化」「Space / Enter をタブ間の移動に使わない」と手動アクティベーションを指定しており、Compose もフォーカス移動では
+    選択しない(TB9a)。APG は自動も許容するが上位ソースに従い、追加しない
+  - **secondary タブのアイコン**: m3 の secondary の anatomy にはアイコンがない。`iconPosition="start"`(Compose
+    `LeadingIconTab`、B40)は variant に関係なく使えるが、secondary タブは通常アイコンなしで使う旨をドキュメントに書く
+    (型や実行時の制限はしない)
+
+**影響**: 非破壊(prop・コンポーネント・カスタムプロパティの追加。`onChange` の event 型は
+`MouseEvent<HTMLButtonElement | HTMLAnchorElement>` に広げるがメソッド記法なので既存の注釈付きハンドラーもそのまま通る、
+Tab の `ref` は `HTMLButtonElement | HTMLAnchorElement`)。既存ストーリーはピクセル不変(背景は同じ surface)。VRT:
+`Components/Tabs` の NavigationTabs / WithPanels を追加。対象: Tabs、Tab、新規 TabContext / TabPanel(`m3-expressive-react/Tabs`)。
+docs/audits/tabs.md の「tabpanel との関連付け」は本裁定で置換(監査側に相互参照を追記)。
 
 ---
 

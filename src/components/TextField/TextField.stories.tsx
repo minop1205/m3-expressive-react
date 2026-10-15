@@ -6,6 +6,7 @@ import SearchIcon from '@material-symbols/svg-400/outlined/search.svg?react'
 import ClearIcon from '@material-symbols/svg-400/outlined/close.svg?react'
 import VisibilityIcon from '@material-symbols/svg-400/outlined/visibility.svg?react'
 import VisibilityOffIcon from '@material-symbols/svg-400/outlined/visibility_off.svg?react'
+import InfoIcon from '@material-symbols/svg-400/outlined/info.svg?react'
 import { IconButton } from '../IconButton'
 
 const meta = {
@@ -219,6 +220,62 @@ export const Tonal: Story = {
     </div>
   ),
   args: { tonal: true },
+}
+
+const inlineIcon = { width: '1.2em', height: '1.2em', verticalAlign: 'middle', fill: 'currentColor' }
+
+/** B48: `label`, `supportingText` and `errorText` take rich content (Compose
+ * composable slots). The outlined notch follows the rendered label width.
+ * Keep the label short and on one line, with no links (m3); a short link in
+ * the supporting / error text is fine. */
+export const RichContent: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <TextField
+        {...args}
+        variant="outlined"
+        required
+        defaultValue="ada@example.com"
+        label={
+          <>
+            Email <strong>(work)</strong> <InfoIcon aria-hidden="true" style={inlineIcon} />
+          </>
+        }
+        supportingText={
+          <>
+            Used for sign-in. <a href="#privacy">Privacy policy</a>
+          </>
+        }
+      />
+      <TextField
+        {...args}
+        variant="filled"
+        label={
+          <>
+            Display name <em>(public)</em>
+          </>
+        }
+        supportingText={
+          <>
+            Shown on your <strong>profile</strong>
+          </>
+        }
+      />
+      <TextField
+        {...args}
+        variant="outlined"
+        error
+        defaultValue="ada@"
+        label="Email"
+        supportingText="Used for sign-in"
+        errorText={
+          <>
+            Enter a valid address. <a href="#help">Get help</a>
+          </>
+        }
+      />
+    </div>
+  ),
 }
 
 export const AllVariants: Story = {

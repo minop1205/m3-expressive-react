@@ -153,7 +153,10 @@ mark replaces it while that option is selected.
 
 `error` switches to the error colors and sets `aria-invalid`. `errorText`
 replaces `supportingText` while in error and is announced (`role="alert"`).
-`fullWidth` stretches the field, and with it the list, to the container's
+`label`, `supportingText` and `errorText` also accept React content (e.g. a
+short link in the supporting text), with the same guidance as
+[TextField](/components/textfield#rich-label--supporting-text): a short, single-line
+label without links. `fullWidth` stretches the field, and with it the list, to the container's
 width.
 
 ## Forms
