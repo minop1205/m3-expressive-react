@@ -393,3 +393,39 @@ describe('FabMenu', () => {
     })
   })
 })
+
+describe('FabMenu focus after an outside press (#515)', () => {
+  function Page() {
+    return (
+      <>
+        <FabMenu icon={add} ariaLabel="Create">
+          <FabMenuItem>Note</FabMenuItem>
+        </FabMenu>
+        <p data-testid="blank">Plain text</p>
+        <button>Elsewhere</button>
+      </>
+    )
+  }
+
+  it('returns focus to the toggle when the press takes no focus', async () => {
+    const user = userEvent.setup()
+    render(<Page />)
+    const toggle = screen.getByRole('button', { name: 'Create' })
+    await user.click(toggle)
+    screen.getByRole('menuitem', { name: 'Note' }).focus()
+    await user.click(screen.getByTestId('blank'))
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    await vi.waitFor(() => expect(toggle).toHaveFocus())
+  })
+
+  it('lets focus go to a focusable element that was pressed', async () => {
+    const user = userEvent.setup()
+    render(<Page />)
+    await user.click(screen.getByRole('button', { name: 'Create' }))
+    screen.getByRole('menuitem', { name: 'Note' }).focus()
+    const elsewhere = screen.getByRole('button', { name: 'Elsewhere' })
+    await user.click(elsewhere)
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(elsewhere).toHaveFocus()
+  })
+})

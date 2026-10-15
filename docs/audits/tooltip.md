@@ -194,3 +194,15 @@ TT5 → #260、TT6 → #261、TT7 → #262、TT8 → #263
 - hover 経路を `page.mouse.move` で試すときは trigger の 48dp タッチターゲット(`::before`)が anchor の外まで広がっている点に注意
   (rich の Button trigger では 4px の隙間が `::before` に覆われていて、隙間で閉じる問題が観測されない)
 - Compose の tooltip 挙動の本体は `material3/.../internal/BasicTooltip.kt`(M3 が import する方)にある。foundation 版は照合用
+
+## 修正メモ: 消え残り中の Escape(2026-10-16・#514)
+
+バグ修正(新規裁定なし)。trigger から focus が離れたあとも tooltip は m3 tooltips/guidelines の
+「disappear 1.5 seconds after navigating away from the target region」に従って 1.5 秒残る — この遅延は維持する。
+ただし残っている間も document の Escape を `preventDefault` していたため、その間に開いた Dialog(useModal は
+prevented な Escape を無視する)や Menu が次の Escape で閉じなかった。
+
+- Escape を**消費する**(`preventDefault`)のは、focus が trigger / tooltip 内にあるか、pointer が上にある間だけ
+  (従来どおり、enclosing modal より先に tooltip だけを閉じる)
+- 消え残り中の tooltip は Escape で閉じてよいが、イベントは止めない — 外側 / 新たに開いた Dialog・Menu にも届く
+- テスト: Tab で trigger → Tab で別ボタン → Enter で Dialog を開き、1.5 秒以内の Escape で Dialog が閉じる

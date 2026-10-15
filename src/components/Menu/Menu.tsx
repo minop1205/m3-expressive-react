@@ -22,6 +22,7 @@ import {
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
+import { restoreFocusAfterOutsidePress } from '../../internal/outsidePressFocus'
 import { usePopupPosition, type PopupAnchorRect } from '../../internal/usePopupPosition'
 import {
   createMenuTypeahead,
@@ -284,6 +285,9 @@ export const Menu = forwardRef<HTMLDivElement, MenuProps>(function Menu(
     // pointerdown (drag libraries) suppresses the compatibility mousedown.
     const onPointerDown = (event: globalThis.PointerEvent) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        // Focus goes to what was pressed, or back to the trigger when the
+        // press takes no focus (it would fall to <body>) — #515.
+        restoreFocusAfterOutsidePress(event, wrapperRef.current, focusTrigger)
         setOpen(false)
       }
     }
