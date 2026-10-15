@@ -108,7 +108,7 @@
   ]
  },
  "Autocomplete": {
-  "description": "Material Design 3 Autocomplete — the editable exposed dropdown menu\n(Compose `ExposedDropdownMenuBox` + an editable `TextField` with the\n`PrimaryEditable` anchor and a `SecondaryEditable` trailing icon, as in\n`EditableExposedDropdownMenuSample`). m3 menus guidelines: \"A menu can\ninclude a text field to filter options. This pattern is also known as\nautocomplete.\"\n\nThe field is the `TextField` anatomy with a real text `<input>`; typing\nfilters the listbox, which is the one `Select` uses (top layer, field\nwidth, Expressive options with a check on the selected one). Options that\nstay ease into their new position as the list is filtered (DefaultSpatial;\nnone under reduced motion).\n\nAccessibility follows the WAI-ARIA APG editable combobox with list\nautocomplete: the input is `role=\"combobox\"` with `aria-autocomplete=\"list\"`\nand keeps focus while the listbox is open; the active option is exposed\nthrough `aria-activedescendant`. ArrowDown / ArrowUp open and move (wrapping),\nAlt+ArrowDown opens without moving, Enter picks the active option (or\ncommits the text with `freeSolo`), Escape closes the listbox and, when it is\nalready closed, clears the field. Typing opens the listbox without\nactivating an option. The trailing arrow is a button (`tabindex=\"-1\"`) that\ntoggles the listbox.\n\nA visually hidden native `<input>` carries `name` / `value` for form\nsubmission, `required` validation, and form reset.",
+  "description": "Material Design 3 Autocomplete — the editable exposed dropdown menu\n(Compose `ExposedDropdownMenuBox` + an editable `TextField` with the\n`PrimaryEditable` anchor and a `SecondaryEditable` trailing icon, as in\n`EditableExposedDropdownMenuSample`). m3 menus guidelines: \"A menu can\ninclude a text field to filter options. This pattern is also known as\nautocomplete.\"\n\nThe field is the `TextField` anatomy with a real text `<input>`; typing\nfilters the listbox, which is the one `Select` uses (top layer, field\nwidth, Expressive options with a check on the selected one). Options that\nstay ease into their new position as the list is filtered (DefaultSpatial;\nnone under reduced motion).\n\nAccessibility follows the WAI-ARIA APG editable combobox with list\nautocomplete: the input is `role=\"combobox\"` with `aria-autocomplete=\"list\"`\nand keeps focus while the listbox is open; the active option is exposed\nthrough `aria-activedescendant`. ArrowDown / ArrowUp open and move (wrapping),\nAlt+ArrowDown opens without moving, Enter picks the active option (or\ncommits the text with `freeSolo`), Escape closes the listbox (consumed, so an\nenclosing Dialog stays open) and, when it is already closed, clears the field\nwith `clearOnEscape` — else it is left to enclosing handlers. Typing opens the listbox without\nactivating an option. The trailing arrow is a button (`tabindex=\"-1\"`) that\ntoggles the listbox.\n\nA visually hidden native `<input>` carries `name` / `value` for form\nsubmission, `required` validation, and form reset.",
   "props": [
    {
     "name": "autoFocus",
@@ -123,6 +123,13 @@
     "required": false,
     "defaultValue": null,
     "description": "`Option` elements (direct children or inside Fragments), used when `options` is not given."
+   },
+   {
+    "name": "clearOnEscape",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Escape with the listbox closed clears the input and the value (and is\nconsumed). Without it, that Escape does nothing and reaches enclosing\nhandlers — an enclosing Dialog closes. Escape with the listbox open only\ncloses the listbox either way."
    },
    {
     "name": "defaultInputValue",
@@ -241,7 +248,7 @@
     "type": "((event: SyntheticEvent<Element, Event>, value: string) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Fires when the value changes: an option is picked, the input is cleared\n(or Escape clears it), or — with `freeSolo` — typed text is committed with\nEnter or on blur. Not fired on form reset."
+    "description": "Fires when the value changes: an option is picked, the input is cleared\n(or Escape clears it, with `clearOnEscape`), or — with `freeSolo` — typed text is committed with\nEnter or on blur. Not fired on form reset."
    },
    {
     "name": "onInputChange",
@@ -422,7 +429,7 @@
   ]
  },
  "BottomSheet": {
-  "description": "Material Design 3 bottom sheet (modal or standard).\n\nSurfaceContainerLow container, 28dp top corners, elevation 1, max-width\n640dp, an OnSurfaceVariant 32×4 drag handle — per Compose SheetBottomTokens.\nThe modal variant slides up over a 0.32 Scrim (`role=\"dialog\"\naria-modal`); the standard variant is a labelled `region` without a scrim.\nEscape closes either (the standard one while focus is inside it).\n\nBy default the sheet opens at full height and the drag handle is a close\nbutton. With `skipPartiallyExpanded={false}` (Compose `SheetValue`\ndetents) it opens partially expanded — showing\n`min(container / 2, sheet / 2)` — and the handle toggles partial /\nexpanded (`aria-expanded`).\nDragging snaps between hidden, partial and expanded: past 56px from the\nstarting detent, or a fling faster than 125px/s, moves to the next detent\n(Compose thresholds); reaching hidden calls `onClose(event, 'drag')`.",
+  "description": "Material Design 3 bottom sheet (modal or standard).\n\nSurfaceContainerLow container, 28dp top corners, elevation 1, max-width\n640dp, an OnSurfaceVariant 32×4 drag handle — per Compose SheetBottomTokens.\nThe modal variant slides up over a 0.32 Scrim (`role=\"dialog\"\naria-modal`); the standard variant is a labelled `region` without a scrim.\nEscape closes either (the standard one while focus is inside it).\n\nBy default the sheet opens at full height and the drag handle is a close\nbutton. With `skipPartiallyExpanded={false}` (Compose `SheetValue`\ndetents) it opens partially expanded — showing\n`min(container / 2, sheet / 2)` — and the handle toggles partial /\nexpanded (`aria-expanded`).\nDragging snaps between hidden, partial and expanded: past 56px from the\nstarting detent, or a fling faster than 125px/s, moves to the next detent\n(Compose thresholds); reaching hidden calls `onClose(event, 'drag')`.\n\nA modal sheet mounted with `open` slides in like one opened later. Initial\nfocus (modal): an element React's `autoFocus` focused inside it, else the\nelement marked `data-autofocus`, else the first tabbable element.\n`autoFocus` only runs when its element mounts, so for content rendered\nwhile the sheet is closed mark the target with `data-autofocus` instead.",
   "props": [
    {
     "name": "defaultExpanded",
@@ -1544,7 +1551,7 @@
   ]
  },
  "Dialog": {
-  "description": "Material Design 3 Dialog (basic / alert).\n\nSurfaceContainerHigh container, 28dp corners, elevation 3, 280–560dp wide,\n24dp padding; Secondary icon, OnSurface HeadlineSmall title, OnSurfaceVariant\nBodyMedium text — per Compose DialogTokens. Modal with a 0.32 Scrim,\nrole=\"dialog\" aria-modal, and Escape-to-close.\n\n- Long content scrolls inside the body only; the icon, title and actions\n  (the full-screen top bar) stay fixed (ruling B46).\n- Width: set `--md-dialog-container-min-width` / `--md-dialog-container-max-width`\n  (default `280px` / `560px` — the m3 basic dialog range; other values are\n  outside the spec) on the dialog (`style` / `className`) or an ancestor.\n  Not used by `fullScreen`.\n- While open, the dialog is drawn in the browser top layer, above popups\n  opened before it, such as the Menu it was opened from (ruling B45).",
+  "description": "Material Design 3 Dialog (basic / alert).\n\nSurfaceContainerHigh container, 28dp corners, elevation 3, 280–560dp wide,\n24dp padding; Secondary icon, OnSurface HeadlineSmall title, OnSurfaceVariant\nBodyMedium text — per Compose DialogTokens. Modal with a 0.32 Scrim,\nrole=\"dialog\" aria-modal, and Escape-to-close.\n\n- Long content scrolls inside the body only; the icon, title and actions\n  (the full-screen top bar) stay fixed (ruling B46).\n- Width: set `--md-dialog-container-min-width` / `--md-dialog-container-max-width`\n  (default `280px` / `560px` — the m3 basic dialog range; other values are\n  outside the spec) on the dialog (`style` / `className`) or an ancestor.\n  Not used by `fullScreen`.\n- While open, the dialog is drawn in the browser top layer, above popups\n  opened before it, such as the Menu it was opened from (ruling B45).\n- Mounted with `open`, it plays the same open motion as opening later.\n- Initial focus: an element React's `autoFocus` focused inside it, else\n  the element marked `data-autofocus`, else the first tabbable element.\n  `autoFocus` only runs when its element mounts, so for content rendered\n  while the dialog is closed (the usual `open={open}` pattern) mark the\n  target with `data-autofocus` instead.",
   "props": [
    {
     "name": "actions",
@@ -2422,7 +2429,7 @@
   ]
  },
  "NavigationDrawer": {
-  "description": "Material Design 3 Navigation drawer (standard or modal).\n\n360dp SurfaceContainerLow (modal) / Surface (standard) panel, rounded 16dp on\nthe trailing edge. Items are 56dp full pills (CornerFull): active =\nSecondaryContainer / OnSecondaryContainer, inactive transparent /\nOnSurfaceVariant, LabelLarge — per Compose NavigationDrawerTokens. Modal adds\na 0.32 Scrim, Escape-to-close, and `role=\"dialog\" aria-modal`.\n\n`dismissible` (Compose `DismissibleNavigationDrawer`) is the standard\nSurface panel toggled by `open`: it opens on DefaultSpatial and closes on\nFastEffects by sliding its inline-start margin, so place it as the first\nchild of a flex (or grid) row next to the content — the content is pushed\naside rather than covered (give the row `overflow: hidden` so the sliding\npanel stays clipped). There is no scrim or focus trap. Opening moves focus\nto the selected (else first) item, as Compose does; Escape inside the\ndrawer calls `onClose`; a closed drawer is `inert`, and closing it with\nfocus inside returns focus to where it was before opening. Pair it with a\nmenu button carrying `aria-expanded` / `aria-controls`.",
+  "description": "Material Design 3 Navigation drawer (standard or modal).\n\n360dp SurfaceContainerLow (modal) / Surface (standard) panel, rounded 16dp on\nthe trailing edge. Items are 56dp full pills (CornerFull): active =\nSecondaryContainer / OnSecondaryContainer, inactive transparent /\nOnSurfaceVariant, LabelLarge — per Compose NavigationDrawerTokens. Modal adds\na 0.32 Scrim, Escape-to-close, and `role=\"dialog\" aria-modal`.\n\n`dismissible` (Compose `DismissibleNavigationDrawer`) is the standard\nSurface panel toggled by `open`: it opens on DefaultSpatial and closes on\nFastEffects by sliding its inline-start margin, so place it as the first\nchild of a flex (or grid) row next to the content — the content is pushed\naside rather than covered (give the row `overflow: hidden` so the sliding\npanel stays clipped). There is no scrim or focus trap. Opening moves focus\nto the selected (else first) item, as Compose does; Escape inside the\ndrawer calls `onClose`; a closed drawer is `inert`, and closing it with\nfocus inside returns focus to where it was before opening. Pair it with a\nmenu button carrying `aria-expanded` / `aria-controls`.\n\nA modal drawer mounted with `open` slides in like one opened later. Initial\nfocus (modal): an element React's `autoFocus` focused inside it, else the\nelement marked `data-autofocus`, else the first tabbable element.\n`autoFocus` only runs when its element mounts, so for content rendered\nwhile the drawer is closed mark the target with `data-autofocus` instead.",
   "props": [
    {
     "name": "defaultValue",
@@ -2598,7 +2605,7 @@
     "type": "boolean",
     "required": false,
     "defaultValue": "false",
-    "description": "Modal expanded layout: while `variant=\"expanded\"` the rail overlaps the\npage instead of pushing it — surface-container, 16dp trailing corners,\nlevel-2 shadow, a 0.32 scrim, focus trapped inside, the rest of the page\ninert, Escape / scrim click call `onClose`, and focus returns to the\nopener on collapse. Collapsed, it is a regular in-flow 96dp rail (or\nnothing, with `hideOnCollapse`)."
+    "description": "Modal expanded layout: while `variant=\"expanded\"` the rail overlaps the\npage instead of pushing it — surface-container, 16dp trailing corners,\nlevel-2 shadow, a 0.32 scrim, focus trapped inside, the rest of the page\ninert, Escape / scrim click call `onClose`, and focus returns to the\nopener on collapse. Collapsed, it is a regular in-flow 96dp rail (or\nnothing, with `hideOnCollapse`). Mounted expanded, it plays the same\nexpand motion as expanding later. Initial focus: an element React's\n`autoFocus` focused inside the rail, else the element marked\n`data-autofocus`, else the first tabbable element — `autoFocus` only runs\nwhen its element mounts, so for content rendered while collapsed use\n`data-autofocus`."
    },
    {
     "name": "modalLabel",
@@ -3318,7 +3325,7 @@
   ]
  },
  "SideSheet": {
-  "description": "Material Design 3 Side sheet (standard or modal).\n\nA 400dp max-width panel anchored to the right (or left) edge. Standard\n= inline Surface panel; modal = SurfaceContainerLow over a 0.32 Scrim with\n`role=\"dialog\" aria-modal` and Escape-to-close — per m3.material.io specs.\nHeader uses 24dp side padding (16dp with a back icon), 12dp gaps, a Title\nLarge headline, and optional back/close IconButtons. Bottom actions are a\n72dp left-aligned bar.",
+  "description": "Material Design 3 Side sheet (standard or modal).\n\nA 400dp max-width panel anchored to the right (or left) edge. Standard\n= inline Surface panel; modal = SurfaceContainerLow over a 0.32 Scrim with\n`role=\"dialog\" aria-modal` and Escape-to-close — per m3.material.io specs.\nHeader uses 24dp side padding (16dp with a back icon), 12dp gaps, a Title\nLarge headline, and optional back/close IconButtons. Bottom actions are a\n72dp left-aligned bar.\n\nA modal sheet mounted with `open` slides in like one opened later. Initial\nfocus (modal): an element React's `autoFocus` focused inside it, else the\nelement marked `data-autofocus`, else the first tabbable element.\n`autoFocus` only runs when its element mounts, so for content rendered\nwhile the sheet is closed mark the target with `data-autofocus` instead.",
   "props": [
    {
     "name": "actions",

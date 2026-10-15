@@ -298,6 +298,23 @@ describe('NavigationRail modal (#180)', () => {
     expect(screen.getByRole('navigation', { name: 'Mail' })).toBe(nav)
   })
 
+  it('a modal rail mounted expanded starts the morph collapsed; an in-flow one rests expanded (#516)', () => {
+    const { unmount } = render(
+      <NavigationRail aria-label="Mail" modal variant="expanded">
+        <NavigationRailItem value="a" icon={Icon} label="Alpha" />
+      </NavigationRail>,
+    )
+    // The spring then runs to 1 on the next frames, as a later expand does.
+    expect(screen.getByRole('navigation').style.getPropertyValue('--_t')).toBe('0')
+    unmount()
+    render(
+      <NavigationRail aria-label="Mail" variant="expanded">
+        <NavigationRailItem value="a" icon={Icon} label="Alpha" />
+      </NavigationRail>,
+    )
+    expect(screen.getByRole('navigation').style.getPropertyValue('--_t')).toBe('1')
+  })
+
   it('ignores hideOnCollapse without modal', () => {
     render(
       <NavigationRail aria-label="Mail" hideOnCollapse>

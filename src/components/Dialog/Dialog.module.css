@@ -181,6 +181,26 @@
   transform: translateY(0);
 }
 
+/* Mounted already open (#516): an element has no before-change style on its
+   first render, so the open transition would not run. Start it from the
+   closed values instead — the same motion as opening later. A later open
+   (the closed root already rendered) ignores these. Reduced motion: the
+   transitions are `none`, so the dialog still appears at once. */
+@starting-style {
+  .root[data-open] .scrim {
+    opacity: 0;
+  }
+
+  .root[data-open] .dialog {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+
+  .root[data-full-screen][data-open] .dialog {
+    transform: translateY(24px);
+  }
+}
+
 .fsHeader {
   display: flex;
   align-items: center;

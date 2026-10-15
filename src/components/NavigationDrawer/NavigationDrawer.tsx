@@ -83,6 +83,12 @@ export interface NavigationDrawerProps
  * drawer calls `onClose`; a closed drawer is `inert`, and closing it with
  * focus inside returns focus to where it was before opening. Pair it with a
  * menu button carrying `aria-expanded` / `aria-controls`.
+ *
+ * A modal drawer mounted with `open` slides in like one opened later. Initial
+ * focus (modal): an element React's `autoFocus` focused inside it, else the
+ * element marked `data-autofocus`, else the first tabbable element.
+ * `autoFocus` only runs when its element mounts, so for content rendered
+ * while the drawer is closed mark the target with `data-autofocus` instead.
  */
 export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
   function NavigationDrawer(

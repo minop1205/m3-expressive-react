@@ -131,6 +131,25 @@
   transform: translateX(-100%);
 }
 
+/* Modal sheet mounted already open (#516): an element has no before-change
+   style on its first render, so the open transition would not run. Start it
+   from the closed values instead — the same motion as opening later. A later
+   open ignores these. The standard sheet is a persistent surface and is left
+   out. Reduced motion: the transitions are `none`. */
+@starting-style {
+  .modalRoot[data-open] .scrim {
+    opacity: 0;
+  }
+
+  .modalRoot[data-open] .sheet[data-anchor='right'] {
+    transform: translateX(100%);
+  }
+
+  .modalRoot[data-open] .sheet[data-anchor='left'] {
+    transform: translateX(-100%);
+  }
+}
+
 .header {
   display: flex;
   align-items: center;

@@ -17,6 +17,7 @@ import {
   type ReactNode,
 } from 'react'
 import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
+import { restoreFocusAfterOutsidePress } from '../../internal/outsidePressFocus'
 import clsx from 'clsx'
 import { Ripple } from '../../primitives/Ripple/Ripple'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
@@ -252,6 +253,9 @@ export const FabMenu = forwardRef<HTMLDivElement, FabMenuProps>(function FabMenu
     // pointerdown (drag libraries) suppresses the compatibility mousedown.
     const onPointerDown = (event: globalThis.PointerEvent) => {
       if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        // Focus goes to what was pressed, or back to the toggle when the
+        // press takes no focus (it would fall to <body>) — #515.
+        restoreFocusAfterOutsidePress(event, rootRef.current, focusToggle)
         setOpen(false)
       }
     }

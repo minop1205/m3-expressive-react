@@ -67,7 +67,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B39 | #442 | SearchBar の full-screen レイアウト | **`layout="docked" \| "fullscreen"`(既定 docked)、full-screen は Compose `ExpandedFullScreenContainedSearchBar`(contained)、戻るボタンの名前は `backLabel`** | なし(追加) | 決定(2026-10-13・#442 の API 案どおり) |
 | B37 | #439 | TextField のラベル位置(上置き・常時縮小) | **`labelPlacement?: 'floating' \| 'above'`(既定 `'floating'`)+ `shrinkLabel?: boolean`、DatePickerField も同名で素通し** | なし(追加) | 決定(2026-10-13・#439 の API 案どおり) |
 | B41 | #444 | 小さな構成の不足(FabMenu 配置・Toolbar elevation・dismissible drawer・Carousel 幅) | **FabMenu `horizontalAlignment`、Toolbar `disableElevation`、NavigationDrawer `variant="dismissible"`、Carousel `itemWidth` の JSDoc 修正** | なし(追加) | 決定(2026-10-13) |
-| B42 | #434 | Autocomplete(exposed dropdown menu・編集可) | **専用の `<Autocomplete>`、`options` 配列か `<Option>` 子要素、`value` / `inputValue` の二系統(各 controlled / uncontrolled)、`freeSolo` / `filterOptions` / `noOptionsText`、APG list autocomplete、listbox / Option は Select と共有** | なし(追加) | 決定(2026-10-13・#434 フェーズ 2) |
+| B42 | #434 | Autocomplete(exposed dropdown menu・編集可) | **専用の `<Autocomplete>`、`options` 配列か `<Option>` 子要素、`value` / `inputValue` の二系統(各 controlled / uncontrolled)、`freeSolo` / `filterOptions` / `noOptionsText`、APG list autocomplete、listbox / Option は Select と共有** | なし(追加) | 決定(2026-10-13・#434 フェーズ 2)。追補(2026-10-16・#517): `clearOnEscape`(既定 false) |
 | B43 | #444 | TimePicker の vibrant・横向き・スクロールホイール | **`variant="standard" \| "vibrant"`、`orientation="vertical" \| "horizontal"`(dial のみ)、`mode="scroll"`(Compose `TimeScroll`)+ 公開 `ScrollField`(APG spinbutton)** | なし(追加) | 決定(2026-10-13) |
 | B44 | #444 | TextField / Select の tonal・secure field・VerticalDragHandle | **TextField / Select `tonal?: boolean`(`@experimental`、Compose `tonalColors()` + `roundedShape`)、secure field はレシピ(`type="password"` + `IconButton toggle`、名前固定 + `aria-pressed`)、新規 `DragHandle`(APG window splitter、`value` / `onChange(event, value)` / `min` / `max` / `step` / `paneSide`)** | なし(追加) | 決定(2026-10-13) |
 | B45 | #494 | モーダル面の重なり順(top layer) | **Dialog / BottomSheet(modal)/ SideSheet(modal)/ NavigationDrawer(modal)/ NavigationRail(modal)/ modal DatePicker・TimePicker を開いている間 Popover API の top layer に置く(`popover="manual"` + `showPopover()`、開くたびに最上位へ、閉じる motion の間は残す)。DOM 位置は不変。Snackbar host も表示中は top layer に置き、modal の後に再 show して上を保つ。Popover API がなければ従来の z-index** | なし(内部・見た目不変) | 決定(2026-10-15) |
@@ -1478,6 +1478,22 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 
 **影響**: 非破壊(新規コンポーネント `Autocomplete`、サブパス `m3-expressive-react/Autocomplete`、`Option` に
 `textValue` を追加)。VRT: Autocomplete のストーリー 9 件を追加。Select のストーリーは変化なし。
+
+**追補(2026-10-16・#517)— `clearOnEscape`**: 上の「Escape は閉じていれば入力と値をクリア(APG)」を改める。
+WAI-ARIA APG の combobox パターンは、ポップアップが閉じているときの Escape を「Dismisses the listbox if it is
+displayed. Optionally, if the listbox is not showing, clears the textbox」とし、クリアは **任意**(optionally
+clears)。MUI `Autocomplete` も `clearOnEscape`(既定 `false`)で opt-in にしている。常にクリアして
+`preventDefault` すると、Dialog 内の Autocomplete で Escape が消費され、Dialog が閉じなくなる(下流アプリの報告)。
+
+- **公開 API**: `clearOnEscape?: boolean`(既定 `false`、MUI と同名・同既定)
+- **既定(`false`)**: リストが閉じているときの Escape は何もしない。`preventDefault` も伝播の停止もしないので、
+  外側の Dialog などが閉じる
+- **`clearOnEscape`**: リストが閉じていて入力か値があれば、入力と値を空にし(`onInputChange` / `onChange` に `''`)、
+  キーを消費する(`preventDefault`。外側の Dialog は閉じない)。空になった後の Escape は既定と同じく素通り
+- **リストが開いているとき**: どちらでもリストを閉じるだけ(入力は残す)で、キーを消費する(従来どおり)
+- docs/specs/autocomplete.md のキー表の Escape(閉)行は本追補で置き換え(取り消し線 + 参照)
+
+**影響**: 挙動の変更(既定で Escape がクリアしなくなる)。従来の挙動は `clearOnEscape` で戻せる。VRT 変化なし。
 
 ## 入力系
 

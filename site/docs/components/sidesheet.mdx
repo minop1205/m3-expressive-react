@@ -146,6 +146,12 @@ on scrim click and <kbd>Escape</kbd>.
   does not trap focus.
 - The close and back buttons are icon buttons labelled "Close" and "Back";
   localize them with `closeLabel` / `backLabel`.
+- Initial focus (modal): an element that React's `autoFocus` focused inside
+  the sheet, else the element marked `data-autofocus`, else the first
+  tabbable element. `autoFocus` only runs when its element mounts, so for
+  content rendered while the sheet is closed (the usual `open={open}` pattern)
+  mark the target with `data-autofocus` instead.
+- A modal sheet mounted with `open` slides in the same way as one opened later.
 
 ## Props
 

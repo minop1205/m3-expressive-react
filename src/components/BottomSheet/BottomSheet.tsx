@@ -188,6 +188,12 @@ export interface BottomSheetProps extends HTMLAttributes<HTMLDivElement> {
  * Dragging snaps between hidden, partial and expanded: past 56px from the
  * starting detent, or a fling faster than 125px/s, moves to the next detent
  * (Compose thresholds); reaching hidden calls `onClose(event, 'drag')`.
+ *
+ * A modal sheet mounted with `open` slides in like one opened later. Initial
+ * focus (modal): an element React's `autoFocus` focused inside it, else the
+ * element marked `data-autofocus`, else the first tabbable element.
+ * `autoFocus` only runs when its element mounts, so for content rendered
+ * while the sheet is closed mark the target with `data-autofocus` instead.
  */
 export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
   function BottomSheet(

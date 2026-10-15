@@ -212,6 +212,12 @@ slides it in from the leading edge — open it from a button in the page.
 - The open modal rail is a `dialog` (`aria-modal`) named by `modalLabel`
   (default "Navigation rail"); focus returns to the opener when it
   collapses.
+- Initial focus (modal): an element that React's `autoFocus` focused inside
+  the rail, else the element marked `data-autofocus`, else the first
+  tabbable element. `autoFocus` only runs when its element mounts, so for
+  content rendered while the rail is collapsed (the usual `variant={expanded ? 'expanded' : 'collapsed'}` pattern)
+  mark the target with `data-autofocus` instead.
+- A modal rail mounted expanded plays the same expand motion as one expanded later.
 
 ## Props
 

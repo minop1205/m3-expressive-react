@@ -2,6 +2,8 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
+import { useState } from 'react'
+import { Dialog } from '../Dialog/Dialog'
 import { Tooltip } from './Tooltip'
 
 const HIDE_DELAY = 1500
@@ -726,5 +728,84 @@ describe('Tooltip', () => {
       </div>,
     )
     expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
+describe('Tooltip Escape while lingering (#514)', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  function Page() {
+    const [open, setOpen] = useState(false)
+    return (
+      <>
+        <Tooltip text="Hint">
+          <button>Trigger</button>
+        </Tooltip>
+        <button onClick={() => setOpen(true)}>Open dialog</button>
+        <Dialog open={open} onClose={() => setOpen(false)} title="Settings">
+          Body
+        </Dialog>
+      </>
+    )
+  }
+
+  it('lets a dialog opened during the hide delay close on Escape', async () => {
+    const user = setupFake()
+    render(<Page />)
+    const trigger = screen.getByRole('button', { name: 'Trigger' })
+    await user.tab()
+    expect(isShown(trigger)).toBe(true)
+    // Focus leaves the trigger: the tooltip lingers for 1.5 s.
+    await user.tab()
+    expect(screen.getByRole('button', { name: 'Open dialog' })).toHaveFocus()
+    await user.keyboard('{Enter}')
+    expect(isShown(trigger)).toBe(true)
+    expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument()
+    advance(HIDE_DELAY / 3)
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: 'Settings' })).not.toBeInTheDocument()
+    expect(isShown(trigger)).toBe(false)
+  })
+
+  it('still consumes Escape while the trigger has focus', async () => {
+    const onKey = vi.fn((event: KeyboardEvent) => event.key === 'Escape' && event.defaultPrevented)
+    const user = userEvent.setup()
+    render(
+      <Tooltip text="Hint">
+        <button>Trigger</button>
+      </Tooltip>,
+    )
+    window.addEventListener('keydown', onKey)
+    try {
+      await user.tab()
+      await user.keyboard('{Escape}')
+      expect(onKey.mock.results.at(-1)?.value).toBe(true)
+    } finally {
+      window.removeEventListener('keydown', onKey)
+    }
+  })
+
+  it('still consumes Escape while the pointer is over the trigger', async () => {
+    const onKey = vi.fn((event: KeyboardEvent) => event.key === 'Escape' && event.defaultPrevented)
+    const user = userEvent.setup()
+    render(
+      <>
+        <input aria-label="Elsewhere" />
+        <Tooltip text="Hint">
+          <button>Trigger</button>
+        </Tooltip>
+      </>,
+    )
+    window.addEventListener('keydown', onKey)
+    try {
+      await user.click(screen.getByRole('textbox'))
+      await user.hover(screen.getByRole('button'))
+      await user.keyboard('{Escape}')
+      expect(onKey.mock.results.at(-1)?.value).toBe(true)
+    } finally {
+      window.removeEventListener('keydown', onKey)
+    }
   })
 })

@@ -1,5 +1,32 @@
 # Changelog
 
+## 1.5.1 (2026-10-16)
+
+### Fixed
+
+- **Tooltip**: a tooltip lingering for the m3 1.5 s hide delay no longer
+  swallows Escape — it consumes the key only while its trigger is focused or
+  hovered, so a dialog opened in that window still closes (#514).
+- **Menu / FabMenu**: closing with an outside press returns focus to the
+  trigger when the press lands on nothing focusable (instead of `<body>`);
+  pressing a focusable element still moves focus there (#515).
+- **Dialog / BottomSheet / SideSheet / NavigationDrawer / NavigationRail**
+  (modal): mounting already open plays the open motion (`@starting-style`),
+  so React `autoFocus` works without rendering closed first. For content
+  mounted while closed, use `data-autofocus` (#516).
+- **Autocomplete**: Escape with the list closed no longer clears the value
+  and no longer stops the key, so an enclosing Dialog closes. Opt in with the
+  new `clearOnEscape` (MUI name; APG "optionally clears") (#517).
+
+### Migration notes
+
+- **Modals in the top layer (from 1.5.0)**: since 1.5.0 the modal DatePicker /
+  TimePicker, Dialog and the other modals (BottomSheet, SideSheet,
+  NavigationDrawer, NavigationRail) show themselves in the browser top layer
+  (#494, B45). If your app wrapped one in its own popover / top-layer
+  container, remove that wrapper — otherwise the app's layer is painted above
+  the modal and blocks it.
+
 ## 1.5.0 (2026-10-15)
 
 Follow-ups from a downstream app's report, each decided spec-first: m3.material.io,
