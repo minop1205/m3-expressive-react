@@ -123,6 +123,48 @@ shown mainly by the text cursor; check that this is enough for your design.
 />
 ```
 
+## Rich label & supporting text
+
+`label`, `supportingText` and `errorText` accept any React content, not just
+strings (as Compose's composable slots do). The label stays the field's
+accessible name (it is still a `<label for>`), the supporting / error text
+stays its description (`aria-describedby`), and the outlined notch follows
+the rendered label's width.
+
+<Demo>
+  <TextField
+    variant="outlined"
+    required
+    label={<>Email <strong>(work)</strong></>}
+    supportingText={<>Used for sign-in. <a href="#rich-label--supporting-text">Privacy policy</a></>}
+  />
+  <TextField
+    label="Email"
+    defaultValue="ada@"
+    error
+    errorText={<>Enter a valid address. <a href="#rich-label--supporting-text">Get help</a></>}
+  />
+</Demo>
+
+```tsx
+<TextField
+  variant="outlined"
+  required
+  label={<>Email <strong>(work)</strong></>}
+  supportingText={<>Used for sign-in. <a href="/privacy">Privacy policy</a></>}
+/>
+```
+
+:::note Content guidance (m3)
+Keep the label **short and on one line** — m3: "Label text shouldn't be
+truncated or take up multiple lines". Use text, emphasis or a small icon;
+don't put links or buttons in the label (clicks on it go to the input, and
+the outlined notch renders a hidden copy of it, so also avoid elements with
+an `id`). Supporting text should ideally fit on one line; a **short** link
+there is fine — it stays in the Tab order and is read as part of the
+description. `errorText` replaces `supportingText` while in error.
+:::
+
 ## Label position
 
 By default the label floats: it rests in the input line and minimizes on

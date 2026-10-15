@@ -69,6 +69,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B42 | #434 | Autocomplete(exposed dropdown menu・編集可) | **専用の `<Autocomplete>`、`options` 配列か `<Option>` 子要素、`value` / `inputValue` の二系統(各 controlled / uncontrolled)、`freeSolo` / `filterOptions` / `noOptionsText`、APG list autocomplete、listbox / Option は Select と共有** | なし(追加) | 決定(2026-10-13・#434 フェーズ 2) |
 | B43 | #444 | TimePicker の vibrant・横向き・スクロールホイール | **`variant="standard" \| "vibrant"`、`orientation="vertical" \| "horizontal"`(dial のみ)、`mode="scroll"`(Compose `TimeScroll`)+ 公開 `ScrollField`(APG spinbutton)** | なし(追加) | 決定(2026-10-13) |
 | B44 | #444 | TextField / Select の tonal・secure field・VerticalDragHandle | **TextField / Select `tonal?: boolean`(`@experimental`、Compose `tonalColors()` + `roundedShape`)、secure field はレシピ(`type="password"` + `IconButton toggle`、名前固定 + `aria-pressed`)、新規 `DragHandle`(APG window splitter、`value` / `onChange(event, value)` / `min` / `max` / `step` / `paneSide`)** | なし(追加) | 決定(2026-10-13) |
+| B48 | #498 | TextField 系の `label` / `supportingText` / `errorText` をリッチ内容に | **TextField / Select / Autocomplete / DatePickerField の `label` / `supportingText` / `errorText`(DatePickerField は `getErrorLabel` の戻り値)を `ReactNode` に拡張。名前・説明の配線と notch の実測は従来の仕組みのまま、文字列のときの DOM と見た目は不変。m3 の内容指針(ラベルは短く 1 行、supporting text のリンクは短く)を JSDoc と docs に記載** | なし(型の拡張) | 決定(2026-10-15) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -1862,6 +1863,56 @@ Default / Refreshing / Circular を追加。
 `Tonal`、Select `Tonal`、DragHandle `Default` / `Disabled` / `ListDetail` を追加。対象: TextField、Select、DragHandle。
 textfield 監査(docs/audits/textfield.md 軽微欄)の「機能追加の候補」の SecureTextField / tonal / roundedShape は
 本裁定で対応済み(監査側に相互参照を追記)。
+
+### B48: TextField 系のラベル・supporting text をリッチ内容に(#498)
+
+- **Issue**: #498(下流アプリ dd_redesign の MD3 ブランチ、1.4.0 採用後の報告)
+- **状態**: 決定(2026-10-15)
+- **背景**: `label` / `supportingText` / `errorText` が `string` のみで、リンク・ツールチップ用アイコン・
+  強調などを入れられない。
+
+**仕様の位置づけ**
+
+- **m3.material.io**(優先 1): 内容の指針だけがある — ラベルは「Label text shouldn't be truncated or take up
+  multiple lines. Keep it short」、required の `*` はラベル末尾で「The accessibility label must include the
+  asterisk」、supporting text は理想は 1 行(折り返しは可)、error text は supporting text を**置き換える**
+  (error icon 推奨)、a11y はエラーを alert で通知し、ラベル → supporting → error の順で読む。ラベルや
+  supporting text に**リッチ内容を入れてよいか**は書かれていない(沈黙)
+- **Compose**(優先 2): `label` / `placeholder` / `leadingIcon` / `prefix` / `suffix` / `supportingText` は
+  すべて `@Composable` スロットで、任意の内容を置ける(TextField.kt:212–219。`label` は
+  `TextFieldLabelScope`)。outlined の切り欠きは**計測したラベルの大きさ**で決まる(TextFieldImpl.kt:247–270)。
+  error 専用スロットはなく、呼び出し側が `supportingText` を差し替える
+- m3 が沈黙している「内容の型」は Compose のスロット = 任意内容に合わせ、Web では `ReactNode` とする。m3 の
+  内容指針は型では強制できないので、JSDoc と docs の注意として残す
+
+**選択肢**
+
+1. **(a) `label` / `supportingText` / `errorText` を `ReactNode` に広げる**(MUI TextField の `label` /
+   `helperText` と同じ形)
+2. (b) 別の slot prop(`labelSlot` など)を足す — 同じ役割の prop が 2 つになり、どちらが優先かの規則が増える
+3. (c) `string` のまま、リンク等は利用者が TextField の外に置く — 説明(`aria-describedby`)の対象から外れる
+
+**決定**: **(a)**。
+
+- 対象: **TextField / Select / Autocomplete** の `label` / `supportingText` / `errorText`、
+  **DatePickerField** の `label` / `supportingText` と、error text を作る `getErrorLabel` の戻り値
+  (DatePickerField には `errorText` prop がなく、これが同じ役割)
+- 名前と説明は今の仕組みのまま: ラベルは TextField / DatePickerField / Autocomplete では `<label htmlFor>`、
+  Select では `aria-labelledby` が指す要素に入る。required の `*` は従来どおり末尾に `aria-hidden` で付ける
+  (`aria-required` が必須を伝える)。supporting / error の要素は `aria-describedby` で参照し、error 時は
+  error text が supporting text を置き換えて `role="alert"` を持つ(m3)
+- outlined の notch は、ラベルと同じ内容を不可視(`visibility: hidden`)の計測用コピーとして notch に描く
+  既存の仕組みで、**描画されたラベルの幅**に追従する(Compose の計測と同じ結果)。コピーは
+  `visibility: hidden` なのでフォーカスも読み上げも受けない
+- 文字列のときの DOM と見た目は変えない(型の拡張のみ)
+- 内容の指針(JSDoc と docs): ラベルは短い 1 行の phrasing content(テキスト・強調・小さなアイコン)。
+  ラベルは 1 行で省略表示され、クリックは入力に渡るので、**ラベルにリンクやボタンを入れない**。
+  notch のコピーと 2 回描かれるので `id` を持つ要素も避ける。supporting text のリンクは可、ただし短く。
+  error text は supporting text を置き換える
+- Web 側の判断: 内容の制限は型では課さない(MUI と同じ)。m3 の指針を守るのは利用者の責任とし、docs に明記する
+
+**影響**: 非破壊(公開型の拡張のみ。既定値・DOM・見た目は文字列のとき不変)。VRT: TextField `RichContent` を追加、
+既存ストーリーはピクセル不変。対象: TextField、Select、Autocomplete、DatePickerField。
 
 ---
 

@@ -54,8 +54,16 @@ export interface SelectProps
    * @default false
    */
   tonal?: boolean
-  /** Floating label; also names the combobox and the listbox. Rendered with a trailing `*` when `required`. */
-  label?: string
+  /**
+   * Floating label; also names the combobox and the listbox. Rendered with a trailing `*` when `required`.
+   *
+   * Accepts rich content (text, emphasis, a small icon) — keep it short and
+   * on one line, as m3 asks: the label is a single line (truncated with an
+   * ellipsis), clicks on it go to the field, and the outlined notch draws a
+   * hidden copy of it to measure its width. So no links or buttons in the
+   * label, and no elements with an `id`.
+   */
+  label?: ReactNode
   /** Controlled selected value (`''` = nothing selected). */
   value?: string
   /** Uncontrolled initial value. @default '' */
@@ -81,10 +89,18 @@ export interface SelectProps
   required?: boolean
   /** Error state — error colors, `aria-invalid`, and `errorText`. Ignored while `disabled`. @default false */
   error?: boolean
-  /** Helper line below the field. Replaced by `errorText` while in error. */
-  supportingText?: string
-  /** Shown instead of `supportingText` (with `role="alert"`) when `error` is set. */
-  errorText?: string
+  /**
+   * Helper line below the field. Replaced by `errorText` while in error.
+   * Accepts rich content — a short link is fine (it stays reachable and is
+   * part of the field's description via `aria-describedby`); keep it to
+   * about one line, as m3 asks.
+   */
+  supportingText?: ReactNode
+  /**
+   * Shown instead of `supportingText` (with `role="alert"`) when `error` is set.
+   * Accepts rich content, like `supportingText`.
+   */
+  errorText?: ReactNode
   /** Icon at the start of the field (decorative). */
   startIcon?: ReactNode
   /** Stretch the field (and therefore the listbox) to the container's width. @default false */
