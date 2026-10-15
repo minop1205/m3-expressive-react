@@ -110,11 +110,20 @@ import type { ButtonProps } from 'm3-expressive-react/Button'
 - **Root and subpath imports can be mixed** — they share the same modules
   (one `RadioGroup` context, one `ThemeProvider`). The root entry is
   unchanged and still tree-shaken.
+- **Primitives for your own controls**: the `Ripple` and `FocusRing`
+  primitives have subpaths too (`m3-expressive-react/Ripple`,
+  `m3-expressive-react/FocusRing`; default + named export), so a custom
+  control built on them gets their CSS in `tokens.css` mode:
 
-| You import components from…           | Import this CSS once                                  |
-| ------------------------------------- | ----------------------------------------------------- |
-| `m3-expressive-react` (root)          | `m3-expressive-react/styles.css` (every component)    |
-| `m3-expressive-react/<Component>`     | `m3-expressive-react/tokens.css` (tokens + typescale) |
+  ```tsx
+  import Ripple from 'm3-expressive-react/Ripple'
+  import { FocusRing } from 'm3-expressive-react/FocusRing'
+  ```
+
+| You import components from…                                    | Import this CSS once                                  |
+| -------------------------------------------------------------- | ----------------------------------------------------- |
+| `m3-expressive-react` (root)                                   | `m3-expressive-react/styles.css` (every component)    |
+| `m3-expressive-react/<Component>` (or `/Ripple`, `/FocusRing`) | `m3-expressive-react/tokens.css` (tokens + typescale) |
 
 Notes:
 

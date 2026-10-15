@@ -13,13 +13,16 @@
  *    through CSS Modules a second time and re-hash the class names.
  * 2. Emits `styles.css` (every rule, same order as the former single-bundle
  *    build) and `tokens.css` (`src/styles/tokens.css` + `typescale.css`).
- * 3. Emits one thin ESM wrapper per component folder, `<Component>/index.js`,
- *    that imports the CSS of the component's module graph (shared primitives
- *    first, then the component) and re-exports `components/<Component>/`.
+ * 3. Emits one thin ESM wrapper per subpath folder, `<Name>/index.js`,
+ *    that imports the CSS of the folder's module graph (shared primitives
+ *    first, then the component) and re-exports `<base>/<Name>/`. Subpath
+ *    folders are every component folder (`components/<Name>`) plus the
+ *    public primitives (`primitives/Ripple`, `primitives/FocusRing`) for
+ *    consumers who build their own controls on them in `tokens.css` mode.
  *    The CSS lives only in these wrappers, so the root entry stays CSS-free
  *    exactly as before. The `require` / `types` conditions point straight
- *    at `components/<Component>/index.{cjs,d.ts,d.cts}` (no CSS, so plain
- *    Node and Jest can `require()` any subpath).
+ *    at `<base>/<Name>/index.{cjs,d.ts,d.cts}` (no CSS, so plain Node and
+ *    Jest can `require()` any subpath).
  *
  * Inert outside `vite build` in library mode (Storybook and Vitest load the
  * same vite.config.ts).
@@ -28,9 +31,18 @@ import { existsSync, readdirSync, statSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import type { Plugin } from 'vite'
 
-/** Component folders under `src/components/` — one subpath entry each. */
-export function componentFolders(srcDir: string): string[] {
-  const dir = join(srcDir, 'components')
+/** Source directories whose folders (with an `index.ts`) become subpaths. */
+export const SUBPATH_BASES = ['components', 'primitives'] as const
+
+export interface SubpathFolder {
+  /** Subpath name: `m3-expressive-react/<name>`. */
+  name: string
+  /** Source directory under `src/` (`components` or `primitives`). */
+  base: (typeof SUBPATH_BASES)[number]
+}
+
+function foldersIn(srcDir: string, base: string): string[] {
+  const dir = join(srcDir, base)
   return readdirSync(dir)
     .filter(
       (name) =>
@@ -40,14 +52,28 @@ export function componentFolders(srcDir: string): string[] {
     .sort()
 }
 
-/** Lib entries: the root barrel plus every component folder's barrel. */
+/**
+ * Every subpath folder: the component folders plus the public primitives
+ * (`src/primitives/<Name>/index.ts`). Names share one namespace.
+ */
+export function subpathFolders(srcDir: string): SubpathFolder[] {
+  const folders = SUBPATH_BASES.flatMap((base) =>
+    foldersIn(srcDir, base).map((name) => ({ name, base })),
+  )
+  const names = folders.map((f) => f.name)
+  const dup = names.find((name, i) => names.indexOf(name) !== i)
+  if (dup) throw new Error(`subpath name collision: ${dup}`)
+  return folders.sort((a, b) => a.name.localeCompare(b.name))
+}
+
+/** Lib entries: the root barrel plus every subpath folder's barrel. */
 export function libEntries(srcDir: string): Record<string, string> {
   return {
     index: join(srcDir, 'index.ts'),
     ...Object.fromEntries(
-      componentFolders(srcDir).map((name) => [
-        `components/${name}/index`,
-        join(srcDir, 'components', name, 'index.ts'),
+      subpathFolders(srcDir).map(({ name, base }) => [
+        `${base}/${name}/index`,
+        join(srcDir, base, name, 'index.ts'),
       ]),
     ),
   }
@@ -194,10 +220,10 @@ export function subpathEntries({ srcDir }: { srcDir: string }): Plugin {
       }
 
       // The CJS build needs no wrapper: `require` resolves straight to
-      // components/<Name>/index.cjs (CSS-free, so plain Node / Jest work).
+      // <base>/<Name>/index.cjs (CSS-free, so plain Node / Jest work).
       if (!esm) return
-      for (const name of componentFolders(srcDir)) {
-        const entryId = join(srcDir, 'components', name, 'index.ts')
+      for (const { name, base } of subpathFolders(srcDir)) {
+        const entryId = join(srcDir, base, name, 'index.ts')
         const target = JSON.stringify(rel(name, entryFor(entryId).fileName))
         const source = [
           ...cssClosure(entryId)

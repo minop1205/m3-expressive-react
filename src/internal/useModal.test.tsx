@@ -298,6 +298,59 @@ describe('useModal — focus return', () => {
     expect(trigger).toHaveFocus()
   })
 
+  it('keeps focus on an autoFocus input on open and returns it to the opener on close', async () => {
+    const user = userEvent.setup()
+    function App() {
+      const [open, setOpen] = useState(false)
+      return (
+        <>
+          <button onClick={() => setOpen(true)}>Open</button>
+          <Dialog open={open} onClose={() => setOpen(false)} title="T">
+            <button>Before</button>
+            {open && <input aria-label="Name" autoFocus />}
+          </Dialog>
+        </>
+      )
+    }
+    render(<App />)
+    const trigger = screen.getByRole('button', { name: 'Open' })
+    await user.click(trigger)
+    expect(screen.getByRole('textbox', { name: 'Name' })).toHaveFocus()
+    await user.keyboard('{Escape}')
+    expect(trigger).toHaveFocus()
+  })
+
+  it('never restores focus into the closed surface when a kept-mounted child autoFocused', async () => {
+    const user = userEvent.setup()
+    function App() {
+      const [open, setOpen] = useState(false)
+      const [key, setKey] = useState(0)
+      return (
+        <>
+          <button
+            onClick={() => {
+              setKey((k) => k + 1)
+              setOpen(true)
+            }}
+          >
+            Open
+          </button>
+          <Dialog open={open} onClose={() => setOpen(false)} title="T">
+            <button>Before</button>
+            <input key={key} aria-label="Name" autoFocus={key > 0} />
+          </Dialog>
+        </>
+      )
+    }
+    render(<App />)
+    const trigger = screen.getByRole('button', { name: 'Open' })
+    await user.click(trigger)
+    const input = screen.getByRole('textbox', { name: 'Name' })
+    expect(input).toHaveFocus()
+    await user.keyboard('{Escape}')
+    expect(trigger).toHaveFocus()
+  })
+
   it('falls back to the nearest surviving ancestor when the trigger was removed', () => {
     function App({ open, showTrigger }: { open: boolean; showTrigger: boolean }) {
       return (

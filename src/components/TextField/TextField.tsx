@@ -109,11 +109,16 @@ export interface TextFieldProps
    * (`pattern`, `min`, `max`, `step`, `onKeyDown`, extra `aria-*`, …).
    * Precedence: the component's own wiring always wins over conflicting
    * `inputProps` keys — the controlled `value` / `onChange` / `onFocus` /
-   * `onBlur`, `id`, `className`, and every dedicated input prop the
-   * component sets (`type`, `name`, `placeholder`, `required`, `readOnly`,
-   * `autoComplete`, `maxLength`, `rows`, …). Exceptions: `aria-describedby`
-   * is merged (the field's own ids first), and an `onInput` handler is
-   * called after the component's own.
+   * `onBlur`, `id`, `className`, and every dedicated input prop that is
+   * given (`type`, `name`, `placeholder`, `required`, `readOnly`,
+   * `disabled`, `autoComplete`, `maxLength`, `rows`, …). A dedicated prop
+   * that is omitted never overrides `inputProps`, even when it has a
+   * default: `inputProps={{ required: true }}` makes the input required
+   * (and adds the label `*`) unless `required` is passed explicitly — then
+   * the top-level prop wins. The same holds for `readOnly`, `disabled`,
+   * `type` and `rows`. Exceptions: `aria-describedby` is merged (the field's
+   * own ids first), and an `onInput` handler is called after the
+   * component's own.
    */
   inputProps?:
     | InputHTMLAttributes<HTMLInputElement>
@@ -193,8 +198,8 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
       maxLength,
       getCounterLabel = defaultCounterLabel,
       multiline = false,
-      rows = 2,
-      disabled = false,
+      rows: rowsProp,
+      disabled: disabledProp,
       className,
       value: controlledValue,
       defaultValue,
@@ -205,11 +210,11 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
       id: providedId,
       inputRef,
       inputProps,
-      type = 'text',
+      type: typeProp,
       name,
       placeholder,
-      required = false,
-      readOnly = false,
+      required: requiredProp,
+      readOnly: readOnlyProp,
       autoComplete,
       autoFocus,
       inputMode,
@@ -217,6 +222,17 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
     },
     forwardedRef,
   ) {
+    // Attributes with a dedicated prop AND a default: an explicit top-level
+    // prop wins; when it is omitted, an `inputProps` value wins over the
+    // default (so `inputProps={{ required: true }}` isn't reset to false).
+    const nativeProps = (inputProps ?? {}) as InputHTMLAttributes<HTMLInputElement> &
+      TextareaHTMLAttributes<HTMLTextAreaElement>
+    const disabled = disabledProp ?? nativeProps.disabled ?? false
+    const required = requiredProp ?? nativeProps.required ?? false
+    const readOnly = readOnlyProp ?? nativeProps.readOnly ?? false
+    const type = typeProp ?? nativeProps.type ?? 'text'
+    const rows = rowsProp ?? nativeProps.rows ?? 2
+
     const generatedId = useId()
     const inputId = providedId ?? generatedId
     const supportingId = `${inputId}-supporting`
