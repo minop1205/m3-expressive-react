@@ -1935,6 +1935,90 @@ WithBadges を追加。対象: Tab(Badge は内部ヘルパーへの切り出し
 
 ---
 
+### B47: Slider の操作終了イベント `onChangeCommitted`(#497)
+
+- **Issue**: #497
+- **状態**: 決定(2026-10-15)
+- **背景**: Slider には操作の終わりを知らせるイベントがない。確定時に保存するアプリは native の `change` と keyup を
+  組み合わせるしかなく、しかも Home / End / PageUp / PageDown は Slider が自前で値を動かすため native の `change` が
+  出ない(1.4.0 を採用した下流アプリからの報告)。
+
+**仕様**
+
+- **m3.material.io**(優先度 1): sliders accessibility「Changes made with sliders must take effect immediately」。
+  キーボードは矢印で 1 値 / 1 stop、Home / End で先頭 / 末尾。操作終了(commit)イベントについては**記述がない**。
+  「即時に反映」は値の更新(`onChange`)の要件であり、`onChange` は従来どおり連続で出す
+- **Compose androidx-main**(優先度 2)`Slider.kt`:
+  - `onValueChangeFinished`「called when value change has ended … by ending a drag or a click. For keyboard movements,
+    this is called on every step.」(:184–187)
+  - ドラッグ終了(`onDragStopped`、:921–923)、ドラッグ中でないタップ(`onTap` の `!state.isDragging`、:3074–3077)
+  - キーボードは **KeyUp** で、値を動かすキー(矢印・Home / End・PageUp / PageDown)ごと(:1180–1214)。KeyUp は値が
+    変わったかを見ない(範囲端での矢印でも出る)
+  - アクセシビリティの `setProgress` は `onValueChange` の直後に即時に出し、値が変わらなければ何もしない(:2875–2882)
+- m3 が commit イベントについて沈黙しているので、時機は Compose に従い、prop の形は Web / MUI の慣用(A2)にする
+
+**選択肢**
+
+- **(a) `onChangeCommitted(event, value)`**(MUI `Slider` と同名・同形。`value` は `onChange` と同じ形 — `number` か `[start, end]`)
+- (b) `onValueChangeFinished()`(Compose 名、引数なし)— Web / MUI 利用者に馴染みがなく、A2 の `(event, value)` にも合わない
+- (c) native `change` イベントをそのまま流す — Home / End / PageUp / PageDown で出ない(本 Issue の問題そのもの)
+
+**決定**: **(a)**。時機は Compose `onValueChangeFinished` と同じにする。
+
+1. **ポインタ**: 入力上で pointerdown してから pointerup / pointercancel したとき、1 回の操作につき 1 回(Compose の
+   ドラッグ終了と、ドラッグなしのタップの両方に当たる。値が動かないタップでも出す — Compose `onTap` と同じ)。
+   ドラッグ中の連続した値は `onChange` だけに出る。`event` はウィンドウで受けた native の `PointerEvent`
+2. **キーボード**: 値を動かすキー(`ArrowLeft` / `ArrowRight` / `ArrowUp` / `ArrowDown`・`Home` / `End`・`PageUp` /
+   `PageDown`)の **keyup** ごと(押し続けたキーリピートは keyup の 1 回)。Compose と同じく値が変わったかは見ない
+   (範囲端での矢印・最小値での Home でも出す)。Compose は向きに合う矢印だけを扱うが、native の `<input type="range">`
+   は向きに関係なく 4 方向の矢印で値を動かすので、Web では 4 方向とも対象にする(値を動かすキー = commit するキー、
+   という Compose の対応を保つための Web 適応)。`event` は React の `KeyboardEvent`
+3. **支援技術による直接の値変更**(ポインタ・キー操作の外で入力の値が変わったとき — Compose の `setProgress` に相当):
+   `onChange` の直後に即時に出す。値が変わらなかったとき(range で反対側の thumb に当たって止まった等)は出さない。
+   `event` は `ChangeEvent`
+4. `value` は操作の最後に報告した値(`onChange` で最後に渡した値。controlled で親が値を反映しなくても同じ)。
+   range では `[start, end]` の組全体。積み重なった thumb のドラッグ受け渡し(#431)でも 1 回
+5. `onChange` の挙動・時機は**変えない**。disabled では出ない(入力がイベントを受けない)
+
+**影響**: 非破壊(prop の追加のみ)。見た目・DOM は不変、既存ストーリーはピクセル不変。VRT: `Components/Slider` に
+`ChangeCommitted`(確定値の表示)を追加。対象: Slider。
+
+---
+### B51: 仕様に根拠がないため見送る要望(#496・#501・#502)
+
+- **Issue**: #496・#501・#502(利用側アプリの報告 docs/redesign/07-md3.md §7 由来)
+- **状態**: 決定(2026-10-15・スペックファーストの原則で判定)
+- **調査**: m3.material.io(2026-10-15、TOKEN_TABLE revision 2026-10-13_06-10-19)と Compose androidx-main を確認
+
+**#496 フォーカス可能な無効ボタン(`aria-disabled`)**
+
+- m3: icon buttons の accessibility のキーボード表は「Tab — Focus lands on (non-disabled) icon button」
+  「Space or Enter — Activates the (non-disabled) icon button」で、無効なボタンは Tab で飛ばす前提。
+  フォーカス可能な無効状態は menus の「Disabled menu items can receive focus but aren't selectable」だけで、
+  ボタンには定義がない
+- Compose: `Button` / `IconButton` の `enabled = false` は `clickable(enabled = false)` でフォーカスもクリックも外す。
+  フォーカス可能な無効の概念はない
+- **決定**: 実装しない。無効の理由を伝えたい場合は、ボタンの近くの補助テキスト、または包む要素に
+  Tooltip を付ける方法をドキュメントで案内する
+
+**#501 Menu の `onAction(value)`**
+
+- m3: menus は「Selecting an option」で閉じる挙動と単一・複数選択(B33)を定めるが、集約ハンドラーの API はない
+- Compose: `DropdownMenuItem(onClick)` ごとの処理で、メニュー単位のハンドラーはない(閉じるのも呼び出し側)
+- **決定**: 実装しない。データから組み立てるメニューは、各 `MenuItem` の `onClick` で `value` を渡すか、
+  選択グループ(B33 `MenuGroup selectionMode` の `onChange(event, value)`)を使う
+
+**#502 Tooltip の表示遅延**
+
+- m3: 「Both plain and rich tooltips disappear 1.5 seconds after navigating away from the target region」
+  (消える遅延のみ)。表示までの遅延の定義はない
+- Compose: `BasicTooltip` はポインター Enter で即 `show()`、キーボードフォーカスでも即表示。
+  遅延はタッチの長押し(`longPressTimeoutMillis`)と、非 persistent の表示時間 `TooltipDuration` 1500ms のみ
+- 現状: 消える遅延は `HIDE_DELAY_MS = 1500` で m3 と一致、フォーカスでの表示は 1.4.1 で `:focus-visible` のときだけに修正済み
+- **決定**: 表示遅延は追加しない(m3・Compose とも即表示)
+
+---
+
 ## モーダル・Dialog(2026-10 利用者報告)
 
 ### B45: モーダル面を top layer に置く(重なり順)
@@ -2046,87 +2130,6 @@ full-screen / SideSheet / BottomSheet のデモ)は不要になったので外�
 `Components/Dialog` の `LongContent` を追加。対象: Dialog。
 
 ---
-### B47: Slider の操作終了イベント `onChangeCommitted`(#497)
-
-- **Issue**: #497
-- **状態**: 決定(2026-10-15)
-- **背景**: Slider には操作の終わりを知らせるイベントがない。確定時に保存するアプリは native の `change` と keyup を
-  組み合わせるしかなく、しかも Home / End / PageUp / PageDown は Slider が自前で値を動かすため native の `change` が
-  出ない(1.4.0 を採用した下流アプリからの報告)。
-
-**仕様**
-
-- **m3.material.io**(優先度 1): sliders accessibility「Changes made with sliders must take effect immediately」。
-  キーボードは矢印で 1 値 / 1 stop、Home / End で先頭 / 末尾。操作終了(commit)イベントについては**記述がない**。
-  「即時に反映」は値の更新(`onChange`)の要件であり、`onChange` は従来どおり連続で出す
-- **Compose androidx-main**(優先度 2)`Slider.kt`:
-  - `onValueChangeFinished`「called when value change has ended … by ending a drag or a click. For keyboard movements,
-    this is called on every step.」(:184–187)
-  - ドラッグ終了(`onDragStopped`、:921–923)、ドラッグ中でないタップ(`onTap` の `!state.isDragging`、:3074–3077)
-  - キーボードは **KeyUp** で、値を動かすキー(矢印・Home / End・PageUp / PageDown)ごと(:1180–1214)。KeyUp は値が
-    変わったかを見ない(範囲端での矢印でも出る)
-  - アクセシビリティの `setProgress` は `onValueChange` の直後に即時に出し、値が変わらなければ何もしない(:2875–2882)
-- m3 が commit イベントについて沈黙しているので、時機は Compose に従い、prop の形は Web / MUI の慣用(A2)にする
-
-**選択肢**
-
-- **(a) `onChangeCommitted(event, value)`**(MUI `Slider` と同名・同形。`value` は `onChange` と同じ形 — `number` か `[start, end]`)
-- (b) `onValueChangeFinished()`(Compose 名、引数なし)— Web / MUI 利用者に馴染みがなく、A2 の `(event, value)` にも合わない
-- (c) native `change` イベントをそのまま流す — Home / End / PageUp / PageDown で出ない(本 Issue の問題そのもの)
-
-**決定**: **(a)**。時機は Compose `onValueChangeFinished` と同じにする。
-
-1. **ポインタ**: 入力上で pointerdown してから pointerup / pointercancel したとき、1 回の操作につき 1 回(Compose の
-   ドラッグ終了と、ドラッグなしのタップの両方に当たる。値が動かないタップでも出す — Compose `onTap` と同じ)。
-   ドラッグ中の連続した値は `onChange` だけに出る。`event` はウィンドウで受けた native の `PointerEvent`
-2. **キーボード**: 値を動かすキー(`ArrowLeft` / `ArrowRight` / `ArrowUp` / `ArrowDown`・`Home` / `End`・`PageUp` /
-   `PageDown`)の **keyup** ごと(押し続けたキーリピートは keyup の 1 回)。Compose と同じく値が変わったかは見ない
-   (範囲端での矢印・最小値での Home でも出す)。Compose は向きに合う矢印だけを扱うが、native の `<input type="range">`
-   は向きに関係なく 4 方向の矢印で値を動かすので、Web では 4 方向とも対象にする(値を動かすキー = commit するキー、
-   という Compose の対応を保つための Web 適応)。`event` は React の `KeyboardEvent`
-3. **支援技術による直接の値変更**(ポインタ・キー操作の外で入力の値が変わったとき — Compose の `setProgress` に相当):
-   `onChange` の直後に即時に出す。値が変わらなかったとき(range で反対側の thumb に当たって止まった等)は出さない。
-   `event` は `ChangeEvent`
-4. `value` は操作の最後に報告した値(`onChange` で最後に渡した値。controlled で親が値を反映しなくても同じ)。
-   range では `[start, end]` の組全体。積み重なった thumb のドラッグ受け渡し(#431)でも 1 回
-5. `onChange` の挙動・時機は**変えない**。disabled では出ない(入力がイベントを受けない)
-
-**影響**: 非破壊(prop の追加のみ)。見た目・DOM は不変、既存ストーリーはピクセル不変。VRT: `Components/Slider` に
-`ChangeCommitted`(確定値の表示)を追加。対象: Slider。
-
----
-### B51: 仕様に根拠がないため見送る要望(#496・#501・#502)
-
-- **Issue**: #496・#501・#502(利用側アプリの報告 docs/redesign/07-md3.md §7 由来)
-- **状態**: 決定(2026-10-15・スペックファーストの原則で判定)
-- **調査**: m3.material.io(2026-10-15、TOKEN_TABLE revision 2026-10-13_06-10-19)と Compose androidx-main を確認
-
-**#496 フォーカス可能な無効ボタン(`aria-disabled`)**
-
-- m3: icon buttons の accessibility のキーボード表は「Tab — Focus lands on (non-disabled) icon button」
-  「Space or Enter — Activates the (non-disabled) icon button」で、無効なボタンは Tab で飛ばす前提。
-  フォーカス可能な無効状態は menus の「Disabled menu items can receive focus but aren't selectable」だけで、
-  ボタンには定義がない
-- Compose: `Button` / `IconButton` の `enabled = false` は `clickable(enabled = false)` でフォーカスもクリックも外す。
-  フォーカス可能な無効の概念はない
-- **決定**: 実装しない。無効の理由を伝えたい場合は、ボタンの近くの補助テキスト、または包む要素に
-  Tooltip を付ける方法をドキュメントで案内する
-
-**#501 Menu の `onAction(value)`**
-
-- m3: menus は「Selecting an option」で閉じる挙動と単一・複数選択(B33)を定めるが、集約ハンドラーの API はない
-- Compose: `DropdownMenuItem(onClick)` ごとの処理で、メニュー単位のハンドラーはない(閉じるのも呼び出し側)
-- **決定**: 実装しない。データから組み立てるメニューは、各 `MenuItem` の `onClick` で `value` を渡すか、
-  選択グループ(B33 `MenuGroup selectionMode` の `onChange(event, value)`)を使う
-
-**#502 Tooltip の表示遅延**
-
-- m3: 「Both plain and rich tooltips disappear 1.5 seconds after navigating away from the target region」
-  (消える遅延のみ)。表示までの遅延の定義はない
-- Compose: `BasicTooltip` はポインター Enter で即 `show()`、キーボードフォーカスでも即表示。
-  遅延はタッチの長押し(`longPressTimeoutMillis`)と、非 persistent の表示時間 `TooltipDuration` 1500ms のみ
-- 現状: 消える遅延は `HIDE_DELAY_MS = 1500` で m3 と一致、フォーカスでの表示は 1.4.1 で `:focus-visible` のときだけに修正済み
-- **決定**: 表示遅延は追加しない(m3・Compose とも即表示)
 
 ## 本書で扱わなかった判断候補(次回以降)
 
