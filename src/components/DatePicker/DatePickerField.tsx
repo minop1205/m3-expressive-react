@@ -33,6 +33,7 @@ import {
 } from './dateUtils'
 import pickerStyles from './DatePicker.module.css'
 import { useControllableState } from '../../internal/useControllableState'
+import { useLocaleProps } from '../../internal/locale'
 import styles from './DatePickerField.module.css'
 
 export type { DateInputError } from './dateUtils'
@@ -78,7 +79,10 @@ export interface DatePickerFieldProps
   min?: Date
   /** Latest selectable date. */
   max?: Date
-  /** BCP-47 locale — display format, typed-date field order, week start. @default 'en-US' */
+  /**
+   * BCP-47 locale — display format, typed-date field order, week start.
+   * @default LocaleProvider `locale`, else 'en-US'
+   */
   locale?: string
   disabled?: boolean
   className?: string
@@ -154,8 +158,8 @@ export interface DatePickerFieldProps
  * doesn't fit below — and kept inside the viewport.
  */
 export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
-  function DatePickerField(
-    {
+  function DatePickerField(inProps, ref) {
+    const {
       value,
       defaultValue,
       onChange,
@@ -185,9 +189,7 @@ export const DatePickerField = forwardRef<HTMLDivElement, DatePickerFieldProps>(
       onKeyDown,
       onBlur,
       ...rest
-    },
-    ref,
-  ) {
+    } = useLocaleProps('DatePickerField', inProps)
     const popupId = useId()
     const [stored, setInternal, isControlled] = useControllableState<Date | null>({
       value,

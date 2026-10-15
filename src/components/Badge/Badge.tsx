@@ -1,7 +1,8 @@
 import { forwardRef, type HTMLAttributes, type ReactNode } from 'react'
 import clsx from 'clsx'
 import styles from './Badge.module.css'
-import { badgeDisplayValue, defaultBadgeLabel } from '../../internal/badgeLabel'
+import { badgeDisplayValue } from '../../internal/badgeLabel'
+import { BadgeLabelText } from './BadgeLabelText'
 
 export type BadgeSize = 'small' | 'large'
 
@@ -25,7 +26,8 @@ export interface BadgeProps extends HTMLAttributes<HTMLDivElement> {
   /**
    * Accessible description announced for the badge (rendered as visually
    * hidden text right after the anchor content; the visible digits are
-   * hidden from assistive technology). Override it to localize.
+   * hidden from assistive technology). Override it to localize, or set
+   * `LocaleProvider` `labels.Badge.getLabel` for every badge.
    * @default "New notification" for a dot, "{n} new notifications" for a count
    */
   label?: string
@@ -67,7 +69,7 @@ export const Badge = forwardRef<HTMLDivElement, BadgeProps>(function Badge(
             <span aria-hidden="true">{displayValue}</span>
           )}
           <span className={styles.visuallyHidden}>
-            {label ?? defaultBadgeLabel(displayValue)}
+            {label ?? <BadgeLabelText count={displayValue} />}
           </span>
         </span>
       )}

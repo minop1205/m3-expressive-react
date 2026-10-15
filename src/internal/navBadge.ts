@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { defaultBadgeLabel, type BadgeLabelGetter } from './badgeLabel'
 
 /** Whether a navigation item's `badge` prop renders a badge at all. */
 export function hasNavBadge(badge: ReactNode): boolean {
@@ -10,13 +11,14 @@ export function hasNavBadge(badge: ReactNode): boolean {
  * badges/accessibility: the badge is read AFTER the destination; a counting
  * badge reads its number, a non-counting one reads "New notification").
  * Same default English wording as the Badge ruling (Phase B B28). Items take a
- * `badgeLabel` override for i18n (Phase B B1).
+ * `badgeLabel` override for i18n (Phase B B1); `getLabel` is LocaleProvider's
+ * `labels.Badge.getLabel` (B50).
  */
-export function defaultNavBadgeLabel(badge: ReactNode): string | undefined {
+export function defaultNavBadgeLabel(
+  badge: ReactNode,
+  getLabel?: BadgeLabelGetter,
+): string | undefined {
   if (!hasNavBadge(badge)) return undefined
-  if (typeof badge === 'string' || typeof badge === 'number') {
-    const text = String(badge)
-    return text === '1' ? '1 new notification' : `${text} new notifications`
-  }
-  return 'New notification'
+  const text = typeof badge === 'string' || typeof badge === 'number' ? String(badge) : undefined
+  return defaultBadgeLabel(text, getLabel)
 }

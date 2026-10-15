@@ -41,6 +41,7 @@ import {
   type Strategy,
 } from './keylines'
 import styles from './Carousel.module.css'
+import { useLocaleProps } from '../../internal/locale'
 
 export type CarouselVariant = 'multi-browse' | 'uncontained' | 'hero'
 
@@ -238,8 +239,8 @@ interface DragState {
  * and Left / Right move between items and a focused item scrolls into the
  * focal (large) position; otherwise the scroll container itself is focusable.
  */
-export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carousel(
-  {
+export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carousel(inProps, ref) {
+  const {
     variant = 'multi-browse',
     itemWidth,
     itemHeight = 200,
@@ -259,9 +260,7 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(function Carou
     onClickCapture,
     onDragStart,
     ...rest
-  },
-  ref,
-) {
+  } = useLocaleProps('Carousel', inProps)
   const scrollerRef = useRef<HTMLDivElement | null>(null)
   const strategyRef = useRef<Strategy | null>(null)
   /** Compositor-driven (ScrollTimeline) mask animations, when supported. */

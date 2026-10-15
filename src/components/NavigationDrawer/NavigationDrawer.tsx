@@ -18,6 +18,7 @@ import type { ModalCloseEvent } from '../../internal/closeReason'
 import { assignRefs, useModal } from '../../internal/useModal'
 import { useControllableState } from '../../internal/useControllableState'
 import styles from './NavigationDrawer.module.css'
+import { useLocaleLabels } from '../../internal/locale'
 
 export type NavigationDrawerVariant = 'standard' | 'modal' | 'dismissible'
 
@@ -97,6 +98,7 @@ export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
     },
     ref,
   ) {
+    const { fallbackLabel = 'Navigation' } = useLocaleLabels('NavigationDrawer')
     const [current, setUncontrolled, isControlled] = useControllableState({
       value,
       defaultValue,
@@ -178,7 +180,7 @@ export const NavigationDrawer = forwardRef<HTMLElement, NavigationDrawerProps>(
         className={clsx(styles.drawer, className)}
         role={variant === 'modal' ? 'dialog' : undefined}
         aria-modal={variant === 'modal' ? true : undefined}
-        aria-label={restLabelledby == null ? (restAriaLabel ?? 'Navigation') : restAriaLabel}
+        aria-label={restLabelledby == null ? (restAriaLabel ?? fallbackLabel) : restAriaLabel}
       >
         {children}
       </Panel>

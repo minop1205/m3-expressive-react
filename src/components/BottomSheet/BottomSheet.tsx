@@ -16,6 +16,7 @@ import { useControllableState } from '../../internal/useControllableState'
 import { assignRefs, useModal } from '../../internal/useModal'
 import { FocusRing } from '../../primitives/FocusRing/FocusRing'
 import styles from './BottomSheet.module.css'
+import { useLocaleLabels } from '../../internal/locale'
 
 /**
  * Drag distance from the starting detent beyond which release settles at the
@@ -206,6 +207,7 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
     },
     ref,
   ) {
+    const localeLabels = useLocaleLabels('BottomSheet')
     const isModal = variant !== 'standard'
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLDivElement | null>(null)
@@ -371,7 +373,11 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
           onKeyDown={onSurfaceKeyDown}
           role={isModal ? 'dialog' : 'region'}
           aria-modal={isModal ? true : undefined}
-          aria-label={restLabelledby == null ? (restAriaLabel ?? 'Bottom sheet') : restAriaLabel}
+          aria-label={
+            restLabelledby == null
+              ? (restAriaLabel ?? localeLabels.fallbackLabel ?? 'Bottom sheet')
+              : restAriaLabel
+          }
           className={clsx(styles.sheet, className)}
         >
           {showDragHandle && (
@@ -379,7 +385,12 @@ export const BottomSheet = forwardRef<HTMLDivElement, BottomSheetProps>(
               <button
                 type="button"
                 className={styles.dragHandleButton}
-                aria-label={dragHandleLabel ?? (hasPartial ? 'Drag handle' : 'Close')}
+                aria-label={
+                  dragHandleLabel ??
+                  (hasPartial
+                    ? (localeLabels.partialDragHandleLabel ?? 'Drag handle')
+                    : (localeLabels.dragHandleLabel ?? 'Close'))
+                }
                 aria-expanded={hasPartial ? isExpanded : undefined}
                 onClick={onHandleClick}
                 onPointerDown={onHandlePointerDown}

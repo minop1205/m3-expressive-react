@@ -20,6 +20,7 @@ import { devWarnOnce } from '../../internal/devWarning'
 import { defaultNavBadgeLabel, hasNavBadge } from '../../internal/navBadge'
 import { useControllableState } from '../../internal/useControllableState'
 import styles from './NavigationBar.module.css'
+import { useLocaleLabels } from '../../internal/locale'
 
 export type NavigationItemLayout = 'vertical' | 'horizontal'
 
@@ -157,11 +158,14 @@ export const NavigationBarItem = forwardRef<HTMLButtonElement, NavigationBarItem
         )
       }
     }, [hasName])
+    const { getLabel: getBadgeLabel } = useLocaleLabels('Badge')
     if (!ctx) throw new Error('NavigationBarItem must be used within <NavigationBar>')
     const selected = ctx.value === value
     const horizontal = ctx.layout === 'horizontal'
     const showBadge = hasNavBadge(badge)
-    const badgeText = showBadge ? (badgeLabel ?? defaultNavBadgeLabel(badge)) : undefined
+    const badgeText = showBadge
+      ? (badgeLabel ?? defaultNavBadgeLabel(badge, getBadgeLabel))
+      : undefined
 
     return (
       <button

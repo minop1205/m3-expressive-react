@@ -14,6 +14,7 @@ import { Button } from '../Button/Button'
 import { IconButton } from '../IconButton/IconButton'
 import { CloseIcon } from '../../internal/icons'
 import styles from './Snackbar.module.css'
+import { useLocaleProps } from '../../internal/locale'
 
 /** Built-in action button for {@link Snackbar}'s `action` prop. */
 export interface SnackbarAction {
@@ -78,8 +79,8 @@ export interface SnackbarProps extends HTMLAttributes<HTMLDivElement> {
  * shared state layers, ripple and focus ring.
  */
 export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
-  function Snackbar(
-    {
+  function Snackbar(inProps, ref) {
+    const {
       message,
       action,
       onDismiss,
@@ -88,9 +89,7 @@ export const Snackbar = forwardRef<HTMLDivElement, SnackbarProps>(
       onKeyDown,
       className,
       ...rest
-    },
-    ref,
-  ) {
+    } = useLocaleProps('Snackbar', inProps)
     let actionNode: ReactNode = null
     if (action != null) {
       actionNode = isValidElement(action) ? (

@@ -17,6 +17,7 @@ import { LoadingIndicator } from '../LoadingIndicator'
 import { CircularProgressIndicator } from '../ProgressIndicator'
 import { prefersReducedMotion } from '../../internal/spring'
 import styles from './PullToRefresh.module.css'
+import { useLocaleProps } from '../../internal/locale'
 
 /**
  * Indicator flavor: `loading` = the Expressive contained loading indicator
@@ -193,8 +194,8 @@ function CircularArrow({ progress }: { progress: number }) {
  * (the indicator's distance fraction, 0 at rest, 1 at the threshold, up to 2).
  */
 export const PullToRefresh = forwardRef<HTMLDivElement, PullToRefreshProps>(
-  function PullToRefresh(
-    {
+  function PullToRefresh(inProps, ref) {
+    const {
       refreshing: refreshingProp,
       onRefresh,
       indicator = 'loading',
@@ -210,9 +211,7 @@ export const PullToRefresh = forwardRef<HTMLDivElement, PullToRefreshProps>(
       onPointerCancel,
       children,
       ...rest
-    },
-    ref,
-  ) {
+    } = useLocaleProps('PullToRefresh', inProps)
     const [refreshingState, setRefreshingState] = useState(false)
     const controlled = refreshingProp !== undefined
     const refreshing = controlled ? refreshingProp : refreshingState

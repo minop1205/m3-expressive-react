@@ -29,6 +29,7 @@ import type { BadgeProps } from '../Badge/Badge'
 import { badgeAccessibleLabel } from '../../internal/badgeLabel'
 import { devWarnOnce } from '../../internal/devWarning'
 import styles from './Tabs.module.css'
+import { useLocaleLabels } from '../../internal/locale'
 
 export type TabsVariant = 'primary' | 'secondary'
 
@@ -458,7 +459,10 @@ export const Tab = forwardRef<HTMLButtonElement | HTMLAnchorElement, TabProps>(f
     isValidElement<BadgeProps>(badge) && (hasIcon || hasLabel) ? badge : null
   // The painted badge is hidden from assistive technology; its text is read
   // after the label instead (m3 badges/accessibility, as NavigationBar #175).
-  const badgeText = badgeElement ? badgeAccessibleLabel(badgeElement.props) : undefined
+  const { getLabel: getBadgeLabel } = useLocaleLabels('Badge')
+  const badgeText = badgeElement
+    ? badgeAccessibleLabel(badgeElement.props, getBadgeLabel)
+    : undefined
   const isLink = href != null
   // TabContext linking (APG Tabs): id always, aria-controls only when the
   // matching TabPanel is mounted. Link tabs have no panel.
