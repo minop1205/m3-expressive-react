@@ -16,6 +16,7 @@ import { defaultNavBadgeLabel, hasNavBadge } from '../../internal/navBadge'
 import { RailContext } from './NavigationRailContext'
 import { useRailMorph } from './useRailMorph'
 import styles from './NavigationRailItem.module.css'
+import { useLocaleLabels } from '../../internal/locale'
 
 /** Space between the expanded label and the badge beside it (CSS `.labelExpanded` gap). */
 const BADGE_GAP = 8
@@ -88,7 +89,10 @@ export const NavigationRailItem = forwardRef<HTMLButtonElement, NavigationRailIt
     const ctx = useContext(RailContext)
     const selected = ctx ? ctx.value === value : !!selectedProp
     const showBadge = hasNavBadge(badge)
-    const badgeText = showBadge ? (badgeLabel ?? defaultNavBadgeLabel(badge)) : undefined
+    const { getLabel: getBadgeLabel } = useLocaleLabels('Badge')
+    const badgeText = showBadge
+      ? (badgeLabel ?? defaultNavBadgeLabel(badge, getBadgeLabel))
+      : undefined
 
     const buttonRef = useRef<HTMLButtonElement | null>(null)
     const labelExpRef = useRef<HTMLSpanElement>(null)

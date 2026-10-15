@@ -94,3 +94,41 @@ export const WithIcon: Story = {
     )
   },
 }
+
+/**
+ * Long supporting content (ruling B46): only the body scrolls; the headline
+ * and the actions stay pinned.
+ */
+export const LongContent: Story = {
+  render: () => {
+    const [open, setOpen] = useState(true)
+    return (
+      <div style={{ padding: 24 }}>
+        <Button onClick={() => setOpen(true)}>Open terms</Button>
+        <Dialog
+          open={open}
+          onClose={() => setOpen(false)}
+          title="Terms of service"
+          actions={
+            <>
+              <Button variant="text" onClick={() => setOpen(false)}>
+                Decline
+              </Button>
+              <Button variant="text" onClick={() => setOpen(false)}>
+                Accept
+              </Button>
+            </>
+          }
+        >
+          {Array.from({ length: 16 }, (_, i) => (
+            <p key={i}>
+              Section {i + 1}. By using this service you agree to keep your account details
+              accurate, to use the service lawfully, and to let us store the content you upload
+              so it can be synced across your devices.
+            </p>
+          ))}
+        </Dialog>
+      </div>
+    )
+  },
+}

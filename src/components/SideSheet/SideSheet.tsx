@@ -12,7 +12,9 @@ import { IconButton } from '../IconButton/IconButton'
 import { Divider } from '../Divider/Divider'
 import type { ModalCloseEvent } from '../../internal/closeReason'
 import { assignRefs, useModal } from '../../internal/useModal'
+import { useModalTopLayer } from '../../internal/useTopLayer'
 import styles from './SideSheet.module.css'
+import { useLocaleLabels, useLocaleProps } from '../../internal/locale'
 
 export type SideSheetVariant = 'standard' | 'modal'
 export type SideSheetAnchor = 'left' | 'right'
@@ -80,8 +82,8 @@ export interface SideSheetProps extends HTMLAttributes<HTMLDivElement> {
  * 72dp left-aligned bar.
  */
 export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
-  function SideSheet(
-    {
+  function SideSheet(inProps, ref) {
+    const {
       variant = 'standard',
       anchor = 'right',
       open = true,
@@ -97,11 +99,12 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
       className,
       children,
       ...rest
-    },
-    ref,
-  ) {
+    } = useLocaleProps('SideSheet', inProps)
+    const { fallbackLabel = 'Side sheet' } = useLocaleLabels('SideSheet')
     const rootRef = useRef<HTMLDivElement>(null)
     const surfaceRef = useRef<HTMLDivElement | null>(null)
+    // B45: the open modal sheet paints in the top layer.
+    useModalTopLayer(variant === 'modal' && open, [rootRef])
     useModal({
       active: variant === 'modal' && open,
       rootRef,
@@ -134,7 +137,9 @@ export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
           restLabelledby ?? (headline != null && restAriaLabel == null ? headlineId : undefined)
         }
         aria-label={
-          restLabelledby == null && headline == null ? (restAriaLabel ?? 'Side sheet') : restAriaLabel
+          restLabelledby == null && headline == null
+            ? (restAriaLabel ?? fallbackLabel)
+            : restAriaLabel
         }
       >
         {hasHeader && (

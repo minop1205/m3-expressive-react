@@ -28,6 +28,7 @@ import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import { useModal } from '../../internal/useModal'
 import { IconButton } from '../IconButton/IconButton'
 import styles from './SearchBar.module.css'
+import { useLocaleProps } from '../../internal/locale'
 
 /** Where the search view opens (m3: "two layout options: full-screen and docked"). */
 export type SearchBarLayout = 'docked' | 'fullscreen'
@@ -165,8 +166,8 @@ const VIEW_GAP_PX = 2
  * attributes on it (the component's own wiring wins).
  */
 export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
-  function SearchBar(
-    {
+  function SearchBar(inProps, forwardedRef) {
+    const {
       value,
       defaultValue,
       onChange,
@@ -192,9 +193,7 @@ export const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
       onBlur,
       className,
       ...rest
-    },
-    forwardedRef,
-  ) {
+    } = useLocaleProps('SearchBar', inProps)
     const [current, setInternal, isControlled] = useControllableState({
       value,
       defaultValue: defaultValue ?? '',

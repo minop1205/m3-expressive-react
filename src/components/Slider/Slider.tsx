@@ -11,11 +11,13 @@ import {
   type KeyboardEvent,
   type ReactNode,
   type Ref,
+  type SyntheticEvent,
 } from 'react'
 import clsx from 'clsx'
 import { devWarnOnce } from '../../internal/devWarning'
 import { useControllableState } from '../../internal/useControllableState'
 import styles from './Slider.module.css'
+import { useLocaleProps } from '../../internal/locale'
 
 export type SliderSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 export type SliderOrientation = 'horizontal' | 'vertical'
@@ -37,6 +39,15 @@ export interface SliderProps
   step?: number
   /** Fires with the native event and the new value (same shape as `value`). */
   onChange?: (event: ChangeEvent<HTMLInputElement>, value: SliderValue) => void
+  /**
+   * Fires when an interaction ends (Compose `onValueChangeFinished`, ruling
+   * B47): on pointer release (end of a drag, or a tap), on the keyup of each
+   * value key (arrows, Home / End, PageUp / PageDown), and right after a
+   * direct value change from assistive technology (only when the value
+   * changed). `value` is the last value reported to `onChange`. `onChange`
+   * keeps firing continuously during a drag.
+   */
+  onChangeCommitted?: (event: SyntheticEvent | Event, value: SliderValue) => void
   /** Expressive size (track thickness / handle height). @default 'xs' */
   size?: SliderSize
   /** Orientation. @default 'horizontal' */
@@ -84,6 +95,22 @@ function clamp(v: number, min: number, max: number) {
   return Math.min(max, Math.max(min, v))
 }
 
+/** Keys that move the value — each commits on its keyup (B47). */
+const VALUE_KEYS = new Set([
+  'ArrowLeft',
+  'ArrowRight',
+  'ArrowUp',
+  'ArrowDown',
+  'Home',
+  'End',
+  'PageUp',
+  'PageDown',
+])
+
+function sameValue(a: SliderValue, b: SliderValue) {
+  return Array.isArray(a) && Array.isArray(b) ? a[0] === b[0] && a[1] === b[1] : a === b
+}
+
 /** Tolerance for float step counts — `0.3 / 0.1` is `2.9999999999999996`. */
 const STEP_EPSILON = 1e-9
 
@@ -118,14 +145,15 @@ function pos(frac: number, gap = 0) {
  * MUI parity: the forwarded `ref` and `{...rest}` land on the ROOT element;
  * `inputRef` reaches the first native `<input type="range">`.
  */
-export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
-  {
+export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(inProps, ref) {
+  const {
     value,
     defaultValue,
     min: minProp = 0,
     max: maxProp = 100,
     step = 1,
     onChange,
+    onChangeCommitted,
     size = 'xs',
     orientation = 'horizontal',
     centered = false,
@@ -142,9 +170,7 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledby,
     ...rest
-  },
-  ref,
-) {
+  } = useLocaleProps('Slider', inProps)
   // Normalize inverted bounds (#431): `min > max` would draw the handle off
   // the track. Swap them, and tell the developer.
   const inverted = minProp > maxProp
@@ -176,12 +202,22 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
   const pressRef = useRef<{ input: number; thumb: number | null; el?: HTMLInputElement } | null>(
     null,
   )
+  // Commit tracking (B47): the last value reported to onChange during the
+  // interaction, and the value keys currently held on an input.
+  const latestRef = useRef<SliderValue>(current)
+  const heldKeysRef = useRef(new Set<string>())
+  const onCommittedRef = useRef(onChangeCommitted)
+  useEffect(() => {
+    onCommittedRef.current = onChangeCommitted
+  })
   useEffect(() => {
     if (pressed === null) return
-    const clear = () => {
+    const clear = (event: Event) => {
       const press = pressRef.current
       pressRef.current = null
       setPressed(null)
+      // Pointer release ends the drag or tap (Compose onDragStopped / onTap).
+      if (press) onCommittedRef.current?.(event, latestRef.current)
       // A drag handed to the other thumb leaves focus on the input that was
       // grabbed; move it to the thumb that moved so the keyboard follows.
       if (press?.el && press.thumb !== press.input) press.el.focus({ preventScroll: true })
@@ -205,6 +241,8 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
   // places, so float noise (`0.1 + 0.2`) never reaches onChange (#431).
   const precision = step > 0 ? Math.max(decimals(step), decimals(min)) : null
   const round = (v: number) => (precision === null ? v : Number(v.toFixed(precision)))
+  // The value as rendered (clamped), in the shape of `value`.
+  const shown: SliderValue = isRange ? [clamped[0], clamped[1]] : clamped[0]
 
   const commit = (raw: number, inputIndex: number, event: ChangeEvent<HTMLInputElement>) => {
     const next = round(raw)
@@ -240,6 +278,18 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
     }
     if (!isControlled) setInternal(out)
     onChange?.(event, out)
+    latestRef.current = out
+    // A change outside a pointer or key press is a direct value change from
+    // assistive technology (Compose `setProgress`): commit at once, unless the
+    // value did not move (e.g. a range thumb stopped by the other one).
+    if (!press && heldKeysRef.current.size === 0 && !sameValue(out, shown)) {
+      onChangeCommitted?.(event, out)
+    }
+  }
+
+  /** Value keys commit on their keyup (Compose `onValueChangeFinished`, B47). */
+  const handleKeyUp = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (heldKeysRef.current.delete(event.key)) onChangeCommitted?.(event, latestRef.current)
   }
 
   /**
@@ -251,6 +301,10 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
    */
   const handleKeyDown = (index: number) => (event: KeyboardEvent<HTMLInputElement>) => {
     const { key } = event
+    if (VALUE_KEYS.has(key)) {
+      if (heldKeysRef.current.size === 0) latestRef.current = shown
+      heldKeysRef.current.add(key)
+    }
     let next: number | null = null
     if (key === 'PageUp' || key === 'PageDown') {
       const intervals = step > 0 ? Math.max(1, stepIntervals(span, step)) : 100
@@ -415,8 +469,11 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
             aria-valuetext={ariaValueText(valueLabelFormat, clamped[i])}
             onChange={(event) => commit(Number(event.target.value), i, event)}
             onKeyDown={handleKeyDown(i)}
+            onKeyUp={handleKeyUp}
+            onBlur={() => heldKeysRef.current.clear()}
             onPointerDown={() => {
               if (disabled) return
+              latestRef.current = shown
               pressRef.current = { input: i, thumb: null }
               setPressed(i)
             }}

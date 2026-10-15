@@ -497,3 +497,233 @@ describe('Slider keyboard via userEvent (#425)', () => {
     expect(screen.getByRole('button', { name: 'After' })).toHaveFocus()
   })
 })
+
+describe('Slider onChangeCommitted (B47 / #497)', () => {
+  it('fires once on pointer release after a drag, not during it', () => {
+    const onChange = vi.fn()
+    const onChangeCommitted = vi.fn()
+    render(
+      <Slider
+        aria-label="Vol"
+        defaultValue={40}
+        onChange={onChange}
+        onChangeCommitted={onChangeCommitted}
+      />,
+    )
+    const input = screen.getByRole('slider')
+    firePointer(input, 'pointerdown', { pointerId: 1 })
+    fireEvent.change(input, { target: { value: '45' } })
+    fireEvent.change(input, { target: { value: '55' } })
+    // onChange stays continuous; nothing is committed mid-drag.
+    expect(onChange).toHaveBeenCalledTimes(2)
+    expect(onChangeCommitted).not.toHaveBeenCalled()
+    firePointer(window, 'pointerup', { pointerId: 1 })
+    expect(onChangeCommitted).toHaveBeenCalledTimes(1)
+    expect(onChangeCommitted).toHaveBeenCalledWith(expect.any(Event), 55)
+    // A stray pointerup after the interaction does not commit again.
+    firePointer(window, 'pointerup', { pointerId: 1 })
+    expect(onChangeCommitted).toHaveBeenCalledTimes(1)
+  })
+
+  it('commits on pointercancel (the drag ended)', () => {
+    const onChangeCommitted = vi.fn()
+    render(<Slider aria-label="Vol" defaultValue={40} onChangeCommitted={onChangeCommitted} />)
+    const input = screen.getByRole('slider')
+    firePointer(input, 'pointerdown', { pointerId: 1 })
+    fireEvent.change(input, { target: { value: '60' } })
+    firePointer(window, 'pointercancel', { pointerId: 1 })
+    expect(onChangeCommitted).toHaveBeenCalledWith(expect.any(Event), 60)
+  })
+
+  it('commits a tap (Compose onTap), even on the current value', () => {
+    const onChangeCommitted = vi.fn()
+    render(<Slider aria-label="Vol" defaultValue={40} onChangeCommitted={onChangeCommitted} />)
+    const input = screen.getByRole('slider')
+    // Tap on the track: the value jumps, then the pointer is released.
+    firePointer(input, 'pointerdown', { pointerId: 1 })
+    fireEvent.change(input, { target: { value: '70' } })
+    firePointer(window, 'pointerup', { pointerId: 1 })
+    expect(onChangeCommitted).toHaveBeenLastCalledWith(expect.any(Event), 70)
+    // Tap on the handle: no value change, still one commit.
+    firePointer(input, 'pointerdown', { pointerId: 2 })
+    firePointer(window, 'pointerup', { pointerId: 2 })
+    expect(onChangeCommitted).toHaveBeenCalledTimes(2)
+    expect(onChangeCommitted).toHaveBeenLastCalledWith(expect.any(Event), 70)
+  })
+
+  it.each(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'])(
+    'commits %s on keyup, not on keydown',
+    (key) => {
+      const onChangeCommitted = vi.fn()
+      render(<Slider aria-label="Vol" defaultValue={40} onChangeCommitted={onChangeCommitted} />)
+      const input = screen.getByRole('slider')
+      const next = key === 'ArrowLeft' || key === 'ArrowDown' ? '39' : '41'
+      // The native range input steps on keydown (jsdom has no UA stepping).
+      fireEvent.keyDown(input, { key })
+      fireEvent.change(input, { target: { value: next } })
+      expect(onChangeCommitted).not.toHaveBeenCalled()
+      fireEvent.keyUp(input, { key })
+      expect(onChangeCommitted).toHaveBeenCalledTimes(1)
+      expect(onChangeCommitted).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'keyup' }),
+        Number(next),
+      )
+    },
+  )
+
+  it.each([
+    ['PageUp', 50],
+    ['PageDown', 30],
+    ['Home', 0],
+    ['End', 100],
+  ])('commits %s on keyup with the new value', async (key, expected) => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const onChangeCommitted = vi.fn()
+    render(
+      <Slider
+        aria-label="Vol"
+        defaultValue={40}
+        onChange={onChange}
+        onChangeCommitted={onChangeCommitted}
+      />,
+    )
+    screen.getByRole('slider').focus()
+    await user.keyboard(`{${key}>}`)
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), expected)
+    expect(onChangeCommitted).not.toHaveBeenCalled()
+    await user.keyboard(`{/${key}}`)
+    expect(onChangeCommitted).toHaveBeenCalledTimes(1)
+    expect(onChangeCommitted).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'keyup' }),
+      expected,
+    )
+  })
+
+  it('commits each keyboard step, once per held key (auto-repeat)', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const onChangeCommitted = vi.fn()
+    render(
+      <Slider
+        aria-label="Vol"
+        defaultValue={40}
+        onChange={onChange}
+        onChangeCommitted={onChangeCommitted}
+      />,
+    )
+    screen.getByRole('slider').focus()
+    await user.keyboard('{PageUp}{PageUp}')
+    expect(onChangeCommitted).toHaveBeenCalledTimes(2)
+    expect(onChangeCommitted).toHaveBeenLastCalledWith(expect.anything(), 60)
+    // Holding PageUp repeats keydown; it commits once, on release.
+    await user.keyboard('{PageUp>3}')
+    expect(onChange).toHaveBeenLastCalledWith(expect.anything(), 90)
+    expect(onChangeCommitted).toHaveBeenCalledTimes(2)
+    await user.keyboard('{/PageUp}')
+    expect(onChangeCommitted).toHaveBeenCalledTimes(3)
+    expect(onChangeCommitted).toHaveBeenLastCalledWith(expect.anything(), 90)
+  })
+
+  it('commits a value key at the bound like Compose KeyUp, but ignores other keys', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const onChangeCommitted = vi.fn()
+    render(
+      <Slider
+        aria-label="Vol"
+        defaultValue={0}
+        onChange={onChange}
+        onChangeCommitted={onChangeCommitted}
+      />,
+    )
+    screen.getByRole('slider').focus()
+    await user.keyboard('{Home}')
+    expect(onChange).not.toHaveBeenCalled()
+    expect(onChangeCommitted).toHaveBeenCalledWith(expect.anything(), 0)
+    await user.keyboard('a{Enter}{Shift}')
+    expect(onChangeCommitted).toHaveBeenCalledTimes(1)
+  })
+
+  it('commits a direct (assistive technology) change at once', () => {
+    const onChange = vi.fn()
+    const onChangeCommitted = vi.fn()
+    render(
+      <Slider
+        aria-label="Vol"
+        defaultValue={40}
+        onChange={onChange}
+        onChangeCommitted={onChangeCommitted}
+      />,
+    )
+    // No pointer or key press: a screen reader set the value (setProgress).
+    fireEvent.change(screen.getByRole('slider'), { target: { value: '45' } })
+    expect(onChange).toHaveBeenCalledWith(expect.anything(), 45)
+    expect(onChangeCommitted).toHaveBeenCalledTimes(1)
+    expect(onChangeCommitted).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'change' }),
+      45,
+    )
+  })
+
+  it('does not commit a direct change that leaves the value unchanged', () => {
+    const onChange = vi.fn()
+    const onChangeCommitted = vi.fn()
+    render(
+      <Slider
+        aria-label="Price"
+        defaultValue={[60, 60]}
+        onChange={onChange}
+        onChangeCommitted={onChangeCommitted}
+      />,
+    )
+    // The start thumb is stopped by the end thumb: [60, 60] stays [60, 60].
+    fireEvent.change(screen.getAllByRole('slider')[0], { target: { value: '70' } })
+    expect(onChange).toHaveBeenCalledWith(expect.anything(), [60, 60])
+    expect(onChangeCommitted).not.toHaveBeenCalled()
+  })
+
+  it('commits the [start, end] pair for range thumbs (pointer and keyboard)', async () => {
+    const user = userEvent.setup()
+    const onChangeCommitted = vi.fn()
+    render(
+      <Slider aria-label="Price" defaultValue={[20, 60]} onChangeCommitted={onChangeCommitted} />,
+    )
+    const [start, end] = screen.getAllByRole('slider')
+    firePointer(end, 'pointerdown', { pointerId: 1 })
+    fireEvent.change(end, { target: { value: '70' } })
+    fireEvent.change(end, { target: { value: '80' } })
+    firePointer(window, 'pointerup', { pointerId: 1 })
+    expect(onChangeCommitted).toHaveBeenCalledTimes(1)
+    expect(onChangeCommitted).toHaveBeenLastCalledWith(expect.any(Event), [20, 80])
+
+    start.focus()
+    await user.keyboard('{PageUp}')
+    expect(onChangeCommitted).toHaveBeenCalledTimes(2)
+    expect(onChangeCommitted).toHaveBeenLastCalledWith(expect.anything(), [30, 80])
+  })
+
+  it('commits once for a drag handed between stacked range thumbs', () => {
+    const onChangeCommitted = vi.fn()
+    render(
+      <Slider aria-label="Price" defaultValue={[100, 100]} onChangeCommitted={onChangeCommitted} />,
+    )
+    const end = screen.getAllByRole('slider')[1]
+    firePointer(end, 'pointerdown', { pointerId: 1 })
+    fireEvent.change(end, { target: { value: '80' } })
+    fireEvent.change(end, { target: { value: '70' } })
+    firePointer(window, 'pointerup', { pointerId: 1 })
+    expect(onChangeCommitted).toHaveBeenCalledTimes(1)
+    expect(onChangeCommitted).toHaveBeenCalledWith(expect.any(Event), [70, 100])
+  })
+
+  it('reports the last onChange value for a controlled slider', () => {
+    const onChangeCommitted = vi.fn()
+    render(<Slider aria-label="Vol" value={40} onChangeCommitted={onChangeCommitted} />)
+    const input = screen.getByRole('slider')
+    firePointer(input, 'pointerdown', { pointerId: 1 })
+    fireEvent.change(input, { target: { value: '65' } })
+    firePointer(window, 'pointerup', { pointerId: 1 })
+    expect(onChangeCommitted).toHaveBeenCalledWith(expect.any(Event), 65)
+  })
+})

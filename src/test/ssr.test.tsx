@@ -42,6 +42,7 @@ import {
   List,
   ListItem,
   LoadingIndicator,
+  LocaleProvider,
   Menu,
   MenuDivider,
   MenuGroup,
@@ -71,6 +72,8 @@ import {
   SwipeToDismiss,
   Switch,
   Tab,
+  TabContext,
+  TabPanel,
   Tabs,
   TextField,
   ThemeProvider,
@@ -88,6 +91,13 @@ const options = [
 ]
 
 const cases: Record<string, ReactElement> = {
+  LocaleProvider: (
+    <LocaleProvider locale="ja-JP" labels={{ Badge: { getLabel: () => '新着' } }}>
+      <Badge value={3} />
+      <TimePicker />
+      <DatePicker referenceDate={new Date(2026, 0, 15)} />
+    </LocaleProvider>
+  ),
   ThemeProvider: (
     <ThemeProvider>
       <span>content</span>
@@ -271,6 +281,21 @@ const cases: Record<string, ReactElement> = {
     <Tabs defaultValue="a">
       <Tab value="a">A</Tab>
     </Tabs>
+  ),
+  TabContext: (
+    <TabContext defaultValue="a">
+      <Tabs>
+        <Tab value="a" label="A" />
+        <Tab value="b" href="/b" label="B" />
+      </Tabs>
+      <TabPanel value="a">Panel A</TabPanel>
+    </TabContext>
+  ),
+  TabPanel: (
+    <TabContext value="a">
+      <TabPanel value="a">Panel A</TabPanel>
+      <TabPanel value="b">Panel B</TabPanel>
+    </TabContext>
   ),
   Tooltip: (
     <Tooltip open text="Tip">

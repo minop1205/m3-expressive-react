@@ -231,7 +231,8 @@ type PopoverElement = HTMLElement & {
   hidePopover?: () => void
 }
 
-function isPopoverOpen(el: HTMLElement) {
+/** Whether `el` is currently shown in the top layer (an open popover). */
+export function isPopoverOpen(el: HTMLElement) {
   try {
     return el.matches(':popover-open')
   } catch {

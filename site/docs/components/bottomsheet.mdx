@@ -32,30 +32,28 @@ export function BottomSheetDemo({ label = 'Open bottom sheet', showDragHandle, l
       <Button variant={showDragHandle === false ? 'outlined' : 'filled'} onClick={() => setOpen(true)}>
         {label}
       </Button>
-      {/* Raised above the docs navbar; the sheet itself is position: fixed. */}
-      <div style={{ position: 'relative', zIndex: 'var(--ifm-z-index-overlay)' }}>
-        <BottomSheet
-          open={open}
-          onClose={() => setOpen(false)}
-          showDragHandle={showDragHandle}
-          aria-label="Share"
-          {...props}
-        >
-          {long ? (
-            <List aria-label="Places">
-              {places.map((place) => (
-                <ListItem key={place} headline={place} supportingText="San Francisco, CA" />
-              ))}
-            </List>
-          ) : (
-            <List aria-label="Share options">
-              <ListItem headline="Copy link" onClick={() => setOpen(false)} />
-              <ListItem headline="Send by email" onClick={() => setOpen(false)} />
-              <ListItem headline="Share to contacts" onClick={() => setOpen(false)} />
-            </List>
-          )}
-        </BottomSheet>
-      </div>
+      {/* The open modal sheet is drawn in the top layer, above the docs navbar. */}
+      <BottomSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        showDragHandle={showDragHandle}
+        aria-label="Share"
+        {...props}
+      >
+        {long ? (
+          <List aria-label="Places">
+            {places.map((place) => (
+              <ListItem key={place} headline={place} supportingText="San Francisco, CA" />
+            ))}
+          </List>
+        ) : (
+          <List aria-label="Share options">
+            <ListItem headline="Copy link" onClick={() => setOpen(false)} />
+            <ListItem headline="Send by email" onClick={() => setOpen(false)} />
+            <ListItem headline="Share to contacts" onClick={() => setOpen(false)} />
+          </List>
+        )}
+      </BottomSheet>
     </>
   )
 }

@@ -36,6 +36,14 @@ const hasDirective = (file: string) => /^'use client'\n/.test(source(file))
 const mentionsDirective = (file: string) =>
   /^\s*['"]use client['"]/m.test(source(file))
 
+/**
+ * Server components that render a client boundary: they import a
+ * 'use client' module but use no client API themselves, so they stay
+ * directive-free (Badge renders `BadgeLabelText`, which reads the
+ * LocaleProvider context — Phase B B50).
+ */
+const SERVER_WITH_CLIENT_CHILD = new Set(['components/Badge/Badge.tsx'])
+
 const IMPORT = /import\s+(type\s+)?([^'"]*?)\s*from\s*['"]([^'"]+)['"]/g
 const CLIENT_API = /^(use[A-Z]\w*|createContext)$/
 
@@ -81,7 +89,8 @@ function needsClient(file: string): boolean {
   const result =
     !!info &&
     !isBarrel(file) &&
-    (info.reactApis.length > 0 || info.localImports.some(needsClient))
+    (info.reactApis.length > 0 ||
+      (!SERVER_WITH_CLIENT_CHILD.has(rel(file)) && info.localImports.some(needsClient)))
   memo.set(file, result)
   return result
 }
@@ -119,6 +128,9 @@ describe("'use client' directives", () => {
         'components/NavigationRail/NavigationRailContext.ts',
         'components/Radio/RadioGroup.tsx',
         'components/Snackbar/SnackbarProvider.tsx',
+        'components/Badge/BadgeLabelText.tsx',
+        'components/LocaleProvider/LocaleProvider.tsx',
+        'internal/locale.ts',
       ]),
     )
     expect(server).toEqual(

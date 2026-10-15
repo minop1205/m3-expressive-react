@@ -24,6 +24,7 @@ import { INTERACTIVE_SELECTOR } from '../../internal/isFromNestedInteractive'
 import { useFormReset } from '../../internal/useFormReset'
 import { useControllableState } from '../../internal/useControllableState'
 import styles from './TextField.module.css'
+import { useLocaleProps } from '../../internal/locale'
 
 export type TextFieldVariant = 'filled' | 'outlined'
 
@@ -56,8 +57,16 @@ export interface TextFieldProps
    * @default false
    */
   tonal?: boolean
-  /** Field label; rendered with a trailing `*` when `required`. */
-  label?: string
+  /**
+   * Field label; rendered with a trailing `*` when `required`.
+   *
+   * Accepts rich content (text, emphasis, a small icon) — keep it short and
+   * on one line, as m3 asks: the label is a single line (truncated with an
+   * ellipsis), clicks on it go to the field, and the outlined notch draws a
+   * hidden copy of it to measure its width. So no links or buttons in the
+   * label, and no elements with an `id`.
+   */
+  label?: ReactNode
   /**
    * Label position. `'floating'` keeps the label inside the container (it
    * rests in the input line and minimizes on focus or value; the outlined
@@ -75,10 +84,18 @@ export interface TextFieldProps
    * @default false
    */
   shrinkLabel?: boolean
-  /** Helper line below the field. Replaced by `errorText` while in error. */
-  supportingText?: string
-  /** Shown instead of `supportingText` (with `role="alert"`) when `error` is set. */
-  errorText?: string
+  /**
+   * Helper line below the field. Replaced by `errorText` while in error.
+   * Accepts rich content — a short link is fine (it stays reachable and is
+   * part of the field's description via `aria-describedby`); keep it to
+   * about one line, as m3 asks.
+   */
+  supportingText?: ReactNode
+  /**
+   * Shown instead of `supportingText` (with `role="alert"`) when `error` is set.
+   * Accepts rich content, like `supportingText`.
+   */
+  errorText?: ReactNode
   /** Error state — error colors, `aria-invalid`, and `errorText`. Ignored while `disabled`. @default false */
   error?: boolean
   /** Icon at the start of the field (decorative). */
@@ -181,8 +198,8 @@ const defaultCounterLabel = (length: number, maxLength: number) =>
  * spreads extra attributes on it (the component's own wiring wins).
  */
 export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
-  function TextField(
-    {
+  function TextField(inProps, forwardedRef) {
+    const {
       variant = 'filled',
       tonal = false,
       label,
@@ -219,9 +236,7 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
       autoFocus,
       inputMode,
       ...rest
-    },
-    forwardedRef,
-  ) {
+    } = useLocaleProps('TextField', inProps)
     // Attributes with a dedicated prop AND a default: an explicit top-level
     // prop wins; when it is omitted, an `inputProps` value wins over the
     // default (so `inputProps={{ required: true }}` isn't reset to false).

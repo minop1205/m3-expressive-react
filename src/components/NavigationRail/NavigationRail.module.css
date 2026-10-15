@@ -74,6 +74,15 @@
 .scrim {
   position: fixed;
   inset: 0;
+  /* Top layer (B45): the open rail's scrim is a `popover="manual"` element —
+     reset the UA [popover] box so it renders the same in and out of it. */
+  display: block;
+  width: auto;
+  height: auto;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  overflow: visible;
   background-color: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
   opacity: 0;
   visibility: hidden;
@@ -95,10 +104,34 @@
   position: absolute;
   inset-block: 0;
   inset-inline-start: 0;
+  /* Top layer (B45): reset the UA [popover] box (inset: 0 — the end side
+     too —, fit-content size, margin: auto, border, padding, overflow,
+     Canvas colors, display: none while closed). */
+  inset-inline-end: auto;
+  display: block;
+  width: auto;
+  height: auto;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  overflow: visible;
+  color: inherit;
+  background-color: transparent;
   outline: none;
   /* Only the rail itself is a hit target (a hidden rail — visibility: hidden —
      is not), so the slid-out hide-on-collapse rail never blocks the page. */
   pointer-events: none;
+}
+
+/* In the top layer the surface is pinned to the root's viewport rect
+   (written by JS), where it sat in the page. */
+.modalSurface:popover-open {
+  position: fixed;
+  top: var(--_top-layer-top);
+  bottom: auto;
+  left: var(--_top-layer-left);
+  right: var(--_top-layer-right);
+  height: var(--_top-layer-height);
 }
 
 .modalSurface > .rail {
