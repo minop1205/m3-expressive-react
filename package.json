@@ -250,6 +250,17 @@
         "default": "./dist/components/LoadingIndicator/index.cjs"
       }
     },
+    "./LocaleProvider": {
+      "import": {
+        "types": "./dist/components/LocaleProvider/index.d.ts",
+        "node": "./dist/components/LocaleProvider/index.js",
+        "default": "./dist/LocaleProvider/index.js"
+      },
+      "require": {
+        "types": "./dist/components/LocaleProvider/index.d.cts",
+        "default": "./dist/components/LocaleProvider/index.cjs"
+      }
+    },
     "./Menu": {
       "import": {
         "types": "./dist/components/Menu/index.d.ts",
@@ -565,6 +576,9 @@
       ],
       "LoadingIndicator": [
         "./dist/components/LoadingIndicator/index.d.ts"
+      ],
+      "LocaleProvider": [
+        "./dist/components/LocaleProvider/index.d.ts"
       ],
       "Menu": [
         "./dist/components/Menu/index.d.ts"

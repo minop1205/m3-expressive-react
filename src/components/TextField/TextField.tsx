@@ -24,6 +24,7 @@ import { INTERACTIVE_SELECTOR } from '../../internal/isFromNestedInteractive'
 import { useFormReset } from '../../internal/useFormReset'
 import { useControllableState } from '../../internal/useControllableState'
 import styles from './TextField.module.css'
+import { useLocaleProps } from '../../internal/locale'
 
 export type TextFieldVariant = 'filled' | 'outlined'
 
@@ -181,8 +182,8 @@ const defaultCounterLabel = (length: number, maxLength: number) =>
  * spreads extra attributes on it (the component's own wiring wins).
  */
 export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
-  function TextField(
-    {
+  function TextField(inProps, forwardedRef) {
+    const {
       variant = 'filled',
       tonal = false,
       label,
@@ -219,9 +220,7 @@ export const TextField = forwardRef<HTMLDivElement, TextFieldProps>(
       autoFocus,
       inputMode,
       ...rest
-    },
-    forwardedRef,
-  ) {
+    } = useLocaleProps('TextField', inProps)
     // Attributes with a dedicated prop AND a default: an explicit top-level
     // prop wins; when it is omitted, an `inputProps` value wins over the
     // default (so `inputProps={{ required: true }}` isn't reset to false).

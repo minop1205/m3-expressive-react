@@ -37,6 +37,7 @@ import {
 } from '../../internal/listbox/Listbox'
 import fieldStyles from '../TextField/TextField.module.css'
 import styles from './Autocomplete.module.css'
+import { useLocaleProps } from '../../internal/locale'
 
 export type AutocompleteVariant = 'filled' | 'outlined'
 
@@ -227,7 +228,10 @@ function fromOptionsProp(options: readonly AutocompleteOption[]): OptionData[] {
  * submission, `required` validation, and form reset.
  */
 export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(function Autocomplete(
-  {
+  inProps,
+  forwardedRef,
+) {
+  const {
     variant = 'filled',
     label,
     options: optionsProp,
@@ -263,9 +267,7 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
     'aria-labelledby': ariaLabelledBy,
     'aria-describedby': ariaDescribedBy,
     ...rest
-  },
-  forwardedRef,
-) {
+  } = useLocaleProps('Autocomplete', inProps)
   const autoId = useId()
   const inputId = providedId ?? `${autoId}-input`
   const labelId = `${autoId}-label`

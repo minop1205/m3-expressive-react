@@ -42,6 +42,7 @@ import {
   List,
   ListItem,
   LoadingIndicator,
+  LocaleProvider,
   Menu,
   MenuDivider,
   MenuGroup,
@@ -88,6 +89,13 @@ const options = [
 ]
 
 const cases: Record<string, ReactElement> = {
+  LocaleProvider: (
+    <LocaleProvider locale="ja-JP" labels={{ Badge: { getLabel: () => '新着' } }}>
+      <Badge value={3} />
+      <TimePicker />
+      <DatePicker referenceDate={new Date(2026, 0, 15)} />
+    </LocaleProvider>
+  ),
   ThemeProvider: (
     <ThemeProvider>
       <span>content</span>

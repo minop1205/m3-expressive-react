@@ -16,6 +16,7 @@ import clsx from 'clsx'
 import { devWarnOnce } from '../../internal/devWarning'
 import { useControllableState } from '../../internal/useControllableState'
 import styles from './Slider.module.css'
+import { useLocaleProps } from '../../internal/locale'
 
 export type SliderSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
 export type SliderOrientation = 'horizontal' | 'vertical'
@@ -118,8 +119,8 @@ function pos(frac: number, gap = 0) {
  * MUI parity: the forwarded `ref` and `{...rest}` land on the ROOT element;
  * `inputRef` reaches the first native `<input type="range">`.
  */
-export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
-  {
+export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(inProps, ref) {
+  const {
     value,
     defaultValue,
     min: minProp = 0,
@@ -142,9 +143,7 @@ export const Slider = forwardRef<HTMLSpanElement, SliderProps>(function Slider(
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledby,
     ...rest
-  },
-  ref,
-) {
+  } = useLocaleProps('Slider', inProps)
   // Normalize inverted bounds (#431): `min > max` would draw the handle off
   // the track. Swap them, and tell the developer.
   const inverted = minProp > maxProp

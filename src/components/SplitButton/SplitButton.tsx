@@ -17,6 +17,7 @@ import { Menu, type MenuAlign } from '../Menu/Menu'
 import buttonStyles from '../Button/Button.module.css'
 import { useControllableState } from '../../internal/useControllableState'
 import styles from './SplitButton.module.css'
+import { useLocaleProps } from '../../internal/locale'
 
 export type SplitButtonVariant = 'elevated' | 'filled' | 'tonal' | 'outlined'
 export type SplitButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
@@ -70,8 +71,8 @@ export interface SplitButtonProps
  * `aria-label`, which is forwarded to the leading button.
  */
 export const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
-  function SplitButton(
-    {
+  function SplitButton(inProps, ref) {
+    const {
       variant = 'filled',
       size = 'sm',
       children,
@@ -86,9 +87,7 @@ export const SplitButton = forwardRef<HTMLButtonElement, SplitButtonProps>(
       className,
       onClick,
       ...rest
-    },
-    ref,
-  ) {
+    } = useLocaleProps('SplitButton', inProps)
     const [storedOpen, setUncontrolled, isControlled] = useControllableState({
       value: controlledOpen,
       defaultValue: defaultOpen,

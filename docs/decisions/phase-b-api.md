@@ -25,7 +25,8 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 
 | ID | Issue | 論点 | 推奨 | 破壊的変更 | 状態 |
 |---|---|---|---|---|---|
-| B1 | 横断(#265 #251 #161 ほか) | 組み込み文言の i18n | **prop ごとのラベル(`*Label` / `get*Label`)を正とし、`LocaleProvider` は後から既定値供給として追加** | なし | 決定(2026-09-30・推奨どおり) |
+| B1 | 横断(#265 #251 #161 ほか) | 組み込み文言の i18n | **prop ごとのラベル(`*Label` / `get*Label`)を正とし、`LocaleProvider` は後から既定値供給として追加** | なし | 決定(2026-09-30・推奨どおり。Provider は **B50** で実装) |
+| B50 | #500 | locale と組み込み文言の一括指定(B1 の拡張) | **独立した `<LocaleProvider locale ampm labels>` + `useLocale()`、`labels` はコンポーネント名ごとに prop 名のキー(モード別見出し・名前の代替・Badge `getLabel` は Provider だけのキー)、優先順位は prop > 近い Provider > 英語既定、Provider なしは従来どおり** | なし(追加) | 決定(2026-10-15・#500 の提案をもとに確定) |
 | B2 | 横断(button B5・nav 監査) | 既定の motion scheme | **expressive を既定、`ThemeProvider motionScheme="standard"` で切替** | 挙動のみ(bounce 量) | 決定(2026-09-30・推奨どおり) |
 | B3 | 横断(PI5・CR4 ほか) | reduced motion の方針 | **状態遷移は即時/フェードのみ、不定進捗だけ最小の動きで継続** | 挙動のみ | 決定(2026-09-30・推奨どおり) |
 | B4 | 横断(#259 #54) | ポップアップ位置決めの共通化 | **内製の `src/internal` ヘルパー(flip + clamp)+ Popover API の top layer** | なし(内部) | 決定(2026-09-30・推奨どおり) |
@@ -89,7 +90,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 ### B1: 組み込み文言の i18n
 
 - **Issue**: 横断(#265 Badge、#251 / SN 軽微欄 "Dismiss"、#161 DatePicker、TextField の `getCounterLabel`)
-- **状態**: 決定(2026-09-30・推奨どおり)
+- **状態**: 決定(2026-09-30・推奨どおり)。`LocaleProvider` は **B50**(#500)で実装 — 形と優先順位は B50 を参照
 - **背景**: 英語が直書きの文言が散在する — Snackbar "Dismiss"、Dialog "Close"、DatePickerField "Open calendar"、
   DatePicker "Previous month" / "Next month" / "Select date"、TimePicker "Hour" / "Minute" / "AM or PM" / "Switch to dial"、
   Chip `Remove ${label}`、Badge `${n} notifications`。一方で一部は既に prop 化済み(SideSheet `closeLabel` / `backLabel`、
@@ -123,6 +124,90 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 
 **影響**: 非破壊(追加のみ、既定文言は現状の英語のまま)。VRT なし。対象: Snackbar / Dialog / DatePicker / DatePickerField /
 TimePicker / Chip / Badge ほか。
+
+### B50: `LocaleProvider` — locale と組み込み文言の一括指定(B1 の段階導入の後半)
+
+- **Issue**: #500(下流アプリ dd_redesign の MD3 ブランチ docs/redesign/07-md3.md §7 から。1.4.0 採用後の報告)
+- **状態**: 決定(2026-10-15・#500 の提案をもとに確定)。**B1 を拡張する**(B1 の「`LocaleProvider` は v1.x で非破壊追加」の実施)
+- **背景**: B1 で全文言を prop 化した(`*Label` / `get*Label`)が、アプリ全体を訳すには全インスタンスに渡す必要がある。
+  ピッカーは `locale="en-US"` 既定、Badge は "n new notifications" と英語で読む。
+- **仕様の根拠**:
+  - **m3**(優先 1): time picker「24 時間制は time picker の外、通常はシステム設定で決める」(set outside of the time picker
+    component, typically through system settings)。AM/PM は 12 時間制のときだけ。date input の helper text の既定
+    「MM/DD/YYYY」は変更可能、区切りはダッシュ / スペース / スラッシュ / ドットを受け付け、入力マスクなし。badge の読み上げは
+    数字、数えない badge は「New notification」。**locale の設定方法・週の始まりは m3 に記載なし**。
+  - **Compose**(優先 2): locale はプラットフォームから(`defaultLocale()` = `LocalLocale.current.platformLocale` —
+    CalendarLocale.android.kt:27。DatePicker.kt:397 / :709 が既定に使う)。週の始まりは locale から
+    (`CalendarModel.firstDayOfWeek` — CalendarModel.kt:71、Android 実装は `WeekFields`。DatePicker.kt:1893 で曜日見出しを回す)。
+    `is24Hour` の既定はシステム設定(`is24HourFormat` — TimeFormat.android.kt:24-25、TimePicker.kt:1415)。組み込み文言は
+    約 80 個の `Strings` キー(internal/Strings.kt:28-107)をプラットフォームの翻訳リソースから引く — `DatePickerTitle` /
+    `DateRangePickerTitle` / `DateRangeInputTitle`、`TimePickerDialogTitle` / `TimeInputDialogTitle`、
+    `BottomSheetDragHandleDescription` / `BottomSheetDismissDescription` のように**モード別の文言は別キー**。
+    `DatePickerFormatter` の skeleton は `yMMMM` / `yMMMd` / `yMMMMEEEEd`(DatePicker.kt:803-812)。Badge 自体は文言を持たない。
+  - **Web での適応(仕様が黙っている部分)**: Web には「プラットフォームの locale / 翻訳リソース」に相当する決定的な入力がない。
+    `navigator.language` は実行環境依存で SSR とハイドレーションが食い違う(B8 で不採用にした理由と同じ)。そこで Compose の
+    「locale・時刻制・文言は外から供給」を **React context で明示的に供給する**形に置き換える。
+
+**選択肢**
+
+- 置き場所
+  - **(a) 独立した `<LocaleProvider>`**(MUI X `LocalizationProvider` / MUI core のロケールと同じく、テーマとは別の層)
+  - (b) `ThemeProvider` の `locale` / `labels` prop — 色・モーションと文言は独立に変わる(画面の一部だけ別言語、テーマなしの
+    利用)ので結合しない。ThemeProvider は DOM ラッパー(CSS 変数)を描くが、locale は純粋な context でよい
+- 文言の形
+  - **(c) コンポーネント名ごとの入れ子 `labels={{ Snackbar: { dismissLabel }, DatePicker: { … } }}`、キーは各 prop 名**
+    (MUI の `components.MuiX.defaultProps` と同じ発想。prop と Provider で同じ名前)
+  - (d) フラットな `localeText`(MUI X)— キー名を別途覚える必要があり、同名 prop(`okLabel` など)の衝突を接頭辞で避けることになる
+
+**決定**: **(a) + (c)**。`ThemeProvider` には足さない(併用は入れ子にする)。
+
+- **API**: `<LocaleProvider locale? ampm? labels?>{children}</LocaleProvider>`(新しい subpath `m3-expressive-react/LocaleProvider`、
+  ルートからも export)。`useLocale()` が解決済みの `{ locale, ampm, labels }` を返す(アプリ側の書式にも使える)
+  - `locale`(BCP 47): DatePicker / DatePickerField / TimePicker の `locale` の既定。月・曜日名、週の始まり、入力の並び / パターンは
+    従来どおりこの locale から求める(週の始まりは `Intl.Locale(locale).getWeekInfo()` / `weekInfo`、無ければ日曜 —
+    既存の `getFirstDayOfWeek`。`-u-fw-mon` などの Unicode 拡張も engine が対応していれば効く)
+  - `ampm`: TimePicker の `ampm` の既定。省略時は locale の `Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hourCycle`
+    から導出(B8 と同じ)。m3 の「24 時間制は外で決める」の Web 版
+  - `labels`: コンポーネントごとの文言。値は prop と同じ型(文字列、または値に依存する `get*Label` 関数)
+- **優先順位**: **prop > 最も近い Provider > 外側の Provider > 英語の既定**。入れ子の Provider は親を継承し、`labels` は
+  コンポーネント単位で浅くマージ(`labels.DatePicker` の一部だけ上書きできる)、`locale` / `ampm` は指定したものだけ上書き。
+  TimePicker の 24 時間制は `ampm` prop > Provider `ampm` > 実効 locale(prop の `locale` を含む)から導出
+- **Provider なしは完全に従来どおり**(`'en-US'`・英語)。`navigator.language` は読まない(SSR で決定的)
+- **対象の文言(棚卸し)** — キーは prop 名:
+  - DatePicker: `titleLabel` `noSelectionLabel` `previousMonthLabel` `nextMonthLabel` `selectYearLabel` `todayLabel`
+    `startDateLabel` `endDateLabel` `inRangeLabel` `inputLabel` `switchToInputLabel` `switchToCalendarLabel` `getErrorLabel`
+    `okLabel` `cancelLabel`
+  - DatePickerField: `label` `openCalendarLabel` `dialogLabel` `getErrorLabel` `previousMonthLabel` `nextMonthLabel`
+    `previousYearLabel` `nextYearLabel` `selectMonthLabel` `selectYearLabel` `todayLabel`
+  - TimePicker: `titleLabel` `hourLabel` `minuteLabel` `selectHourLabel` `selectMinuteLabel` `periodLabel` `amLabel` `pmLabel`
+    `switchToInputLabel` `switchToDialLabel` `switchToScrollLabel` `getHourLabel` `getMinuteLabel` `getErrorLabel` `okLabel` `cancelLabel`
+  - Snackbar(SnackbarProvider 経由の表示も): `dismissLabel` / SearchBar: `backLabel` `suggestionsLabel` `placeholder` /
+    Chip: `getRemoveLabel` / Dialog: `closeLabel` / BottomSheet: `dragHandleLabel` / SideSheet: `closeLabel` `backLabel` /
+    NavigationRail: `modalLabel` / Carousel: `getItemLabel` `roleDescriptionLabel` `itemRoleDescriptionLabel` /
+    Slider: `rangeStartLabel` `rangeEndLabel` / SplitButton: `trailingAriaLabel` / Autocomplete: `toggleLabel` /
+    TextField: `getCounterLabel` / PullToRefresh: `refreshingLabel`
+  - **Provider だけのキー**(prop にない組み込み文言。Compose が別キーにしているもの):
+    - モード別の見出し: DatePicker `rangeTitleLabel`('Select dates')・`rangeInputTitleLabel`('Enter dates')・
+      `inputNoSelectionLabel`('Entered date')、TimePicker `inputTitleLabel`('Enter time')、BottomSheet
+      `partialDragHandleLabel`('Drag handle'、`skipPartiallyExpanded={false}` のとき)。Provider の `titleLabel` 等は
+      基本モード(単一日付 / dial)だけに効き、各モードはそれぞれのキーで訳す。**prop の `titleLabel` / `noSelectionLabel` /
+      `dragHandleLabel` は従来どおり全モードに効き、Provider より優先**
+    - 名前の代替(`title` / `aria-label` / `aria-labelledby` が無いときの accessible name): Dialog / BottomSheet / SideSheet /
+      NavigationDrawer の `fallbackLabel`('Dialog' / 'Bottom sheet' / 'Side sheet' / 'Navigation')
+    - Badge `getLabel(count)`: `count` は表示する文字列('8'、'999+')、dot / 数えない badge は `undefined`。既定は B28 の
+      "New notification" / "{n} new notification(s)"。Badge の `label` prop が優先。NavigationBar / NavigationRail の項目の
+      バッジ(`badgeLabel` が優先)と Tab の `badge` の読み上げも同じ関数を使う(m3 badges/accessibility)
+  - 対象外: 利用者が必ず渡す文言(FabMenu `ariaLabel` など既定なし)、DatePickerField の helper text(既定は locale の
+    パターン文字 `MM/DD/YYYY` 等で m3 の既定どおり — 訳すなら `supportingText`)、数値だけの `aria-valuetext`
+- **英語の既定だけ同梱**(翻訳パックは出さない)。日本語の例はドキュメント(`site/docs/i18n.mdx`)に載せる
+- **RSC**: Badge は**サーバーコンポーネントのまま**(#409 の保証)。context を読む既定文言だけを小さな client 子
+  `BadgeLabelText`(直列化できる `count` だけを受け取る)に分け、Badge 本体は directive なしで client 境界を描く
+  (`src/test/useClient.test.ts` に「client 子を描くサーバーモジュール」として明示)。`LocaleProvider` は client コンポーネントで、関数のラベル(`getLabel` など)は
+  サーバー → クライアント境界を越えられないため、App Router では利用側の `'use client'` モジュールで Provider を描く(docs に記載)
+
+**影響**: 非破壊(新しいコンポーネント `LocaleProvider` / フック `useLocale` / 型 `LocaleLabels` と subpath の追加。Provider なしの
+出力は不変)。VRT: `Components/LocaleProvider` の `Japanese`(DatePicker / TimePicker / Badge / Snackbar を ja-JP で)を追加。
+既存ストーリーは不変。対象: 上記の各コンポーネント(内部の `badgeLabel` / `navBadge` ヘルパーは getter を受け取るだけ)。
 
 ### B2: 既定の motion scheme(standard / expressive)
 

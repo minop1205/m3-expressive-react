@@ -13,6 +13,7 @@ import type { ModalCloseEvent } from '../../internal/closeReason'
 import { assignRefs, useModal } from '../../internal/useModal'
 import { IconButton } from '../IconButton/IconButton'
 import styles from './Dialog.module.css'
+import { useLocaleLabels, useLocaleProps } from '../../internal/locale'
 
 /**
  * Why the dialog asked to close (ruling B7 vocabulary): Escape, a scrim
@@ -52,10 +53,20 @@ export interface DialogProps
  * BodyMedium text — per Compose DialogTokens. Modal with a 0.32 Scrim,
  * role="dialog" aria-modal, and Escape-to-close.
  */
-export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
-  { open, onClose, icon, title, actions, fullScreen = false, closeLabel = 'Close', className, children, ...rest },
-  ref,
-) {
+export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(inProps, ref) {
+  const {
+    open,
+    onClose,
+    icon,
+    title,
+    actions,
+    fullScreen = false,
+    closeLabel = 'Close',
+    className,
+    children,
+    ...rest
+  } = useLocaleProps('Dialog', inProps)
+  const { fallbackLabel = 'Dialog' } = useLocaleLabels('Dialog')
   const titleId = useId()
   const rootRef = useRef<HTMLDivElement>(null)
   const surfaceRef = useRef<HTMLDivElement | null>(null)
@@ -96,7 +107,7 @@ export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(
         aria-modal="true"
         aria-labelledby={title != null ? titleId : restLabelledby}
         aria-label={
-          title == null && restLabelledby == null ? (restAriaLabel ?? 'Dialog') : restAriaLabel
+          title == null && restLabelledby == null ? (restAriaLabel ?? fallbackLabel) : restAriaLabel
         }
         data-has-icon={icon != null || undefined}
         data-full-screen={fullScreen || undefined}

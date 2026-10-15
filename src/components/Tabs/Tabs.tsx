@@ -26,6 +26,7 @@ import { useControllableState } from '../../internal/useControllableState'
 import type { BadgeProps } from '../Badge/Badge'
 import { badgeAccessibleLabel } from '../../internal/badgeLabel'
 import styles from './Tabs.module.css'
+import { useLocaleLabels } from '../../internal/locale'
 
 export type TabsVariant = 'primary' | 'secondary'
 
@@ -377,7 +378,10 @@ export const Tab = forwardRef<HTMLButtonElement, TabProps>(function Tab(
     isValidElement<BadgeProps>(badge) && (hasIcon || hasLabel) ? badge : null
   // The painted badge is hidden from assistive technology; its text is read
   // after the label instead (m3 badges/accessibility, as NavigationBar #175).
-  const badgeText = badgeElement ? badgeAccessibleLabel(badgeElement.props) : undefined
+  const { getLabel: getBadgeLabel } = useLocaleLabels('Badge')
+  const badgeText = badgeElement
+    ? badgeAccessibleLabel(badgeElement.props, getBadgeLabel)
+    : undefined
 
   const iconNode = hasIcon && (
     <span className={styles.icon} aria-hidden="true" data-tab-content={contentAttr}>

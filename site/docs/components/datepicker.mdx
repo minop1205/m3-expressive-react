@@ -163,7 +163,9 @@ const [date, setDate] = useState<Date | null>(null)
 
 `locale` localizes dates, and every built-in string is a `*Label` prop with
 an English default (`titleLabel`, `okLabel`, `cancelLabel`,
-`previousMonthLabel`, `switchToInputLabel`, `getErrorLabel`, …).
+`previousMonthLabel`, `switchToInputLabel`, `getErrorLabel`, …). To set the
+locale and the strings once for the whole app, wrap it in
+[`LocaleProvider`](/i18n) — props still override it.
 
 <Demo>
   <DatePicker
@@ -179,6 +181,11 @@ an English default (`titleLabel`, `okLabel`, `cancelLabel`,
 
 ```tsx
 <DatePicker locale="ja-JP" titleLabel="日付を選択" okLabel="OK" cancelLabel="キャンセル" />
+
+// or app-wide:
+<LocaleProvider locale="ja-JP" labels={{ DatePicker: { titleLabel: '日付を選択', cancelLabel: 'キャンセル' } }}>
+  <DatePicker />
+</LocaleProvider>
 ```
 
 ## Server rendering

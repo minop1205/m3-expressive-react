@@ -21,6 +21,7 @@ import type { ModalCloseEvent } from '../../internal/closeReason'
 import { useModal } from '../../internal/useModal'
 import { useControllableState } from '../../internal/useControllableState'
 import styles from './NavigationRail.module.css'
+import { useLocaleProps } from '../../internal/locale'
 
 export type { NavigationRailVariant, NavigationRailArrangement } from './NavigationRailContext'
 export { NavigationRailItem, type NavigationRailItemProps } from './NavigationRailItem'
@@ -84,8 +85,8 @@ export interface NavigationRailProps
  * FAB) is pinned at the top.
  */
 export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
-  function NavigationRail(
-    {
+  function NavigationRail(inProps, ref) {
+    const {
       value,
       defaultValue,
       onChange,
@@ -99,9 +100,7 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
       className,
       children,
       ...rest
-    },
-    ref,
-  ) {
+    } = useLocaleProps('NavigationRail', inProps)
     const innerRef = useRef<HTMLElement | null>(null)
     const expanded = variant === 'expanded'
     const hide = modal && hideOnCollapse
