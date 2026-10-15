@@ -94,6 +94,13 @@ const [draft, setDraft] = useState<Date | null>(null)
 Passing `onAccept` or `onCancel` without `open` renders the same action row
 on an inline picker.
 
+:::warning Upgrading from 1.4 or earlier
+Since 1.5.0 the modal DatePicker shows itself in the browser top layer (#494). If
+your app wrapped it in its own popover or top-layer container (e.g. to lift
+it above other layers), remove that wrapper: the app's layer would be painted
+above the picker and block it.
+:::
+
 ## Range
 
 `range` selects a start and end date; the value is a `[start, end]` tuple

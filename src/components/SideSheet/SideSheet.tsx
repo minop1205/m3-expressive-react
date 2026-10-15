@@ -80,6 +80,12 @@ export interface SideSheetProps extends HTMLAttributes<HTMLDivElement> {
  * Header uses 24dp side padding (16dp with a back icon), 12dp gaps, a Title
  * Large headline, and optional back/close IconButtons. Bottom actions are a
  * 72dp left-aligned bar.
+ *
+ * A modal sheet mounted with `open` slides in like one opened later. Initial
+ * focus (modal): an element React's `autoFocus` focused inside it, else the
+ * element marked `data-autofocus`, else the first tabbable element.
+ * `autoFocus` only runs when its element mounts, so for content rendered
+ * while the sheet is closed mark the target with `data-autofocus` instead.
  */
 export const SideSheet = forwardRef<HTMLDivElement, SideSheetProps>(
   function SideSheet(inProps, ref) {

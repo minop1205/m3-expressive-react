@@ -68,7 +68,12 @@ export interface NavigationRailProps
    * level-2 shadow, a 0.32 scrim, focus trapped inside, the rest of the page
    * inert, Escape / scrim click call `onClose`, and focus returns to the
    * opener on collapse. Collapsed, it is a regular in-flow 96dp rail (or
-   * nothing, with `hideOnCollapse`). @default false
+   * nothing, with `hideOnCollapse`). Mounted expanded, it plays the same
+   * expand motion as expanding later. Initial focus: an element React's
+   * `autoFocus` focused inside the rail, else the element marked
+   * `data-autofocus`, else the first tabbable element — `autoFocus` only runs
+   * when its element mounts, so for content rendered while collapsed use
+   * `data-autofocus`. @default false
    */
   modal?: boolean
   /**
@@ -122,7 +127,9 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
     // Hide-on-collapse keeps the expanded layout (--_t = 1 in CSS) and springs
     // the slide-in progress instead.
     const morphProperty = hide ? '--_reveal' : '--_t'
-    useRailMorph(expanded, innerRef, true, morphProperty)
+    // A modal rail mounted expanded plays the expand motion like a later
+    // expand (#516).
+    useRailMorph(expanded, innerRef, true, morphProperty, modal)
     useEffect(() => {
       innerRef.current?.style.removeProperty(hide ? '--_t' : '--_reveal')
     }, [hide])

@@ -62,6 +62,12 @@ export interface DialogProps
  *   Not used by `fullScreen`.
  * - While open, the dialog is drawn in the browser top layer, above popups
  *   opened before it, such as the Menu it was opened from (ruling B45).
+ * - Mounted with `open`, it plays the same open motion as opening later.
+ * - Initial focus: an element React's `autoFocus` focused inside it, else
+ *   the element marked `data-autofocus`, else the first tabbable element.
+ *   `autoFocus` only runs when its element mounts, so for content rendered
+ *   while the dialog is closed (the usual `open={open}` pattern) mark the
+ *   target with `data-autofocus` instead.
  */
 export const Dialog = forwardRef<HTMLDivElement, DialogProps>(function Dialog(inProps, ref) {
   const {

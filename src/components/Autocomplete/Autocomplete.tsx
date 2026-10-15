@@ -93,7 +93,7 @@ export interface AutocompleteProps extends Omit<
   defaultValue?: string
   /**
    * Fires when the value changes: an option is picked, the input is cleared
-   * (or Escape clears it), or — with `freeSolo` — typed text is committed with
+   * (or Escape clears it, with `clearOnEscape`), or — with `freeSolo` — typed text is committed with
    * Enter or on blur. Not fired on form reset.
    */
   onChange?: (event: SyntheticEvent, value: string) => void
@@ -118,6 +118,13 @@ export interface AutocompleteProps extends Omit<
    * text returns to the selected option's label on blur. @default false
    */
   freeSolo?: boolean
+  /**
+   * Escape with the listbox closed clears the input and the value (and is
+   * consumed). Without it, that Escape does nothing and reaches enclosing
+   * handlers — an enclosing Dialog closes. Escape with the listbox open only
+   * closes the listbox either way. @default false
+   */
+  clearOnEscape?: boolean
   /**
    * Custom filtering. Receives every option and `{ inputValue }`; returns the
    * options to show, in order. The default keeps the options whose label
@@ -235,8 +242,9 @@ function fromOptionsProp(options: readonly AutocompleteOption[]): OptionData[] {
  * and keeps focus while the listbox is open; the active option is exposed
  * through `aria-activedescendant`. ArrowDown / ArrowUp open and move (wrapping),
  * Alt+ArrowDown opens without moving, Enter picks the active option (or
- * commits the text with `freeSolo`), Escape closes the listbox and, when it is
- * already closed, clears the field. Typing opens the listbox without
+ * commits the text with `freeSolo`), Escape closes the listbox (consumed, so an
+ * enclosing Dialog stays open) and, when it is already closed, clears the field
+ * with `clearOnEscape` — else it is left to enclosing handlers. Typing opens the listbox without
  * activating an option. The trailing arrow is a button (`tabindex="-1"`) that
  * toggles the listbox.
  *
@@ -262,6 +270,7 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
     defaultOpen = false,
     onOpenChange,
     freeSolo = false,
+    clearOnEscape = false,
     filterOptions = defaultFilterOptions,
     noOptionsText,
     toggleLabel = 'Toggle dropdown menu',
@@ -547,8 +556,10 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
           close()
           return
         }
-        if (inputValue !== '' || value !== '') {
-          // APG: Escape on a closed listbox clears the textbox.
+        // APG: Escape on a closed listbox "optionally clears" the textbox —
+        // opt-in (MUI `clearOnEscape`), so by default the key propagates and
+        // an enclosing modal closes (B42 addendum, #517).
+        if (clearOnEscape && (inputValue !== '' || value !== '')) {
           event.preventDefault()
           changeInput(event, '')
           changeValue(event, '')

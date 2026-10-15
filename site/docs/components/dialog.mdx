@@ -246,6 +246,34 @@ export function NarrowDialogDemo() {
 </Dialog>
 ```
 
+## Initial focus
+
+On open, focus goes to an element that React's `autoFocus` focused inside
+the dialog, else the element marked `data-autofocus`, else the first
+tabbable element. `autoFocus` only runs when its element mounts — and with
+the usual `open={open}` pattern the content mounts while the dialog is still
+closed — so mark the target with `data-autofocus` instead:
+
+```tsx
+<Dialog
+  open={open}
+  onClose={() => setOpen(false)}
+  title="Discard draft?"
+  actions={
+    <>
+      {/* The safe action takes focus on open. */}
+      <Button variant="text" data-autofocus onClick={() => setOpen(false)}>
+        Cancel
+      </Button>
+      <Button variant="text" onClick={discard}>Discard</Button>
+    </>
+  }
+/>
+```
+
+A dialog mounted with `open` (rendered only while open) can use `autoFocus`,
+and plays the same open motion as one opened later.
+
 ## Stacking
 
 While open, the dialog is drawn in the browser's top layer, so app
@@ -256,6 +284,14 @@ from `SnackbarProvider` stay above both. The dialog keeps its place in the
 DOM, so `ThemeProvider` tokens apply as usual. The same holds for the modal
 sheets, drawer, rail and pickers. Browsers without the Popover API fall back
 to `z-index`.
+
+:::warning Upgrading from 1.4 or earlier
+Before 1.5.0 (#494) these modals were not in the top layer. If your app
+wrapped a Dialog, a modal sheet / drawer / rail or a modal DatePicker /
+TimePicker in its own popover or top-layer container to lift it above other
+layers, remove that wrapper: the app's layer would be painted above the modal
+and block it.
+:::
 
 export function MenuDialogDemo() {
   const [open, setOpen] = useState(false)
