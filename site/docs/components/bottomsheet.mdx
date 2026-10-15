@@ -209,6 +209,12 @@ the same detents and drag behavior; the demo opts in to the partial detent.
 - Dragging is a pointer-only enhancement: every detent and dismissal is
   also reachable from the keyboard.
 - With reduced motion, the sheet moves between detents instantly.
+- Initial focus (modal): an element that React's `autoFocus` focused inside
+  the sheet, else the element marked `data-autofocus`, else the first
+  tabbable element. `autoFocus` only runs when its element mounts, so for
+  content rendered while the sheet is closed (the usual `open={open}` pattern)
+  mark the target with `data-autofocus` instead.
+- A modal sheet mounted with `open` slides in the same way as one opened later.
 
 ## Props
 

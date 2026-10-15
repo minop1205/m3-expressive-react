@@ -115,6 +115,24 @@
   transform: translateY(max(50%, 100% - 50cqh));
 }
 
+/* Modal sheet mounted already open (#516): an element has no before-change
+   style on its first render, so the open transition would not run. Start it
+   from the closed values instead — the same motion as opening later (Compose
+   ModalBottomSheet always animates in on show). A later open ignores these.
+   The standard sheet lives in the layout (Compose BottomSheetScaffold starts
+   at its initial value without animating), so it is left out. Reduced
+   motion: the transitions are `none`. */
+@starting-style {
+  .root[data-variant='modal'][data-open] .scrim {
+    opacity: 0;
+  }
+
+  .root[data-variant='modal'][data-open] .sheet,
+  .root[data-variant='modal'][data-open][data-detent='partial'] .sheet {
+    transform: translateY(100%);
+  }
+}
+
 .dragHandleRow {
   display: flex;
   align-items: center;

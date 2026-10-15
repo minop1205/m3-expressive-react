@@ -211,6 +211,12 @@ const [open, setOpen] = useState(false)
 - The open modal drawer is a `dialog` with `aria-modal`: focus moves inside
   and is trapped, the rest of the page is inert, <kbd>Escape</kbd> closes
   it, and focus returns to the opener on close.
+- Initial focus (modal): an element that React's `autoFocus` focused inside
+  the drawer, else the element marked `data-autofocus`, else the first
+  tabbable element. `autoFocus` only runs when its element mounts, so for
+  content rendered while the drawer is closed (the usual `open={open}` pattern)
+  mark the target with `data-autofocus` instead.
+- A modal drawer mounted with `open` slides in the same way as one opened later.
 
 ## Props
 

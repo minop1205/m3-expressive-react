@@ -122,6 +122,26 @@
     var(--md-sys-motion-spring-default-spatial-easing);
 }
 
+/* Modal drawer mounted already open (#516): an element has no before-change
+   style on its first render, so the open transition would not run. Start it
+   from the closed values instead — the same motion as opening later. A later
+   open ignores these. The dismissible drawer is part of the layout and
+   renders its initial state without motion. Reduced motion: the transitions
+   are `none`. */
+@starting-style {
+  .modalRoot[data-open] .scrim {
+    opacity: 0;
+  }
+
+  .modalRoot[data-open] .drawer {
+    transform: translateX(-100%);
+  }
+
+  [dir='rtl'] .modalRoot[data-open] .drawer {
+    transform: translateX(100%);
+  }
+}
+
 /* --------------------------------------------------------------------------- */
 /* Item                                                                        */
 /* --------------------------------------------------------------------------- */

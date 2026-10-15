@@ -184,6 +184,22 @@
     var(--md-sys-motion-spring-default-effects-easing);
 }
 
+/* Modal rail mounted already expanded (#516): an element has no
+   before-change style on its first render, so the scrim fade and shadow
+   would not run. Start them from the collapsed values — the same motion as
+   expanding later (useRailMorph runs the expand morph / slide-in from the
+   collapsed value on such a mount). A later expand ignores these. Reduced
+   motion: the transitions are `none`. */
+@starting-style {
+  .modalRoot[data-open] .scrim {
+    opacity: 0;
+  }
+
+  .rail[data-modal][data-open] {
+    box-shadow: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .scrim,
   .modalRoot[data-open] .scrim,

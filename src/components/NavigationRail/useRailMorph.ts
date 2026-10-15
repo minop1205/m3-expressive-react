@@ -20,15 +20,18 @@ import { prefersReducedMotion, readSpring, stepSpring, type SpringState } from '
  * `--_slide` (1 expanding / 0 collapsing) so the label only slides in on expand.
  * `property` redirects the spring value to another custom property (the modal
  * hide-on-collapse rail slides in on `--_reveal` while its layout stays
- * expanded).
+ * expanded). `fromCollapsedOnMount` starts a mount that is already expanded
+ * from 0, so it plays the same expand motion as expanding later — the modal
+ * rail mounted open (#516); an in-flow rail keeps its resting value.
  */
 export function useRailMorph(
   expanded: boolean,
   ref: RefObject<HTMLElement | null>,
   enabled = true,
   property = '--_t',
+  fromCollapsedOnMount = false,
 ) {
-  const t = useRef<SpringState>({ value: expanded ? 1 : 0, vel: 0 })
+  const t = useRef<SpringState>({ value: expanded && !fromCollapsedOnMount ? 1 : 0, vel: 0 })
   const raf = useRef(0)
 
   // Resting value + direction flag on first paint.
