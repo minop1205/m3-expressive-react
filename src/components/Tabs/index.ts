@@ -1,8 +1,13 @@
 export {
   Tabs,
   Tab,
+  TabContext,
+  TabPanel,
   type TabsProps,
   type TabProps,
+  type TabContextProps,
+  type TabPanelProps,
+  type TabChangeEvent,
   type TabsVariant,
   type TabIconPosition,
 } from './Tabs'

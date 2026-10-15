@@ -61,6 +61,8 @@ TB6a/TB6b/TB6c → #138、TB7 → #139、TB8a/TB8b → #140、TB9a/TB9b → #141
   対応するのが自然
 - **tabpanel との関連付け**: `TabPanel` コンポーネントや自動 id 付与はない。`aria-controls` は `...rest` で渡せる
   ので、利用側の責務としてドキュメント/ストーリーで示すのが妥当(API 追加は MUI の `TabPanel` 相当として別途検討)
+  → **置換(#499、Phase B B49)**: `TabContext` + `TabPanel value` で `id` / `aria-controls` / `aria-labelledby` を自動配線
+  (APG Tabs)。リンクタブ(`Tab href`)とコンテナ色 `--md-tabs-container-color` も同裁定。詳細は `docs/decisions/phase-b-api.md` B49
 - **ループ**: 矢印キーが末尾→先頭へ回る。site の「infinite scroll する tab set を作らない」は内容のループの話で、
   キー移動の回り込みは APG どおり
 - **Compose にあって実装にないもの**(機能追加の候補、今回は対象外): `LeadingIconTab`(インラインアイコン、

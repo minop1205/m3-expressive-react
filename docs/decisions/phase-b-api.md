@@ -70,6 +70,9 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B42 | #434 | Autocomplete(exposed dropdown menu・編集可) | **専用の `<Autocomplete>`、`options` 配列か `<Option>` 子要素、`value` / `inputValue` の二系統(各 controlled / uncontrolled)、`freeSolo` / `filterOptions` / `noOptionsText`、APG list autocomplete、listbox / Option は Select と共有** | なし(追加) | 決定(2026-10-13・#434 フェーズ 2) |
 | B43 | #444 | TimePicker の vibrant・横向き・スクロールホイール | **`variant="standard" \| "vibrant"`、`orientation="vertical" \| "horizontal"`(dial のみ)、`mode="scroll"`(Compose `TimeScroll`)+ 公開 `ScrollField`(APG spinbutton)** | なし(追加) | 決定(2026-10-13) |
 | B44 | #444 | TextField / Select の tonal・secure field・VerticalDragHandle | **TextField / Select `tonal?: boolean`(`@experimental`、Compose `tonalColors()` + `roundedShape`)、secure field はレシピ(`type="password"` + `IconButton toggle`、名前固定 + `aria-pressed`)、新規 `DragHandle`(APG window splitter、`value` / `onChange(event, value)` / `min` / `max` / `step` / `paneSide`)** | なし(追加) | 決定(2026-10-13) |
+| B49 | #499 | Tabs のリンクタブ・TabPanel・コンテナ色 | **`Tab href` → `<a role="tab">`(見た目・手動アクティベーション・`value` による選択は同じ、遷移は横取りしない、`aria-current` は付けない)+ `TabContext` / `TabPanel value`(APG Tabs の `id` / `aria-controls` / `aria-labelledby` 自動配線、非選択は `hidden`、パネルは `tabIndex=0`)+ ホスト変数 `--md-tabs-container-color`(既定 surface)。自動アクティベーションは実装しない** | なし(追加) | 決定(2026-10-15) |
+| B47 | #497 | Slider の操作終了イベント | **`onChangeCommitted(event, value)`(MUI 名)を追加。Compose `onValueChangeFinished` と同じ時機 — ポインタを離したとき(ドラッグ終了・タップ、1 回の操作で 1 回)、値を動かすキー(矢印・Home / End・PageUp / PageDown)の keyup ごと、支援技術による直接の値変更は即時(値が変わらなければ出さない)。single / range 共通、`onChange` は従来どおり連続** | なし(追加) | 決定(2026-10-15) |
+| B51 | #496 #501 #502 | フォーカス可能な無効ボタン・Menu `onAction`・Tooltip の表示遅延 | **いずれも実装しない(仕様に根拠なし)。代替手段をドキュメント化** | なし | 決定(2026-10-15) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -2014,7 +2017,166 @@ textfield 監査(docs/audits/textfield.md 軽微欄)の「機能追加の候補�
 **影響**: 非破壊(prop の追加のみ。既存ストーリーは DOM・CSS とも不変)。VRT: `Components/Tabs` の LeadingIcons /
 WithBadges を追加。対象: Tab(Badge は内部ヘルパーへの切り出しのみ、出力不変)。
 
+
+### B49: Tabs のリンクタブ(navigation tab)・TabPanel・コンテナ色
+
+- **Issue**: #499(下流アプリ dd_redesign からの報告。docs/audits/tabs.md 軽微欄「tabpanel との関連付け」の後続)
+- **状態**: 決定(2026-10-15)
+- **背景**: Tab は常に `<button>` で、ルートへのリンクとして使えない。`TabPanel` がなく、`id` / `aria-controls` は
+  利用側が `...rest` で手配線する。コンテナは surface 固定で、dialog や白いパネルの上では帯に見える。
+- **スペック**:
+  - m3(tabs/specs・/accessibility):トークン名は **`md.comp.primary-navigation-tab.*` / `secondary-navigation-tab.*`**、
+    a11y は「Arrow — Focus lands on the next available navigation destination」「Space / Enter — Activates」
+    「Don't use Space/Enter for navigating tabs」、タブは「invoke navigation to a new destination」。コンテナ色は
+    primary / secondary とも `md.sys.color.surface`、上書きの記述はない。primary の anatomy は Icon (optional)、
+    **secondary の anatomy にアイコンはない**。tabpanel / `aria-controls` の記述は**ない**
+  - Compose(androidx-main):`Tab` / `LeadingIconTab` は `Role.Tab`、TabRow は `selectableGroup`。
+    `Primary/Secondary(Scrollable)TabRow` に `containerColor` 引数(既定 `TabRowDefaults.primaryContainerColor` /
+    `secondaryContainerColor` = Surface — TabRow.kt:998-1003)。`LeadingIconTab`(インライン 8dp)は secondary に限らない。
+    pager / タブパネルとの関連付けは**ない**(Compose はセマンティクスツリーにパネルの概念を持たない)
+
+**選択肢**
+
+- リンクタブ
+  - **(a) `Tab href`(+ `target` / `rel` / `download`)で `<a role="tab">` を描く**(B5・Card と同じ「`href` → `<a>`」)
+  - (b) ポリモーフィック `component` prop — ライブラリ全体の方針が未決(本書末尾「扱わなかった判断候補」)なので見送り
+- パネル
+  - **(c) `TabContext`(状態と id の範囲)+ `TabPanel value`**(MUI Lab の `TabContext` / `TabPanel` と同名)。`Tabs` は
+    `TabContext` の中にあれば状態をそこから読む
+  - (d) `TabPanel` だけを足し、`Tabs` の `id` から id を組み立てる — 自動にならず、SSR で選択中のパネルを決められない
+- コンテナ色
+  - **(e) ホストのカスタムプロパティ `--md-tabs-container-color`**(SearchBar の `--md-search-bar-container-color` と同じ形)
+  - (f) `color` / `containerColor` prop — Compose 流の色 prop は API 方針で避ける
+
+**決定**: **(a) + (c) + (e)**。補足:
+
+- **リンクタブ(`href`)**: m3 の navigation tab(トークン名・「新しい行き先へ移動する」)の Web 版。
+  - 見た目・roving tabindex・矢印 / Home / End のフォーカス移動・`Tabs value` による選択(`aria-selected`)は `<button>` の
+    タブと同じ。**遷移は横取りしない**: クリックはブラウザの通常の遷移で、`onChange(event, value)` は遷移の前に呼ばれる。
+    クライアントルーターを使う場合は `onChange`(または Tab の `onClick`)で `event.preventDefault()` してから
+    `navigate()` する(Tab の `onClick` で `preventDefault()` すると従来どおり `onChange` も止まる)。選択はふつう現在の
+    ルートから `value` を controlled で渡す
+  - 修飾キー付きクリック(Ctrl / ⌘ / Shift / Alt。新しいタブ・ウィンドウで開く)は**選択を変えない**(`onChange` を呼ばない)
+    — 現在のページは変わらないため。中クリックは `click` が発火しないので同じ
+  - m3 の「Space / Enter — Activates」に合わせ、リンクタブでも **Space で活性化**する(`<a>` は Enter しかネイティブに
+    扱わないため、Space は keyup で `click()` を呼び、keydown のページスクロールを止める)
+  - disabled のリンクタブは `href` を外し `aria-disabled="true"`(Card / Carousel と同じ)。矢印キーでは飛ばす
+  - **`aria-current="page"` は付けない**。ARIA 1.2 は aria-current について「aria-selected が同じ意味を持つウィジェット
+    (例: tablist)では aria-selected の代わりに使うべきでない」とし、tab の現在状態は `aria-selected` で伝わる。両方付けると
+    「選択、現在のページ」と二重に読まれる。必要なら利用側が `aria-current` を渡せる(`...rest` でそのまま出る)
+  - リンクタブはパネルを持たない(行き先はページそのもの)ので、`TabContext` の中でも `id` / `aria-controls` を付けない。
+    ページ遷移のナビゲーションで tablist を使いたくない場合は、`<nav>` + リンク + `aria-current` のほうが適切である旨を
+    ドキュメントに書く(APG)
+- **`TabContext` / `TabPanel`**(**Web 固有の要件**: m3・Compose とも記述がないので WAI-ARIA APG Tabs パターンに従う)
+  - `TabContext` は `value` / `defaultValue` / `onChange(event, value)`(controlled / uncontrolled)と id の基点(`useId`)を
+    持つ。中の `Tabs` はその状態を使い(`Tabs` の `value` / `defaultValue` は無視して開発時に警告、`Tabs` の `onChange`
+    も従来どおり呼ぶ)、各 `Tab` に `id` と、対応する `TabPanel` が描画されている場合だけ `aria-controls` を付ける
+    (存在しない id を指さない)
+  - `TabPanel value` は `role="tabpanel"`、`id`、`aria-labelledby`(対応する Tab の id)。**選択中でないパネルは `hidden`**
+    (中身はマウントしたまま — 状態を保つ。遅延マウントは提供しない)
+  - **`tabIndex=0` を既定にする**: APG は「パネルにフォーカス可能な要素がない、または先頭にない場合は tabindex=0」とする。
+    中身を静的に判定できないため常に 0(APG の例と同じ)、先頭がフォーカス可能な場合は `tabIndex={-1}` などで上書きできる。
+    フォーカス表示はブラウザ既定の outline(パネルは操作要素ではないので FocusRing は使わない)
+  - `TabContext` を使わない `Tabs` は従来どおり(`id` / `aria-controls` を付けない。DOM 不変)
+- **コンテナ色**: `.tabs` の背景を `--md-tabs-container-color`(既定 `var(--md-sys-color-surface)`)にする。primary /
+  secondary 共通(m3 は両方 surface、Compose の `containerColor` も TabRow 単位)。値の変更はホスト要素か祖先に指定する
+- **実装しないもの**:
+  - **自動アクティベーション**(`activationMode="automatic"`、#499 の提案): m3 a11y は「矢印 = フォーカス移動、Space / Enter =
+    活性化」「Space / Enter をタブ間の移動に使わない」と手動アクティベーションを指定しており、Compose もフォーカス移動では
+    選択しない(TB9a)。APG は自動も許容するが上位ソースに従い、追加しない
+  - **secondary タブのアイコン**: m3 の secondary の anatomy にはアイコンがない。`iconPosition="start"`(Compose
+    `LeadingIconTab`、B40)は variant に関係なく使えるが、secondary タブは通常アイコンなしで使う旨をドキュメントに書く
+    (型や実行時の制限はしない)
+
+**影響**: 非破壊(prop・コンポーネント・カスタムプロパティの追加。`onChange` の event 型は
+`MouseEvent<HTMLButtonElement | HTMLAnchorElement>` に広げるがメソッド記法なので既存の注釈付きハンドラーもそのまま通る、
+Tab の `ref` は `HTMLButtonElement | HTMLAnchorElement`)。既存ストーリーはピクセル不変(背景は同じ surface)。VRT:
+`Components/Tabs` の NavigationTabs / WithPanels を追加。対象: Tabs、Tab、新規 TabContext / TabPanel(`m3-expressive-react/Tabs`)。
+docs/audits/tabs.md の「tabpanel との関連付け」は本裁定で置換(監査側に相互参照を追記)。
+
 ---
+
+### B47: Slider の操作終了イベント `onChangeCommitted`(#497)
+
+- **Issue**: #497
+- **状態**: 決定(2026-10-15)
+- **背景**: Slider には操作の終わりを知らせるイベントがない。確定時に保存するアプリは native の `change` と keyup を
+  組み合わせるしかなく、しかも Home / End / PageUp / PageDown は Slider が自前で値を動かすため native の `change` が
+  出ない(1.4.0 を採用した下流アプリからの報告)。
+
+**仕様**
+
+- **m3.material.io**(優先度 1): sliders accessibility「Changes made with sliders must take effect immediately」。
+  キーボードは矢印で 1 値 / 1 stop、Home / End で先頭 / 末尾。操作終了(commit)イベントについては**記述がない**。
+  「即時に反映」は値の更新(`onChange`)の要件であり、`onChange` は従来どおり連続で出す
+- **Compose androidx-main**(優先度 2)`Slider.kt`:
+  - `onValueChangeFinished`「called when value change has ended … by ending a drag or a click. For keyboard movements,
+    this is called on every step.」(:184–187)
+  - ドラッグ終了(`onDragStopped`、:921–923)、ドラッグ中でないタップ(`onTap` の `!state.isDragging`、:3074–3077)
+  - キーボードは **KeyUp** で、値を動かすキー(矢印・Home / End・PageUp / PageDown)ごと(:1180–1214)。KeyUp は値が
+    変わったかを見ない(範囲端での矢印でも出る)
+  - アクセシビリティの `setProgress` は `onValueChange` の直後に即時に出し、値が変わらなければ何もしない(:2875–2882)
+- m3 が commit イベントについて沈黙しているので、時機は Compose に従い、prop の形は Web / MUI の慣用(A2)にする
+
+**選択肢**
+
+- **(a) `onChangeCommitted(event, value)`**(MUI `Slider` と同名・同形。`value` は `onChange` と同じ形 — `number` か `[start, end]`)
+- (b) `onValueChangeFinished()`(Compose 名、引数なし)— Web / MUI 利用者に馴染みがなく、A2 の `(event, value)` にも合わない
+- (c) native `change` イベントをそのまま流す — Home / End / PageUp / PageDown で出ない(本 Issue の問題そのもの)
+
+**決定**: **(a)**。時機は Compose `onValueChangeFinished` と同じにする。
+
+1. **ポインタ**: 入力上で pointerdown してから pointerup / pointercancel したとき、1 回の操作につき 1 回(Compose の
+   ドラッグ終了と、ドラッグなしのタップの両方に当たる。値が動かないタップでも出す — Compose `onTap` と同じ)。
+   ドラッグ中の連続した値は `onChange` だけに出る。`event` はウィンドウで受けた native の `PointerEvent`
+2. **キーボード**: 値を動かすキー(`ArrowLeft` / `ArrowRight` / `ArrowUp` / `ArrowDown`・`Home` / `End`・`PageUp` /
+   `PageDown`)の **keyup** ごと(押し続けたキーリピートは keyup の 1 回)。Compose と同じく値が変わったかは見ない
+   (範囲端での矢印・最小値での Home でも出す)。Compose は向きに合う矢印だけを扱うが、native の `<input type="range">`
+   は向きに関係なく 4 方向の矢印で値を動かすので、Web では 4 方向とも対象にする(値を動かすキー = commit するキー、
+   という Compose の対応を保つための Web 適応)。`event` は React の `KeyboardEvent`
+3. **支援技術による直接の値変更**(ポインタ・キー操作の外で入力の値が変わったとき — Compose の `setProgress` に相当):
+   `onChange` の直後に即時に出す。値が変わらなかったとき(range で反対側の thumb に当たって止まった等)は出さない。
+   `event` は `ChangeEvent`
+4. `value` は操作の最後に報告した値(`onChange` で最後に渡した値。controlled で親が値を反映しなくても同じ)。
+   range では `[start, end]` の組全体。積み重なった thumb のドラッグ受け渡し(#431)でも 1 回
+5. `onChange` の挙動・時機は**変えない**。disabled では出ない(入力がイベントを受けない)
+
+**影響**: 非破壊(prop の追加のみ)。見た目・DOM は不変、既存ストーリーはピクセル不変。VRT: `Components/Slider` に
+`ChangeCommitted`(確定値の表示)を追加。対象: Slider。
+
+---
+### B51: 仕様に根拠がないため見送る要望(#496・#501・#502)
+
+- **Issue**: #496・#501・#502(利用側アプリの報告 docs/redesign/07-md3.md §7 由来)
+- **状態**: 決定(2026-10-15・スペックファーストの原則で判定)
+- **調査**: m3.material.io(2026-10-15、TOKEN_TABLE revision 2026-10-13_06-10-19)と Compose androidx-main を確認
+
+**#496 フォーカス可能な無効ボタン(`aria-disabled`)**
+
+- m3: icon buttons の accessibility のキーボード表は「Tab — Focus lands on (non-disabled) icon button」
+  「Space or Enter — Activates the (non-disabled) icon button」で、無効なボタンは Tab で飛ばす前提。
+  フォーカス可能な無効状態は menus の「Disabled menu items can receive focus but aren't selectable」だけで、
+  ボタンには定義がない
+- Compose: `Button` / `IconButton` の `enabled = false` は `clickable(enabled = false)` でフォーカスもクリックも外す。
+  フォーカス可能な無効の概念はない
+- **決定**: 実装しない。無効の理由を伝えたい場合は、ボタンの近くの補助テキスト、または包む要素に
+  Tooltip を付ける方法をドキュメントで案内する
+
+**#501 Menu の `onAction(value)`**
+
+- m3: menus は「Selecting an option」で閉じる挙動と単一・複数選択(B33)を定めるが、集約ハンドラーの API はない
+- Compose: `DropdownMenuItem(onClick)` ごとの処理で、メニュー単位のハンドラーはない(閉じるのも呼び出し側)
+- **決定**: 実装しない。データから組み立てるメニューは、各 `MenuItem` の `onClick` で `value` を渡すか、
+  選択グループ(B33 `MenuGroup selectionMode` の `onChange(event, value)`)を使う
+
+**#502 Tooltip の表示遅延**
+
+- m3: 「Both plain and rich tooltips disappear 1.5 seconds after navigating away from the target region」
+  (消える遅延のみ)。表示までの遅延の定義はない
+- Compose: `BasicTooltip` はポインター Enter で即 `show()`、キーボードフォーカスでも即表示。
+  遅延はタッチの長押し(`longPressTimeoutMillis`)と、非 persistent の表示時間 `TooltipDuration` 1500ms のみ
+- 現状: 消える遅延は `HIDE_DELAY_MS = 1500` で m3 と一致、フォーカスでの表示は 1.4.1 で `:focus-visible` のときだけに修正済み
+- **決定**: 表示遅延は追加しない(m3・Compose とも即表示)
 
 ## 本書で扱わなかった判断候補(次回以降)
 
