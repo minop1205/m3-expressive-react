@@ -98,3 +98,17 @@ shadow / コンテナ縦 padding 8dp / 幅 112〜280dp / item 高さ 48dp / item
 | baseline の selected | `MenuTokens.ListItemSelected*` = SecondaryContainer / OnSecondaryContainer(MenuTokens.kt:34-41、Compose では未使用)、material-web `md-menu-item` `.selected`(_menu-item.scss) | secondary-container / on-secondary-container |
 | サブメニュー(Compose なし) | material-web `md-sub-menu`: anchor START_END / menu START_START(sub-menu.ts:48-52)、hover open / close 400ms(:56-61, :249-287)、`quick = true`(:153, :208)、open キー Right(RTL Left)/ Space / Enter(:384-397)、close キー Left(RTL Right)/ Escape(:404-416)、Escape は 1 段だけ(:340) | 同じ。gap は baseline 0 / vertical 2dp(SegmentedGap)、親 item は開いている間 state layer 色を保持(vertical は 12dp に形を変える — m3「corner shape changes」) |
 | コンテキストメニュー | m3 overview / guidelines(secondary click)、MUI `anchorPosition` | `anchorPosition={{ top, left }}`、点の下・後ろに開き flip + clamp |
+
+## 修正メモ: 外側クリックで閉じたあとの focus(2026-10-16・#515)
+
+バグ修正(新規裁定なし)。m3 menus/accessibility は「Where focus is placed after closing the menu depends on
+the app」として行き先を定めない。外側 press で閉じると focus が `<body>` に落ちていた(Escape / 選択では trigger に戻る)。
+Web 適応(MUI の挙動に寄せる):
+
+- press の target(またはその focusable な祖先)が focus を取れるなら、そこへ移る focus をそのままにする
+- 取れない(focus が `<body>` に落ちる、または閉じた menu 内に残る)なら trigger に戻す — Escape 経路と同じ。
+  trigger のないコンテキストメニューは開く前に focus していた要素へ
+- 実装は共有 helper `src/internal/outsidePressFocus.ts`(mouse / pen は pointerdown と同じタスクの mousedown 後に判定、
+  touch は後から来る互換 mouse イベントのため click 後にも再判定)。FabMenu(toggle に戻す)にも適用、SplitButton は
+  Menu を使うので同じ挙動。Select / Autocomplete は `aria-activedescendant` 型で focus が field から動かないため、
+  外側 press の blur はネイティブ input と同じ通常の挙動であり対象外

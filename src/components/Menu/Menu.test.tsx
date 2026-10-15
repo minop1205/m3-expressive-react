@@ -438,3 +438,59 @@ describe('Menu focus and ARIA (#420)', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'false')
   })
 })
+
+describe('Menu focus after an outside press (#515)', () => {
+  function Page() {
+    return (
+      <>
+        <Menu trigger={<button>Open</button>} aria-label="Actions">
+          <MenuItem>Copy</MenuItem>
+          <MenuItem>Share</MenuItem>
+        </Menu>
+        <p data-testid="blank">Plain text</p>
+        <button>Elsewhere</button>
+      </>
+    )
+  }
+
+  it('returns focus to the trigger when the press takes no focus', async () => {
+    const user = userEvent.setup()
+    render(<Page />)
+    const trigger = screen.getByRole('button', { name: 'Open' })
+    await user.click(trigger)
+    expect(item('Copy')).toHaveFocus()
+    await user.click(screen.getByTestId('blank'))
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    await vi.waitFor(() => expect(trigger).toHaveFocus())
+  })
+
+  it('lets focus go to a focusable element that was pressed', async () => {
+    const user = userEvent.setup()
+    render(<Page />)
+    const trigger = screen.getByRole('button', { name: 'Open' })
+    await user.click(trigger)
+    const elsewhere = screen.getByRole('button', { name: 'Elsewhere' })
+    await user.click(elsewhere)
+    expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(elsewhere).toHaveFocus()
+  })
+
+  it('a press inside a focusable ancestor keeps focus there', async () => {
+    const user = userEvent.setup()
+    render(
+      <>
+        <Menu trigger={<button>Open</button>} aria-label="Actions">
+          <MenuItem>Copy</MenuItem>
+        </Menu>
+        <div tabIndex={-1} data-testid="region">
+          <span data-testid="inner">Inner text</span>
+        </div>
+      </>,
+    )
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    await user.click(screen.getByTestId('inner'))
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(screen.getByTestId('region')).toHaveFocus()
+  })
+})

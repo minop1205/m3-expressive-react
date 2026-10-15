@@ -273,9 +273,12 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     if (!isOpen) return
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
       if (event.key !== 'Escape' || event.defaultPrevented) return
-      // Consumed: an enclosing modal (useModal) ignores a prevented Escape,
-      // so one press dismisses only the tooltip.
-      event.preventDefault()
+      // Consumed only while the user is still on the trigger / tooltip (focus
+      // or pointer inside): an enclosing modal (useModal) ignores a prevented
+      // Escape, so one press dismisses only the tooltip. A tooltip lingering
+      // through its 1.5 s hide delay closes but lets the event through, so a
+      // Dialog or Menu opened meanwhile still gets it (#514).
+      if (focusWithin.current || hovered.current) event.preventDefault()
       const focusInPopup = popupRef.current?.contains(document.activeElement) ?? false
       escapeDismissed.current = focusWithin.current
       close()
