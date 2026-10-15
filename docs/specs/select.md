@@ -119,5 +119,26 @@ Autocomplete both use them).
 - `multiple` (multi-select): Compose's `ExposedDropdownMenu` has no
   multi-select, and the m3 menu guidance doesn't describe one either. It is
   left for a later decision.
-- Option groups and dividers inside the listbox.
+- Option groups and dividers inside the listbox. (Native mode renders
+  `<optgroup>` natively — see "Native mode" below, B53.)
 - Autocomplete: phase 2, docs/specs/autocomplete.md.
+
+## Native mode (`<Select native>`, B53, #519)
+
+Neither m3.material.io nor Compose has a native select (m3's menus and text
+fields pages are silent; Compose's `ExposedDropdownMenuBox` always draws its
+own popup). This is a web adaptation after MUI `Select native`; the ruling is
+docs/decisions/phase-b-api.md B53.
+
+| Part | Native mode |
+|---|---|
+| Field | the same TextField anatomy and tokens as above (filled / outlined / tonal, floating label, start icon, `ArrowDropDown`, supporting / error text, required `*`) around a real `<select>` (`appearance: none`) |
+| Popup | the OS picker — the menu tokens above do not apply. No listbox, `Option`, typeahead or `aria-activedescendant` |
+| Children | native `<option>` / `<optgroup>` |
+| Label | floats when the selected value is non-empty, or while focused. An empty-value option counts as "nothing selected": its text shows (placeholder color) only while focused or without a label |
+| Arrow | not rotated (the picker's open state is not observable) |
+| Clicks | on the field padding, label or arrow focus the `<select>` and call `showPicker()` where supported |
+| Form | `name` / `form` / `required` / `disabled` on the `<select>`; submit, validation and reset are native. Controlled values survive a reset |
+| `ref` / `inputRef` | both the `<select>` (exception to A10) |
+| `onChange` | `(event: ChangeEvent<HTMLSelectElement>, value)` |
+| Not supported | `multiple`, `size` (no text-field sizes in m3), option icons, `open` / `placeholder` |

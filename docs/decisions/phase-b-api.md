@@ -59,6 +59,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B36 | #438 | ChipSet の選択モードと filter chip の `endIcon` | **`ChipSet selectionMode` + `value` / `defaultValue` / `onChange(event, value)` + `selectionRequired`(single = APG radio group)、filter chip に装飾の `endIcon`(Menu の trigger で `aria-expanded` 時に 180° 回転)** | なし(追加) | 決定(2026-10-13・#438 の API 案どおり) |
 | B35 | #437 | BottomSheet の standard variant と detent | **`variant="standard" \| "modal"`(既定 modal)+ `expanded` / `defaultExpanded` / `onExpandedChange` + `skipPartiallyExpanded`、部分展開 = `min(画面/2, シート/2)`(Compose 現行フラグ、TODO 付き)は `skipPartiallyExpanded={false}` で opt-in(既定 true = 従来どおり、切替は v2 候補)、opt-in 時のハンドルは partial ↔ expanded のトグル** | なし(追加) | 決定(2026-10-13) |
 | B31 | #434 | Select(exposed dropdown menu・非編集) | **専用の `<Select>` + `<Option>` 子要素、`value` / `defaultValue` / `onChange(event, value)`、APG select-only combobox + 隠しネイティブ input** | なし(追加) | 決定(2026-10-13・#434 フェーズ 1) |
+| B53 | #519 | Select のネイティブモード(`<select>`) | **`<Select native>` で同じフィールドの見た目のまま本物の `<select>` を描く。子は `<option>` / `<optgroup>`、`ref` / `inputRef` / 残りの属性は `<select>`(`className` / `style` はルート)、`onChange(event, value)` の `event` はネイティブの `ChangeEvent<HTMLSelectElement>`、ポップアップは OS のピッカー。型はオーバーロードで分岐。サイズは対象外** | なし(追加) | 決定(2026-10-16・#519) |
 | B38 | #440 | Tooltip の配置拡張・rich の既定位置・caret | **`placement` に `'start' \| 'end' \| 'left' \| 'right'`(論理値は RTL で反転、flip あり)、`placement` 未指定の rich は bottom-end の角 + 4 隅の動的配置、`caret?: boolean`(16×8dp)** | 既定値変更(rich の未指定時の位置) | 決定(2026-10-13・#440 の提案どおり) |
 | B32 | #441 | PullToRefresh(新規) | **自身がスクロールコンテナになる `<PullToRefresh refreshing onRefresh indicator disabled threshold>`、touch + pointer、reduced motion はフェードのみ、`aria-busy` + polite live region** | なし(追加) | 決定(2026-10-13・#441 の API 案をもとに確定) |
 | B33 | #435 | Menu の選択項目(単一 / 複数)・supporting text | **`MenuGroup selectionMode="single" \| "multiple"` + `value` / `defaultValue` / `onChange(event, value)`(single = `menuitemradio`、multiple = `menuitemcheckbox` で開いたまま)、`closeOnSelect`(group / item)、`MenuItem supportingText` / `selectedIcon`** | なし(追加。baseline の selected に色が付く) | 決定(2026-10-13・実装時に確定) |
@@ -1413,6 +1414,73 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 **影響**: 非破壊(新規コンポーネント `Select` / `Option`、サブパス `m3-expressive-react/Select`)。VRT: Select の
 ストーリー 6 件を追加。内部: `menuNavigation` の typeahead を、DOM フォーカスを使わない `matchTypeahead` に切り出した
 (Menu / FabMenu の挙動は変わらない)。
+
+### B53: Select のネイティブモード(`<Select native>`)
+
+- **Issue**: #519(下流アプリ dd_redesign の報告、#25)
+- **状態**: 決定(2026-10-16・#519 の実装で確定)
+- **背景**: フォームやモバイル向けに、OS のピッカーが開く本物の `<select>`(ネイティブ ref・ネイティブの `change`
+  イベント)がほしい。**m3.material.io には native select の記述がどこにもない**(menus / text fields の
+  guidelines・specs・accessibility・overview を確認。web 固有の注記はサブメニュー・区切り・「Role (Web): Menu item」
+  だけ)。**Compose にも対応物はない**(`ExposedDropdownMenuBox` は常に独自の popup)。つまり仕様は沈黙しており、
+  これは web への適応として決める。先例は MUI の `Select native` / `NativeSelect`(フィールドの見た目は TextField と
+  同じで、中身が `<select>`、ポップアップは OS)
+- **見た目の根拠**: フィールドは m3 の「Text field - Select, filled / outlined」トークン(`md.comp.{filled,outlined}-select`
+  の text field 部分)= 既存 Select / TextField と同じ。ポップアップ(`.menu.*` トークン)は OS が描くので適用しない
+
+**選択肢**
+
+- **(a) `<Select native>`**(MUI `Select native` の形)
+  ```tsx
+  <Select native label="Fruit" name="fruit" defaultValue="">
+    <option value="" />
+    <optgroup label="Berries">
+      <option value="blueberry">Blueberry</option>
+    </optgroup>
+    <option value="apple">Apple</option>
+  </Select>
+  ```
+  - 利点: 1 MD3 コンポーネント = 1 コンポーネント(CLAUDE.md)。prop 名は Select と同じ。MUI 利用者に馴染みがある
+  - 欠点: 子要素と ref の型が `native` で変わる → オーバーロードで型を分ける
+- **(b) 別コンポーネント `<NativeSelect>`**(MUI にもある)
+  - 欠点: 同じ MD3 コンポーネントの別名が増える。サブパスも増える
+- **(c) 作らない(B51 と同じく見送り)**
+  - 欠点: m3 は禁じておらず、web のフォーム・モバイルでは OS ピッカーの利点(アクセシビリティ・スクロール・
+    仮想キーボードとの共存)が大きい。要望の実需がある
+
+**決定**: **(a)**。補足:
+
+- **公開 API**(`native: true` のとき): `variant` / `tonal` / `label` / `value` / `defaultValue` / `onChange` /
+  `name` / `form` / `disabled` / `required` / `error` / `errorText` / `supportingText` / `startIcon` / `fullWidth` /
+  `id` / `inputRef` は Select と同じ名前と意味。`open` / `defaultOpen` / `onOpenChange` / `placeholder` は持たない
+  (ピッカーの開閉は OS が持ち、外から知る手段がない。プレースホルダーは空値の `<option value="">` で書く)。
+  `multiple` / `size`(ネイティブ属性)も持たない(フィールドではなくリストボックスになるため)
+- **型**: `Select` を呼び出しシグネチャのオーバーロードにする。`native: true` なら `NativeSelectProps`(子は
+  `<option>` / `<optgroup>`、ref は `HTMLSelectElement`)、それ以外は従来の `SelectProps`(`native?: false`、
+  子は `Option`、ref は `HTMLDivElement`)。`native` を途中で切り替えると別の要素として作り直す
+- **ref**: `ref` と `inputRef` はどちらも `<select>`。**A10(ref は常にルート)の例外** — ネイティブモードの目的が
+  「ネイティブの ref」(#519)で、要素そのものが `<select>` だから。`inputRef` も同じ要素を指す(Select から
+  書き換えたコードがそのまま動くように)
+- **属性の着地先**: `className` / `style` はルート(他のフィールドと同じくレイアウト用)、それ以外(`autoComplete`、
+  `onBlur` / `onFocus`、`aria-*`、`data-*` など)は `<select>`
+- **`onChange(event, value)`**: A2 の形を保ち、`event` はネイティブの `ChangeEvent<HTMLSelectElement>`
+  (`event.target.value` も使える = MUI 互換)、`value` は `event.target.value`。form reset では呼ばない
+  (ネイティブも `change` を出さない)
+- **フォーム**: `name` / `form` / `required` / `disabled` / `value` / `defaultValue` は `<select>` に直接付き、
+  送信・制約検証・form reset はブラウザの挙動そのまま。uncontrolled は reset で `defaultValue`(なければ最初の
+  有効な option)に戻る。controlled は reset 後も `value` を保つ(Select と同じ)
+- **ラベル**: 選択中の値が空でなければ浮く(populated)。最初の option が空値なら未選択と同じ扱い — ラベルは
+  入力行に留まり、空値の option の文字は TextField の placeholder と同じく、フォーカス中かラベルなしのときだけ
+  placeholder 色で見せる。フォーカスでも浮く(OS ピッカーが開いている間を含む)
+- **ポップアップ**: OS のピッカー。listbox / `Option` / typeahead / `aria-activedescendant` は使わない
+  (ネイティブ `<select>` がキーボード・支援技術を受け持つ)。フィールドの余白・ラベル・矢印を押しても
+  `<select>` にフォーカスし、`showPicker()` がある環境ではピッカーを開く。矢印は開閉で回転しない(開いている
+  ことを知る手段がない)
+- **見送り**: サイズ(m3 に text field のサイズはない — B37 と同じ。Select にも `size` はない)、`multiple`、
+  option のアイコン(`<option>` に描けない)
+
+**影響**: 非破壊(`native` prop の追加。既定の Select は DOM・挙動・見た目とも不変)。VRT: Select に `Native` ストーリーを
+1 件追加。docs/specs/select.md に「Native mode」節を追加。
 
 ### B42: Autocomplete(exposed dropdown menu・編集可)
 

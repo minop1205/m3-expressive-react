@@ -11,8 +11,10 @@ import {
   type HTMLAttributes,
   type KeyboardEvent,
   type MouseEvent,
+  type ReactElement,
   type ReactNode,
   type Ref,
+  type RefAttributes,
   type SyntheticEvent,
 } from 'react'
 import clsx from 'clsx'
@@ -34,6 +36,7 @@ import {
 } from '../../internal/listbox/Listbox'
 import fieldStyles from '../TextField/TextField.module.css'
 import styles from './Select.module.css'
+import { NativeSelect, type NativeSelectProps } from './NativeSelect'
 
 export type SelectVariant = 'filled' | 'outlined'
 
@@ -42,6 +45,11 @@ export interface SelectProps
     HTMLAttributes<HTMLDivElement>,
     'children' | 'defaultValue' | 'onChange' | 'color' | 'placeholder'
   > {
+  /**
+   * `true` renders a native `<select>` with `<option>` children instead
+   * (`NativeSelectProps`, ruling B53). @default false
+   */
+  native?: false
   /** Text field container style (the same two as `TextField`). @default 'filled' */
   variant?: SelectVariant
   /**
@@ -155,7 +163,7 @@ const PAGE_STEP = 10
  * submission, `required` validation, and form reset (uncontrolled values
  * return to `defaultValue`).
  */
-export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
+const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
   {
     variant = 'filled',
     tonal = false,
@@ -615,4 +623,30 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
   )
 })
 
+/** `Select`: the listbox Select, or `<select>` with `native` (B53). */
+export interface SelectComponent {
+  (props: NativeSelectProps & RefAttributes<HTMLSelectElement>): ReactElement | null
+  (props: SelectProps & RefAttributes<HTMLDivElement>): ReactElement | null
+  displayName?: string
+}
+
+/**
+ * Material Design 3 Select. Without `native`: the exposed dropdown menu
+ * described on `ListboxSelect` above (`Option` children, `ref` = root).
+ * With `native`: the same field around a real `<select>` (`<option>` /
+ * `<optgroup>` children, `ref` = the `<select>`, OS picker) — ruling B53.
+ */
+export const Select = forwardRef<HTMLDivElement | HTMLSelectElement, SelectProps | NativeSelectProps>(
+  function SelectSwitch(props, ref) {
+    if (props.native) {
+      const { native: _native, ...nativeProps } = props
+      return <NativeSelect {...nativeProps} ref={ref as Ref<HTMLSelectElement>} />
+    }
+    const { native: _native, ...listboxProps } = props
+    return <ListboxSelect {...listboxProps} ref={ref as Ref<HTMLDivElement>} />
+  },
+) as SelectComponent
+Select.displayName = 'Select'
+
+export type { NativeSelectProps } from './NativeSelect'
 export { Option, type OptionProps } from '../../internal/listbox/Listbox'
