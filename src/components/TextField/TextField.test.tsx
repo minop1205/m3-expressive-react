@@ -81,6 +81,38 @@ describe('TextField', () => {
     expect(input).toHaveValue('controlled')
   })
 
+  it('lets inputProps set required / readOnly / disabled / type when the props are omitted', () => {
+    render(
+      <TextField
+        label="Code"
+        inputProps={{ required: true, readOnly: true, disabled: true, type: 'email' }}
+      />,
+    )
+    const input = screen.getByLabelText(/^Code/)
+    expect(input).toBeRequired()
+    expect(input).toHaveAttribute('readonly')
+    expect(input).toBeDisabled()
+    expect(input).toHaveAttribute('type', 'email')
+  })
+
+  it('lets explicit top-level props win over inputProps', () => {
+    render(
+      <TextField
+        label="Code"
+        required={false}
+        readOnly={false}
+        disabled={false}
+        type="text"
+        inputProps={{ required: true, readOnly: true, disabled: true, type: 'email' }}
+      />,
+    )
+    const input = screen.getByLabelText('Code')
+    expect(input).not.toBeRequired()
+    expect(input).not.toHaveAttribute('readonly')
+    expect(input).toBeEnabled()
+    expect(input).toHaveAttribute('type', 'text')
+  })
+
   it('spreads inputProps on the textarea when multiline', () => {
     render(<TextField label="Notes" multiline inputProps={{ maxLength: 5 }} />)
     expect(screen.getByRole('textbox')).toHaveAttribute('maxlength', '5')
