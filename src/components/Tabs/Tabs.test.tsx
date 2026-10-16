@@ -1,5 +1,5 @@
 import { createRef } from 'react'
-import { render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
@@ -275,6 +275,44 @@ describe('Tabs', () => {
       expect(scrollBy).toHaveBeenLastCalledWith(expect.objectContaining({ behavior: 'smooth' }))
     } finally {
       Element.prototype.scrollBy = original
+    }
+  })
+
+  it('re-centers the scrollable row on resize until the user scrolls it', () => {
+    const scrollBy = vi.fn()
+    const original = Element.prototype.scrollBy
+    Element.prototype.scrollBy = scrollBy
+    const callbacks: ResizeObserverCallback[] = []
+    const OriginalRO = globalThis.ResizeObserver
+    globalThis.ResizeObserver = class {
+      constructor(cb: ResizeObserverCallback) {
+        callbacks.push(cb)
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver
+    const resize = () =>
+      act(() => callbacks.forEach((cb) => cb([], {} as ResizeObserver)))
+    try {
+      render(
+        <Tabs value="b" onChange={() => {}} scrollable aria-label="S">
+          <Tab value="a" label="Alpha" />
+          <Tab value="b" label="Beta" />
+        </Tabs>,
+      )
+      expect(scrollBy).toHaveBeenCalledTimes(1)
+      // Web fonts load → tab widths change → keep the selection centered.
+      resize()
+      expect(scrollBy).toHaveBeenCalledTimes(2)
+      expect(scrollBy).toHaveBeenLastCalledWith(expect.objectContaining({ behavior: 'instant' }))
+      // Once the user scrolls the row, resizes leave the position alone.
+      fireEvent.wheel(screen.getByRole('tablist'))
+      resize()
+      expect(scrollBy).toHaveBeenCalledTimes(2)
+    } finally {
+      Element.prototype.scrollBy = original
+      globalThis.ResizeObserver = OriginalRO
     }
   })
 

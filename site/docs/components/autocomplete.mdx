@@ -46,8 +46,8 @@ const fruits = ['Apple', 'Banana', { value: 'Cherry', label: 'Cherry', disabled:
 <Autocomplete variant="outlined" label="Fruit" options={fruits} />
 ```
 
-`options` takes strings (the value is the label) or `{ value, label, disabled }`
-objects. Typing opens the list with only the options whose label contains the
+`options` takes strings (the value is the label) or `{ value, label, disabled,
+supportingText }` objects. Typing opens the list with only the options whose label contains the
 text, ignoring case and accents. When nothing matches, the list closes. Pass
 `noOptionsText` to show a message instead.
 
@@ -111,8 +111,11 @@ The open state can be controlled too, with `open` / `defaultOpen` /
 ## Free text
 
 With `freeSolo`, any text is a value: <kbd>Enter</kbd> (with no option
-active) or leaving the field commits it. Options are still suggested, and text
-that equals an option's label commits that option's value.
+active) or leaving the field commits it. Options are still suggested, but an
+option is selected only when you pick it (click it, or Enter on the active
+one): typed text stays the typed string even when it equals an option's
+label, as in MUI. Compose also selects only on an item click, and m3 doesn't
+say. In 1.5 and earlier, an exact label match committed that option's value instead.
 
 export function FreeSoloDemo() {
   const [value, setValue] = useState('')
@@ -205,6 +208,71 @@ children are not plain text.
     <strong>Bike</strong> (fastest in town)
   </Option>
 </Autocomplete>
+```
+
+## Option supporting text
+
+A `supportingText` on an `options` object (or on an `Option` child) adds a
+second line below the label (m3 menu-item supporting text: body-small,
+on-surface-variant). Both lines wrap, and the list keeps the width of the
+field. Only the label is matched by the filter and put in the input. The
+option's accessible name is its label, and the supporting text is its
+description (`aria-describedby`).
+
+<Demo>
+  <Autocomplete
+    label="Airport"
+    options={[
+      { value: 'hnd', label: 'Haneda', supportingText: 'Tokyo, Japan' },
+      { value: 'nrt', label: 'Narita International', supportingText: 'Tokyo, Japan' },
+      { value: 'kix', label: 'Kansai International', supportingText: 'Osaka, Japan' },
+    ]}
+  />
+</Demo>
+
+```tsx
+<Autocomplete
+  label="Airport"
+  options={[
+    { value: 'hnd', label: 'Haneda', supportingText: 'Tokyo, Japan' },
+    { value: 'kix', label: 'Kansai International', supportingText: 'Osaka, Japan' },
+  ]}
+/>
+```
+
+## Label placement
+
+`labelPlacement` and `shrinkLabel` work as they do on
+[TextField](/components/textfield): `labelPlacement="above"` puts the label
+above the container, always minimized, and `shrinkLabel` keeps the floating
+label minimized and shows the `placeholder` while the input is empty. The list
+still opens right below the container. m3 doesn't describe an above label for
+dropdowns. This is the Compose `TextFieldLabelPosition` mapping from
+TextField, applied to the field that anchors the menu.
+
+<Demo>
+  <Autocomplete label="Fruit" labelPlacement="above" placeholder="Type a fruit" options={fruits} />
+  <Autocomplete label="Fruit" variant="outlined" shrinkLabel placeholder="Type a fruit" options={fruits} />
+</Demo>
+
+```tsx
+<Autocomplete label="Fruit" labelPlacement="above" placeholder="Type a fruit" options={fruits} />
+<Autocomplete label="Fruit" variant="outlined" shrinkLabel placeholder="Type a fruit" options={fruits} />
+```
+
+## Open on focus
+
+By default the list opens when you type, click the field, or press
+<kbd>ArrowDown</kbd>. Neither m3 nor Compose opens it just because the input
+got focus. `openOnFocus` (the MUI name) opts in: the list opens with every
+option and no active option when focus enters the input.
+
+<Demo>
+  <Autocomplete openOnFocus label="Fruit" options={fruits} />
+</Demo>
+
+```tsx
+<Autocomplete openOnFocus label="Fruit" options={fruits} />
 ```
 
 ## Supporting text, error & states
