@@ -59,6 +59,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B36 | #438 | ChipSet の選択モードと filter chip の `endIcon` | **`ChipSet selectionMode` + `value` / `defaultValue` / `onChange(event, value)` + `selectionRequired`(single = APG radio group)、filter chip に装飾の `endIcon`(Menu の trigger で `aria-expanded` 時に 180° 回転)** | なし(追加) | 決定(2026-10-13・#438 の API 案どおり) |
 | B35 | #437 | BottomSheet の standard variant と detent | **`variant="standard" \| "modal"`(既定 modal)+ `expanded` / `defaultExpanded` / `onExpandedChange` + `skipPartiallyExpanded`、部分展開 = `min(画面/2, シート/2)`(Compose 現行フラグ、TODO 付き)は `skipPartiallyExpanded={false}` で opt-in(既定 true = 従来どおり、切替は v2 候補)、opt-in 時のハンドルは partial ↔ expanded のトグル** | なし(追加) | 決定(2026-10-13) |
 | B31 | #434 | Select(exposed dropdown menu・非編集) | **専用の `<Select>` + `<Option>` 子要素、`value` / `defaultValue` / `onChange(event, value)`、APG select-only combobox + 隠しネイティブ input** | なし(追加) | 決定(2026-10-13・#434 フェーズ 1) |
+| B53 | #519 | Select のネイティブモード(`<select>`) | **`<Select native>` で同じフィールドの見た目のまま本物の `<select>` を描く。子は `<option>` / `<optgroup>`、`ref` / `className` / `style` はルート(A10)、`inputRef` と残りの属性は `<select>`、`onChange(event, value)` の `event` はネイティブの `ChangeEvent<HTMLSelectElement>`、ポップアップは OS のピッカー。型はオーバーロードで分岐。サイズは対象外** | なし(追加) | 決定(2026-10-16・#519) |
 | B38 | #440 | Tooltip の配置拡張・rich の既定位置・caret | **`placement` に `'start' \| 'end' \| 'left' \| 'right'`(論理値は RTL で反転、flip あり)、`placement` 未指定の rich は bottom-end の角 + 4 隅の動的配置、`caret?: boolean`(16×8dp)** | 既定値変更(rich の未指定時の位置) | 決定(2026-10-13・#440 の提案どおり) |
 | B32 | #441 | PullToRefresh(新規) | **自身がスクロールコンテナになる `<PullToRefresh refreshing onRefresh indicator disabled threshold>`、touch + pointer、reduced motion はフェードのみ、`aria-busy` + polite live region** | なし(追加) | 決定(2026-10-13・#441 の API 案をもとに確定) |
 | B33 | #435 | Menu の選択項目(単一 / 複数)・supporting text | **`MenuGroup selectionMode="single" \| "multiple"` + `value` / `defaultValue` / `onChange(event, value)`(single = `menuitemradio`、multiple = `menuitemcheckbox` で開いたまま)、`closeOnSelect`(group / item)、`MenuItem supportingText` / `selectedIcon`** | なし(追加。baseline の selected に色が付く) | 決定(2026-10-13・実装時に確定) |
@@ -76,6 +77,8 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B49 | #499 | Tabs のリンクタブ・TabPanel・コンテナ色 | **`Tab href` → `<a role="tab">`(見た目・手動アクティベーション・`value` による選択は同じ、遷移は横取りしない、`aria-current` は付けない)+ `TabContext` / `TabPanel value`(APG Tabs の `id` / `aria-controls` / `aria-labelledby` 自動配線、非選択は `hidden`、パネルは `tabIndex=0`)+ ホスト変数 `--md-tabs-container-color`(既定 surface)。自動アクティベーションは実装しない** | なし(追加) | 決定(2026-10-15) |
 | B47 | #497 | Slider の操作終了イベント | **`onChangeCommitted(event, value)`(MUI 名)を追加。Compose `onValueChangeFinished` と同じ時機 — ポインタを離したとき(ドラッグ終了・タップ、1 回の操作で 1 回)、値を動かすキー(矢印・Home / End・PageUp / PageDown)の keyup ごと、支援技術による直接の値変更は即時(値が変わらなければ出さない)。single / range 共通、`onChange` は従来どおり連続** | なし(追加) | 決定(2026-10-15) |
 | B51 | #496 #501 #502 | フォーカス可能な無効ボタン・Menu `onAction`・Tooltip の表示遅延 | **いずれも実装しない(仕様に根拠なし)。代替手段をドキュメント化** | なし | 決定(2026-10-15) |
+| B54 | — | スクロール可能な Tabs のマウス操作 | **縦ホイールで横スクロール(m3 Foundations › Inputs)。横成分のあるホイールは変換せず、行が端に達したらページへ渡す。マウスのドラッグスクロールは採らない** | なし(追加) | 決定(2026-10-16) |
+| B52 | #518 | Select / Autocomplete の listbox の見た目・`openOnFocus`・ラベル位置・option の supporting text・`freeSolo` の完全一致 | **listbox を m3 の select / autocomplete トークン(baseline menu: surface-container・4dp・48dp・label-large・選択は surface-container-highest の container のみ、チェックなし)に切替(SE1 / AC1 を置換)、`openOnFocus`(既定 false、Select / Autocomplete)、`labelPlacement` / `shrinkLabel`(B37 と同じ)、`Option supportingText`(body-small・on-surface-variant・`aria-describedby`、折り返し、幅はフィールドのまま)、`freeSolo` は打った文字列のまま(完全一致でも option を選ばない)** | 見た目(listbox)・`freeSolo` の完全一致の挙動 | 決定(2026-10-16) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -1402,9 +1405,9 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
   Escape・Tab)は docs/specs/select.md。Tab は APG どおり「アクティブな option を確定して閉じ、次へ進む」。
   disabled な option はキー移動と typeahead で飛ばす
 - **ポップアップ**: 共通ヘルパー(B4)で top layer に出し、フィールドと同じ幅、隙間なし(Compose `topToAnchorBottom`)。
-  見た目は Compose の現行サンプル(Expressive: surface-container-low・16dp・44dp option・選択時 tertiary-container +
+  ~~見た目は Compose の現行サンプル(Expressive: surface-container-low・16dp・44dp option・選択時 tertiary-container +
   チェック + 12dp)に従う。Compose の `ExposedDropdownMenu` 既定値(baseline の 4dp / surface-container)ではない
-  理由は spec の SE1
+  理由は spec の SE1~~ — **B52 で置き換え**: m3 の select / autocomplete トークン(baseline menu)に従う
 - **フォーム**: 視覚的に隠したネイティブ `<input>`(`type="hidden"` ではない — `required` を制約検証に参加させるため)が
   `name` / `value` を運ぶ。form reset で uncontrolled は初期 `defaultValue` に戻る
 - **見送り**: `multiple`(Compose の `ExposedDropdownMenu` にも m3 の menu ガイダンスにも複数選択がない。必要に
@@ -1413,6 +1416,72 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 **影響**: 非破壊(新規コンポーネント `Select` / `Option`、サブパス `m3-expressive-react/Select`)。VRT: Select の
 ストーリー 6 件を追加。内部: `menuNavigation` の typeahead を、DOM フォーカスを使わない `matchTypeahead` に切り出した
 (Menu / FabMenu の挙動は変わらない)。
+
+### B53: Select のネイティブモード(`<Select native>`)
+
+- **Issue**: #519(下流アプリ dd_redesign の報告、#25)
+- **状態**: 決定(2026-10-16・#519 の実装で確定)
+- **背景**: フォームやモバイル向けに、OS のピッカーが開く本物の `<select>`(ネイティブ ref・ネイティブの `change`
+  イベント)がほしい。**m3.material.io には native select の記述がどこにもない**(menus / text fields の
+  guidelines・specs・accessibility・overview を確認。web 固有の注記はサブメニュー・区切り・「Role (Web): Menu item」
+  だけ)。**Compose にも対応物はない**(`ExposedDropdownMenuBox` は常に独自の popup)。つまり仕様は沈黙しており、
+  これは web への適応として決める。先例は MUI の `Select native` / `NativeSelect`(フィールドの見た目は TextField と
+  同じで、中身が `<select>`、ポップアップは OS)
+- **見た目の根拠**: フィールドは m3 の「Text field - Select, filled / outlined」トークン(`md.comp.{filled,outlined}-select`
+  の text field 部分)= 既存 Select / TextField と同じ。ポップアップ(`.menu.*` トークン)は OS が描くので適用しない
+
+**選択肢**
+
+- **(a) `<Select native>`**(MUI `Select native` の形)
+  ```tsx
+  <Select native label="Fruit" name="fruit" defaultValue="">
+    <option value="" />
+    <optgroup label="Berries">
+      <option value="blueberry">Blueberry</option>
+    </optgroup>
+    <option value="apple">Apple</option>
+  </Select>
+  ```
+  - 利点: 1 MD3 コンポーネント = 1 コンポーネント(CLAUDE.md)。prop 名は Select と同じ。MUI 利用者に馴染みがある
+  - 欠点: 子要素と ref の型が `native` で変わる → オーバーロードで型を分ける
+- **(b) 別コンポーネント `<NativeSelect>`**(MUI にもある)
+  - 欠点: 同じ MD3 コンポーネントの別名が増える。サブパスも増える
+- **(c) 作らない(B51 と同じく見送り)**
+  - 欠点: m3 は禁じておらず、web のフォーム・モバイルでは OS ピッカーの利点(アクセシビリティ・スクロール・
+    仮想キーボードとの共存)が大きい。要望の実需がある
+
+**決定**: **(a)**。補足:
+
+- **公開 API**(`native: true` のとき): `variant` / `tonal` / `label` / `value` / `defaultValue` / `onChange` /
+  `name` / `form` / `disabled` / `required` / `error` / `errorText` / `supportingText` / `startIcon` / `fullWidth` /
+  `id` / `inputRef` は Select と同じ名前と意味。`open` / `defaultOpen` / `onOpenChange` / `placeholder` は持たない
+  (ピッカーの開閉は OS が持ち、外から知る手段がない。プレースホルダーは空値の `<option value="">` で書く)。
+  `multiple` / `size`(ネイティブ属性)も持たない(フィールドではなくリストボックスになるため)
+- **型**: `Select` を呼び出しシグネチャのオーバーロードにする。`native: true` なら `NativeSelectProps`(子は
+  `<option>` / `<optgroup>`)、それ以外は従来の `SelectProps`(`native?: false`、子は `Option`)。どちらも
+  `ref` は `HTMLDivElement`(ルート)。`native` を途中で切り替えると別の要素として作り直す
+- **ref**: A10 を保つ。`ref` はフィールドのルート(listbox の Select・TextField と同じ)、#519 の「ネイティブの ref」は
+  `inputRef`(`<select>`)で渡す。MUI も `Select native` の `ref` はルート、`inputRef` が `<select>` で、同じ形になる
+- **属性の着地先**: `className` / `style` はルート(他のフィールドと同じくレイアウト用)、それ以外(`autoComplete`、
+  `onBlur` / `onFocus`、`aria-*`、`data-*` など)は `<select>`
+- **`onChange(event, value)`**: A2 の形を保ち、`event` はネイティブの `ChangeEvent<HTMLSelectElement>`
+  (`event.target.value` も使える = MUI 互換)、`value` は `event.target.value`。form reset では呼ばない
+  (ネイティブも `change` を出さない)
+- **フォーム**: `name` / `form` / `required` / `disabled` / `value` / `defaultValue` は `<select>` に直接付き、
+  送信・制約検証・form reset はブラウザの挙動そのまま。uncontrolled は reset で `defaultValue`(なければ最初の
+  有効な option)に戻る。controlled は reset 後も `value` を保つ(Select と同じ)
+- **ラベル**: 選択中の値が空でなければ浮く(populated)。最初の option が空値なら未選択と同じ扱い — ラベルは
+  入力行に留まり、空値の option の文字は TextField の placeholder と同じく、フォーカス中かラベルなしのときだけ
+  placeholder 色で見せる。フォーカスでも浮く(OS ピッカーが開いている間を含む)
+- **ポップアップ**: OS のピッカー。listbox / `Option` / typeahead / `aria-activedescendant` は使わない
+  (ネイティブ `<select>` がキーボード・支援技術を受け持つ)。フィールドの余白・ラベル・矢印を押しても
+  `<select>` にフォーカスし、`showPicker()` がある環境ではピッカーを開く。矢印は開閉で回転しない(開いている
+  ことを知る手段がない)
+- **見送り**: サイズ(m3 に text field のサイズはない — B37 と同じ。Select にも `size` はない)、`multiple`、
+  option のアイコン(`<option>` に描けない)
+
+**影響**: 非破壊(`native` prop の追加。既定の Select は DOM・挙動・見た目とも不変)。VRT: Select に `Native` ストーリーを
+1 件追加。docs/specs/select.md に「Native mode」節を追加。
 
 ### B42: Autocomplete(exposed dropdown menu・編集可)
 
@@ -1468,7 +1537,8 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
   (MUI の既定 'No options' は採らない)。入力が選択中のラベルのままなら全件を出す(MUI `inputPristine`)
 - **確定のタイミング**: `freeSolo` なしは、blur で一致しない入力を選択中のラベルに戻し、入力を空にすると値も空に
   する(MUI `clearOnBlur`)。`freeSolo` は Enter と **blur** で入力を値として確定する(MUI は blur で確定しない
-  ——`autoSelect` 相当を既定にした。フォーム送信される値と表示を一致させるため)
+  ——`autoSelect` 相当を既定にした。フォーム送信される値と表示を一致させるため)。打った文字列が option のラベルと
+  一致しても option は選ばず、文字列のまま値にする(**B52** で明記・挙動変更)
 - **motion**: m3「ease into their new position」を FLIP で実装(残る option は DefaultSpatial で移動、新たに出る
   option は DefaultEffects でフェードイン)。reduced motion(B3)では動かさない
 - **共有**: listbox / `Option` / 有効 option の移動ヘルパーを `src/internal/listbox/` に切り出し、Select もそれを
@@ -1494,6 +1564,114 @@ clears)。MUI `Autocomplete` も `clearOnEscape`(既定 `false`)で opt-in に�
 - docs/specs/autocomplete.md のキー表の Escape(閉)行は本追補で置き換え(取り消し線 + 参照)
 
 **影響**: 挙動の変更(既定で Escape がクリアしなくなる)。従来の挙動は `clearOnEscape` で戻せる。VRT 変化なし。
+
+### B52: Select / Autocomplete の listbox の見た目・`openOnFocus`・ラベル位置・option の supporting text・`freeSolo` の完全一致
+
+- **Issue**: #518(下流アプリ dd_redesign の 1.5.0 での報告)
+- **状態**: 決定(2026-10-16)
+- **背景**: 4 点の要望(`openOnFocus`、TextField と同じ `labelPlacement` / `shrinkLabel`、option の 2 行目と折り返し、
+  `freeSolo` で option のラベルと同じ文字列を打つとその option が選ばれてしまう)。調査の途中で、listbox の見た目を
+  決めた SE1(docs/specs/select.md)が m3 の **有効な**トークン表と食い違っていることが分かったので、あわせて正す。
+
+**1. listbox と option の見た目(SE1 の置き換え)**
+
+- **m3(優先 1)**: m3.material.io のトークン表(TOKEN_TABLE 2026-10-13 版)には、現役(ACTIVE)のトークンセット
+  「Text field - Select, filled / outlined」(`md.comp.filled-select` / `md.comp.outlined-select`)と
+  「Text field - Autocomplete, filled / outlined」(`md.comp.filled-autocomplete` / `md.comp.outlined-autocomplete`)がある。
+  その `menu.*` は **baseline の menu**: container surface-container、corner extra-small(4dp)、elevation level 2、
+  `menu.list-item.container.height` 48dp、ラベル label-large / on-surface、選択中の list item の container
+  surface-container-highest、divider surface-variant 1dp、アイコン 24dp。このセットに supporting text のトークンはない
+- **Compose(優先 2)**: `ExposedDropdownMenu` の既定値も同じ baseline(`FilledAutocompleteTokens.MenuContainerColor` =
+  SurfaceContainer・`MenuContainerShape` = CornerExtraSmall・`MenuContainerElevation` = Level2、
+  tokens/FilledAutocompleteTokens.kt:23-31。item は `DropdownMenuItemContent` の 48dp・LabelLarge・アイコン 24dp・
+  アイコンと文字の間 12dp、Menu.kt:2163-2198 / :2374-2377)。SE1 が従っていた Expressive の見た目
+  (surface-container-low・16dp・44dp・body-large・tertiary-container + チェック)は **サンプル**
+  (`ExposedDropdownMenuSample`)の書き方で、既定値でも m3 の値でもない
+- **決定**: 優先順位どおり **m3 の select / autocomplete トークンに切り替える**。SE1(と autocomplete.md の AC1)は本裁定で
+  置き換え(取り消し線 + 参照)。共有の `src/internal/listbox/` だけを変えるので Select と Autocomplete の両方に効く
+  - listbox: surface-container、4dp、level 2 の影、縦 8dp の内側余白(Compose `DropdownMenuVerticalPadding`、
+    Menu.kt:2386。m3 のセットに値がないため)
+  - option: 最小高 48dp、label-large / on-surface、全幅(4dp の inset・位置による角丸・選択時の 12dp への変形はやめる。
+    baseline の item は角丸なし)、横 16dp(`ExposedDropdownMenuDefaults.ItemContentPadding`。m3 のセットに値がない)、
+    アイコン 24dp / on-surface-variant、アイコンと文字の間 12dp(`DropdownMenuItemHorizontalPadding`)
+  - divider: listbox は区切りを持たないので該当なし
+- **選択中の表示**: m3 の select / autocomplete セットが選択中に指定するのは **list item の container
+  (surface-container-highest)だけ**で、ラベル色・アイコン色の選択時トークンも、チェックマーク(selected leading
+  icon)のトークンもない。**よってチェックはやめ、選択中の container 色だけで示す**(ラベルは on-surface のまま、
+  `startIcon` は選択中も残す)。色だけの表示になるが、選択中の値はフィールド自体に表示されており、支援技術には
+  `aria-selected` で伝わる(WCAG 1.4.1 の「色だけで伝える」には当たらない)。forced colors では従来どおり Highlight で塗る
+- disabled は on-surface の 38%(選択中 + disabled は container も 38%)。state layer(hover 0.08 / pressed 0.10)と
+  キーボードのフォーカスリング(secondary、内側 3dp)は従来どおり
+
+**2. `openOnFocus`**
+
+- **m3**: 「A menu should open when a person: Selects an element, such as an icon, button, or text field / Performs a
+  specific action」、キーボードは「Space or Enter to open」「Up and Down arrows — For closed menus: Opens menu」。
+  フォーカスで開くことは書かれていない(禁止もしていない)
+- **Compose**: `ExposedDropdownMenuBox` はフォーカスで開かない(フォーカスの監視がなく、展開中に anchor へフォーカスを
+  戻すだけ、ExposedDropdownMenu.kt:245)
+- **決定**: どちらの仕様でも既定は「フォーカスでは開かない」ので、**`openOnFocus?: boolean`(既定 `false`、MUI
+  `Autocomplete` と同名)を opt-in の Web 適応**として Autocomplete と **Select の両方**に置く(Select にも置くのは、
+  同じフォーム内で 2 つのフィールドを同じ書き方にするため。MUI `Select` にはない)
+  - Autocomplete: フォーカスが入ったとき、アクティブな option なしで開き、入力が選択中のラベルのままなら全件を出す
+    (クリックで開いたときと同じ)
+  - Select: 選択中の option(なければ最初の有効な option)をアクティブにして開く。キーボードで入ったとき
+    (`:focus-visible`)だけフォーカスリングを出す
+  - クリックでフォーカスが入った場合も開くのは 1 回だけ(`onOpenChange(true)` は 1 回)。フォーカスが残ったまま閉じた
+    後(選択・Escape・トグル)は、フォーカスが出入りするまで開かない
+
+**3. `labelPlacement` / `shrinkLabel`**
+
+- **m3**: text field のラベルは「placed in the middle… or rest near the top of the container」。dropdown 用の上置き
+  ラベルは **指定がない**
+- **Compose**: 公式サンプルは既定の `TextFieldLabelPosition.Inside()` のまま(`Above` を使う例はない)だが、
+  `ExposedDropdownMenuBox` の anchor は普通の `TextField` なので `labelPosition` はそのまま使える
+- **決定**: **B37 で TextField に裁定した Compose `TextFieldLabelPosition` との対応をそのまま広げる**
+  (`labelPlacement?: 'floating' | 'above'`、既定 `'floating'`、`shrinkLabel?: boolean`)。見た目・CSS は TextField と同じ
+  (`TextField.module.css` の `aboveLabel` / `shrinkLabel` を共有)。上置きラベルでも listbox はフィールドのコンテナ
+  (56dp の部分)の真下に出る(SE3 のまま)
+  - Select の上置きラベルは `<span id>` で combobox の名前(`aria-labelledby`)、クリックで combobox にフォーカス。
+    Autocomplete は `<label htmlFor>`
+  - `shrinkLabel` は空でもラベルを縮小位置に置き、placeholder を表示する。`label` がないとき・`above` のときは効果なし
+    (B37 と同じ)
+
+**4. `Option supportingText` と折り返し**
+
+- **m3**: vertical menu の anatomy に「Supporting text (optional)」があり、トークンは
+  `md.comp.menus.menu-item.supporting-text` = **body-small**(12/16)、色 on-surface-variant(状態別あり)。select /
+  autocomplete のセットには supporting text のトークンがないので、menu の値を使う。2 行の高さ・最大行数・省略か折り返しかは
+  指定なし
+- **Compose**: `DropdownMenuItem` の `supportingText` は Expressive の overload だけ(Menu.kt:386 / :463 / :705)。
+  ラベルと supporting text を Column に縦に並べ(:2096-2107 / :2252-2262)、どちらも `maxLines` を付けないので
+  **折り返す**。行は `sizeIn(minWidth 112, maxWidth 280)`(:2163-2167、`DropdownMenuItemDefaultMin/MaxWidth` :2388-2391)。
+  書体は token が BodyMedium(m3 の body-small と違う — m3 を採る)
+- **決定**: `Option` に **`supportingText?: ReactNode`**。Autocomplete の `options` 配列のオブジェクト形にも同名の
+  `supportingText` を足す(子要素に書き換えなくても使えるように)
+  - 書体 body-small、色 on-surface-variant、disabled は 38%。選択中も on-surface-variant(選択時の色トークンがない)
+  - **折り返す**: option のラベルと supporting text は省略(ellipsis)せず折り返す(Compose が `maxLines` を付けないのと同じ。
+    m3 は指定なし)。縦の余白 8dp(m3 vertical menu の top / bottom space)を足すので、1 行の option の見た目は 48dp のまま
+  - **listbox の幅はフィールドと同じ**(SE3 / `matchAnchorWidth`)。Compose の 112–280dp は **menu の item の規則で、
+    select の規則ではない**(`ExposedDropdownMenu` は `exposedDropdownSize(matchAnchorWidth = true)` で anchor 幅に揃える)
+    ので、280dp の上限は付けない
+  - **名前と説明**: option のアクセシブルネームはラベルだけ(`aria-labelledby` = ラベル)、supporting text は
+    `aria-describedby`(APG: option の名前は短く、補足は説明に)。Select のフィールドに出るのも typeahead が照合するのも
+    ラベルだけ。Autocomplete の絞り込みもラベル(`textValue`)だけを対象にする
+
+**5. `freeSolo` の完全一致**
+
+- **m3**: 絞り込みは「As someone types, the list of menu options filters」とだけあり、完全一致・自由入力・確定の時機は
+  **指定なし**
+- **Compose**: `EditableExposedDropdownMenuSample` は item のクリックでだけ選択する(完全一致の特別扱いはない)
+- **決定**: `freeSolo` では、打った文字列が option のラベルと同じでも **打った文字列のまま値にする**(MUI と同じ)。
+  option を選ぶのは option を選んだとき(クリック・Enter でのアクティブ option)だけ。B42 / AC9 の「ラベルが完全一致すれば
+  その option の value を確定」は本裁定で置き換え(**挙動の変更**: `{ value: 'us', label: 'United States' }` で
+  「United States」と打って Enter / blur すると、値は従来 `'us'`、今後は `'United States'`)。value とラベルが同じ
+  文字列の option(`options` に文字列を渡した場合)は結果が変わらない
+
+**影響**: 見た目の変更(Select / Autocomplete の listbox が baseline になる: 色・角・高さ・書体・選択中の表示)、
+`freeSolo` の完全一致の挙動の変更、ほかは追加 prop(`openOnFocus` / `labelPlacement` / `shrinkLabel` /
+`Option supportingText`)のみ。VRT: Select / Autocomplete の開いた listbox を写すストーリーが変わる(それ以外は不変)+
+新ストーリー。B31 の「ポップアップ」の見た目の記述、SE1、AC1、AC9 の完全一致は本裁定で置き換え。
 
 ## 入力系
 
@@ -2360,6 +2538,27 @@ full-screen / SideSheet / BottomSheet のデモ)は不要になったので外�
 `Components/Dialog` の `LongContent` を追加。対象: Dialog。
 
 ---
+
+### B54: スクロール可能な Tabs のマウス操作
+
+- **状態**: 決定(2026-10-16・オーナー判断。m3 の調査結果に基づく)
+- **背景**: スクロール可能な Tabs はスクロールバーを非表示にしており、ホイールしかないマウスでは隠れたタブへ移動する手段がなかった
+- **m3.material.io**:
+  - Foundations › Inputs › Mouse wheel and trackpad gestures › Horizontal scroll:
+    「Mouse users should be able to scroll with a mouse wheel to navigate horizontally scrolling fields.
+    Trackpad users should be able to scroll using a two-finger horizontal gesture.」
+  - 同ページでマウスのドラッグはタッチのスクロールと区別される(テキスト領域ではマウスのドラッグは選択)
+  - Tabs › Accessibility › Scrollable: 「users swipe the set left or right. Users can also use arrow/tab to navigate through.」
+    スクロールボタン・スクロールバー・マウスのドラッグの記述はない
+- **Compose**: `ScrollableTabRow` は `horizontalScroll`。スクロールのドラッグはマウスを除外
+  (`AbstractScrollableNode.kt:239` `CanDragCalculation = { type -> type != PointerType.Mouse }`)、
+  マウスはホイール(`MouseWheel1DScrollingLogic`)で横スクロールする
+- **検討した代替案**: マウスのドラッグでスクロール(m3・Compose とも採らない)、左右のスクロールボタン(仕様に記述なし)
+- **決定**: 縦ホイールを行の横スクロールに変換する。利用者の縦スクロールを奪わないよう次を守る
+  - 横成分のあるホイール(トラックパッドの横スワイプ・Shift+ホイール)は変換しない(ブラウザの標準動作に任せる)
+  - 行がその方向の端に達しているときは変換せず、ページの縦スクロールへ渡す
+  - Ctrl+ホイール(ズーム)は対象外。RTL では向きを反転する
+  - ホイール操作は「利用者のスクロール」として扱い、フォント読み込み後の再センタリング(#526)を止める
 
 ## 本書で扱わなかった判断候補(次回以降)
 

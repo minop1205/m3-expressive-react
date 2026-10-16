@@ -36,10 +36,14 @@ import {
   type OptionProps,
 } from '../../internal/listbox/Listbox'
 import fieldStyles from '../TextField/TextField.module.css'
+import type { TextFieldLabelPlacement } from '../TextField/TextField'
 import styles from './Autocomplete.module.css'
 import { useLocaleProps } from '../../internal/locale'
 
 export type AutocompleteVariant = 'filled' | 'outlined'
+
+/** Where the label sits — the same values as TextField `labelPlacement` (B37). */
+export type AutocompleteLabelPlacement = TextFieldLabelPlacement
 
 /** An entry of the `options` prop: a string (value = label) or an object. */
 export type AutocompleteOption =
@@ -51,6 +55,8 @@ export type AutocompleteOption =
       label: string
       /** Visible, inert, and skipped by keyboard navigation. */
       disabled?: boolean
+      /** A second line below the label, as `Option supportingText` (not matched by filtering). */
+      supportingText?: ReactNode
     }
 
 /** An option as `filterOptions` sees it (from `options` or from `Option` children). */
@@ -83,7 +89,20 @@ export interface AutocompleteProps extends Omit<
    * label, and no elements with an `id`.
    */
   label?: ReactNode
-  /** The options, as strings or `{ value, label, disabled }` objects. Use `Option` children instead for icons. */
+  /**
+   * Where the label sits, as TextField `labelPlacement` (B37 / B52):
+   * `'floating'` inside the container (the outlined variant notches the
+   * border), `'above'` minimized above the container. The listbox still
+   * opens right below the container. @default 'floating'
+   */
+  labelPlacement?: AutocompleteLabelPlacement
+  /**
+   * Keep the floating label minimized even while the input is empty, and
+   * show the placeholder (TextField `shrinkLabel`). No effect without a
+   * `label` or with `labelPlacement="above"`. @default false
+   */
+  shrinkLabel?: boolean
+  /** The options, as strings or `{ value, label, disabled, supportingText }` objects. Use `Option` children instead for icons. */
   options?: readonly AutocompleteOption[]
   /** `Option` elements (direct children or inside Fragments), used when `options` is not given. */
   children?: ReactNode
@@ -113,9 +132,17 @@ export interface AutocompleteProps extends Omit<
   /** Notified when the listbox should open or close. */
   onOpenChange?: (open: boolean) => void
   /**
+   * Open the listbox when the input receives focus (with no active option).
+   * Neither m3 nor Compose opens on focus, so this is opt-in, as in MUI
+   * (B52). @default false
+   */
+  openOnFocus?: boolean
+  /**
    * Accept any text, not only an option: Enter (with no option active) or
-   * leaving the field commits the typed text as the value. Without it, the
-   * text returns to the selected option's label on blur. @default false
+   * leaving the field commits the typed text as the value — as typed, even
+   * when it equals an option's label (an option is selected only by picking
+   * it, B52). Without it, the text returns to the selected option's label on
+   * blur. @default false
    */
   freeSolo?: boolean
   /**
@@ -208,14 +235,17 @@ function fromOptionsProp(options: readonly AutocompleteOption[]): OptionData[] {
       value,
       label,
       disabled = false,
-    } = typeof entry === 'string' ? { value: entry, label: entry } : entry
+      supportingText,
+    } = typeof entry === 'string'
+      ? { value: entry, label: entry, supportingText: undefined }
+      : entry
     return {
       value,
       label,
       disabled,
       children: label,
       element: (
-        <Option value={value} disabled={disabled}>
+        <Option value={value} disabled={disabled} supportingText={supportingText}>
           {label}
         </Option>
       ) as ReactElement<OptionProps>,
@@ -233,7 +263,7 @@ function fromOptionsProp(options: readonly AutocompleteOption[]): OptionData[] {
  *
  * The field is the `TextField` anatomy with a real text `<input>`; typing
  * filters the listbox, which is the one `Select` uses (top layer, field
- * width, Expressive options with a check on the selected one). Options that
+ * width, the m3 select / autocomplete menu tokens — B52). Options that
  * stay ease into their new position as the list is filtered (DefaultSpatial;
  * none under reduced motion).
  *
@@ -258,6 +288,8 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
   const {
     variant = 'filled',
     label,
+    labelPlacement = 'floating',
+    shrinkLabel = false,
     options: optionsProp,
     children,
     value: valueProp,
@@ -269,6 +301,7 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
     open: openProp,
     defaultOpen = false,
     onOpenChange,
+    openOnFocus = false,
     freeSolo = false,
     clearOnEscape = false,
     filterOptions = defaultFilterOptions,
@@ -352,7 +385,10 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
   const latest = useRef({ open, onOpenChange, setOpenState })
   latest.current = { open, onOpenChange, setOpenState }
   const setOpen = (next: boolean) => {
+    // Several requests in one event (focus + click with `openOnFocus`)
+    // notify once.
     if (latest.current.open === next) return
+    latest.current.open = next
     latest.current.setOpenState(next)
     latest.current.onOpenChange?.(next)
   }
@@ -395,8 +431,9 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
     if (!dirty) return
     setDirty(false)
     if (freeSolo) {
-      const match = options.find((option) => option.label === inputValue && !option.disabled)
-      changeValue(event, match ? match.value : inputValue)
+      // The typed string, even when it equals an option label: an option is
+      // selected only by picking it (B52; Compose selects on item click only).
+      changeValue(event, inputValue)
     } else {
       // Not an option: the text returns to the selected option's label.
       changeInput(event, labelOf(value))
@@ -633,6 +670,9 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
     [hasSupportingText && supportingId, ariaDescribedBy].filter(Boolean).join(' ') || undefined
   const labelledBy = ariaLabelledBy ?? (label && ariaLabel == null ? labelId : undefined)
 
+  // `above`: the label leaves the container, which then lays out like a
+  // label-less field (B37).
+  const labelAbove = !!label && labelPlacement === 'above'
   const labelText = label ? (
     <>
       {label}
@@ -663,12 +703,18 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
         disabled && fieldStyles.disabled,
         startIcon != null && fieldStyles.hasLeadingIcon,
         fieldStyles.hasTrailingIcon,
-        !label && fieldStyles.noLabel,
+        (!label || labelAbove) && fieldStyles.noLabel,
+        label && !labelAbove && shrinkLabel && fieldStyles.shrinkLabel,
         fullWidth && styles.fullWidth,
         className,
       )}
       data-open={popupVisible || undefined}
     >
+      {labelAbove && (
+        <label id={labelId} htmlFor={inputId} className={fieldStyles.aboveLabel}>
+          {labelText}
+        </label>
+      )}
       <div
         ref={fieldRef}
         className={clsx(fieldStyles.field, styles.field)}
@@ -687,7 +733,9 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
           <div className={fieldStyles.outline} aria-hidden="true">
             <div className={fieldStyles.outlineStart} />
             <div className={fieldStyles.outlineNotch}>
-              {labelText && <span className={fieldStyles.outlineLabel}>{labelText}</span>}
+              {labelText && !labelAbove && (
+                <span className={fieldStyles.outlineLabel}>{labelText}</span>
+              )}
             </div>
             <div className={fieldStyles.outlineEnd} />
           </div>
@@ -700,7 +748,7 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
         )}
 
         <div className={fieldStyles.middle}>
-          {labelText && (
+          {labelText && !labelAbove && (
             <label id={labelId} htmlFor={inputId} className={fieldStyles.label}>
               {labelText}
             </label>
@@ -733,7 +781,13 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
               aria-invalid={showError || undefined}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              onFocus={() => setFocused(true)}
+              onFocus={() => {
+                setFocused(true)
+                if (openOnFocus && !disabled && !latest.current.open) {
+                  setDirty(false)
+                  openListbox(-1, false)
+                }
+              }}
               onBlur={handleBlur}
             />
           </div>

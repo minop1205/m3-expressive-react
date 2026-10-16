@@ -11,8 +11,10 @@ import {
   type HTMLAttributes,
   type KeyboardEvent,
   type MouseEvent,
+  type ReactElement,
   type ReactNode,
   type Ref,
+  type RefAttributes,
   type SyntheticEvent,
 } from 'react'
 import clsx from 'clsx'
@@ -20,11 +22,7 @@ import { usePopupPosition } from '../../internal/usePopupPosition'
 import { useFormReset } from '../../internal/useFormReset'
 import { assignRef } from '../../internal/assignRef'
 import { ArrowDropDownIcon } from '../../internal/icons'
-import {
-  createMenuTypeahead,
-  getTypeaheadLabel,
-  matchTypeahead,
-} from '../../internal/menuNavigation'
+import { createMenuTypeahead, matchTypeahead } from '../../internal/menuNavigation'
 import {
   Listbox,
   collectOptions,
@@ -33,15 +31,25 @@ import {
   stepEnabled as stepEnabledIn,
 } from '../../internal/listbox/Listbox'
 import fieldStyles from '../TextField/TextField.module.css'
+import type { TextFieldLabelPlacement } from '../TextField/TextField'
 import styles from './Select.module.css'
+import { NativeSelect, type NativeSelectProps } from './NativeSelect'
 
 export type SelectVariant = 'filled' | 'outlined'
+
+/** Where the label sits — the same values as TextField `labelPlacement` (B37). */
+export type SelectLabelPlacement = TextFieldLabelPlacement
 
 export interface SelectProps
   extends Omit<
     HTMLAttributes<HTMLDivElement>,
     'children' | 'defaultValue' | 'onChange' | 'color' | 'placeholder'
   > {
+  /**
+   * `true` renders a native `<select>` with `<option>` children instead
+   * (`NativeSelectProps`, ruling B53). @default false
+   */
+  native?: false
   /** Text field container style (the same two as `TextField`). @default 'filled' */
   variant?: SelectVariant
   /**
@@ -64,6 +72,19 @@ export interface SelectProps
    * label, and no elements with an `id`.
    */
   label?: ReactNode
+  /**
+   * Where the label sits, as TextField `labelPlacement` (B37 / B52):
+   * `'floating'` inside the container (the outlined variant notches the
+   * border), `'above'` minimized above the container. The listbox still
+   * opens right below the container. @default 'floating'
+   */
+  labelPlacement?: SelectLabelPlacement
+  /**
+   * Keep the floating label minimized even while nothing is selected, and
+   * show the placeholder (TextField `shrinkLabel`). No effect without a
+   * `label` or with `labelPlacement="above"`. @default false
+   */
+  shrinkLabel?: boolean
   /** Controlled selected value (`''` = nothing selected). */
   value?: string
   /** Uncontrolled initial value. @default '' */
@@ -79,6 +100,11 @@ export interface SelectProps
   defaultOpen?: boolean
   /** Notified when the listbox should open or close. */
   onOpenChange?: (open: boolean) => void
+  /**
+   * Open the listbox when the field receives focus (on the selected option).
+   * Neither m3 nor Compose opens on focus, so this is opt-in (B52). @default false
+   */
+  openOnFocus?: boolean
   /** Form field name of the hidden native input that carries the value. */
   name?: string
   /** Associates the hidden native input with a `<form>` elsewhere in the page (native `form` attribute). */
@@ -126,6 +152,15 @@ const VIEWPORT_MARGIN_PX = 8
 /** Options PageUp / PageDown move by (APG). */
 const PAGE_STEP = 10
 
+/** Whether the element has keyboard (`:focus-visible`) focus; false where unsupported. */
+function isFocusVisible(element: Element): boolean {
+  try {
+    return element.matches(':focus-visible')
+  } catch {
+    return false
+  }
+}
+
 /**
  * Material Design 3 Select — the non-editable exposed dropdown menu
  * (Compose `ExposedDropdownMenuBox` + a read-only `TextField` with the
@@ -136,10 +171,9 @@ const PAGE_STEP = 10
  * rotated 180° while open. The listbox is drawn in the top layer below the
  * field (flipped above when there is no room, clamped to the viewport),
  * exactly as wide as the field and capped to the room left on that side —
- * styled after the Compose sample: a surface-container-low, 16dp-corner,
- * elevation-2 surface with 44dp body-large options (16dp padding, positional
- * corners), and a tertiary-container selected option with a check mark that
- * morphs to 12dp corners.
+ * styled by the m3 select menu tokens (B52): a surface-container, 4dp-corner,
+ * elevation-2 surface with 48dp label-large options (optionally with
+ * supporting text; text wraps), the selected one on surface-container-highest.
  *
  * Accessibility follows the WAI-ARIA APG select-only combobox: the field is a
  * focusable `role="combobox"` that keeps focus while the `role="listbox"`
@@ -155,17 +189,20 @@ const PAGE_STEP = 10
  * submission, `required` validation, and form reset (uncontrolled values
  * return to `defaultValue`).
  */
-export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
+const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
   {
     variant = 'filled',
     tonal = false,
     label,
+    labelPlacement = 'floating',
+    shrinkLabel = false,
     value: controlledValue,
     defaultValue = '',
     onChange,
     open: controlledOpen,
     defaultOpen = false,
     onOpenChange,
+    openOnFocus = false,
     name,
     form,
     disabled = false,
@@ -221,9 +258,13 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
   const nativeInputRef = useRef<HTMLInputElement>(null)
 
   // Read through a ref: the document listener below is bound once per open.
-  const latest = useRef({ isOpenControlled, onOpenChange })
-  latest.current = { isOpenControlled, onOpenChange }
+  const latest = useRef({ open, isOpenControlled, onOpenChange })
+  latest.current = { open, isOpenControlled, onOpenChange }
   const setOpen = (next: boolean) => {
+    // Several requests in one event (focus + click with `openOnFocus`)
+    // notify once.
+    if (latest.current.open === next) return
+    latest.current.open = next
     if (!latest.current.isOpenControlled) setInternalOpen(next)
     latest.current.onOpenChange?.(next)
   }
@@ -305,11 +346,8 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
     if (!isValueControlled) setInternalValue(initialDefaultValue)
   })
 
-  const optionLabels = () =>
-    Array.from(
-      listboxRef.current?.querySelectorAll<HTMLElement>('[role="option"]') ?? [],
-      getTypeaheadLabel,
-    )
+  // Typeahead matches the labels only (not an option's supporting text).
+  const optionLabels = () => options.map((option) => option.label.trim().toLowerCase())
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (disabled) return
@@ -438,6 +476,9 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
     [hasSupportingText && supportingId, ariaDescribedBy].filter(Boolean).join(' ') || undefined
   const labelledBy = ariaLabelledBy ?? (label && ariaLabel == null ? labelId : undefined)
 
+  // `above`: the label leaves the container, which then lays out like a
+  // label-less field (B37).
+  const labelAbove = !!label && labelPlacement === 'above'
   const labelText = label ? (
     <>
       {label}
@@ -467,12 +508,26 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
         disabled && fieldStyles.disabled,
         startIcon != null && fieldStyles.hasLeadingIcon,
         fieldStyles.hasTrailingIcon,
-        !label && fieldStyles.noLabel,
+        (!label || labelAbove) && fieldStyles.noLabel,
+        label && !labelAbove && shrinkLabel && fieldStyles.shrinkLabel,
         fullWidth && styles.fullWidth,
         className,
       )}
       data-open={open || undefined}
     >
+      {labelAbove && (
+        // Names the combobox (aria-labelledby); a click focuses it, as a
+        // <label> would.
+        <span
+          id={labelId}
+          className={fieldStyles.aboveLabel}
+          onClick={() => {
+            if (!disabled) comboboxRef.current?.focus()
+          }}
+        >
+          {labelText}
+        </span>
+      )}
       <div
         ref={fieldRef}
         className={clsx(fieldStyles.field, styles.field)}
@@ -491,7 +546,7 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
           <div className={fieldStyles.outline} aria-hidden="true">
             <div className={fieldStyles.outlineStart} />
             <div className={fieldStyles.outlineNotch}>
-              {labelText && !tonal && (
+              {labelText && !labelAbove && !tonal && (
                 <span className={fieldStyles.outlineLabel}>{labelText}</span>
               )}
             </div>
@@ -506,7 +561,7 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
         )}
 
         <div className={fieldStyles.middle}>
-          {labelText && (
+          {labelText && !labelAbove && (
             <span id={labelId} className={fieldStyles.label}>
               {labelText}
             </span>
@@ -536,6 +591,9 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
               onFocus={(event) => {
                 setFocused(true)
                 onFocus?.(event)
+                if (openOnFocus && !disabled && !latest.current.open) {
+                  openListbox(initialActive(), isFocusVisible(event.currentTarget))
+                }
               }}
               onBlur={handleBlur}
             >
@@ -615,4 +673,31 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(function Select(
   )
 })
 
+/** `Select`: the listbox Select, or `<select>` with `native` (B53). */
+export interface SelectComponent {
+  (props: NativeSelectProps & RefAttributes<HTMLDivElement>): ReactElement | null
+  (props: SelectProps & RefAttributes<HTMLDivElement>): ReactElement | null
+  displayName?: string
+}
+
+/**
+ * Material Design 3 Select. Without `native`: the exposed dropdown menu
+ * described on `ListboxSelect` above (`Option` children, `ref` = root).
+ * With `native`: the same field around a real `<select>` (`<option>` /
+ * `<optgroup>` children, `ref` = root, `inputRef` = the `<select>`, OS
+ * picker) — ruling B53.
+ */
+export const Select = forwardRef<HTMLDivElement, SelectProps | NativeSelectProps>(
+  function SelectSwitch(props, ref) {
+    if (props.native) {
+      const { native: _native, ...nativeProps } = props
+      return <NativeSelect {...nativeProps} ref={ref} />
+    }
+    const { native: _native, ...listboxProps } = props
+    return <ListboxSelect {...listboxProps} ref={ref} />
+  },
+) as SelectComponent
+Select.displayName = 'Select'
+
+export type { NativeSelectProps } from './NativeSelect'
 export { Option, type OptionProps } from '../../internal/listbox/Listbox'

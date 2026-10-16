@@ -32,6 +32,9 @@ const meta = {
   argTypes: {
     variant: { control: 'inline-radio', options: ['filled', 'outlined'] },
     tonal: { control: 'boolean' },
+    labelPlacement: { control: 'inline-radio', options: ['floating', 'above'] },
+    shrinkLabel: { control: 'boolean' },
+    openOnFocus: { control: 'boolean' },
     error: { control: 'boolean' },
     disabled: { control: 'boolean' },
     required: { control: 'boolean' },
@@ -53,7 +56,7 @@ export const Outlined: Story = {
   args: { variant: 'outlined', defaultValue: 'banana', supportingText: 'Supporting text' },
 }
 
-/** A field start icon, and option start icons (the check mark replaces the selected one's). */
+/** A field start icon, and option start icons (kept on the selected option — B52). */
 export const WithIcons: Story = {
   render: (args) => (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -112,8 +115,9 @@ export const ErrorState: Story = {
 }
 
 /**
- * Open listbox (VRT): matches the field's width, selected option (check mark,
- * 12dp corners) and a disabled option.
+ * Open listbox (VRT): matches the field's width, the m3 select menu tokens
+ * (B52: surface-container, 4dp, 48dp label-large options), the selected
+ * option on surface-container-highest and a disabled option.
  */
 export const Open: Story = {
   render: (args) => (
@@ -134,6 +138,97 @@ export const Tonal: Story = {
       <Select {...args} tonal variant="outlined" defaultValue="banana" supportingText="Supporting text" />
       <Select {...args} tonal variant="outlined" startIcon={<Commute />} placeholder="Pick one" />
       <Select {...args} tonal error defaultValue="grape" errorText="Out of stock" />
+    </div>
+  ),
+}
+
+const nativeFruits = (
+  <>
+    <option value="" />
+    <option value="apple">Apple</option>
+    <option value="banana">Banana</option>
+    <optgroup label="Berries">
+      <option value="blueberry">Blueberry</option>
+      <option value="cherry" disabled>
+        Cherry
+      </option>
+    </optgroup>
+    <option value="grape">Grape</option>
+  </>
+)
+
+/**
+ * `native` (ruling B53): the same field around a real `<select>` with
+ * `<option>` / `<optgroup>` children; the popup is the OS picker. An
+ * empty-value first option counts as "nothing selected" (the label rests).
+ */
+export const Native: Story = {
+  render: () => (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, max-content)', gap: 24 }}>
+      <Select native label="Fruit" name="fruit-empty">
+        {nativeFruits}
+      </Select>
+      <Select native label="Fruit" defaultValue="banana" supportingText="Supporting text">
+        {nativeFruits}
+      </Select>
+      <Select native variant="outlined" label="Fruit">
+        {nativeFruits}
+      </Select>
+      <Select native variant="outlined" label="Fruit" startIcon={<Commute />} defaultValue="grape">
+        {nativeFruits}
+      </Select>
+      <Select native label="Fruit" required error errorText="Choose a fruit">
+        {nativeFruits}
+      </Select>
+      <Select native variant="outlined" label="Fruit" disabled defaultValue="apple">
+        {nativeFruits}
+      </Select>
+    </div>
+  ),
+}
+
+/** `labelPlacement="above"` (B52 — the TextField B37 placement): label above the container. */
+export const LabelAbove: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <Select {...args} labelPlacement="above" placeholder="Pick one" supportingText="Supporting text" />
+      <Select {...args} labelPlacement="above" variant="outlined" defaultValue="banana" required />
+    </div>
+  ),
+}
+
+/** `shrinkLabel` (B52): the label stays minimized and the placeholder shows. */
+export const ShrinkLabel: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <Select {...args} shrinkLabel placeholder="Pick one" />
+      <Select {...args} shrinkLabel variant="outlined" placeholder="Pick one" />
+    </div>
+  ),
+}
+
+/**
+ * Options with supporting text (B52 — m3 menu-item supporting text,
+ * body-small on-surface-variant). Label and supporting text wrap; the
+ * listbox keeps the field's width.
+ */
+export const OptionSupportingText: Story = {
+  render: (args) => (
+    <div style={{ paddingBottom: 340 }}>
+      <Select {...args} label="Plan" defaultOpen defaultValue="team">
+        <Option value="free" supportingText="For one person">
+          Free
+        </Option>
+        <Option value="team" supportingText="Shared projects, roles and a single bill for everyone">
+          Team
+        </Option>
+        <Option value="enterprise" startIcon={<Flight />} supportingText="SSO, audit logs">
+          Enterprise with a long name that wraps
+        </Option>
+        <Option value="legacy" disabled supportingText="No longer offered">
+          Legacy
+        </Option>
+      </Select>
     </div>
   ),
 }

@@ -1,5 +1,46 @@
 # Changelog
 
+## 1.6.0 (2026-10-16)
+
+Select / Autocomplete follow-ups from the downstream report, decided
+spec-first (rulings B52, B53 in `docs/decisions/phase-b-api.md`).
+
+### Behavior changes to check
+
+- **Select / Autocomplete listbox look** now follows the m3 "Text field -
+  Select" / "Text field - Autocomplete" token sets (spec priority over the
+  Compose sample used before): surface-container, 4dp corners, elevation
+  level 2, 48dp `label-large` options, selected option =
+  `surface-container-highest` container (no check mark — the m3 set has no
+  selected-icon token). Supersedes spec-sheet ruling SE1 (#518, B52).
+- **Autocomplete `freeSolo`**: typed text stays the typed string even when it
+  equals an option label; an option is selected only by picking it (Compose
+  selects on item click only). Before, typing "United States" committed the
+  option's value `'us'`; now it commits `'United States'` (#518, B52).
+
+### Added
+
+- **Select / Autocomplete**: `openOnFocus` (opt-in; m3 / Compose open on
+  interaction, not focus), `labelPlacement="above"` / `shrinkLabel` (the
+  TextField B37 placement), and `Option supportingText` (also on Autocomplete
+  `options` objects) — m3 menu-item supporting text, body-small
+  on-surface-variant, exposed as the option's description. Option text wraps
+  instead of being truncated (#518, B52).
+- **Select `native`**: renders the same field around a real `<select>` with
+  `<option>` / `<optgroup>` children — native form behaviour and the OS picker.
+  `ref` stays on the field root; `inputRef` reaches the `<select>`;
+  `onChange(event, value)` with the native change event (#519, B53).
+
+### Fixed
+
+- **Tabs** (scrollable): the selected tab stays centered after web fonts load
+  (re-centers on tab resize until the user scrolls the row) (#526).
+- **Tabs** (scrollable): a mouse wheel now scrolls the row horizontally (m3
+  Foundations › Inputs: "Mouse users should be able to scroll with a mouse
+  wheel to navigate horizontally scrolling fields"). Wheels that already
+  carry a horizontal delta (trackpad, Shift+wheel) are left to the browser,
+  and at either end of the row the wheel scrolls the page as usual (B54).
+
 ## 1.5.1 (2026-10-16)
 
 ### Fixed

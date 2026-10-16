@@ -108,7 +108,7 @@
   ]
  },
  "Autocomplete": {
-  "description": "Material Design 3 Autocomplete — the editable exposed dropdown menu\n(Compose `ExposedDropdownMenuBox` + an editable `TextField` with the\n`PrimaryEditable` anchor and a `SecondaryEditable` trailing icon, as in\n`EditableExposedDropdownMenuSample`). m3 menus guidelines: \"A menu can\ninclude a text field to filter options. This pattern is also known as\nautocomplete.\"\n\nThe field is the `TextField` anatomy with a real text `<input>`; typing\nfilters the listbox, which is the one `Select` uses (top layer, field\nwidth, Expressive options with a check on the selected one). Options that\nstay ease into their new position as the list is filtered (DefaultSpatial;\nnone under reduced motion).\n\nAccessibility follows the WAI-ARIA APG editable combobox with list\nautocomplete: the input is `role=\"combobox\"` with `aria-autocomplete=\"list\"`\nand keeps focus while the listbox is open; the active option is exposed\nthrough `aria-activedescendant`. ArrowDown / ArrowUp open and move (wrapping),\nAlt+ArrowDown opens without moving, Enter picks the active option (or\ncommits the text with `freeSolo`), Escape closes the listbox (consumed, so an\nenclosing Dialog stays open) and, when it is already closed, clears the field\nwith `clearOnEscape` — else it is left to enclosing handlers. Typing opens the listbox without\nactivating an option. The trailing arrow is a button (`tabindex=\"-1\"`) that\ntoggles the listbox.\n\nA visually hidden native `<input>` carries `name` / `value` for form\nsubmission, `required` validation, and form reset.",
+  "description": "Material Design 3 Autocomplete — the editable exposed dropdown menu\n(Compose `ExposedDropdownMenuBox` + an editable `TextField` with the\n`PrimaryEditable` anchor and a `SecondaryEditable` trailing icon, as in\n`EditableExposedDropdownMenuSample`). m3 menus guidelines: \"A menu can\ninclude a text field to filter options. This pattern is also known as\nautocomplete.\"\n\nThe field is the `TextField` anatomy with a real text `<input>`; typing\nfilters the listbox, which is the one `Select` uses (top layer, field\nwidth, the m3 select / autocomplete menu tokens — B52). Options that\nstay ease into their new position as the list is filtered (DefaultSpatial;\nnone under reduced motion).\n\nAccessibility follows the WAI-ARIA APG editable combobox with list\nautocomplete: the input is `role=\"combobox\"` with `aria-autocomplete=\"list\"`\nand keeps focus while the listbox is open; the active option is exposed\nthrough `aria-activedescendant`. ArrowDown / ArrowUp open and move (wrapping),\nAlt+ArrowDown opens without moving, Enter picks the active option (or\ncommits the text with `freeSolo`), Escape closes the listbox (consumed, so an\nenclosing Dialog stays open) and, when it is already closed, clears the field\nwith `clearOnEscape` — else it is left to enclosing handlers. Typing opens the listbox without\nactivating an option. The trailing arrow is a button (`tabindex=\"-1\"`) that\ntoggles the listbox.\n\nA visually hidden native `<input>` carries `name` / `value` for form\nsubmission, `required` validation, and form reset.",
   "props": [
    {
     "name": "autoFocus",
@@ -192,7 +192,7 @@
     "type": "boolean",
     "required": false,
     "defaultValue": "false",
-    "description": "Accept any text, not only an option: Enter (with no option active) or\nleaving the field commits the typed text as the value. Without it, the\ntext returns to the selected option's label on blur."
+    "description": "Accept any text, not only an option: Enter (with no option active) or\nleaving the field commits the typed text as the value — as typed, even\nwhen it equals an option's label (an option is selected only by picking\nit, B52). Without it, the text returns to the selected option's label on\nblur."
    },
    {
     "name": "fullWidth",
@@ -228,6 +228,13 @@
     "required": false,
     "defaultValue": null,
     "description": "Floating label; also names the input and the listbox. Rendered with a trailing `*` when `required`.\n\nAccepts rich content (text, emphasis, a small icon) — keep it short and\non one line, as m3 asks: the label is a single line (truncated with an\nellipsis), clicks on it go to the field, and the outlined notch draws a\nhidden copy of it to measure its width. So no links or buttons in the\nlabel, and no elements with an `id`."
+   },
+   {
+    "name": "labelPlacement",
+    "type": "\"floating\" | \"above\"",
+    "required": false,
+    "defaultValue": "'floating'",
+    "description": "Where the label sits, as TextField `labelPlacement` (B37 / B52):\n`'floating'` inside the container (the outlined variant notches the\nborder), `'above'` minimized above the container. The listbox still\nopens right below the container."
    },
    {
     "name": "name",
@@ -272,11 +279,18 @@
     "description": "Controlled open state of the listbox."
    },
    {
+    "name": "openOnFocus",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Open the listbox when the input receives focus (with no active option).\nNeither m3 nor Compose opens on focus, so this is opt-in, as in MUI\n(B52)."
+   },
+   {
     "name": "options",
     "type": "readonly AutocompleteOption[]",
     "required": false,
     "defaultValue": null,
-    "description": "The options, as strings or `{ value, label, disabled }` objects. Use `Option` children instead for icons."
+    "description": "The options, as strings or `{ value, label, disabled, supportingText }` objects. Use `Option` children instead for icons."
    },
    {
     "name": "placeholder",
@@ -291,6 +305,13 @@
     "required": false,
     "defaultValue": "false",
     "description": "Requires a value for form submission (native constraint validation) and appends `*` to the label."
+   },
+   {
+    "name": "shrinkLabel",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Keep the floating label minimized even while the input is empty, and\nshow the placeholder (TextField `shrinkLabel`). No effect without a\n`label` or with `labelPlacement=\"above\"`."
    },
    {
     "name": "startIcon",
@@ -330,7 +351,7 @@
   ]
  },
  "Option": {
-  "description": "An option of a `Select` or `Autocomplete` (`role=\"option\"`). The selected\noption shows the tertiary-container colors, a 12dp corner shape and a\nleading check mark.",
+  "description": "An option of a `Select` or `Autocomplete` (`role=\"option\"`): a 48dp\nlabel-large row with an optional start icon and supporting text. The\nselected option takes the surface-container-highest container (m3 select /\nautocomplete tokens, ruling B52).",
   "props": [
    {
     "name": "children",
@@ -351,7 +372,14 @@
     "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Icon at the start of the option (decorative); the check mark replaces it while selected."
+    "description": "Icon at the start of the option (decorative, 24dp)."
+   },
+   {
+    "name": "supportingText",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "A second line below the label (m3 menu-item supporting text: body-small,\non-surface-variant). Both lines wrap. Exposed as the option's\ndescription (`aria-describedby`) — the accessible name stays the label,\nand only the label is shown in the field, matched by typeahead, and\nmatched by Autocomplete filtering."
    },
    {
     "name": "textValue",
@@ -3158,43 +3186,29 @@
    }
   ]
  },
- "Select": {
-  "description": "Material Design 3 Select — the non-editable exposed dropdown menu\n(Compose `ExposedDropdownMenuBox` + a read-only `TextField` with the\n`PrimaryNotEditable` anchor, `ExposedDropdownMenu(matchAnchorWidth = true)`).\n\nThe field is the `TextField` anatomy (filled / outlined, floating label,\nstart icon, supporting / error text) with the `ArrowDropDown` trailing icon,\nrotated 180° while open. The listbox is drawn in the top layer below the\nfield (flipped above when there is no room, clamped to the viewport),\nexactly as wide as the field and capped to the room left on that side —\nstyled after the Compose sample: a surface-container-low, 16dp-corner,\nelevation-2 surface with 44dp body-large options (16dp padding, positional\ncorners), and a tertiary-container selected option with a check mark that\nmorphs to 12dp corners.\n\nAccessibility follows the WAI-ARIA APG select-only combobox: the field is a\nfocusable `role=\"combobox\"` that keeps focus while the `role=\"listbox\"`\npopup is open, the active option is exposed through\n`aria-activedescendant`. Closed: ArrowDown / ArrowUp / Enter / Space /\nAlt+ArrowDown open (Home / End open on the first / last option), and\ntyping opens on the matching option. Open: ArrowUp / ArrowDown move (no\nwrap), Home / End / PageUp / PageDown jump, typing moves by typeahead,\nEnter / Space / Alt+ArrowUp select and close, Tab selects and moves on,\nEscape closes without selecting. Disabled options are skipped.\n\nA visually hidden native `<input>` carries `name` / `value` for form\nsubmission, `required` validation, and form reset (uncontrolled values\nreturn to `defaultValue`).",
+ "NativeSelect": {
+  "description": "`<Select native>` (ruling B53, #519): the TextField / Select field — label,\nfilled / outlined / tonal, start icon, `ArrowDropDown`, supporting / error\ntext — drawn around a real `<select>` whose popup is the OS picker. A web\nadaptation (MUI `Select native`); m3 and Compose have no native select.",
   "props": [
-   {
-    "name": "autoFocus",
-    "type": "boolean",
-    "required": false,
-    "defaultValue": null,
-    "description": "Focus the combobox on mount."
-   },
    {
     "name": "children",
     "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "`Option` elements (direct children or inside Fragments)."
+    "description": "Native `<option>` / `<optgroup>` elements."
    },
    {
-    "name": "defaultOpen",
-    "type": "boolean",
+    "name": "className",
+    "type": "string",
     "required": false,
-    "defaultValue": "false",
-    "description": "Uncontrolled initial open state."
+    "defaultValue": null,
+    "description": "Applied to the field's root element."
    },
    {
     "name": "defaultValue",
     "type": "string",
     "required": false,
-    "defaultValue": "",
-    "description": "Uncontrolled initial value."
-   },
-   {
-    "name": "disabled",
-    "type": "boolean",
-    "required": false,
-    "defaultValue": "false",
-    "description": "Disables the field (and leaves the value out of form submission)."
+    "defaultValue": null,
+    "description": "Uncontrolled initial value (default: the first enabled option, as natively)."
    },
    {
     "name": "error",
@@ -3208,84 +3222,35 @@
     "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Shown instead of `supportingText` (with `role=\"alert\"`) when `error` is set.\nAccepts rich content, like `supportingText`."
-   },
-   {
-    "name": "form",
-    "type": "string",
-    "required": false,
-    "defaultValue": null,
-    "description": "Associates the hidden native input with a `<form>` elsewhere in the page (native `form` attribute)."
+    "description": "Shown instead of `supportingText` (with `role=\"alert\"`) when `error` is set."
    },
    {
     "name": "fullWidth",
     "type": "boolean",
     "required": false,
     "defaultValue": "false",
-    "description": "Stretch the field (and therefore the listbox) to the container's width."
-   },
-   {
-    "name": "id",
-    "type": "string",
-    "required": false,
-    "defaultValue": null,
-    "description": "Applied to the `role=\"combobox\"` element."
+    "description": "Stretch the field to the container's width."
    },
    {
     "name": "inputRef",
-    "type": "Ref<HTMLInputElement>",
+    "type": "Ref<HTMLSelectElement>",
     "required": false,
     "defaultValue": null,
-    "description": "Ref to the hidden native `<input>` that carries the value for forms (the forwarded `ref` points at the root)."
+    "description": "Ref to the native `<select>` (the forwarded `ref` points at the root)."
    },
    {
     "name": "label",
     "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Floating label; also names the combobox and the listbox. Rendered with a trailing `*` when `required`.\n\nAccepts rich content (text, emphasis, a small icon) — keep it short and\non one line, as m3 asks: the label is a single line (truncated with an\nellipsis), clicks on it go to the field, and the outlined notch draws a\nhidden copy of it to measure its width. So no links or buttons in the\nlabel, and no elements with an `id`."
-   },
-   {
-    "name": "name",
-    "type": "string",
-    "required": false,
-    "defaultValue": null,
-    "description": "Form field name of the hidden native input that carries the value."
+    "description": "Floating label (a `<label>` for the `<select>`). Rendered with a trailing\n`*` when `required`. Floats while focused or while the selected value is\nnot empty."
    },
    {
     "name": "onChange",
-    "type": "((event: SyntheticEvent<Element, Event>, value: string) => void)",
+    "type": "((event: ChangeEvent<HTMLSelectElement, Element>, value: string) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Fires when the user picks a different option — with the click or key\nevent and the new value (A2). Not fired on form reset."
-   },
-   {
-    "name": "onOpenChange",
-    "type": "((open: boolean) => void)",
-    "required": false,
-    "defaultValue": null,
-    "description": "Notified when the listbox should open or close."
-   },
-   {
-    "name": "open",
-    "type": "boolean",
-    "required": false,
-    "defaultValue": null,
-    "description": "Controlled open state of the listbox."
-   },
-   {
-    "name": "placeholder",
-    "type": "string",
-    "required": false,
-    "defaultValue": null,
-    "description": "Shown in the field while nothing is selected (once the label has floated, or always without a label)."
-   },
-   {
-    "name": "required",
-    "type": "boolean",
-    "required": false,
-    "defaultValue": "false",
-    "description": "Requires a value for form submission (native constraint validation) and appends `*` to the label."
+    "description": "Fires on the native `change` event — with that event (so\n`event.target.value` works, as in MUI) and the new value (A2). Not fired\non form reset."
    },
    {
     "name": "startIcon",
@@ -3295,32 +3260,156 @@
     "description": "Icon at the start of the field (decorative)."
    },
    {
+    "name": "style",
+    "type": "CSSProperties",
+    "required": false,
+    "defaultValue": null,
+    "description": "Applied to the field's root element."
+   },
+   {
     "name": "supportingText",
     "type": "ReactNode",
     "required": false,
     "defaultValue": null,
-    "description": "Helper line below the field. Replaced by `errorText` while in error.\nAccepts rich content — a short link is fine (it stays reachable and is\npart of the field's description via `aria-describedby`); keep it to\nabout one line, as m3 asks."
+    "description": "Helper line below the field. Replaced by `errorText` while in error."
    },
    {
     "name": "tonal",
     "type": "boolean",
     "required": false,
     "defaultValue": "false",
-    "description": "Expressive tonal style, as TextField `tonal` (Compose `tonalColors()` +\n`roundedShape`): 12dp rounded container, no indicator on `filled`,\noutline-variant border and inside label on `outlined`.\n@experimental Compose still marks these values `TODO(b/448727879)`, so\nthe look may change when the spec settles."
+    "description": "Expressive tonal style, as TextField `tonal`.\n@experimental Compose still marks these values `TODO(b/448727879)`."
    },
    {
     "name": "value",
     "type": "string",
     "required": false,
     "defaultValue": null,
-    "description": "Controlled selected value (`''` = nothing selected)."
+    "description": "Controlled selected value."
    },
    {
     "name": "variant",
     "type": "\"filled\" | \"outlined\"",
     "required": false,
     "defaultValue": "filled",
-    "description": "Text field container style (the same two as `TextField`)."
+    "description": "Text field container style."
+   }
+  ]
+ },
+ "Select": {
+  "description": "Material Design 3 Select. Without `native`: the exposed dropdown menu\ndescribed on `ListboxSelect` above (`Option` children, `ref` = root).\nWith `native`: the same field around a real `<select>` (`<option>` /\n`<optgroup>` children, `ref` = root, `inputRef` = the `<select>`, OS\npicker) — ruling B53.",
+  "props": [
+   {
+    "name": "children",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Native `<option>` / `<optgroup>` elements."
+   },
+   {
+    "name": "className",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Applied to the field's root element."
+   },
+   {
+    "name": "defaultValue",
+    "type": "string",
+    "required": false,
+    "defaultValue": "",
+    "description": "Uncontrolled initial value (default: the first enabled option, as natively)."
+   },
+   {
+    "name": "error",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Error state — error colors, `aria-invalid`, and `errorText`. Ignored while `disabled`."
+   },
+   {
+    "name": "errorText",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Shown instead of `supportingText` (with `role=\"alert\"`) when `error` is set."
+   },
+   {
+    "name": "fullWidth",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Stretch the field to the container's width."
+   },
+   {
+    "name": "inputRef",
+    "type": "Ref<HTMLSelectElement>",
+    "required": false,
+    "defaultValue": null,
+    "description": "Ref to the native `<select>` (the forwarded `ref` points at the root)."
+   },
+   {
+    "name": "label",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Floating label (a `<label>` for the `<select>`). Rendered with a trailing\n`*` when `required`. Floats while focused or while the selected value is\nnot empty."
+   },
+   {
+    "name": "native",
+    "type": "true",
+    "required": true,
+    "defaultValue": null,
+    "description": "Render a native `<select>` with the OS picker instead of the listbox.\nChildren are then `<option>` / `<optgroup>` elements."
+   },
+   {
+    "name": "onChange",
+    "type": "((event: ChangeEvent<HTMLSelectElement, Element>, value: string) => void)",
+    "required": false,
+    "defaultValue": null,
+    "description": "Fires on the native `change` event — with that event (so\n`event.target.value` works, as in MUI) and the new value (A2). Not fired\non form reset."
+   },
+   {
+    "name": "startIcon",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Icon at the start of the field (decorative)."
+   },
+   {
+    "name": "style",
+    "type": "CSSProperties",
+    "required": false,
+    "defaultValue": null,
+    "description": "Applied to the field's root element."
+   },
+   {
+    "name": "supportingText",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Helper line below the field. Replaced by `errorText` while in error."
+   },
+   {
+    "name": "tonal",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Expressive tonal style, as TextField `tonal`.\n@experimental Compose still marks these values `TODO(b/448727879)`."
+   },
+   {
+    "name": "value",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Controlled selected value."
+   },
+   {
+    "name": "variant",
+    "type": "\"filled\" | \"outlined\"",
+    "required": false,
+    "defaultValue": "filled",
+    "description": "Text field container style."
    }
   ]
  },
