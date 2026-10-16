@@ -232,6 +232,21 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
   const placed = useRef<{ value: string; left: number; width: number } | null>(null)
   // Selection the scroll position was last centered on (scrollable only).
   const scrolledFor = useRef<string | null>(null)
+  // Whether the user has scrolled the row since the last centering.
+  const userScrolled = useRef(false)
+
+  // Scrollable: scroll the selected tab to the center of the row
+  // (Compose `ScrollableTabData`).
+  const centerSelected = useCallback((behavior: ScrollBehavior) => {
+    const list = listRef.current
+    const tab = list?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
+    if (!list || !tab || typeof list.scrollBy !== 'function') return
+    const listRect = list.getBoundingClientRect()
+    const tabRect = tab.getBoundingClientRect()
+    const delta =
+      tabRect.left + tabRect.width / 2 - (listRect.left + list.clientLeft + list.clientWidth / 2)
+    list.scrollBy({ left: delta, behavior })
+  }, [])
 
   const layoutIndicator = useCallback(
     (mode: 'auto' | 'snap') => {
@@ -307,13 +322,18 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
   useEffect(() => {
     const list = listRef.current
     if (!list || typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(() => layoutIndicator('snap'))
+    const observer = new ResizeObserver(() => {
+      layoutIndicator('snap')
+      // Tab widths change after web fonts load (or labels change): keep the
+      // selected tab centered until the user scrolls the row themselves.
+      if (scrollable && !userScrolled.current) centerSelected('instant')
+    })
     observer.observe(list)
     list.querySelectorAll('[role="tab"], [data-tab-content]').forEach((el) => {
       observer.observe(el)
     })
     return () => observer.disconnect()
-  }, [layoutIndicator])
+  }, [layoutIndicator, scrollable, centerSelected])
 
   // Scrollable: center the selected tab whenever the selection changes
   // (Compose `ScrollableTabData`), instantly on first layout / reduced motion.
@@ -322,17 +342,23 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
     if (!scrollable || !list || scrolledFor.current === current) return
     const first = scrolledFor.current === null
     scrolledFor.current = current
-    const tab = list.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
-    if (!tab || typeof list.scrollBy !== 'function') return
-    const listRect = list.getBoundingClientRect()
-    const tabRect = tab.getBoundingClientRect()
-    const delta =
-      tabRect.left + tabRect.width / 2 - (listRect.left + list.clientLeft + list.clientWidth / 2)
-    list.scrollBy({
-      left: delta,
-      behavior: first || prefersReducedMotion() ? 'instant' : 'smooth',
-    })
-  }, [scrollable, current])
+    // A new selection re-centers (and re-arms the resize re-centering).
+    userScrolled.current = false
+    centerSelected(first || prefersReducedMotion() ? 'instant' : 'smooth')
+  }, [scrollable, current, centerSelected])
+
+  // The user scrolling the row (wheel, touch, drag, keyboard) stops the
+  // resize-driven re-centering until the selection changes again.
+  useEffect(() => {
+    const list = listRef.current
+    if (!scrollable || !list) return
+    const mark = () => {
+      userScrolled.current = true
+    }
+    const events = ['wheel', 'touchstart', 'pointerdown', 'keydown'] as const
+    events.forEach((type) => list.addEventListener(type, mark, { passive: true }))
+    return () => events.forEach((type) => list.removeEventListener(type, mark))
+  }, [scrollable])
 
   return (
     <TabsContext.Provider
