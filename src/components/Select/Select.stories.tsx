@@ -142,6 +142,51 @@ export const Tonal: Story = {
   ),
 }
 
+const nativeFruits = (
+  <>
+    <option value="" />
+    <option value="apple">Apple</option>
+    <option value="banana">Banana</option>
+    <optgroup label="Berries">
+      <option value="blueberry">Blueberry</option>
+      <option value="cherry" disabled>
+        Cherry
+      </option>
+    </optgroup>
+    <option value="grape">Grape</option>
+  </>
+)
+
+/**
+ * `native` (ruling B53): the same field around a real `<select>` with
+ * `<option>` / `<optgroup>` children; the popup is the OS picker. An
+ * empty-value first option counts as "nothing selected" (the label rests).
+ */
+export const Native: Story = {
+  render: () => (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, max-content)', gap: 24 }}>
+      <Select native label="Fruit" name="fruit-empty">
+        {nativeFruits}
+      </Select>
+      <Select native label="Fruit" defaultValue="banana" supportingText="Supporting text">
+        {nativeFruits}
+      </Select>
+      <Select native variant="outlined" label="Fruit">
+        {nativeFruits}
+      </Select>
+      <Select native variant="outlined" label="Fruit" startIcon={<Commute />} defaultValue="grape">
+        {nativeFruits}
+      </Select>
+      <Select native label="Fruit" required error errorText="Choose a fruit">
+        {nativeFruits}
+      </Select>
+      <Select native variant="outlined" label="Fruit" disabled defaultValue="apple">
+        {nativeFruits}
+      </Select>
+    </div>
+  ),
+}
+
 /** `labelPlacement="above"` (B52 — the TextField B37 placement): label above the container. */
 export const LabelAbove: Story = {
   render: (args) => (

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, type RefObject } from 'react'
 
-type FormControl = HTMLInputElement | HTMLTextAreaElement
+type FormControl = HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
 
 /**
  * Run `onReset` when the control's form fires `reset` (`form.reset()` or a

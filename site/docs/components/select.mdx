@@ -278,6 +278,70 @@ export function FormDemo() {
 </form>
 ```
 
+## Native select
+
+With `native`, the same field (label, filled / outlined / `tonal`, start icon,
+supporting / error text, required `*`, disabled, the trailing arrow) is drawn
+around a real `<select>`, and the popup is the operating system's picker —
+handy for plain forms and on mobile.
+
+- **Children** are native `<option>` / `<optgroup>` elements, not `Option`
+  (TypeScript picks the native props when `native` is set).
+- **`ref`** points at the field's root (as everywhere else) and **`inputRef`**
+  at the `<select>`. `className` / `style` go to the root; every other
+  attribute goes to the `<select>`.
+- **`onChange(event, value)`**: `event` is the native
+  `ChangeEvent<HTMLSelectElement>`, so `event.target.value` works too.
+- **Forms**: `name`, `form`, `required`, `disabled`, `value` / `defaultValue`
+  and form reset behave exactly as on a plain `<select>`. A controlled value
+  survives a reset.
+- **The label** floats while the selected value is not empty (or while
+  focused). An empty-value option, such as `<option value="" />`, counts as
+  "nothing selected": the label rests in the field, and that option's text
+  shows like a placeholder only while focused.
+- There is no listbox, no `Option` icons, no `open` / `placeholder` props, and
+  no `multiple`. The arrow does not rotate, because the page cannot tell when
+  the OS picker is open.
+
+<Demo>
+  <Select native label="Fruit" name="fruit">
+    <option value="" />
+    <option value="apple">Apple</option>
+    <optgroup label="Berries">
+      <option value="blueberry">Blueberry</option>
+      <option value="raspberry">Raspberry</option>
+    </optgroup>
+    <option value="grape">Grape</option>
+  </Select>
+  <Select native variant="outlined" label="Plan" defaultValue="pro" supportingText="Billed monthly">
+    <option value="free">Free</option>
+    <option value="pro">Pro</option>
+    <option value="team">Team</option>
+  </Select>
+</Demo>
+
+```tsx
+<Select
+  native
+  label="Fruit"
+  name="fruit"
+  value={fruit}
+  onChange={(event, value) => setFruit(value)}
+>
+  <option value="" />
+  <option value="apple">Apple</option>
+  <optgroup label="Berries">
+    <option value="blueberry">Blueberry</option>
+  </optgroup>
+</Select>
+```
+
+Spec note: m3.material.io and Jetpack Compose have no native select (Compose's
+exposed dropdown always draws its own menu), so this is a web adaptation in the
+manner of MUI's `Select native` (ruling B53). The field uses the m3 select text
+field tokens; the menu tokens do not apply because the OS draws the popup.
+There are no sizes — m3 has no text-field sizes.
+
 ## Accessibility
 
 Follows the WAI-ARIA APG

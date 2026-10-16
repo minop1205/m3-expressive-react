@@ -1,0 +1,49 @@
+/**
+ * `<Select native>` (ruling B53). The field is the TextField module plus the
+ * Select root classes (Select.module.css: `.select`, `.fullWidth`); this
+ * module only styles the native <select> inside it. The popup is the OS
+ * picker. Values: docs/specs/select.md § Native mode.
+ */
+
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  display: block;
+  box-sizing: border-box;
+  min-height: var(--_input-text-line-height);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: inherit;
+  /* The trailing icon is a sibling; the select fills the input line. */
+  border-radius: 0;
+}
+
+.select:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+/* An empty value = nothing selected: its option text behaves like the
+   TextField placeholder — hidden while the label rests in the input line,
+   shown (placeholder color) while focused or without a label. */
+.native[data-empty] .select {
+  color: transparent;
+}
+
+.native[data-empty] .select:focus,
+.native[data-empty]:not([data-has-label]) .select {
+  color: var(--_input-text-placeholder-color);
+}
+
+/* Options in the OS picker don't inherit the field's (possibly transparent)
+   text color; give them the surface pair explicitly. */
+.select option,
+.select optgroup {
+  color: var(--md-sys-color-on-surface);
+  background-color: var(--md-sys-color-surface-container);
+}
+
+.select option:disabled {
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+}

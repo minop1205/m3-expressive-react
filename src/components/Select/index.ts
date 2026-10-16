@@ -2,6 +2,7 @@ export {
   Select,
   Option,
   type SelectProps,
+  type NativeSelectProps,
   type OptionProps,
   type SelectVariant,
   type SelectLabelPlacement,

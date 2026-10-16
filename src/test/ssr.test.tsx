@@ -354,6 +354,20 @@ describe('server rendering', () => {
     expect(error).not.toHaveBeenCalled()
     expect(warn).not.toHaveBeenCalled()
   })
+
+  it('Select native renders without warnings (#519)', () => {
+    const html = renderToString(
+      <Select native label="Label" name="field" defaultValue="a">
+        <option value="" />
+        <optgroup label="Group">
+          <option value="a">A</option>
+        </optgroup>
+      </Select>,
+    )
+    expect(html).toContain('<select')
+    expect(error).not.toHaveBeenCalled()
+    expect(warn).not.toHaveBeenCalled()
+  })
 })
 
 describe('useLayoutEffect guard', () => {
