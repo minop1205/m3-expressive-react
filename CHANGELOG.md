@@ -35,6 +35,11 @@ spec-first (rulings B52, B53 in `docs/decisions/phase-b-api.md`).
 
 - **Tabs** (scrollable): the selected tab stays centered after web fonts load
   (re-centers on tab resize until the user scrolls the row) (#526).
+- **Tabs** (scrollable): a mouse wheel now scrolls the row horizontally (m3
+  Foundations › Inputs: "Mouse users should be able to scroll with a mouse
+  wheel to navigate horizontally scrolling fields"). Wheels that already
+  carry a horizontal delta (trackpad, Shift+wheel) are left to the browser,
+  and at either end of the row the wheel scrolls the page as usual (B54).
 
 ## 1.5.1 (2026-10-16)
 

@@ -357,7 +357,35 @@ export const Tabs = forwardRef<HTMLDivElement, TabsProps>(function Tabs(
     }
     const events = ['wheel', 'touchstart', 'pointerdown', 'keydown'] as const
     events.forEach((type) => list.addEventListener(type, mark, { passive: true }))
-    return () => events.forEach((type) => list.removeEventListener(type, mark))
+
+    // Mouse wheel scrolls the row horizontally (ruling B54): m3 Foundations ›
+    // Inputs › Horizontal scroll — "Mouse users should be able to scroll with
+    // a mouse wheel to navigate horizontally scrolling fields" (Compose maps
+    // the wheel onto horizontal scrollables the same way). Only a purely
+    // vertical wheel is converted (trackpad / Shift+wheel already carry a
+    // horizontal delta), and only while the row can still move that way —
+    // at either end the wheel scrolls the page as usual.
+    const onWheel = (event: WheelEvent) => {
+      if (event.ctrlKey || event.deltaX !== 0 || event.deltaY === 0) return
+      const max = list.scrollWidth - list.clientWidth
+      if (max <= 0) return
+      const unit =
+        event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? list.clientWidth : 1
+      const delta = event.deltaY * unit
+      // RTL rows report a non-positive scrollLeft (0 … -max).
+      const rtl = getComputedStyle(list).direction === 'rtl'
+      // Logical position from the start edge, 0 … max.
+      const pos = rtl ? -list.scrollLeft : list.scrollLeft
+      const canMove = delta > 0 ? pos < max - 0.5 : pos > 0.5
+      if (!canMove) return
+      event.preventDefault()
+      list.scrollBy({ left: rtl ? -delta : delta, behavior: 'instant' })
+    }
+    list.addEventListener('wheel', onWheel, { passive: false })
+    return () => {
+      events.forEach((type) => list.removeEventListener(type, mark))
+      list.removeEventListener('wheel', onWheel)
+    }
   }, [scrollable])
 
   return (

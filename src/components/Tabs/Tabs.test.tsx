@@ -316,6 +316,60 @@ describe('Tabs', () => {
     }
   })
 
+  describe('mouse wheel on scrollable tabs (B54)', () => {
+    function setup({ scrollLeft = 0, dir }: { scrollLeft?: number; dir?: 'rtl' } = {}) {
+      render(
+        <div dir={dir}>
+          <Tabs value="a" onChange={() => {}} scrollable aria-label="S">
+            <Tab value="a" label="Alpha" />
+            <Tab value="b" label="Beta" />
+          </Tabs>
+        </div>,
+      )
+      const list = screen.getByRole('tablist')
+      Object.defineProperty(list, 'scrollWidth', { configurable: true, value: 800 })
+      Object.defineProperty(list, 'clientWidth', { configurable: true, value: 300 })
+      Object.defineProperty(list, 'scrollLeft', { configurable: true, value: scrollLeft, writable: true })
+      if (dir) list.style.direction = 'rtl'
+      const scrollBy = vi.fn()
+      list.scrollBy = scrollBy as unknown as typeof list.scrollBy
+      const wheel = (init: WheelEventInit) => {
+        const event = new WheelEvent('wheel', { bubbles: true, cancelable: true, ...init })
+        list.dispatchEvent(event)
+        return event
+      }
+      return { scrollBy, wheel }
+    }
+
+    it('scrolls the row horizontally with a vertical wheel', () => {
+      const { scrollBy, wheel } = setup()
+      const event = wheel({ deltaY: 100 })
+      expect(event.defaultPrevented).toBe(true)
+      expect(scrollBy).toHaveBeenCalledWith({ left: 100, behavior: 'instant' })
+    })
+
+    it('lets the page scroll once the row is at the end it would move toward', () => {
+      const atStart = setup({ scrollLeft: 0 })
+      const up = atStart.wheel({ deltaY: -100 })
+      expect(up.defaultPrevented).toBe(false)
+      expect(atStart.scrollBy).not.toHaveBeenCalled()
+    })
+
+    it('leaves wheels with a horizontal delta (trackpad, Shift+wheel) to the browser', () => {
+      const { scrollBy, wheel } = setup({ scrollLeft: 100 })
+      const event = wheel({ deltaX: 40, deltaY: 10 })
+      expect(event.defaultPrevented).toBe(false)
+      expect(scrollBy).not.toHaveBeenCalled()
+    })
+
+    it('moves toward the end in RTL', () => {
+      const { scrollBy, wheel } = setup({ dir: 'rtl', scrollLeft: 0 })
+      const event = wheel({ deltaY: 100 })
+      expect(event.defaultPrevented).toBe(true)
+      expect(scrollBy).toHaveBeenCalledWith({ left: -100, behavior: 'instant' })
+    })
+  })
+
   it('forwards a ref', () => {
     const ref = createRef<HTMLDivElement>()
     render(
