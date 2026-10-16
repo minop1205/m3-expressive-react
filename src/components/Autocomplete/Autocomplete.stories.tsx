@@ -31,6 +31,9 @@ const meta = {
   argTypes: {
     variant: { control: 'inline-radio', options: ['filled', 'outlined'] },
     freeSolo: { control: 'boolean' },
+    openOnFocus: { control: 'boolean' },
+    labelPlacement: { control: 'inline-radio', options: ['floating', 'above'] },
+    shrinkLabel: { control: 'boolean' },
     error: { control: 'boolean' },
     disabled: { control: 'boolean' },
     required: { control: 'boolean' },
@@ -122,7 +125,7 @@ export const Filtered: Story = {
   ),
 }
 
-/** Open on a picked value: every option, the selected one checked. */
+/** Open on a picked value: every option, the selected one on surface-container-highest (B52). */
 export const Open: Story = {
   render: (args) => (
     <div style={{ paddingBottom: 380 }}>
@@ -143,4 +146,51 @@ export const NoOptions: Story = {
 /** `freeSolo`: any text is a value (committed with Enter or on blur). */
 export const FreeSolo: Story = {
   args: { freeSolo: true, label: 'Fruit (any)', defaultValue: 'Dragon fruit' },
+}
+
+/** `labelPlacement="above"` (B52 — the TextField B37 placement): label above the container. */
+export const LabelAbove: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <Autocomplete {...args} labelPlacement="above" placeholder="Type a fruit" supportingText="Type to filter" />
+      <Autocomplete {...args} labelPlacement="above" variant="outlined" defaultValue="Banana" required />
+    </div>
+  ),
+}
+
+/** `shrinkLabel` (B52): the label stays minimized and the placeholder shows. */
+export const ShrinkLabel: Story = {
+  render: (args) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <Autocomplete {...args} shrinkLabel placeholder="Type a fruit" />
+      <Autocomplete {...args} shrinkLabel variant="outlined" placeholder="Type a fruit" />
+    </div>
+  ),
+}
+
+/**
+ * Options with supporting text (B52), from the `options` objects: label and
+ * supporting text wrap, the listbox keeps the field's width, and filtering
+ * matches the label only.
+ */
+export const OptionSupportingText: Story = {
+  render: (args) => (
+    <div style={{ paddingBottom: 300 }}>
+      <Autocomplete
+        {...args}
+        label="Airport"
+        defaultOpen
+        defaultValue="hnd"
+        options={[
+          { value: 'hnd', label: 'Haneda', supportingText: 'Tokyo, Japan' },
+          { value: 'nrt', label: 'Narita International', supportingText: 'Tokyo, Japan' },
+          {
+            value: 'kix',
+            label: 'Kansai International',
+            supportingText: 'Osaka, Japan — on an artificial island in Osaka Bay',
+          },
+        ]}
+      />
+    </div>
+  ),
 }

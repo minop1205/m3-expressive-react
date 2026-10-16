@@ -3,6 +3,7 @@ export {
   Option,
   type AutocompleteProps,
   type AutocompleteVariant,
+  type AutocompleteLabelPlacement,
   type AutocompleteOption,
   type AutocompleteOptionItem,
   type AutocompleteFilterState,
