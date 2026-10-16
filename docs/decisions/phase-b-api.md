@@ -77,6 +77,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B49 | #499 | Tabs のリンクタブ・TabPanel・コンテナ色 | **`Tab href` → `<a role="tab">`(見た目・手動アクティベーション・`value` による選択は同じ、遷移は横取りしない、`aria-current` は付けない)+ `TabContext` / `TabPanel value`(APG Tabs の `id` / `aria-controls` / `aria-labelledby` 自動配線、非選択は `hidden`、パネルは `tabIndex=0`)+ ホスト変数 `--md-tabs-container-color`(既定 surface)。自動アクティベーションは実装しない** | なし(追加) | 決定(2026-10-15) |
 | B47 | #497 | Slider の操作終了イベント | **`onChangeCommitted(event, value)`(MUI 名)を追加。Compose `onValueChangeFinished` と同じ時機 — ポインタを離したとき(ドラッグ終了・タップ、1 回の操作で 1 回)、値を動かすキー(矢印・Home / End・PageUp / PageDown)の keyup ごと、支援技術による直接の値変更は即時(値が変わらなければ出さない)。single / range 共通、`onChange` は従来どおり連続** | なし(追加) | 決定(2026-10-15) |
 | B51 | #496 #501 #502 | フォーカス可能な無効ボタン・Menu `onAction`・Tooltip の表示遅延 | **いずれも実装しない(仕様に根拠なし)。代替手段をドキュメント化** | なし | 決定(2026-10-15) |
+| B54 | — | スクロール可能な Tabs のマウス操作 | **縦ホイールで横スクロール(m3 Foundations › Inputs)。横成分のあるホイールは変換せず、行が端に達したらページへ渡す。マウスのドラッグスクロールは採らない** | なし(追加) | 決定(2026-10-16) |
 | B52 | #518 | Select / Autocomplete の listbox の見た目・`openOnFocus`・ラベル位置・option の supporting text・`freeSolo` の完全一致 | **listbox を m3 の select / autocomplete トークン(baseline menu: surface-container・4dp・48dp・label-large・選択は surface-container-highest の container のみ、チェックなし)に切替(SE1 / AC1 を置換)、`openOnFocus`(既定 false、Select / Autocomplete)、`labelPlacement` / `shrinkLabel`(B37 と同じ)、`Option supportingText`(body-small・on-surface-variant・`aria-describedby`、折り返し、幅はフィールドのまま)、`freeSolo` は打った文字列のまま(完全一致でも option を選ばない)** | 見た目(listbox)・`freeSolo` の完全一致の挙動 | 決定(2026-10-16) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
@@ -2537,6 +2538,27 @@ full-screen / SideSheet / BottomSheet のデモ)は不要になったので外�
 `Components/Dialog` の `LongContent` を追加。対象: Dialog。
 
 ---
+
+### B54: スクロール可能な Tabs のマウス操作
+
+- **状態**: 決定(2026-10-16・オーナー判断。m3 の調査結果に基づく)
+- **背景**: スクロール可能な Tabs はスクロールバーを非表示にしており、ホイールしかないマウスでは隠れたタブへ移動する手段がなかった
+- **m3.material.io**:
+  - Foundations › Inputs › Mouse wheel and trackpad gestures › Horizontal scroll:
+    「Mouse users should be able to scroll with a mouse wheel to navigate horizontally scrolling fields.
+    Trackpad users should be able to scroll using a two-finger horizontal gesture.」
+  - 同ページでマウスのドラッグはタッチのスクロールと区別される(テキスト領域ではマウスのドラッグは選択)
+  - Tabs › Accessibility › Scrollable: 「users swipe the set left or right. Users can also use arrow/tab to navigate through.」
+    スクロールボタン・スクロールバー・マウスのドラッグの記述はない
+- **Compose**: `ScrollableTabRow` は `horizontalScroll`。スクロールのドラッグはマウスを除外
+  (`AbstractScrollableNode.kt:239` `CanDragCalculation = { type -> type != PointerType.Mouse }`)、
+  マウスはホイール(`MouseWheel1DScrollingLogic`)で横スクロールする
+- **検討した代替案**: マウスのドラッグでスクロール(m3・Compose とも採らない)、左右のスクロールボタン(仕様に記述なし)
+- **決定**: 縦ホイールを行の横スクロールに変換する。利用者の縦スクロールを奪わないよう次を守る
+  - 横成分のあるホイール(トラックパッドの横スワイプ・Shift+ホイール)は変換しない(ブラウザの標準動作に任せる)
+  - 行がその方向の端に達しているときは変換せず、ページの縦スクロールへ渡す
+  - Ctrl+ホイール(ズーム)は対象外。RTL では向きを反転する
+  - ホイール操作は「利用者のスクロール」として扱い、フォント読み込み後の再センタリング(#526)を止める
 
 ## 本書で扱わなかった判断候補(次回以降)
 
