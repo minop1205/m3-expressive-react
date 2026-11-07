@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **NavigationRail**: a collapsed rail no longer overflows horizontally — the
+  faded-out expanded labels used to extend past the 96dp edge, so a rail with
+  `overflow-y: auto` (short windows) showed a horizontal scrollbar for
+  invisible content. The rail now clips its inline axis (`overflow-x: clip`,
+  which is not a scroll container, so vertical scrolling still works) (#538).
+
 ## 1.6.0 (2026-10-16)
 
 Select / Autocomplete follow-ups from the downstream report, decided
