@@ -301,7 +301,10 @@ handy for plain forms and on mobile.
 - **The label** floats while the selected value is not empty (or while
   focused). An empty-value option, such as `<option value="" />`, counts as
   "nothing selected": the label rests in the field, and that option's text
-  shows like a placeholder only while focused.
+  shows like a placeholder only while focused. `labelPlacement="above"` and
+  `shrinkLabel` work as on the listbox Select, so a form can place every
+  label the same way (with `shrinkLabel` the empty option's text shows as
+  the placeholder).
 - There is no listbox, no `Option` icons, no `open` / `placeholder` props, and
   no `multiple`. The arrow does not rotate, because the page cannot tell when
   the OS picker is open.
@@ -320,6 +323,11 @@ handy for plain forms and on mobile.
     <option value="free">Free</option>
     <option value="pro">Pro</option>
     <option value="team">Team</option>
+  </Select>
+  <Select native label="Size" labelPlacement="above" name="size">
+    <option value="" />
+    <option value="s">Small</option>
+    <option value="m">Medium</option>
   </Select>
 </Demo>
 

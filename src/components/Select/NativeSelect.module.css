@@ -32,7 +32,8 @@
 }
 
 .native[data-empty] .select:focus,
-.native[data-empty]:not([data-has-label]) .select {
+.native[data-empty]:not([data-has-label]) .select,
+.native[data-empty][data-shrink-label] .select {
   color: var(--_input-text-placeholder-color);
 }
 

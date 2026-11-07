@@ -21,6 +21,7 @@ import { useIsoLayoutEffect } from '../../internal/useIsoLayoutEffect'
 import { assignRef } from '../../internal/assignRef'
 import { ArrowDropDownIcon } from '../../internal/icons'
 import fieldStyles from '../TextField/TextField.module.css'
+import type { TextFieldLabelPlacement } from '../TextField/TextField'
 import selectStyles from './Select.module.css'
 import styles from './NativeSelect.module.css'
 
@@ -54,6 +55,19 @@ export interface NativeSelectProps
    * not empty.
    */
   label?: ReactNode
+  /**
+   * Where the label sits, as Select / TextField `labelPlacement` (B37 /
+   * B52 / B53 addendum): `'floating'` inside the container (the outlined
+   * variant notches the border), `'above'` minimized above the container.
+   * @default 'floating'
+   */
+  labelPlacement?: TextFieldLabelPlacement
+  /**
+   * Keep the floating label minimized even while the selected value is empty
+   * (as TextField `shrinkLabel`). No effect without a `label` or with
+   * `labelPlacement="above"`. @default false
+   */
+  shrinkLabel?: boolean
   /** Controlled selected value. */
   value?: string
   /** Uncontrolled initial value (default: the first enabled option, as natively). */
@@ -126,6 +140,8 @@ export const NativeSelect = forwardRef<HTMLDivElement, Omit<NativeSelectProps, '
       variant = 'filled',
       tonal = false,
       label,
+      labelPlacement = 'floating',
+      shrinkLabel = false,
       value: controlledValue,
       defaultValue,
       onChange,
@@ -214,6 +230,9 @@ export const NativeSelect = forwardRef<HTMLDivElement, Omit<NativeSelectProps, '
     const describedBy =
       [hasSupportingText && supportingId, ariaDescribedBy].filter(Boolean).join(' ') || undefined
 
+    // `above`: the label leaves the container, which then lays out like a
+    // label-less field (B37), as in Select / Autocomplete.
+    const labelAbove = !!label && labelPlacement === 'above'
     const labelText = label ? (
       <>
         {label}
@@ -235,7 +254,8 @@ export const NativeSelect = forwardRef<HTMLDivElement, Omit<NativeSelectProps, '
           disabled && fieldStyles.disabled,
           startIcon != null && fieldStyles.hasLeadingIcon,
           fieldStyles.hasTrailingIcon,
-          !label && fieldStyles.noLabel,
+          (!label || labelAbove) && fieldStyles.noLabel,
+          label && !labelAbove && shrinkLabel && fieldStyles.shrinkLabel,
           fullWidth && selectStyles.fullWidth,
           className,
         )}
@@ -243,8 +263,14 @@ export const NativeSelect = forwardRef<HTMLDivElement, Omit<NativeSelectProps, '
         style={style}
         data-native=""
         data-empty={!populated || undefined}
-        data-has-label={label ? '' : undefined}
+        data-has-label={label && !labelAbove ? '' : undefined}
+        data-shrink-label={label && !labelAbove && shrinkLabel ? '' : undefined}
       >
+        {labelAbove && (
+          <label htmlFor={selectId} className={fieldStyles.aboveLabel}>
+            {labelText}
+          </label>
+        )}
         <div className={clsx(fieldStyles.field, selectStyles.field)} onClick={handleFieldClick}>
           {variant === 'filled' && (
             <>
@@ -258,7 +284,7 @@ export const NativeSelect = forwardRef<HTMLDivElement, Omit<NativeSelectProps, '
             <div className={fieldStyles.outline} aria-hidden="true">
               <div className={fieldStyles.outlineStart} />
               <div className={fieldStyles.outlineNotch}>
-                {labelText && !tonal && (
+                {labelText && !labelAbove && !tonal && (
                   <span className={fieldStyles.outlineLabel}>{labelText}</span>
                 )}
               </div>
@@ -273,7 +299,7 @@ export const NativeSelect = forwardRef<HTMLDivElement, Omit<NativeSelectProps, '
           )}
 
           <div className={fieldStyles.middle}>
-            {labelText && (
+            {labelText && !labelAbove && (
               <label className={fieldStyles.label} htmlFor={selectId}>
                 {labelText}
               </label>
