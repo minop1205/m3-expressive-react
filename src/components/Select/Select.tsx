@@ -1,4 +1,4 @@
-"use client";
+'use client'
 
 import {
   forwardRef,
@@ -16,44 +16,42 @@ import {
   type Ref,
   type RefAttributes,
   type SyntheticEvent,
-} from "react";
-import clsx from "clsx";
-import { usePopupPosition } from "../../internal/usePopupPosition";
-import { useFormReset } from "../../internal/useFormReset";
-import { assignRef } from "../../internal/assignRef";
-import { ArrowDropDownIcon } from "../../internal/icons";
-import {
-  createMenuTypeahead,
-  matchTypeahead,
-} from "../../internal/menuNavigation";
+} from 'react'
+import clsx from 'clsx'
+import { usePopupPosition } from '../../internal/usePopupPosition'
+import { useFormReset } from '../../internal/useFormReset'
+import { assignRef } from '../../internal/assignRef'
+import { ArrowDropDownIcon } from '../../internal/icons'
+import { createMenuTypeahead, matchTypeahead } from '../../internal/menuNavigation'
 import {
   Listbox,
   collectOptions,
   firstEnabled as firstEnabledIn,
   lastEnabled as lastEnabledIn,
   stepEnabled as stepEnabledIn,
-} from "../../internal/listbox/Listbox";
-import fieldStyles from "../TextField/TextField.module.css";
-import type { TextFieldLabelPlacement } from "../TextField/TextField";
-import styles from "./Select.module.css";
-import { NativeSelect, type NativeSelectProps } from "./NativeSelect";
+} from '../../internal/listbox/Listbox'
+import fieldStyles from '../TextField/TextField.module.css'
+import type { TextFieldLabelPlacement } from '../TextField/TextField'
+import styles from './Select.module.css'
+import { NativeSelect, type NativeSelectProps } from './NativeSelect'
 
-export type SelectVariant = "filled" | "outlined";
+export type SelectVariant = 'filled' | 'outlined'
 
 /** Where the label sits — the same values as TextField `labelPlacement` (B37). */
-export type SelectLabelPlacement = TextFieldLabelPlacement;
+export type SelectLabelPlacement = TextFieldLabelPlacement
 
-export interface SelectProps extends Omit<
-  HTMLAttributes<HTMLDivElement>,
-  "children" | "defaultValue" | "onChange" | "color" | "placeholder"
-> {
+export interface SelectProps
+  extends Omit<
+    HTMLAttributes<HTMLDivElement>,
+    'children' | 'defaultValue' | 'onChange' | 'color' | 'placeholder'
+  > {
   /**
    * `true` renders a native `<select>` with `<option>` children instead
    * (`NativeSelectProps`, ruling B53). @default false
    */
-  native?: false;
+  native?: false
   /** Text field container style (the same two as `TextField`). @default 'filled' */
-  variant?: SelectVariant;
+  variant?: SelectVariant
   /**
    * Expressive tonal style, as TextField `tonal` (Compose `tonalColors()` +
    * `roundedShape`): 12dp rounded container, no indicator on `filled`,
@@ -63,7 +61,7 @@ export interface SelectProps extends Omit<
    * the look may change when the spec settles.
    * @default false
    */
-  tonal?: boolean;
+  tonal?: boolean
   /**
    * Floating label; also names the combobox and the listbox. Rendered with a trailing `*` when `required`.
    *
@@ -73,100 +71,100 @@ export interface SelectProps extends Omit<
    * hidden copy of it to measure its width. So no links or buttons in the
    * label, and no elements with an `id`.
    */
-  label?: ReactNode;
+  label?: ReactNode
   /**
    * Where the label sits, as TextField `labelPlacement` (B37 / B52):
    * `'floating'` inside the container (the outlined variant notches the
    * border), `'above'` minimized above the container. The listbox still
    * opens right below the container. @default 'floating'
    */
-  labelPlacement?: SelectLabelPlacement;
+  labelPlacement?: SelectLabelPlacement
   /**
    * Keep the floating label minimized even while nothing is selected, and
    * show the placeholder (TextField `shrinkLabel`). No effect without a
    * `label` or with `labelPlacement="above"`. @default false
    */
-  shrinkLabel?: boolean;
+  shrinkLabel?: boolean
   /** Controlled selected value (`''` = nothing selected). */
-  value?: string;
+  value?: string
   /** Uncontrolled initial value. @default '' */
-  defaultValue?: string;
+  defaultValue?: string
   /**
    * Fires when the user picks a different option — with the click or key
    * event and the new value (A2). Not fired on form reset.
    */
-  onChange?: (event: SyntheticEvent, value: string) => void;
+  onChange?: (event: SyntheticEvent, value: string) => void
   /** Controlled open state of the listbox. */
-  open?: boolean;
+  open?: boolean
   /** Uncontrolled initial open state. @default false */
-  defaultOpen?: boolean;
+  defaultOpen?: boolean
   /** Notified when the listbox should open or close. */
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: (open: boolean) => void
   /**
    * Open the listbox when the field receives focus (on the selected option).
    * Neither m3 nor Compose opens on focus, so this is opt-in (B52). @default false
    */
-  openOnFocus?: boolean;
+  openOnFocus?: boolean
   /** Form field name of the hidden native input that carries the value. */
-  name?: string;
+  name?: string
   /** Associates the hidden native input with a `<form>` elsewhere in the page (native `form` attribute). */
-  form?: string;
+  form?: string
   /** Disables the field (and leaves the value out of form submission). @default false */
-  disabled?: boolean;
+  disabled?: boolean
   /**
    * Requires a value for form submission (native constraint validation on the
    * hidden input, `aria-required` on the combobox) and appends `*` to the
    * label. For `aria-required` and the `*` without the native constraint,
    * pass `aria-required` instead (B55). @default false
    */
-  required?: boolean;
+  required?: boolean
   /** Marks the field required for assistive technology (and shows the `*`) without native validation (B55). */
-  "aria-required"?: boolean | "true" | "false";
+  'aria-required'?: boolean | 'true' | 'false'
   /** Error state — error colors, `aria-invalid`, and `errorText`. Ignored while `disabled`. @default false */
-  error?: boolean;
+  error?: boolean
   /**
    * Helper line below the field. Replaced by `errorText` while in error.
    * Accepts rich content — a short link is fine (it stays reachable and is
    * part of the field's description via `aria-describedby`); keep it to
    * about one line, as m3 asks.
    */
-  supportingText?: ReactNode;
+  supportingText?: ReactNode
   /**
    * Shown instead of `supportingText` (with `role="alert"`) when `error` is set.
    * Accepts rich content, like `supportingText`.
    */
-  errorText?: ReactNode;
+  errorText?: ReactNode
   /** Icon at the start of the field (decorative). */
-  startIcon?: ReactNode;
+  startIcon?: ReactNode
   /** Stretch the field (and therefore the listbox) to the container's width. @default false */
-  fullWidth?: boolean;
+  fullWidth?: boolean
   /** Shown in the field while nothing is selected (once the label has floated, or always without a label). */
-  placeholder?: string;
+  placeholder?: string
   /** Applied to the `role="combobox"` element. */
-  id?: string;
+  id?: string
   /** Focus the combobox on mount. */
-  autoFocus?: boolean;
+  autoFocus?: boolean
   /** Ref to the hidden native `<input>` that carries the value for forms (the forwarded `ref` points at the root). */
-  inputRef?: Ref<HTMLInputElement>;
+  inputRef?: Ref<HTMLInputElement>
   /** `Option` elements (direct children or inside Fragments). */
-  children?: ReactNode;
+  children?: ReactNode
 }
 
 /** Gap between the field and the listbox: none (Compose `topToAnchorBottom`). */
-const ANCHOR_GAP_PX = 0;
+const ANCHOR_GAP_PX = 0
 
 /** Minimum distance the listbox keeps from the viewport edges when clamped. */
-const VIEWPORT_MARGIN_PX = 8;
+const VIEWPORT_MARGIN_PX = 8
 
 /** Options PageUp / PageDown move by (APG). */
-const PAGE_STEP = 10;
+const PAGE_STEP = 10
 
 /** Whether the element has keyboard (`:focus-visible`) focus; false where unsupported. */
 function isFocusVisible(element: Element): boolean {
   try {
-    return element.matches(":focus-visible");
+    return element.matches(':focus-visible')
   } catch {
-    return false;
+    return false
   }
 }
 
@@ -200,13 +198,13 @@ function isFocusVisible(element: Element): boolean {
  */
 const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
   {
-    variant = "filled",
+    variant = 'filled',
     tonal = false,
     label,
-    labelPlacement = "floating",
+    labelPlacement = 'floating',
     shrinkLabel = false,
     value: controlledValue,
-    defaultValue = "",
+    defaultValue = '',
     onChange,
     open: controlledOpen,
     defaultOpen = false,
@@ -227,166 +225,161 @@ const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
     inputRef,
     children,
     className,
-    "aria-label": ariaLabel,
-    "aria-labelledby": ariaLabelledBy,
-    "aria-describedby": ariaDescribedBy,
-    "aria-required": ariaRequired,
+    'aria-label': ariaLabel,
+    'aria-labelledby': ariaLabelledBy,
+    'aria-describedby': ariaDescribedBy,
+    'aria-required': ariaRequired,
     ...rest
   },
   forwardedRef,
 ) {
-  const autoId = useId();
-  const comboboxId = providedId ?? `${autoId}-combobox`;
+  const autoId = useId()
+  const comboboxId = providedId ?? `${autoId}-combobox`
   // Required for assistive technology (and the `*`): `required`, or
   // `aria-required` alone when the app validates by itself (B55, #535).
-  const requiredForAt =
-    required || ariaRequired === true || ariaRequired === "true";
-  const labelId = `${autoId}-label`;
-  const listboxId = `${autoId}-listbox`;
-  const supportingId = `${autoId}-supporting`;
+  const requiredForAt = required || ariaRequired === true || ariaRequired === 'true'
+  const labelId = `${autoId}-label`
+  const listboxId = `${autoId}-listbox`
+  const supportingId = `${autoId}-supporting`
 
-  const options = collectOptions(children);
+  const options = collectOptions(children)
 
   // Uncontrolled semantics: only the initial `defaultValue` counts (the
   // form-reset target), as in TextField.
-  const [initialDefaultValue] = useState(defaultValue);
-  const [internalValue, setInternalValue] = useState(defaultValue);
-  const isValueControlled = controlledValue !== undefined;
-  const value = isValueControlled ? controlledValue : internalValue;
-  const selectedIndex = options.findIndex((option) => option.value === value);
+  const [initialDefaultValue] = useState(defaultValue)
+  const [internalValue, setInternalValue] = useState(defaultValue)
+  const isValueControlled = controlledValue !== undefined
+  const value = isValueControlled ? controlledValue : internalValue
+  const selectedIndex = options.findIndex((option) => option.value === value)
 
-  const [internalOpen, setInternalOpen] = useState(defaultOpen);
-  const isOpenControlled = controlledOpen !== undefined;
-  const open = !disabled && (isOpenControlled ? controlledOpen : internalOpen);
+  const [internalOpen, setInternalOpen] = useState(defaultOpen)
+  const isOpenControlled = controlledOpen !== undefined
+  const open = !disabled && (isOpenControlled ? controlledOpen : internalOpen)
 
-  const [focused, setFocused] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(-1);
+  const [focused, setFocused] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
   // Whether the active option was reached by keyboard (shows the focus
   // indicator and scrolls it into view) rather than by the pointer.
-  const [keyboardActive, setKeyboardActive] = useState(false);
-  const typeahead = useRef(createMenuTypeahead());
+  const [keyboardActive, setKeyboardActive] = useState(false)
+  const typeahead = useRef(createMenuTypeahead())
 
-  const fieldRef = useRef<HTMLDivElement>(null);
-  const comboboxRef = useRef<HTMLDivElement>(null);
-  const listboxRef = useRef<HTMLUListElement>(null);
-  const nativeInputRef = useRef<HTMLInputElement>(null);
+  const fieldRef = useRef<HTMLDivElement>(null)
+  const comboboxRef = useRef<HTMLDivElement>(null)
+  const listboxRef = useRef<HTMLUListElement>(null)
+  const nativeInputRef = useRef<HTMLInputElement>(null)
 
   // Read through a ref: the document listener below is bound once per open.
-  const latest = useRef({ open, isOpenControlled, onOpenChange });
-  latest.current = { open, isOpenControlled, onOpenChange };
+  const latest = useRef({ open, isOpenControlled, onOpenChange })
+  latest.current = { open, isOpenControlled, onOpenChange }
   const setOpen = (next: boolean) => {
     // Several requests in one event (focus + click with `openOnFocus`)
     // notify once.
-    if (latest.current.open === next) return;
-    latest.current.open = next;
-    if (!latest.current.isOpenControlled) setInternalOpen(next);
-    latest.current.onOpenChange?.(next);
-  };
+    if (latest.current.open === next) return
+    latest.current.open = next
+    if (!latest.current.isOpenControlled) setInternalOpen(next)
+    latest.current.onOpenChange?.(next)
+  }
 
-  const isEnabled = (index: number) =>
-    !!options[index] && !options[index].disabled;
-  const firstEnabled = () => firstEnabledIn(options);
-  const lastEnabled = () => lastEnabledIn(options);
+  const isEnabled = (index: number) => !!options[index] && !options[index].disabled
+  const firstEnabled = () => firstEnabledIn(options)
+  const lastEnabled = () => lastEnabledIn(options)
   /** The next enabled option from `from` in `step` direction, clamped at the ends (no wrap). */
-  const stepEnabled = (from: number, step: number) =>
-    stepEnabledIn(options, from, step);
-  const initialActive = () =>
-    isEnabled(selectedIndex) ? selectedIndex : firstEnabled();
+  const stepEnabled = (from: number, step: number) => stepEnabledIn(options, from, step)
+  const initialActive = () => (isEnabled(selectedIndex) ? selectedIndex : firstEnabled())
 
   const openListbox = (target: number, viaKeyboard: boolean) => {
-    setActiveIndex(target);
-    setKeyboardActive(viaKeyboard);
-    if (!open) setOpen(true);
-  };
+    setActiveIndex(target)
+    setKeyboardActive(viaKeyboard)
+    if (!open) setOpen(true)
+  }
 
   // Opened from outside (controlled `open`, `defaultOpen`): start on the
   // selected option. Closing forgets the active option.
   useEffect(() => {
     if (!open) {
-      setActiveIndex(-1);
-      return;
+      setActiveIndex(-1)
+      return
     }
-    setActiveIndex((current) => (current === -1 ? initialActive() : current));
+    setActiveIndex((current) => (current === -1 ? initialActive() : current))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open])
 
   const select = (index: number, event: SyntheticEvent) => {
-    const option = options[index];
-    if (!option || option.disabled) return;
+    const option = options[index]
+    if (!option || option.disabled) return
     if (option.value !== value) {
-      if (!isValueControlled) setInternalValue(option.value);
-      onChange?.(event, option.value);
+      if (!isValueControlled) setInternalValue(option.value)
+      onChange?.(event, option.value)
     }
-  };
+  }
 
   const close = () => {
-    if (open) setOpen(false);
-  };
+    if (open) setOpen(false)
+  }
 
   // Keep the keyboard-active option visible inside a scrolling listbox, and
   // show the selected one when the listbox opens.
   useEffect(() => {
-    if (!open || activeIndex === -1) return;
-    if (!keyboardActive && activeIndex !== initialActive()) return;
-    const el = document.getElementById(`${listboxId}-option-${activeIndex}`);
-    el?.scrollIntoView?.({ block: "nearest" });
+    if (!open || activeIndex === -1) return
+    if (!keyboardActive && activeIndex !== initialActive()) return
+    const el = document.getElementById(`${listboxId}-option-${activeIndex}`)
+    el?.scrollIntoView?.({ block: 'nearest' })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, activeIndex, keyboardActive]);
+  }, [open, activeIndex, keyboardActive])
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) return
     // An outside press closes (`pointerdown`, like Menu). Presses inside the
     // field toggle it themselves; presses on options select.
     const onPointerDown = (event: globalThis.PointerEvent) => {
-      const root = fieldRef.current?.parentElement;
-      if (root && !root.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
+      const root = fieldRef.current?.parentElement
+      if (root && !root.contains(event.target as Node)) setOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    return () => document.removeEventListener('pointerdown', onPointerDown)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open])
 
   const side = usePopupPosition({
     open,
     anchorRef: fieldRef,
     popupRef: listboxRef,
-    side: "bottom",
-    align: "start",
+    side: 'bottom',
+    align: 'start',
     gap: ANCHOR_GAP_PX,
     margin: VIEWPORT_MARGIN_PX,
     matchAnchorWidth: true,
-  });
+  })
 
   // Native form reset: an uncontrolled Select returns to its initial
   // `defaultValue` (the browser resets the hidden input to its default too).
   useFormReset(nativeInputRef, () => {
-    if (!isValueControlled) setInternalValue(initialDefaultValue);
-  });
+    if (!isValueControlled) setInternalValue(initialDefaultValue)
+  })
 
   // Typeahead matches the labels only (not an option's supporting text).
-  const optionLabels = () =>
-    options.map((option) => option.label.trim().toLowerCase());
+  const optionLabels = () => options.map((option) => option.label.trim().toLowerCase())
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (disabled) return;
-    const { key, altKey } = event;
+    if (disabled) return
+    const { key, altKey } = event
     if (!open) {
       switch (key) {
-        case "ArrowDown":
-        case "ArrowUp":
-        case "Enter":
-        case " ":
-          event.preventDefault();
-          openListbox(initialActive(), true);
-          return;
-        case "Home":
-          event.preventDefault();
-          openListbox(firstEnabled(), true);
-          return;
-        case "End":
-          event.preventDefault();
-          openListbox(lastEnabled(), true);
-          return;
+        case 'ArrowDown':
+        case 'ArrowUp':
+        case 'Enter':
+        case ' ':
+          event.preventDefault()
+          openListbox(initialActive(), true)
+          return
+        case 'Home':
+          event.preventDefault()
+          openListbox(firstEnabled(), true)
+          return
+        case 'End':
+          event.preventDefault()
+          openListbox(lastEnabled(), true)
+          return
       }
       const match = matchTypeahead(
         event,
@@ -395,64 +388,55 @@ const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
         typeahead.current,
         Date.now(),
         isEnabled,
-      );
+      )
       if (match !== null) {
-        event.preventDefault();
-        openListbox(match === -1 ? initialActive() : match, true);
+        event.preventDefault()
+        openListbox(match === -1 ? initialActive() : match, true)
       }
-      return;
+      return
     }
 
     const move = (target: number) => {
-      event.preventDefault();
-      setActiveIndex(target);
-      setKeyboardActive(true);
-    };
+      event.preventDefault()
+      setActiveIndex(target)
+      setKeyboardActive(true)
+    }
     switch (key) {
-      case "ArrowDown":
-        return move(
-          activeIndex === -1 ? firstEnabled() : stepEnabled(activeIndex, 1),
-        );
-      case "ArrowUp":
+      case 'ArrowDown':
+        return move(activeIndex === -1 ? firstEnabled() : stepEnabled(activeIndex, 1))
+      case 'ArrowUp':
         if (altKey) {
-          event.preventDefault();
-          select(activeIndex, event);
-          close();
-          return;
+          event.preventDefault()
+          select(activeIndex, event)
+          close()
+          return
         }
-        return move(
-          activeIndex === -1 ? lastEnabled() : stepEnabled(activeIndex, -1),
-        );
-      case "Home":
-        return move(firstEnabled());
-      case "End":
-        return move(lastEnabled());
-      case "PageDown":
-        return move(stepEnabled(activeIndex, PAGE_STEP));
-      case "PageUp":
-        return move(
-          stepEnabled(
-            activeIndex === -1 ? options.length : activeIndex,
-            -PAGE_STEP,
-          ),
-        );
-      case "Enter":
-      case " ":
-        event.preventDefault();
-        select(activeIndex, event);
-        close();
-        return;
-      case "Escape":
+        return move(activeIndex === -1 ? lastEnabled() : stepEnabled(activeIndex, -1))
+      case 'Home':
+        return move(firstEnabled())
+      case 'End':
+        return move(lastEnabled())
+      case 'PageDown':
+        return move(stepEnabled(activeIndex, PAGE_STEP))
+      case 'PageUp':
+        return move(stepEnabled(activeIndex === -1 ? options.length : activeIndex, -PAGE_STEP))
+      case 'Enter':
+      case ' ':
+        event.preventDefault()
+        select(activeIndex, event)
+        close()
+        return
+      case 'Escape':
         // Consumed: an enclosing modal (useModal) ignores a prevented Escape.
-        event.preventDefault();
-        close();
-        return;
-      case "Tab":
+        event.preventDefault()
+        close()
+        return
+      case 'Tab':
         // APG select-only combobox: Tab commits the active option, closes,
         // and moves focus on as usual (no preventDefault).
-        select(activeIndex, event);
-        close();
-        return;
+        select(activeIndex, event)
+        close()
+        return
     }
     const match = matchTypeahead(
       event,
@@ -461,67 +445,64 @@ const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
       typeahead.current,
       Date.now(),
       isEnabled,
-    );
+    )
     if (match !== null) {
-      event.preventDefault();
+      event.preventDefault()
       if (match !== -1) {
-        setActiveIndex(match);
-        setKeyboardActive(true);
+        setActiveIndex(match)
+        setKeyboardActive(true)
       }
     }
-  };
+  }
 
   const handleFieldMouseDown = (event: MouseEvent<HTMLDivElement>) => {
     // Keep (or take) focus on the combobox: a press on the container's
     // padding would otherwise blur it, and text must not get selected.
-    if (event.button !== 0) return;
-    event.preventDefault();
-  };
+    if (event.button !== 0) return
+    event.preventDefault()
+  }
 
   const handleFieldClick = () => {
-    if (disabled) return;
-    comboboxRef.current?.focus();
-    if (open) close();
-    else openListbox(initialActive(), false);
-  };
+    if (disabled) return
+    comboboxRef.current?.focus()
+    if (open) close()
+    else openListbox(initialActive(), false)
+  }
 
   const handleBlur = (event: FocusEvent<HTMLDivElement>) => {
-    setFocused(false);
-    rest.onBlur?.(event);
+    setFocused(false)
+    rest.onBlur?.(event)
     // Focus left (Tab handled in keydown, or moved programmatically).
-    close();
-  };
+    close()
+  }
 
-  const showError = error && !disabled;
-  const showErrorText = showError && !!errorText;
-  const displaySupportingText = showErrorText ? errorText : supportingText;
-  const hasSupportingText = !!displaySupportingText;
-  const populated = selectedIndex !== -1;
-  const selected = populated ? options[selectedIndex] : undefined;
+  const showError = error && !disabled
+  const showErrorText = showError && !!errorText
+  const displaySupportingText = showErrorText ? errorText : supportingText
+  const hasSupportingText = !!displaySupportingText
+  const populated = selectedIndex !== -1
+  const selected = populated ? options[selectedIndex] : undefined
 
   const describedBy =
-    [hasSupportingText && supportingId, ariaDescribedBy]
-      .filter(Boolean)
-      .join(" ") || undefined;
-  const labelledBy =
-    ariaLabelledBy ?? (label && ariaLabel == null ? labelId : undefined);
+    [hasSupportingText && supportingId, ariaDescribedBy].filter(Boolean).join(' ') || undefined
+  const labelledBy = ariaLabelledBy ?? (label && ariaLabel == null ? labelId : undefined)
 
   // `above`: the label leaves the container, which then lays out like a
   // label-less field (B37).
-  const labelAbove = !!label && labelPlacement === "above";
+  const labelAbove = !!label && labelPlacement === 'above'
   const labelText = label ? (
     <>
       {label}
       {requiredForAt && <span aria-hidden="true">*</span>}
     </>
-  ) : undefined;
+  ) : undefined
 
   const setNativeInputRef = (node: HTMLInputElement | null) => {
-    nativeInputRef.current = node;
-    assignRef(inputRef, node);
-  };
+    nativeInputRef.current = node
+    assignRef(inputRef, node)
+  }
 
-  const { onBlur: _onBlur, onFocus, ...rootProps } = rest;
+  const { onBlur: _onBlur, onFocus, ...rootProps } = rest
 
   return (
     <div
@@ -552,7 +533,7 @@ const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
           id={labelId}
           className={fieldStyles.aboveLabel}
           onClick={() => {
-            if (!disabled) comboboxRef.current?.focus();
+            if (!disabled) comboboxRef.current?.focus()
           }}
         >
           {labelText}
@@ -564,7 +545,7 @@ const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
         onMouseDown={handleFieldMouseDown}
         onClick={handleFieldClick}
       >
-        {variant === "filled" && (
+        {variant === 'filled' && (
           <>
             <span className={fieldStyles.background} aria-hidden="true" />
             <span className={fieldStyles.stateLayer} aria-hidden="true" />
@@ -572,7 +553,7 @@ const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
           </>
         )}
 
-        {variant === "outlined" && (
+        {variant === 'outlined' && (
           <div className={fieldStyles.outline} aria-hidden="true">
             <div className={fieldStyles.outlineStart} />
             <div className={fieldStyles.outlineNotch}>
@@ -608,9 +589,7 @@ const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
               aria-expanded={open}
               aria-controls={listboxId}
               aria-activedescendant={
-                open && activeIndex !== -1
-                  ? `${listboxId}-option-${activeIndex}`
-                  : undefined
+                open && activeIndex !== -1 ? `${listboxId}-option-${activeIndex}` : undefined
               }
               aria-label={ariaLabel}
               aria-labelledby={labelledBy}
@@ -621,13 +600,10 @@ const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
               className={clsx(fieldStyles.input, styles.combobox)}
               onKeyDown={handleKeyDown}
               onFocus={(event) => {
-                setFocused(true);
-                onFocus?.(event);
+                setFocused(true)
+                onFocus?.(event)
                 if (openOnFocus && !disabled && !latest.current.open) {
-                  openListbox(
-                    initialActive(),
-                    isFocusVisible(event.currentTarget),
-                  );
+                  openListbox(initialActive(), isFocusVisible(event.currentTarget))
                 }
               }}
               onBlur={handleBlur}
@@ -651,9 +627,7 @@ const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
 
       {hasSupportingText && (
         <div className={fieldStyles.supportingText} id={supportingId}>
-          <span role={showErrorText ? "alert" : undefined}>
-            {displaySupportingText}
-          </span>
+          <span role={showErrorText ? 'alert' : undefined}>{displaySupportingText}</span>
         </div>
       )}
 
@@ -669,9 +643,9 @@ const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
         value={value}
         onChange={(event: ChangeEvent<HTMLInputElement>) => {
           // Autofill / scripted changes on the native input: adopt known values.
-          const next = event.target.value;
-          const index = options.findIndex((option) => option.value === next);
-          if (index !== -1) select(index, event);
+          const next = event.target.value
+          const index = options.findIndex((option) => option.value === next)
+          if (index !== -1) select(index, event)
         }}
         required={required}
         disabled={disabled}
@@ -694,29 +668,27 @@ const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
           keyboardActive,
           idFor: (index) => `${listboxId}-option-${index}`,
           select: (index, event) => {
-            select(index, event);
-            close();
+            select(index, event)
+            close()
           },
           hover: (index) => {
-            if (index === activeIndex && !keyboardActive) return;
-            setActiveIndex(index);
-            setKeyboardActive(false);
+            if (index === activeIndex && !keyboardActive) return
+            setActiveIndex(index)
+            setKeyboardActive(false)
           },
         }}
       >
         {children}
       </Listbox>
     </div>
-  );
-});
+  )
+})
 
 /** `Select`: the listbox Select, or `<select>` with `native` (B53). */
 export interface SelectComponent {
-  (
-    props: NativeSelectProps & RefAttributes<HTMLDivElement>,
-  ): ReactElement | null;
-  (props: SelectProps & RefAttributes<HTMLDivElement>): ReactElement | null;
-  displayName?: string;
+  (props: NativeSelectProps & RefAttributes<HTMLDivElement>): ReactElement | null
+  (props: SelectProps & RefAttributes<HTMLDivElement>): ReactElement | null
+  displayName?: string
 }
 
 /**
@@ -726,18 +698,17 @@ export interface SelectComponent {
  * `<optgroup>` children, `ref` = root, `inputRef` = the `<select>`, OS
  * picker) — ruling B53.
  */
-export const Select = forwardRef<
-  HTMLDivElement,
-  SelectProps | NativeSelectProps
->(function SelectSwitch(props, ref) {
-  if (props.native) {
-    const { native: _native, ...nativeProps } = props;
-    return <NativeSelect {...nativeProps} ref={ref} />;
-  }
-  const { native: _native, ...listboxProps } = props;
-  return <ListboxSelect {...listboxProps} ref={ref} />;
-}) as SelectComponent;
-Select.displayName = "Select";
+export const Select = forwardRef<HTMLDivElement, SelectProps | NativeSelectProps>(
+  function SelectSwitch(props, ref) {
+    if (props.native) {
+      const { native: _native, ...nativeProps } = props
+      return <NativeSelect {...nativeProps} ref={ref} />
+    }
+    const { native: _native, ...listboxProps } = props
+    return <ListboxSelect {...listboxProps} ref={ref} />
+  },
+) as SelectComponent
+Select.displayName = 'Select'
 
-export type { NativeSelectProps } from "./NativeSelect";
-export { Option, type OptionProps } from "../../internal/listbox/Listbox";
+export type { NativeSelectProps } from './NativeSelect'
+export { Option, type OptionProps } from '../../internal/listbox/Listbox'

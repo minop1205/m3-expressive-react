@@ -2,15 +2,15 @@
 title: Select
 ---
 
-import { useState } from "react";
-import Demo from "@site/src/components/Demo";
-import PropsTable from "@site/src/components/PropsTable";
-import { Select, Option, Button } from "m3-expressive-react";
-import CommuteIcon from "@material-symbols/svg-400/outlined/commute.svg";
-import FlightIcon from "@material-symbols/svg-400/outlined/flight.svg";
-import CarIcon from "@material-symbols/svg-400/outlined/directions_car.svg";
-import TrainIcon from "@material-symbols/svg-400/outlined/train.svg";
-import BikeIcon from "@material-symbols/svg-400/outlined/directions_bike.svg";
+import { useState } from 'react'
+import Demo from '@site/src/components/Demo'
+import PropsTable from '@site/src/components/PropsTable'
+import { Select, Option, Button } from 'm3-expressive-react'
+import CommuteIcon from '@material-symbols/svg-400/outlined/commute.svg'
+import FlightIcon from '@material-symbols/svg-400/outlined/flight.svg'
+import CarIcon from '@material-symbols/svg-400/outlined/directions_car.svg'
+import TrainIcon from '@material-symbols/svg-400/outlined/train.svg'
+import BikeIcon from '@material-symbols/svg-400/outlined/directions_bike.svg'
 
 # Select
 
@@ -79,7 +79,7 @@ uncontrolled Select. `''` means nothing is selected; `placeholder` is shown
 then, once the label has floated.
 
 export function ControlledDemo() {
-  const [size, setSize] = useState("");
+  const [size, setSize] = useState('')
   return (
     <>
       <Select
@@ -91,13 +91,11 @@ export function ControlledDemo() {
         <Option value="s">Small</Option>
         <Option value="m">Medium</Option>
         <Option value="l">Large</Option>
-        <Option value="xl" disabled>
-          Extra large (sold out)
-        </Option>
+        <Option value="xl" disabled>Extra large (sold out)</Option>
       </Select>
-      <span>Value: {size === "" ? "—" : size}</span>
+      <span>Value: {size === '' ? '—' : size}</span>
     </>
-  );
+  )
 }
 
 <Demo>
@@ -126,29 +124,17 @@ stays while that option is selected.
 
 <Demo>
   <Select label="Travel mode" startIcon={<CommuteIcon />} defaultValue="train">
-    <Option value="flight" startIcon={<FlightIcon />}>
-      Flight
-    </Option>
-    <Option value="car" startIcon={<CarIcon />}>
-      Car
-    </Option>
-    <Option value="train" startIcon={<TrainIcon />}>
-      Train
-    </Option>
-    <Option value="bike" startIcon={<BikeIcon />}>
-      Bike
-    </Option>
+    <Option value="flight" startIcon={<FlightIcon />}>Flight</Option>
+    <Option value="car" startIcon={<CarIcon />}>Car</Option>
+    <Option value="train" startIcon={<TrainIcon />}>Train</Option>
+    <Option value="bike" startIcon={<BikeIcon />}>Bike</Option>
   </Select>
 </Demo>
 
 ```tsx
 <Select label="Travel mode" startIcon={<CommuteIcon />} defaultValue="train">
-  <Option value="flight" startIcon={<FlightIcon />}>
-    Flight
-  </Option>
-  <Option value="train" startIcon={<TrainIcon />}>
-    Train
-  </Option>
+  <Option value="flight" startIcon={<FlightIcon />}>Flight</Option>
+  <Option value="train" startIcon={<TrainIcon />}>Train</Option>
 </Select>
 ```
 
@@ -164,32 +150,16 @@ option is picked, and typeahead matches only the label.
 
 <Demo>
   <Select label="Plan" defaultValue="team">
-    <Option value="free" supportingText="For one person">
-      Free
-    </Option>
-    <Option
-      value="team"
-      supportingText="Shared projects, roles and a single bill for everyone"
-    >
-      Team
-    </Option>
-    <Option value="enterprise" supportingText="SSO and audit logs">
-      Enterprise
-    </Option>
+    <Option value="free" supportingText="For one person">Free</Option>
+    <Option value="team" supportingText="Shared projects, roles and a single bill for everyone">Team</Option>
+    <Option value="enterprise" supportingText="SSO and audit logs">Enterprise</Option>
   </Select>
 </Demo>
 
 ```tsx
 <Select label="Plan" defaultValue="team">
-  <Option value="free" supportingText="For one person">
-    Free
-  </Option>
-  <Option
-    value="team"
-    supportingText="Shared projects, roles and a single bill"
-  >
-    Team
-  </Option>
+  <Option value="free" supportingText="For one person">Free</Option>
+  <Option value="team" supportingText="Shared projects, roles and a single bill">Team</Option>
 </Select>
 ```
 
@@ -235,9 +205,7 @@ list opens on the selected option when focus enters the field.
 </Demo>
 
 ```tsx
-<Select label="Fruit" openOnFocus>
-  …
-</Select>
+<Select label="Fruit" openOnFocus>…</Select>
 ```
 
 ## Supporting text, error & states
@@ -277,20 +245,13 @@ To announce the field as required (with the `*`) without native validation,
 pass `aria-required` instead of `required`.
 
 export function FormDemo() {
-  const [submitted, setSubmitted] = useState("—");
+  const [submitted, setSubmitted] = useState('—')
   return (
     <form
-      style={{
-        display: "flex",
-        gap: 16,
-        alignItems: "center",
-        flexWrap: "wrap",
-      }}
+      style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}
       onSubmit={(event) => {
-        event.preventDefault();
-        setSubmitted(
-          new FormData(event.currentTarget).get("plan") || "(empty)",
-        );
+        event.preventDefault()
+        setSubmitted(new FormData(event.currentTarget).get('plan') || '(empty)')
       }}
     >
       <Select label="Plan" name="plan" required defaultValue="pro">
@@ -299,12 +260,10 @@ export function FormDemo() {
         <Option value="team">Team</Option>
       </Select>
       <Button type="submit">Submit</Button>
-      <Button type="reset" variant="outlined">
-        Reset
-      </Button>
+      <Button type="reset" variant="outlined">Reset</Button>
       <span>Submitted: {submitted}</span>
     </form>
-  );
+  )
 }
 
 <Demo>
@@ -318,9 +277,7 @@ export function FormDemo() {
     <Option value="pro">Pro</Option>
   </Select>
   <Button type="submit">Submit</Button>
-  <Button type="reset" variant="outlined">
-    Reset
-  </Button>
+  <Button type="reset" variant="outlined">Reset</Button>
 </form>
 ```
 
@@ -359,13 +316,7 @@ handy for plain forms and on mobile.
     </optgroup>
     <option value="grape">Grape</option>
   </Select>
-  <Select
-    native
-    variant="outlined"
-    label="Plan"
-    defaultValue="pro"
-    supportingText="Billed monthly"
-  >
+  <Select native variant="outlined" label="Plan" defaultValue="pro" supportingText="Billed monthly">
     <option value="free">Free</option>
     <option value="pro">Pro</option>
     <option value="team">Team</option>

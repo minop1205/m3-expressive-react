@@ -23,63 +23,63 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 
 ## サマリ
 
-| ID  | Issue                     | 論点                                                                                                                   | 推奨                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | 破壊的変更                                   | 状態                                                                                   |
-| --- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------- |
-| B1  | 横断(#265 #251 #161 ほか) | 組み込み文言の i18n                                                                                                    | **prop ごとのラベル(`*Label` / `get*Label`)を正とし、`LocaleProvider` は後から既定値供給として追加**                                                                                                                                                                                                                                                                                                                                                                                  | なし                                         | 決定(2026-09-30・推奨どおり。Provider は **B50** で実装)                               |
-| B50 | #500                      | locale と組み込み文言の一括指定(B1 の拡張)                                                                             | **独立した `<LocaleProvider locale ampm labels>` + `useLocale()`、`labels` はコンポーネント名ごとに prop 名のキー(モード別見出し・名前の代替・Badge `getLabel` は Provider だけのキー)、優先順位は prop > 近い Provider > 英語既定、Provider なしは従来どおり**                                                                                                                                                                                                                       | なし(追加)                                   | 決定(2026-10-15・#500 の提案をもとに確定)                                              |
-| B2  | 横断(button B5・nav 監査) | 既定の motion scheme                                                                                                   | **expressive を既定、`ThemeProvider motionScheme="standard"` で切替**                                                                                                                                                                                                                                                                                                                                                                                                                 | 挙動のみ(bounce 量)                          | 決定(2026-09-30・推奨どおり)                                                           |
-| B3  | 横断(PI5・CR4 ほか)       | reduced motion の方針                                                                                                  | **状態遷移は即時/フェードのみ、不定進捗だけ最小の動きで継続**                                                                                                                                                                                                                                                                                                                                                                                                                         | 挙動のみ                                     | 決定(2026-09-30・推奨どおり)                                                           |
-| B4  | 横断(#259 #54)            | ポップアップ位置決めの共通化                                                                                           | **内製の `src/internal` ヘルパー(flip + clamp)+ Popover API の top layer**                                                                                                                                                                                                                                                                                                                                                                                                            | なし(内部)                                   | 決定(2026-09-30・推奨どおり)                                                           |
-| B5  | #217 #301 #247            | 操作可能な面(リンク化・入れ子の操作要素・Carousel 項目)                                                                | **`href` → `<a>` / `onClick` → ボタン。入れ子は ListItem = 内部で主アクションと `trailing` を兄弟に、Card = `CardActionArea` / `CardActions` を追加**                                                                                                                                                                                                                                                                                                                                 | ListItem の DOM のみ                         | 決定(2026-09-30・推奨どおり)                                                           |
-| B6  | #161 #168                 | ピッカーの OK / Cancel と dialog 構成                                                                                  | **組み込みアクション行 + `onAccept`(下書き/確定モデル)+ `open` 指定でモーダル表示**                                                                                                                                                                                                                                                                                                                                                                                                   | TimePicker `mode` のみ(下記)                 | 決定(2026-09-30・推奨どおり)                                                           |
-| B7  | 横断                      | ピッカー確定と Snackbar host の共通パターン                                                                            | **仕組みは共通化しない。語彙(`reason`)と内部プリミティブだけ共有**                                                                                                                                                                                                                                                                                                                                                                                                                    | なし                                         | 決定(2026-09-30・推奨どおり)                                                           |
-| B8  | #169                      | TimePicker 24 時間制                                                                                                   | **`ampm?: boolean`(MUI X)、既定は `locale`(既定 `'en-US'`)から導出**                                                                                                                                                                                                                                                                                                                                                                                                                  | なし                                         | 決定(2026-09-30・推奨どおり)                                                           |
-| B9  | #251                      | Snackbar host(キュー・自動消去)                                                                                        | **`SnackbarProvider` + `useSnackbar().show()`(Promise を返す)、`Snackbar` は見た目部品のまま**                                                                                                                                                                                                                                                                                                                                                                                        | なし                                         | 決定(2026-09-30・推奨どおり)                                                           |
-| B10 | #253                      | 長い action を別行に                                                                                                   | **`actionOnNewLine?: boolean`(自動判定なし)**                                                                                                                                                                                                                                                                                                                                                                                                                                         | なし                                         | 決定(2026-09-30・推奨どおり)                                                           |
-| B11 | #257 #261                 | rich tooltip の操作性と persistent                                                                                     | **action 付き rich は非モーダル `role="dialog"`、`persistent?: boolean` を追加**                                                                                                                                                                                                                                                                                                                                                                                                      | a11y ロールのみ                              | 決定(2026-09-30・推奨どおり)                                                           |
-| B12 | #259                      | rich tooltip の既定配置                                                                                                | **rich は `bottom` 既定(plain は `top` のまま)**                                                                                                                                                                                                                                                                                                                                                                                                                                      | 既定値変更(VRT)                              | 決定(2026-09-30・推奨どおり)。rich の既定位置は **B38 で置換**                         |
-| B13 | #281                      | ButtonGroup の選択モデル                                                                                               | **`selectionMode` + `value` / `defaultValue` / `onChange(event, value)` + `selectionRequired`**                                                                                                                                                                                                                                                                                                                                                                                       | なし                                         | 決定(2026-09-30・推奨どおり)                                                           |
-| B14 | 横断(SG 軽微欄)           | SegmentedButton の存廃                                                                                                 | **維持 + JSDoc / Storybook で ButtonGroup を案内(`@deprecated` は付けない)**                                                                                                                                                                                                                                                                                                                                                                                                          | なし                                         | 決定(2026-09-30・推奨どおり)                                                           |
-| B15 | #213                      | アイコンのみセグメント                                                                                                 | **option に `ariaLabel`、アイコンは選択時も残す(check + icon)**                                                                                                                                                                                                                                                                                                                                                                                                                       | なし(見た目は新ストーリーのみ)               | 決定(2026-09-30・推奨どおり)                                                           |
-| B16 | #184 #185 #189            | input chip の選択・avatar・ChipSet                                                                                     | **filter と同じ選択 API / `avatar` prop / `ChipSet` 新設**                                                                                                                                                                                                                                                                                                                                                                                                                            | なし                                         | 決定(2026-09-30・推奨どおり)                                                           |
-| B17 | #225                      | List の選択を支援技術へ                                                                                                | **`List selectionMode` + `value` → `listbox` / `option` + `aria-selected`**                                                                                                                                                                                                                                                                                                                                                                                                           | なし(追加)                                   | 決定(2026-09-30・推奨どおり)                                                           |
-| B18 | #224                      | Expressive リストの形・segmented・既定の見た目                                                                         | **Expressive の形を既定、`variant="standard" \| "segmented"`**                                                                                                                                                                                                                                                                                                                                                                                                                        | 見た目(VRT)                                  | 決定(2026-09-30・推奨どおり)                                                           |
-| B19 | #293                      | SwipeToDismiss のライフサイクル                                                                                        | **`onDismiss` は退場後、`dismissed` の controlled / uncontrolled で reset / プログラム dismiss**                                                                                                                                                                                                                                                                                                                                                                                      | タイミングのみ                               | 決定(2026-09-30・推奨どおり)                                                           |
-| B20 | #294                      | 方向別の背景                                                                                                           | **`startToEndBackground` / `endToStartBackground` + `data-*` / 進捗 CSS 変数**                                                                                                                                                                                                                                                                                                                                                                                                        | なし                                         | 決定(2026-09-30・推奨どおり)                                                           |
-| B21 | #295                      | List 内での list 構造                                                                                                  | **context で自動: List 内の SwipeToDismiss が `<li>`、中の ListItem は `<div>`**                                                                                                                                                                                                                                                                                                                                                                                                      | DOM のみ                                     | 決定(2026-09-30・推奨どおり)                                                           |
-| B22 | #174                      | ナビ項目の `selectedIcon`                                                                                              | **`selectedIcon?: ReactNode`(Switch / IconButton と同名)**                                                                                                                                                                                                                                                                                                                                                                                                                            | なし                                         | 決定(2026-09-30・推奨どおり)                                                           |
-| B23 | #180                      | モーダル NavigationRail                                                                                                | **`modal` + `hideOnCollapse` + `onClose`(useModal ベース)**                                                                                                                                                                                                                                                                                                                                                                                                                           | なし                                         | 決定(2026-09-30・推奨どおり)                                                           |
-| B24 | #203 #208                 | FabMenu の名前固定とサイズ                                                                                             | **`closeAriaLabel` を deprecated(無視)/ `size` + `tonal` を追加**                                                                                                                                                                                                                                                                                                                                                                                                                     | 実質なし(prop は残す)                        | 決定(2026-09-30・推奨どおり)                                                           |
-| B25 | #233 #243                 | AppBar / Toolbar のスクロール連動                                                                                      | **状態 prop(`scrolled` 等)+ 便利 prop `scrollBehavior` / `scrollTarget` の二層**                                                                                                                                                                                                                                                                                                                                                                                                      | なし                                         | 決定(2026-09-30・推奨どおり)                                                           |
-| B26 | #238                      | AppBar の flexible・subtitle・配置                                                                                     | **`medium` / `large` を flexible に置換、`subtitle`、`titleAlignment`、`variant="center"` は deprecated エイリアス**                                                                                                                                                                                                                                                                                                                                                                  | あり(見た目・型)                             | 決定(2026-09-30・推奨どおり)                                                           |
-| B27 | 横断(AB / TL 軽微欄)      | BottomAppBar の扱い                                                                                                    | **JSDoc で `Toolbar variant="docked"` を案内、deprecated 化は v2 で再判断**                                                                                                                                                                                                                                                                                                                                                                                                           | なし                                         | 決定(2026-09-30・推奨どおり)                                                           |
-| B28 | #265                      | Badge のラベルと非表示時の扱い                                                                                         | **visually-hidden の既定英語ラベル + `label` で上書き、`role="status"` 廃止、非表示時は AT からも隠す**                                                                                                                                                                                                                                                                                                                                                                               | a11y のみ                                    | 決定(2026-09-30・推奨どおり)                                                           |
-| B29 | #267                      | Divider を既定で装飾扱いに                                                                                             | **既定 decorative(AT から隠す)+ `decorative={false}` で意味付き区切り**                                                                                                                                                                                                                                                                                                                                                                                                               | a11y のみ                                    | 決定(2026-09-30・推奨どおり)                                                           |
-| B30 | #393                      | Search app bar                                                                                                         | **`TopAppBar variant="search"` + `searchBar` スロット(SearchBar を合成)、`titleAlignment` で中央揃え、`title` は visually hidden の h1**                                                                                                                                                                                                                                                                                                                                              | なし(追加)                                   | 決定(2026-10-07・#393 の API 案どおり)                                                 |
-| B36 | #438                      | ChipSet の選択モードと filter chip の `endIcon`                                                                        | **`ChipSet selectionMode` + `value` / `defaultValue` / `onChange(event, value)` + `selectionRequired`(single = APG radio group)、filter chip に装飾の `endIcon`(Menu の trigger で `aria-expanded` 時に 180° 回転)**                                                                                                                                                                                                                                                                  | なし(追加)                                   | 決定(2026-10-13・#438 の API 案どおり)                                                 |
-| B35 | #437                      | BottomSheet の standard variant と detent                                                                              | **`variant="standard" \| "modal"`(既定 modal)+ `expanded` / `defaultExpanded` / `onExpandedChange` + `skipPartiallyExpanded`、部分展開 = `min(画面/2, シート/2)`(Compose 現行フラグ、TODO 付き)は `skipPartiallyExpanded={false}` で opt-in(既定 true = 従来どおり、切替は v2 候補)、opt-in 時のハンドルは partial ↔ expanded のトグル**                                                                                                                                              | なし(追加)                                   | 決定(2026-10-13)                                                                       |
-| B31 | #434                      | Select(exposed dropdown menu・非編集)                                                                                  | **専用の `<Select>` + `<Option>` 子要素、`value` / `defaultValue` / `onChange(event, value)`、APG select-only combobox + 隠しネイティブ input**                                                                                                                                                                                                                                                                                                                                       | なし(追加)                                   | 決定(2026-10-13・#434 フェーズ 1)                                                      |
-| B53 | #519                      | Select のネイティブモード(`<select>`)                                                                                  | **`<Select native>` で同じフィールドの見た目のまま本物の `<select>` を描く。子は `<option>` / `<optgroup>`、`ref` / `className` / `style` はルート(A10)、`inputRef` と残りの属性は `<select>`、`onChange(event, value)` の `event` はネイティブの `ChangeEvent<HTMLSelectElement>`、ポップアップは OS のピッカー。型はオーバーロードで分岐。サイズは対象外**                                                                                                                          | なし(追加)                                   | 決定(2026-10-16・#519)                                                                 |
-| B38 | #440                      | Tooltip の配置拡張・rich の既定位置・caret                                                                             | **`placement` に `'start' \| 'end' \| 'left' \| 'right'`(論理値は RTL で反転、flip あり)、`placement` 未指定の rich は bottom-end の角 + 4 隅の動的配置、`caret?: boolean`(16×8dp)**                                                                                                                                                                                                                                                                                                  | 既定値変更(rich の未指定時の位置)            | 決定(2026-10-13・#440 の提案どおり)                                                    |
-| B32 | #441                      | PullToRefresh(新規)                                                                                                    | **自身がスクロールコンテナになる `<PullToRefresh refreshing onRefresh indicator disabled threshold>`、touch + pointer、reduced motion はフェードのみ、`aria-busy` + polite live region**                                                                                                                                                                                                                                                                                              | なし(追加)                                   | 決定(2026-10-13・#441 の API 案をもとに確定)                                           |
-| B33 | #435                      | Menu の選択項目(単一 / 複数)・supporting text                                                                          | **`MenuGroup selectionMode="single" \| "multiple"` + `value` / `defaultValue` / `onChange(event, value)`(single = `menuitemradio`、multiple = `menuitemcheckbox` で開いたまま)、`closeOnSelect`(group / item)、`MenuItem supportingText` / `selectedIcon`**                                                                                                                                                                                                                           | なし(追加。baseline の selected に色が付く)  | 決定(2026-10-13・実装時に確定)                                                         |
-| B34 | #436                      | Menu のサブメニューとコンテキストメニュー                                                                              | **`MenuItem submenu={…}`(APG のサブメニュー操作、RTL 反転、ホバー意図 400ms、親メニューの横に flip 配置、見た目とモーションは md-sub-menu)+ `Menu anchorPosition={{ top, left }}`(`trigger` 省略可)と `onContextMenu` レシピ。`ContextMenu` ラッパーは作らない**                                                                                                                                                                                                                      | なし(追加)                                   | 決定(2026-10-13・実装時に確定)                                                         |
-| B40 | #443                      | Tabs のインラインアイコンとバッジ                                                                                      | **`Tab iconPosition="top" \| "start"`(MUI 名、既定 `'top'`)+ `badge={<Badge …/>}`(アイコン上 / テキストのみはラベルの後ろ、読み上げはラベルの後)**                                                                                                                                                                                                                                                                                                                                    | なし(追加)                                   | 決定(2026-10-13・#443 の API 案どおり)                                                 |
-| B39 | #442                      | SearchBar の full-screen レイアウト                                                                                    | **`layout="docked" \| "fullscreen"`(既定 docked)、full-screen は Compose `ExpandedFullScreenContainedSearchBar`(contained)、戻るボタンの名前は `backLabel`**                                                                                                                                                                                                                                                                                                                          | なし(追加)                                   | 決定(2026-10-13・#442 の API 案どおり)                                                 |
-| B37 | #439                      | TextField のラベル位置(上置き・常時縮小)                                                                               | **`labelPlacement?: 'floating' \| 'above'`(既定 `'floating'`)+ `shrinkLabel?: boolean`、DatePickerField も同名で素通し**                                                                                                                                                                                                                                                                                                                                                              | なし(追加)                                   | 決定(2026-10-13・#439 の API 案どおり)                                                 |
-| B41 | #444                      | 小さな構成の不足(FabMenu 配置・Toolbar elevation・dismissible drawer・Carousel 幅)                                     | **FabMenu `horizontalAlignment`、Toolbar `disableElevation`、NavigationDrawer `variant="dismissible"`、Carousel `itemWidth` の JSDoc 修正**                                                                                                                                                                                                                                                                                                                                           | なし(追加)                                   | 決定(2026-10-13)                                                                       |
-| B42 | #434                      | Autocomplete(exposed dropdown menu・編集可)                                                                            | **専用の `<Autocomplete>`、`options` 配列か `<Option>` 子要素、`value` / `inputValue` の二系統(各 controlled / uncontrolled)、`freeSolo` / `filterOptions` / `noOptionsText`、APG list autocomplete、listbox / Option は Select と共有**                                                                                                                                                                                                                                              | なし(追加)                                   | 決定(2026-10-13・#434 フェーズ 2)。追補(2026-10-16・#517): `clearOnEscape`(既定 false) |
-| B43 | #444                      | TimePicker の vibrant・横向き・スクロールホイール                                                                      | **`variant="standard" \| "vibrant"`、`orientation="vertical" \| "horizontal"`(dial のみ)、`mode="scroll"`(Compose `TimeScroll`)+ 公開 `ScrollField`(APG spinbutton)**                                                                                                                                                                                                                                                                                                                 | なし(追加)                                   | 決定(2026-10-13)                                                                       |
-| B44 | #444                      | TextField / Select の tonal・secure field・VerticalDragHandle                                                          | **TextField / Select `tonal?: boolean`(`@experimental`、Compose `tonalColors()` + `roundedShape`)、secure field はレシピ(`type="password"` + `IconButton toggle`、名前固定 + `aria-pressed`)、新規 `DragHandle`(APG window splitter、`value` / `onChange(event, value)` / `min` / `max` / `step` / `paneSide`)**                                                                                                                                                                      | なし(追加)                                   | 決定(2026-10-13)                                                                       |
-| B45 | #494                      | モーダル面の重なり順(top layer)                                                                                        | **Dialog / BottomSheet(modal)/ SideSheet(modal)/ NavigationDrawer(modal)/ NavigationRail(modal)/ modal DatePicker・TimePicker を開いている間 Popover API の top layer に置く(`popover="manual"` + `showPopover()`、開くたびに最上位へ、閉じる motion の間は残す)。DOM 位置は不変。Snackbar host も表示中は top layer に置き、modal の後に再 show して上を保つ。Popover API がなければ従来の z-index**                                                                                 | なし(内部・見た目不変)                       | 決定(2026-10-15)                                                                       |
-| B46 | #495                      | Dialog のスクロール領域と幅                                                                                            | **本文(supporting content)だけをスクロールコンテナにし、icon / headline / actions(full-screen は上部バー)を固定。幅はホスト CSS 変数 `--md-dialog-container-min-width` / `--md-dialog-container-max-width`(既定 280px / 560px)。divider は足さない**                                                                                                                                                                                                                                  | なし(はみ出さない限り見た目不変)             | 決定(2026-10-15)                                                                       |
-| B48 | #498                      | TextField 系の `label` / `supportingText` / `errorText` をリッチ内容に                                                 | **TextField / Select / Autocomplete / DatePickerField の `label` / `supportingText` / `errorText`(DatePickerField は `getErrorLabel` の戻り値)を `ReactNode` に拡張。名前・説明の配線と notch の実測は従来の仕組みのまま、文字列のときの DOM と見た目は不変。m3 の内容指針(ラベルは短く 1 行、supporting text のリンクは短く)を JSDoc と docs に記載**                                                                                                                                | なし(型の拡張)                               | 決定(2026-10-15)                                                                       |
-| B49 | #499                      | Tabs のリンクタブ・TabPanel・コンテナ色                                                                                | **`Tab href` → `<a role="tab">`(見た目・手動アクティベーション・`value` による選択は同じ、遷移は横取りしない、`aria-current` は付けない)+ `TabContext` / `TabPanel value`(APG Tabs の `id` / `aria-controls` / `aria-labelledby` 自動配線、非選択は `hidden`、パネルは `tabIndex=0`)+ ホスト変数 `--md-tabs-container-color`(既定 surface)。自動アクティベーションは実装しない**                                                                                                      | なし(追加)                                   | 決定(2026-10-15)                                                                       |
-| B47 | #497                      | Slider の操作終了イベント                                                                                              | **`onChangeCommitted(event, value)`(MUI 名)を追加。Compose `onValueChangeFinished` と同じ時機 — ポインタを離したとき(ドラッグ終了・タップ、1 回の操作で 1 回)、値を動かすキー(矢印・Home / End・PageUp / PageDown)の keyup ごと、支援技術による直接の値変更は即時(値が変わらなければ出さない)。single / range 共通、`onChange` は従来どおり連続**                                                                                                                                     | なし(追加)                                   | 決定(2026-10-15)                                                                       |
-| B51 | #496 #501 #502            | フォーカス可能な無効ボタン・Menu `onAction`・Tooltip の表示遅延                                                        | **いずれも実装しない(仕様に根拠なし)。代替手段をドキュメント化**                                                                                                                                                                                                                                                                                                                                                                                                                      | なし                                         | 決定(2026-10-15)                                                                       |
-| B54 | —                         | スクロール可能な Tabs のマウス操作                                                                                     | **縦ホイールで横スクロール(m3 Foundations › Inputs)。横成分のあるホイールは変換せず、行が端に達したらページへ渡す。マウスのドラッグスクロールは採らない**                                                                                                                                                                                                                                                                                                                             | なし(追加)                                   | 決定(2026-10-16)                                                                       |
-| B55 | #530 #531 #532 #535       | Autocomplete の確定の意味論と `required` の扱い                                                                        | **`onInputChange` に第 3 引数 `reason`(MUI と同じ語彙)、Enter はアクティブ option がなくても listbox が開いている間・未確定の文字がある間はフォームを送信せずラベルへ戻す、`disableClearable`(MUI 同名)で文字を消しても選択を保つ、`aria-required` 単独でネイティブ検証なしの必須表示**                                                                                                                                                                                               | なし(追加。Enter の送信抑止は不具合修正)     | 決定(2026-11-07)                                                                       |
-| B52 | #518                      | Select / Autocomplete の listbox の見た目・`openOnFocus`・ラベル位置・option の supporting text・`freeSolo` の完全一致 | **listbox を m3 の select / autocomplete トークン(baseline menu: surface-container・4dp・48dp・label-large・選択は surface-container-highest の container のみ、チェックなし)に切替(SE1 / AC1 を置換)、`openOnFocus`(既定 false、Select / Autocomplete)、`labelPlacement` / `shrinkLabel`(B37 と同じ)、`Option supportingText`(body-small・on-surface-variant・`aria-describedby`、折り返し、幅はフィールドのまま)、`freeSolo` は打った文字列のまま(完全一致でも option を選ばない)** | 見た目(listbox)・`freeSolo` の完全一致の挙動 | 決定(2026-10-16)                                                                       |
+| ID | Issue | 論点 | 推奨 | 破壊的変更 | 状態 |
+|---|---|---|---|---|---|
+| B1 | 横断(#265 #251 #161 ほか) | 組み込み文言の i18n | **prop ごとのラベル(`*Label` / `get*Label`)を正とし、`LocaleProvider` は後から既定値供給として追加** | なし | 決定(2026-09-30・推奨どおり。Provider は **B50** で実装) |
+| B50 | #500 | locale と組み込み文言の一括指定(B1 の拡張) | **独立した `<LocaleProvider locale ampm labels>` + `useLocale()`、`labels` はコンポーネント名ごとに prop 名のキー(モード別見出し・名前の代替・Badge `getLabel` は Provider だけのキー)、優先順位は prop > 近い Provider > 英語既定、Provider なしは従来どおり** | なし(追加) | 決定(2026-10-15・#500 の提案をもとに確定) |
+| B2 | 横断(button B5・nav 監査) | 既定の motion scheme | **expressive を既定、`ThemeProvider motionScheme="standard"` で切替** | 挙動のみ(bounce 量) | 決定(2026-09-30・推奨どおり) |
+| B3 | 横断(PI5・CR4 ほか) | reduced motion の方針 | **状態遷移は即時/フェードのみ、不定進捗だけ最小の動きで継続** | 挙動のみ | 決定(2026-09-30・推奨どおり) |
+| B4 | 横断(#259 #54) | ポップアップ位置決めの共通化 | **内製の `src/internal` ヘルパー(flip + clamp)+ Popover API の top layer** | なし(内部) | 決定(2026-09-30・推奨どおり) |
+| B5 | #217 #301 #247 | 操作可能な面(リンク化・入れ子の操作要素・Carousel 項目) | **`href` → `<a>` / `onClick` → ボタン。入れ子は ListItem = 内部で主アクションと `trailing` を兄弟に、Card = `CardActionArea` / `CardActions` を追加** | ListItem の DOM のみ | 決定(2026-09-30・推奨どおり) |
+| B6 | #161 #168 | ピッカーの OK / Cancel と dialog 構成 | **組み込みアクション行 + `onAccept`(下書き/確定モデル)+ `open` 指定でモーダル表示** | TimePicker `mode` のみ(下記) | 決定(2026-09-30・推奨どおり) |
+| B7 | 横断 | ピッカー確定と Snackbar host の共通パターン | **仕組みは共通化しない。語彙(`reason`)と内部プリミティブだけ共有** | なし | 決定(2026-09-30・推奨どおり) |
+| B8 | #169 | TimePicker 24 時間制 | **`ampm?: boolean`(MUI X)、既定は `locale`(既定 `'en-US'`)から導出** | なし | 決定(2026-09-30・推奨どおり) |
+| B9 | #251 | Snackbar host(キュー・自動消去) | **`SnackbarProvider` + `useSnackbar().show()`(Promise を返す)、`Snackbar` は見た目部品のまま** | なし | 決定(2026-09-30・推奨どおり) |
+| B10 | #253 | 長い action を別行に | **`actionOnNewLine?: boolean`(自動判定なし)** | なし | 決定(2026-09-30・推奨どおり) |
+| B11 | #257 #261 | rich tooltip の操作性と persistent | **action 付き rich は非モーダル `role="dialog"`、`persistent?: boolean` を追加** | a11y ロールのみ | 決定(2026-09-30・推奨どおり) |
+| B12 | #259 | rich tooltip の既定配置 | **rich は `bottom` 既定(plain は `top` のまま)** | 既定値変更(VRT) | 決定(2026-09-30・推奨どおり)。rich の既定位置は **B38 で置換** |
+| B13 | #281 | ButtonGroup の選択モデル | **`selectionMode` + `value` / `defaultValue` / `onChange(event, value)` + `selectionRequired`** | なし | 決定(2026-09-30・推奨どおり) |
+| B14 | 横断(SG 軽微欄) | SegmentedButton の存廃 | **維持 + JSDoc / Storybook で ButtonGroup を案内(`@deprecated` は付けない)** | なし | 決定(2026-09-30・推奨どおり) |
+| B15 | #213 | アイコンのみセグメント | **option に `ariaLabel`、アイコンは選択時も残す(check + icon)** | なし(見た目は新ストーリーのみ) | 決定(2026-09-30・推奨どおり) |
+| B16 | #184 #185 #189 | input chip の選択・avatar・ChipSet | **filter と同じ選択 API / `avatar` prop / `ChipSet` 新設** | なし | 決定(2026-09-30・推奨どおり) |
+| B17 | #225 | List の選択を支援技術へ | **`List selectionMode` + `value` → `listbox` / `option` + `aria-selected`** | なし(追加) | 決定(2026-09-30・推奨どおり) |
+| B18 | #224 | Expressive リストの形・segmented・既定の見た目 | **Expressive の形を既定、`variant="standard" \| "segmented"`** | 見た目(VRT) | 決定(2026-09-30・推奨どおり) |
+| B19 | #293 | SwipeToDismiss のライフサイクル | **`onDismiss` は退場後、`dismissed` の controlled / uncontrolled で reset / プログラム dismiss** | タイミングのみ | 決定(2026-09-30・推奨どおり) |
+| B20 | #294 | 方向別の背景 | **`startToEndBackground` / `endToStartBackground` + `data-*` / 進捗 CSS 変数** | なし | 決定(2026-09-30・推奨どおり) |
+| B21 | #295 | List 内での list 構造 | **context で自動: List 内の SwipeToDismiss が `<li>`、中の ListItem は `<div>`** | DOM のみ | 決定(2026-09-30・推奨どおり) |
+| B22 | #174 | ナビ項目の `selectedIcon` | **`selectedIcon?: ReactNode`(Switch / IconButton と同名)** | なし | 決定(2026-09-30・推奨どおり) |
+| B23 | #180 | モーダル NavigationRail | **`modal` + `hideOnCollapse` + `onClose`(useModal ベース)** | なし | 決定(2026-09-30・推奨どおり) |
+| B24 | #203 #208 | FabMenu の名前固定とサイズ | **`closeAriaLabel` を deprecated(無視)/ `size` + `tonal` を追加** | 実質なし(prop は残す) | 決定(2026-09-30・推奨どおり) |
+| B25 | #233 #243 | AppBar / Toolbar のスクロール連動 | **状態 prop(`scrolled` 等)+ 便利 prop `scrollBehavior` / `scrollTarget` の二層** | なし | 決定(2026-09-30・推奨どおり) |
+| B26 | #238 | AppBar の flexible・subtitle・配置 | **`medium` / `large` を flexible に置換、`subtitle`、`titleAlignment`、`variant="center"` は deprecated エイリアス** | あり(見た目・型) | 決定(2026-09-30・推奨どおり) |
+| B27 | 横断(AB / TL 軽微欄) | BottomAppBar の扱い | **JSDoc で `Toolbar variant="docked"` を案内、deprecated 化は v2 で再判断** | なし | 決定(2026-09-30・推奨どおり) |
+| B28 | #265 | Badge のラベルと非表示時の扱い | **visually-hidden の既定英語ラベル + `label` で上書き、`role="status"` 廃止、非表示時は AT からも隠す** | a11y のみ | 決定(2026-09-30・推奨どおり) |
+| B29 | #267 | Divider を既定で装飾扱いに | **既定 decorative(AT から隠す)+ `decorative={false}` で意味付き区切り** | a11y のみ | 決定(2026-09-30・推奨どおり) |
+| B30 | #393 | Search app bar | **`TopAppBar variant="search"` + `searchBar` スロット(SearchBar を合成)、`titleAlignment` で中央揃え、`title` は visually hidden の h1** | なし(追加) | 決定(2026-10-07・#393 の API 案どおり) |
+| B36 | #438 | ChipSet の選択モードと filter chip の `endIcon` | **`ChipSet selectionMode` + `value` / `defaultValue` / `onChange(event, value)` + `selectionRequired`(single = APG radio group)、filter chip に装飾の `endIcon`(Menu の trigger で `aria-expanded` 時に 180° 回転)** | なし(追加) | 決定(2026-10-13・#438 の API 案どおり) |
+| B35 | #437 | BottomSheet の standard variant と detent | **`variant="standard" \| "modal"`(既定 modal)+ `expanded` / `defaultExpanded` / `onExpandedChange` + `skipPartiallyExpanded`、部分展開 = `min(画面/2, シート/2)`(Compose 現行フラグ、TODO 付き)は `skipPartiallyExpanded={false}` で opt-in(既定 true = 従来どおり、切替は v2 候補)、opt-in 時のハンドルは partial ↔ expanded のトグル** | なし(追加) | 決定(2026-10-13) |
+| B31 | #434 | Select(exposed dropdown menu・非編集) | **専用の `<Select>` + `<Option>` 子要素、`value` / `defaultValue` / `onChange(event, value)`、APG select-only combobox + 隠しネイティブ input** | なし(追加) | 決定(2026-10-13・#434 フェーズ 1) |
+| B53 | #519 | Select のネイティブモード(`<select>`) | **`<Select native>` で同じフィールドの見た目のまま本物の `<select>` を描く。子は `<option>` / `<optgroup>`、`ref` / `className` / `style` はルート(A10)、`inputRef` と残りの属性は `<select>`、`onChange(event, value)` の `event` はネイティブの `ChangeEvent<HTMLSelectElement>`、ポップアップは OS のピッカー。型はオーバーロードで分岐。サイズは対象外** | なし(追加) | 決定(2026-10-16・#519) |
+| B38 | #440 | Tooltip の配置拡張・rich の既定位置・caret | **`placement` に `'start' \| 'end' \| 'left' \| 'right'`(論理値は RTL で反転、flip あり)、`placement` 未指定の rich は bottom-end の角 + 4 隅の動的配置、`caret?: boolean`(16×8dp)** | 既定値変更(rich の未指定時の位置) | 決定(2026-10-13・#440 の提案どおり) |
+| B32 | #441 | PullToRefresh(新規) | **自身がスクロールコンテナになる `<PullToRefresh refreshing onRefresh indicator disabled threshold>`、touch + pointer、reduced motion はフェードのみ、`aria-busy` + polite live region** | なし(追加) | 決定(2026-10-13・#441 の API 案をもとに確定) |
+| B33 | #435 | Menu の選択項目(単一 / 複数)・supporting text | **`MenuGroup selectionMode="single" \| "multiple"` + `value` / `defaultValue` / `onChange(event, value)`(single = `menuitemradio`、multiple = `menuitemcheckbox` で開いたまま)、`closeOnSelect`(group / item)、`MenuItem supportingText` / `selectedIcon`** | なし(追加。baseline の selected に色が付く) | 決定(2026-10-13・実装時に確定) |
+| B34 | #436 | Menu のサブメニューとコンテキストメニュー | **`MenuItem submenu={…}`(APG のサブメニュー操作、RTL 反転、ホバー意図 400ms、親メニューの横に flip 配置、見た目とモーションは md-sub-menu)+ `Menu anchorPosition={{ top, left }}`(`trigger` 省略可)と `onContextMenu` レシピ。`ContextMenu` ラッパーは作らない** | なし(追加) | 決定(2026-10-13・実装時に確定) |
+| B40 | #443 | Tabs のインラインアイコンとバッジ | **`Tab iconPosition="top" \| "start"`(MUI 名、既定 `'top'`)+ `badge={<Badge …/>}`(アイコン上 / テキストのみはラベルの後ろ、読み上げはラベルの後)** | なし(追加) | 決定(2026-10-13・#443 の API 案どおり) |
+| B39 | #442 | SearchBar の full-screen レイアウト | **`layout="docked" \| "fullscreen"`(既定 docked)、full-screen は Compose `ExpandedFullScreenContainedSearchBar`(contained)、戻るボタンの名前は `backLabel`** | なし(追加) | 決定(2026-10-13・#442 の API 案どおり) |
+| B37 | #439 | TextField のラベル位置(上置き・常時縮小) | **`labelPlacement?: 'floating' \| 'above'`(既定 `'floating'`)+ `shrinkLabel?: boolean`、DatePickerField も同名で素通し** | なし(追加) | 決定(2026-10-13・#439 の API 案どおり) |
+| B41 | #444 | 小さな構成の不足(FabMenu 配置・Toolbar elevation・dismissible drawer・Carousel 幅) | **FabMenu `horizontalAlignment`、Toolbar `disableElevation`、NavigationDrawer `variant="dismissible"`、Carousel `itemWidth` の JSDoc 修正** | なし(追加) | 決定(2026-10-13) |
+| B42 | #434 | Autocomplete(exposed dropdown menu・編集可) | **専用の `<Autocomplete>`、`options` 配列か `<Option>` 子要素、`value` / `inputValue` の二系統(各 controlled / uncontrolled)、`freeSolo` / `filterOptions` / `noOptionsText`、APG list autocomplete、listbox / Option は Select と共有** | なし(追加) | 決定(2026-10-13・#434 フェーズ 2)。追補(2026-10-16・#517): `clearOnEscape`(既定 false) |
+| B43 | #444 | TimePicker の vibrant・横向き・スクロールホイール | **`variant="standard" \| "vibrant"`、`orientation="vertical" \| "horizontal"`(dial のみ)、`mode="scroll"`(Compose `TimeScroll`)+ 公開 `ScrollField`(APG spinbutton)** | なし(追加) | 決定(2026-10-13) |
+| B44 | #444 | TextField / Select の tonal・secure field・VerticalDragHandle | **TextField / Select `tonal?: boolean`(`@experimental`、Compose `tonalColors()` + `roundedShape`)、secure field はレシピ(`type="password"` + `IconButton toggle`、名前固定 + `aria-pressed`)、新規 `DragHandle`(APG window splitter、`value` / `onChange(event, value)` / `min` / `max` / `step` / `paneSide`)** | なし(追加) | 決定(2026-10-13) |
+| B45 | #494 | モーダル面の重なり順(top layer) | **Dialog / BottomSheet(modal)/ SideSheet(modal)/ NavigationDrawer(modal)/ NavigationRail(modal)/ modal DatePicker・TimePicker を開いている間 Popover API の top layer に置く(`popover="manual"` + `showPopover()`、開くたびに最上位へ、閉じる motion の間は残す)。DOM 位置は不変。Snackbar host も表示中は top layer に置き、modal の後に再 show して上を保つ。Popover API がなければ従来の z-index** | なし(内部・見た目不変) | 決定(2026-10-15) |
+| B46 | #495 | Dialog のスクロール領域と幅 | **本文(supporting content)だけをスクロールコンテナにし、icon / headline / actions(full-screen は上部バー)を固定。幅はホスト CSS 変数 `--md-dialog-container-min-width` / `--md-dialog-container-max-width`(既定 280px / 560px)。divider は足さない** | なし(はみ出さない限り見た目不変) | 決定(2026-10-15) |
+| B48 | #498 | TextField 系の `label` / `supportingText` / `errorText` をリッチ内容に | **TextField / Select / Autocomplete / DatePickerField の `label` / `supportingText` / `errorText`(DatePickerField は `getErrorLabel` の戻り値)を `ReactNode` に拡張。名前・説明の配線と notch の実測は従来の仕組みのまま、文字列のときの DOM と見た目は不変。m3 の内容指針(ラベルは短く 1 行、supporting text のリンクは短く)を JSDoc と docs に記載** | なし(型の拡張) | 決定(2026-10-15) |
+| B49 | #499 | Tabs のリンクタブ・TabPanel・コンテナ色 | **`Tab href` → `<a role="tab">`(見た目・手動アクティベーション・`value` による選択は同じ、遷移は横取りしない、`aria-current` は付けない)+ `TabContext` / `TabPanel value`(APG Tabs の `id` / `aria-controls` / `aria-labelledby` 自動配線、非選択は `hidden`、パネルは `tabIndex=0`)+ ホスト変数 `--md-tabs-container-color`(既定 surface)。自動アクティベーションは実装しない** | なし(追加) | 決定(2026-10-15) |
+| B47 | #497 | Slider の操作終了イベント | **`onChangeCommitted(event, value)`(MUI 名)を追加。Compose `onValueChangeFinished` と同じ時機 — ポインタを離したとき(ドラッグ終了・タップ、1 回の操作で 1 回)、値を動かすキー(矢印・Home / End・PageUp / PageDown)の keyup ごと、支援技術による直接の値変更は即時(値が変わらなければ出さない)。single / range 共通、`onChange` は従来どおり連続** | なし(追加) | 決定(2026-10-15) |
+| B51 | #496 #501 #502 | フォーカス可能な無効ボタン・Menu `onAction`・Tooltip の表示遅延 | **いずれも実装しない(仕様に根拠なし)。代替手段をドキュメント化** | なし | 決定(2026-10-15) |
+| B54 | — | スクロール可能な Tabs のマウス操作 | **縦ホイールで横スクロール(m3 Foundations › Inputs)。横成分のあるホイールは変換せず、行が端に達したらページへ渡す。マウスのドラッグスクロールは採らない** | なし(追加) | 決定(2026-10-16) |
+| B55 | #530 #531 #532 #535 | Autocomplete の確定の意味論と `required` の扱い | **`onInputChange` に第 3 引数 `reason`(MUI と同じ語彙)、Enter はアクティブ option がなくても listbox が開いている間・未確定の文字がある間はフォームを送信せずラベルへ戻す、`disableClearable`(MUI 同名)で文字を消しても選択を保つ、`aria-required` 単独でネイティブ検証なしの必須表示** | なし(追加。Enter の送信抑止は不具合修正) | 決定(2026-11-07) |
+| B52 | #518 | Select / Autocomplete の listbox の見た目・`openOnFocus`・ラベル位置・option の supporting text・`freeSolo` の完全一致 | **listbox を m3 の select / autocomplete トークン(baseline menu: surface-container・4dp・48dp・label-large・選択は surface-container-highest の container のみ、チェックなし)に切替(SE1 / AC1 を置換)、`openOnFocus`(既定 false、Select / Autocomplete)、`labelPlacement` / `shrinkLabel`(B37 と同じ)、`Option supportingText`(body-small・on-surface-variant・`aria-describedby`、折り返し、幅はフィールドのまま)、`freeSolo` は打った文字列のまま(完全一致でも option を選ばない)** | 見た目(listbox)・`freeSolo` の完全一致の挙動 | 決定(2026-10-16) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
 
@@ -118,9 +118,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
   - 利点: 明示的・tree-shake しやすい・既存の prop 化済み部品と同じ形。欠点: アプリ全体を訳すには全箇所に渡す必要
 - **(b) `LocaleProvider`(または `ThemeProvider` の `localeText`)のみ**(MUI X の `localeText`)
   ```tsx
-  <LocaleProvider locale="ja-JP" text={jaJP}>
-    <App />
-  </LocaleProvider>
+  <LocaleProvider locale="ja-JP" text={jaJP}><App /></LocaleProvider>
   ```
   - 利点: 一括翻訳。欠点: 個別上書きができない、context 依存が全コンポーネントに入る
 - **(c) 両方: prop が正、Provider は既定値の供給源**(優先順位 prop > Provider > 英語既定)。MUI core も
@@ -233,7 +231,7 @@ TimePicker / Chip / Badge ほか。
 
 - **(a) expressive を既定 + `ThemeProvider motionScheme="standard"` で切替**
   ```tsx
-  <ThemeProvider motionScheme="standard">…</ThemeProvider> // 既定は 'expressive'
+  <ThemeProvider motionScheme="standard">…</ThemeProvider>  // 既定は 'expressive'
   ```
   spring トークンを `--md-sys-motion-spring-{fast|default|slow}-{spatial|effects}-{easing|duration}` の CSS 変数
   (CSS `linear()` で近似)として `tokens.css` に置き、ThemeProvider が `data-motion-scheme` で差し替える
@@ -401,20 +399,9 @@ Carousel 項目はストーリー追加でベースライン追加。対象: Car
 - **(a) `actions` スロットのみ**(Dialog の `actions?: ReactNode` と同じ形)
   ```tsx
   <Dialog open={open} onClose={close}>
-    <DatePicker
-      value={draft}
-      onChange={setDraft}
-      actions={
-        <>
-          <Button variant="text" onClick={close}>
-            Cancel
-          </Button>
-          <Button variant="text" onClick={() => save(draft)}>
-            OK
-          </Button>
-        </>
-      }
-    />
+    <DatePicker value={draft} onChange={setDraft}
+      actions={<><Button variant="text" onClick={close}>Cancel</Button>
+                 <Button variant="text" onClick={() => save(draft)}>OK</Button></>} />
   </Dialog>
   ```
   - 利点: 最小。欠点: 下書き/確定・Enter で確定・Cancel で戻す、を毎回利用者が書く。Dialog とピッカーの容器が二重になる
@@ -432,13 +419,8 @@ Carousel 項目はストーリー追加でベースライン追加。対象: Car
 - **(c) (b) + `open` を渡すとモーダル表示**(ピッカー自身が `useModal` でスクリム・フォーカストラップ・Escape を持つ。
   A3 のモーダル系に合わせて `onClose(reason)`)
   ```tsx
-  <DatePicker
-    open={open}
-    onClose={(reason) => setOpen(false)}
-    value={draft}
-    onChange={setDraft}
-    onAccept={save}
-  />
+  <DatePicker open={open} onClose={(reason) => setOpen(false)}
+    value={draft} onChange={setDraft} onAccept={save} />
   ```
   - 利点: Compose の `DatePickerDialog` 相当を 1 コンポーネントで(API 方針どおり、`DatePickerDialog` を別に作らない)。
     容器の二重化がない。欠点: 実装量が最大
@@ -531,9 +513,9 @@ SSR とハイドレーションで食い違う)か。
 - **(a) `SnackbarProvider` + `useSnackbar().show()`**(Compose `SnackbarHostState`、notistack `enqueueSnackbar`、
   MUI Toolpad `useNotifications` と同じ形)
   ```tsx
-  <SnackbarProvider>{app}</SnackbarProvider>;
-  const { show } = useSnackbar();
-  const result = await show({ message: "Deleted", actionLabel: "Undo" }); // 'action' | 'dismiss' | 'timeout'
+  <SnackbarProvider>{app}</SnackbarProvider>
+  const { show } = useSnackbar()
+  const result = await show({ message: 'Deleted', actionLabel: 'Undo' })  // 'action' | 'dismiss' | 'timeout'
   ```
   duration 既定: action ありは indefinite、なしは short(4000ms)。hover / フォーカス中はタイマー停止(WCAG 2.2.1)。
   live region は Provider が常設して中身だけ差し替え。閉じたら直前のフォーカスへ戻す
@@ -587,13 +569,7 @@ SSR とハイドレーションで食い違う)か。
 - トリガー(#261)
   - **(c) `persistent?: boolean`**(m3 の用語・Compose `isPersistent`)
     ```tsx
-    <Tooltip
-      variant="rich"
-      persistent
-      subhead="New"
-      text="…"
-      action={<Button variant="text">Learn more</Button>}
-    >
+    <Tooltip variant="rich" persistent subhead="New" text="…" action={<Button variant="text">Learn more</Button>}>
       <Button>Details</Button>
     </Tooltip>
     ```
@@ -702,19 +678,14 @@ Persistent ストーリーを追加。対象: Tooltip(TT2 #258 / TT7 #262 と同
 
 - **(a) ButtonGroup に選択モデルを追加**(MUI `ToggleButtonGroup` の `exclusive` / `value` / `onChange(event, value)` と同型)
   ```tsx
-  <ButtonGroup
-    variant="connected"
-    selectionMode="single"
-    value={view}
-    onChange={(e, v) => setView(v)}
-    selectionRequired
-  >
+  <ButtonGroup variant="connected" selectionMode="single" value={view}
+    onChange={(e, v) => setView(v)} selectionRequired>
     <Button value="day">Day</Button>
     <Button value="week">Week</Button>
   </ButtonGroup>
   ```
   `selectionMode: 'none'(既定) | 'single' | 'multiple'`。single は `role="radiogroup"` + 子 `role="radio"` / `aria-checked`
-  - 矢印キー(BGR6 / SegmentedButton SG1 の裁定と同じ)、multiple は `aria-pressed` のボタン群
+  + 矢印キー(BGR6 / SegmentedButton SG1 の裁定と同じ)、multiple は `aria-pressed` のボタン群
 - **(b) 別コンポーネント(`ToggleButtonGroup` 等)**
   - 利点: 責務が分かれる。欠点: m3 では ButtonGroup の構成であり、1 コンポーネント方針に反する
 - **(c) 現状維持 + ドキュメントで手配線を案内**
@@ -795,8 +766,7 @@ Compose が決める方針で Compose は存続しているが、m3 の推奨先
   - **(e) `ChipSet` を新設**(roving tabindex + 矢印キー、Home / End)
     ```tsx
     <ChipSet aria-label="Filters">
-      <Chip variant="filter" label="Open" />{" "}
-      <Chip variant="filter" label="Closed" />
+      <Chip variant="filter" label="Open" /> <Chip variant="filter" label="Closed" />
     </ChipSet>
     ```
   - **(f) 作らない**(各 chip が個別の Tab 停止のまま、レイアウトは利用者の flex)
@@ -828,12 +798,7 @@ m3 ラベル表の `gridcell` は remove ボタン付き input chip で 2 つの
 - (1) 選択モデル
   - **(a) `ChipSet` に B13(ButtonGroup)/ B17(List)と同じ形を追加**
     ```tsx
-    <ChipSet
-      aria-label="Size"
-      selectionMode="single"
-      value={size}
-      onChange={(e, v) => setSize(v)}
-    >
+    <ChipSet aria-label="Size" selectionMode="single" value={size} onChange={(e, v) => setSize(v)}>
       <Chip variant="filter" label="Small" value="s" />
       <Chip variant="filter" label="Medium" value="m" />
     </ChipSet>
@@ -892,12 +857,7 @@ Menu との合成が `trigger` だけで成り立つため。補足:
 
 - **(a) List レベルの選択モデル → `listbox` / `option`**
   ```tsx
-  <List
-    selectionMode="single"
-    value={id}
-    onChange={(e, v) => setId(v)}
-    aria-label="Account"
-  >
+  <List selectionMode="single" value={id} onChange={(e, v) => setId(v)} aria-label="Account">
     <ListItem value="a" headline="Personal" />
     <ListItem value="b" headline="Work" />
   </List>
@@ -926,7 +886,7 @@ Switch 等)は置けない旨を JSDoc に明記(それらは選択モードで�
 
 - **(a) Expressive の形を既定 + `variant="standard" | "segmented"`**(baseline に戻す手段は持たない)
   ```tsx
-  <List variant="segmented">…</List> // index / count は List が導出
+  <List variant="segmented">…</List>   // index / count は List が導出
   ```
 - **(b) baseline を既定、Expressive は opt-in(`expressive` prop 等)**
   - 利点: 既存の見た目が変わらない。欠点: m3 が非推奨とする方を既定にする
@@ -989,12 +949,7 @@ VRT: 既存なし、代替ボタンのストーリーを追加。対象: SwipeTo
 - **(c) 方向別の静的スロット `startToEndBackground` / `endToStartBackground`**(既存 `enableStartToEnd` / `enableEndToStart`
   と同じ語)+ (b) の CSS フック
   ```tsx
-  <SwipeToDismiss
-    startToEndBackground={<ArchiveBg />}
-    endToStartBackground={<DeleteBg />}
-  >
-    …
-  </SwipeToDismiss>
+  <SwipeToDismiss startToEndBackground={<ArchiveBg />} endToStartBackground={<DeleteBg />}>…</SwipeToDismiss>
   ```
 
 **推奨**: **(c)**(`background` は両側共通の既定として残す)。理由: 典型用途(左右で別アクション)を宣言的に書け、
@@ -1038,12 +993,7 @@ VRT: 既存なし、代替ボタンのストーリーを追加。対象: SwipeTo
 
 - **(a) `selectedIcon?: ReactNode`**(Switch / IconButton と同名。未指定は `icon` にフォールバック)
   ```tsx
-  <NavigationBarItem
-    value="home"
-    icon={<HomeOutlined />}
-    selectedIcon={<Home />}
-    label="Home"
-  />
+  <NavigationBarItem value="home" icon={<HomeOutlined />} selectedIcon={<Home />} label="Home" />
   ```
 - **(b) render 関数 `icon={(selected) => …}`**(Compose のラムダに近い)
   - 利点: 柔軟。欠点: A5 で維持した `selectedIcon` の慣習と不一致
@@ -1094,15 +1044,7 @@ NavigationRail/*)。対象: NavigationBar / NavigationRail。
 - (2) サイズ・配色
   - **(d) `size?: 'regular' | 'medium' | 'large'`(Fab の語彙、A1)+ `tonal?: boolean`(A6、既定 true)**
     ```tsx
-    <FabMenu
-      size="large"
-      color="primary"
-      tonal={false}
-      ariaLabel="Create"
-      icon={<Add />}
-    >
-      …
-    </FabMenu>
+    <FabMenu size="large" color="primary" tonal={false} ariaLabel="Create" icon={<Add />}>…</FabMenu>
     ```
   - **(e) 56dp 固定のまま**
 
@@ -1173,12 +1115,7 @@ A4 の controlled / uncontrolled とも合うため。
   色 on-surface-variant)は全案共通
 
 ```tsx
-<TopAppBar
-  variant="large"
-  title="Inbox"
-  subtitle="3 unread"
-  titleAlignment="center"
-/>
+<TopAppBar variant="large" title="Inbox" subtitle="3 unread" titleAlignment="center" />
 ```
 
 **推奨**: **(b) + (c) + `subtitle`**。理由: Expressive ライブラリとして仕様の推奨を既定にすべきで、配置は m3 / Compose とも
@@ -1209,7 +1146,7 @@ subtitle / centered ストーリー追加(`update-vrt-baselines`)。対象: TopA
 - **状態**: 決定(2026-10-07・#393 の API 案どおり。実装時に補足事項を確定)
 - **背景**: m3 の app bar 4 種のうち Search app bar だけがない。m3「search field instead of heading text」「icons inside and
   outside」「centered text」「opens the search view」。Compose は `AppBarWithSearch(state, inputField, navigationIcon,
-actions, colors, scrollBehavior)`(SearchBar.kt)で、入力欄は `SearchBarDefaults.InputField`、展開は別の
+  actions, colors, scrollBehavior)`(SearchBar.kt)で、入力欄は `SearchBarDefaults.InputField`、展開は別の
   `ExpandedDockedSearchBarWithGap` / `ExpandedFullScreenContainedSearchBar` に同じ `SearchBarState` を渡す。
 
 **選択肢**
@@ -1321,9 +1258,7 @@ SearchBar。数値と裁定は docs/audits/appbar.md「Search app bar」節。
 - ラベル
   - **(a) visually-hidden テキストで既定英語ラベル + `label` で上書き**(可視の数字は `aria-hidden`)
     ```tsx
-    <Badge value={8} label="新着 8 件">
-      …
-    </Badge> // 既定: "New notification" / "8 new notifications"
+    <Badge value={8} label="新着 8 件">…</Badge>   // 既定: "New notification" / "8 new notifications"
     ```
   - **(b) Badge は `aria-hidden`、ラベルはアンカー側(IconButton の `aria-label`)で利用者が付ける**(MUI ドキュメントの流儀)
     - 利点: 読み上げが 1 つにまとまる。欠点: 既定で何も伝わらず、利用者が忘れやすい
@@ -1423,7 +1358,6 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 (size container + clip)も opt-in 時と standard だけに効かせ、既定の modal シートの描画は変えない。VRT: Default は
 不変、PartiallyExpanded / Expanded / ControlledDetent / Standard を追加。対象: BottomSheet。
 数値と裁定は docs/audits/modal-overlays.md「BottomSheet の standard variant と detent」節。
-
 ## フォーム入力
 
 ### B31: Select(exposed dropdown menu・非編集)
@@ -1439,19 +1373,9 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 
 - **(a) 専用の `<Select>` + `<Option>` 子要素**(MUI `Select` + `MenuItem`、Base UI / React Aria の `Select` + `Option` 形)
   ```tsx
-  <Select
-    label="Fruit"
-    variant="outlined"
-    name="fruit"
-    value={v}
-    onChange={(event, value) => setV(value)}
-  >
-    <Option value="apple" startIcon={<Icon />}>
-      Apple
-    </Option>
-    <Option value="cherry" disabled>
-      Cherry
-    </Option>
+  <Select label="Fruit" variant="outlined" name="fruit" value={v} onChange={(event, value) => setV(value)}>
+    <Option value="apple" startIcon={<Icon />}>Apple</Option>
+    <Option value="cherry" disabled>Cherry</Option>
   </Select>
   ```
   - 利点: 役割(combobox / listbox / option)と prop が素直に対応し、型も Select 専用にできる(`value: string`、
@@ -1475,7 +1399,7 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 - **`Option`**: `value`(必須)、`disabled`、`startIcon`、`children`(ラベル。選択後はフィールドにそのまま表示)。
   `Select` の直下か Fragment の中に置く
 - **フィールド**: TextField の見た目(`TextField.module.css`)を共有し、DOM は Select 側で組む(APG どおり `<div
-role="combobox">` にするため。readOnly の `<input>` にすると「読み取り専用」と読まれる)。末尾の `ArrowDropDown` は
+  role="combobox">` にするため。readOnly の `<input>` にすると「読み取り専用」と読まれる)。末尾の `ArrowDropDown` は
   開いている間 180° 回転(Compose `TrailingIcon`)
 - **a11y**: WAI-ARIA APG select-only combobox。フォーカスは開いても combobox に残し、`aria-activedescendant` で
   アクティブな option を示す。キー操作(矢印・Home / End・PageUp / PageDown・typeahead・Enter / Space・Alt+↑・
@@ -1605,7 +1529,7 @@ role="combobox">` にするため。readOnly の `<input>` にすると「読み
 - **`Option`**: Select と同じ部品(`src/internal/listbox` に移した)。`textValue?: string` を追加: 入力欄に入る
   文字列と絞り込みの対象(既定は children のテキスト)。Select では無視
 - **a11y**: WAI-ARIA APG editable combobox with list autocomplete(自動選択なし)。`<input role="combobox"
-aria-autocomplete="list" aria-expanded aria-controls aria-activedescendant>`、フォーカスは常に input。
+  aria-autocomplete="list" aria-expanded aria-controls aria-activedescendant>`、フォーカスは常に input。
   入力で開き(アクティブ option なし)、↓ / ↑ で開く・移動(端で折り返す)、Alt+↓ はアクティブなしで開く、
   Enter はアクティブな option を確定、Escape は開いていれば閉じ、閉じていれば入力と値をクリア(APG)。
   Compose `SecondaryEditable` に合わせ、末尾の矢印は `tabindex="-1"` の `<button>`(`aria-expanded`)。
@@ -1797,7 +1721,6 @@ clears)。MUI `Autocomplete` も `clearOnEscape`(既定 `false`)で opt-in に�
 - 既定(`'floating'`、`shrinkLabel` なし)の DOM・CSS は不変(既存ストーリーはピクセル同一)
 
 **影響**: 非破壊(追加 prop のみ)。VRT: `LabelAbove` / `ShrinkLabel` ストーリー追加。対象: TextField, DatePickerField。
-
 ## ジェスチャー
 
 ### B32: PullToRefresh(新規コンポーネント)
@@ -1807,7 +1730,7 @@ clears)。MUI `Autocomplete` も `clearOnEscape`(既定 `false`)で opt-in に�
 - **背景**: m3 loading-indicator overview は「Used for pull-to-refresh interactions」「Loading indicators are used in the
   pull-to-refresh behavior」とし、本ライブラリの LoadingIndicator(contained・determinate)はそのために存在するが、
   pull-to-refresh 本体がなかった。Compose は `PullToRefreshBox(isRefreshing, onRefresh, state, indicator, enabled,
-threshold, content)` + `Modifier.pullToRefresh`(nested scroll で子のスクロールの余りを受け取る)と、
+  threshold, content)` + `Modifier.pullToRefresh`(nested scroll で子のスクロールの余りを受け取る)と、
   `PullToRefreshDefaults.Indicator`(円形矢印)/ `LoadingIndicator`(Expressive・`ContainedLoadingIndicator`)の 2 種。
   数値は docs/specs/pull-to-refresh.md。
 
@@ -1815,11 +1738,7 @@ threshold, content)` + `Modifier.pullToRefresh`(nested scroll で子のスクロ
 
 - **(a) 自身がスクロールコンテナになる `<PullToRefresh>`**(採用)
   ```tsx
-  <PullToRefresh
-    refreshing={loading}
-    onRefresh={reload}
-    style={{ height: 480 }}
-  >
+  <PullToRefresh refreshing={loading} onRefresh={reload} style={{ height: 480 }}>
     <List>{items}</List>
   </PullToRefresh>
   ```
@@ -1836,14 +1755,14 @@ threshold, content)` + `Modifier.pullToRefresh`(nested scroll で子のスクロ
 
 API:
 
-| prop              | 型 / 既定                               | 内容                                                                                                                                                                                                |
-| ----------------- | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `refreshing`      | `boolean`(省略可)                       | Compose `isRefreshing`。controlled。省略時は `onRefresh` が返す Promise の解決まで refreshing(uncontrolled — A4)                                                                                    |
-| `onRefresh`       | `() => void \| Promise<unknown>`        | しきい値を超えて離したときに呼ぶ                                                                                                                                                                    |
-| `indicator`       | `'loading' \| 'circular'` / `'loading'` | `loading` = `PullToRefreshDefaults.LoadingIndicator`(48dp・contained・Level0)、`circular` = `Indicator`(40dp・surfaceContainerHigh・Level2・矢印 → スピナー)。既定は Expressive 側(B2 と同じ考え方) |
-| `disabled`        | `boolean` / `false`                     | Compose `enabled = false`。進行中の refreshing 表示は残す                                                                                                                                           |
-| `threshold`       | `number` / `80`                         | px。Compose `PositionalThreshold` 80dp。指の移動量 × 0.5(`DragMultiplier`)がこれを**超えた**ら発火                                                                                                  |
-| `refreshingLabel` | `string` / `'Refreshing'`               | live region の文言(B1: prop ごとのラベル)                                                                                                                                                           |
+| prop | 型 / 既定 | 内容 |
+|---|---|---|
+| `refreshing` | `boolean`(省略可) | Compose `isRefreshing`。controlled。省略時は `onRefresh` が返す Promise の解決まで refreshing(uncontrolled — A4) |
+| `onRefresh` | `() => void \| Promise<unknown>` | しきい値を超えて離したときに呼ぶ |
+| `indicator` | `'loading' \| 'circular'` / `'loading'` | `loading` = `PullToRefreshDefaults.LoadingIndicator`(48dp・contained・Level0)、`circular` = `Indicator`(40dp・surfaceContainerHigh・Level2・矢印 → スピナー)。既定は Expressive 側(B2 と同じ考え方) |
+| `disabled` | `boolean` / `false` | Compose `enabled = false`。進行中の refreshing 表示は残す |
+| `threshold` | `number` / `80` | px。Compose `PositionalThreshold` 80dp。指の移動量 × 0.5(`DragMultiplier`)がこれを**超えた**ら発火 |
+| `refreshingLabel` | `string` / `'Refreshing'` | live region の文言(B1: prop ごとのラベル) |
 
 挙動:
 
@@ -1867,7 +1786,6 @@ API:
 
 **影響**: 非破壊(新規コンポーネント・新しい subpath `m3-expressive-react/PullToRefresh`)。VRT: `Components/PullToRefresh` の
 Default / Refreshing / Circular を追加。
-
 ## Menu
 
 ### B33: Menu の選択項目(単一 / 複数)と supporting text
@@ -1884,22 +1802,9 @@ Default / Refreshing / Circular を追加。
 
 - **(a) `MenuGroup` に選択モデル**(B13 ButtonGroup と同型)
   ```tsx
-  <MenuGroup
-    label="Sort by"
-    selectionMode="single"
-    value={sort}
-    onChange={(e, v) => setSort(v)}
-  >
-    <MenuItem value="name" selectedIcon={<CheckIcon />}>
-      Name
-    </MenuItem>
-    <MenuItem
-      value="date"
-      selectedIcon={<CheckIcon />}
-      supportingText="Newest first"
-    >
-      Date
-    </MenuItem>
+  <MenuGroup label="Sort by" selectionMode="single" value={sort} onChange={(e, v) => setSort(v)}>
+    <MenuItem value="name" selectedIcon={<CheckIcon />}>Name</MenuItem>
+    <MenuItem value="date" selectedIcon={<CheckIcon />} supportingText="Newest first">Date</MenuItem>
   </MenuGroup>
   ```
   - 利点: radio の集合が `role="group"` 単位で支援技術に伝わる(APG の menuitemradio はグループ内で排他)。B13 / B17 と
@@ -2149,7 +2054,6 @@ Default / Refreshing / Circular を追加。
 従来の値のまま(既存ストーリーはピクセル不変 — 変更前後の Storybook を同じブラウザで撮って一致を確認)。VRT:
 `Components/TimePicker` の Vibrant / VibrantInputMode / Horizontal / VibrantHorizontal / ScrollMode / VibrantScrollMode、
 `Components/ScrollField` の Default / CustomRange / Disabled を追加。対象: TimePicker、ScrollField(新規)。
-
 ### B44: TextField / Select の tonal スタイル・secure field・VerticalDragHandle(#444 の残り)
 
 - **Issue**: #444(トラッキング。TimePicker のホイール / vibrant / 横向きと ScrollField は別途。#444 は開いたまま)
@@ -2361,6 +2265,7 @@ textfield 監査(docs/audits/textfield.md 軽微欄)の「機能追加の候補�
 **影響**: 非破壊(prop の追加のみ。既存ストーリーは DOM・CSS とも不変)。VRT: `Components/Tabs` の LeadingIcons /
 WithBadges を追加。対象: Tab(Badge は内部ヘルパーへの切り出しのみ、出力不変)。
 
+
 ### B49: Tabs のリンクタブ(navigation tab)・TabPanel・コンテナ色
 
 - **Issue**: #499(下流アプリ dd_redesign からの報告。docs/audits/tabs.md 軽微欄「tabpanel との関連付け」の後続)
@@ -2488,7 +2393,6 @@ docs/audits/tabs.md の「tabpanel との関連付け」は本裁定で置換(�
 `ChangeCommitted`(確定値の表示)を追加。対象: Slider。
 
 ---
-
 ### B51: 仕様に根拠がないため見送る要望(#496・#501・#502)
 
 - **Issue**: #496・#501・#502(利用側アプリの報告 docs/redesign/07-md3.md §7 由来)
@@ -2572,7 +2476,7 @@ docs/audits/tabs.md の「tabpanel との関連付け」は本裁定で置換(�
    開いている間は body スクロールがロックされているので矩形はずれない。リサイズでは測り直す)。閉じるときは畳む
    motion(DefaultSpatial)が終わるまで残す
 5. **UA の `[popover]` スタイルを打ち消す**: `margin: auto` / `border` / `padding` / `inset: 0` / `width` / `height:
-fit-content` / `overflow: auto` / `color: CanvasText` / `background-color: Canvas` / 非表示時の `display: none` を
+   fit-content` / `overflow: auto` / `color: CanvasText` / `background-color: Canvas` / 非表示時の `display: none` を
    各 root(rail は scrim / surface)の基本ルールで明示的に上書きし、top layer の内外でピクセル同一にする
 6. **Popover API がない環境**は従来どおり `z-index: var(--md-sys-z-modal)` の重なり(トークンはフォールバックとして残す)
 7. **Snackbar は modal の上**(z-index の scale `modal < snackbar` と同じ順、`data-md-modal-exempt` で操作可能のまま):
@@ -2603,7 +2507,7 @@ full-screen / SideSheet / BottomSheet のデモ)は不要になったので外�
   任意で、**スクロール時だけ出す規則はない**。specs: basic の幅は **min 280dp / max 560dp**、full-screen は max 560dp。
   **任意の幅は規定なし**。full-screen は compact の画面幅向け
 - Compose androidx-main `AlertDialog`: `BasicAlertDialog` が `sizeIn(minWidth = DialogMinWidth, maxWidth =
-DialogMaxWidth)`(AlertDialog.kt:147、280dp / 560dp は :409–412)。呼び出し側の `modifier` は `sizeIn` より前に
+  DialogMaxWidth)`(AlertDialog.kt:147、280dp / 560dp は :409–412)。呼び出し側の `modifier` は `sizeIn` より前に
   付くので、範囲内で狭めることはできる。中身は Column で icon → title → text → buttons、**text の Box だけが
   `weight(1f, fill = false)`**(:357–358)で縮み、title と buttons は固定。スクロールは呼び出し側が text の中に
   `verticalScroll` を置く。divider の処理はない
@@ -2674,7 +2578,7 @@ DialogMaxWidth)`(AlertDialog.kt:147、280dp / 560dp は :409–412)。呼び出�
   suggestion is selected in the popup, accepts the suggestion」、アクティブな候補がない場合の規定は **なし**。
   「users can … press escape, which closes the popup or menu without changing previous input」。MUI `Autocomplete` —
   `onInputChange(event, value, reason)` の `reason` は `"input" | "reset" | "clear" | "blur" | "selectOption" |
-"removeOption"`、`disableClearable`「If true, the input can't be cleared」、`clearOnBlur`(既定 `!freeSolo`)
+  "removeOption"`、`disableClearable`「If true, the input can't be cleared」、`clearOnBlur`(既定 `!freeSolo`)
   「the input's text is cleared on blur if no value is selected」。React Aria `ComboBox` は listbox が開いている間の Enter
   を常に消費し(フォーム送信の防止)、`allowsCustomValue` なしでは blur / Escape で選択中の item の文字へ戻す
 
