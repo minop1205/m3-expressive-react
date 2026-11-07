@@ -16,6 +16,10 @@
   assistive technology (and shows the `*`) without the native constraint, for
   apps that validate by themselves (B55, #535).
 
+- **Select** `native`: `labelPlacement="above"` / `shrinkLabel`, as on the
+  listbox Select and Autocomplete, so a form that mixes native selects with
+  other fields can place every label the same way (B53 addendum, #534).
+
 ### Fixed
 
 - **Autocomplete**: Enter with the list open and no active option no longer
