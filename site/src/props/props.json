@@ -108,8 +108,15 @@
   ]
  },
  "Autocomplete": {
-  "description": "Material Design 3 Autocomplete — the editable exposed dropdown menu\n(Compose `ExposedDropdownMenuBox` + an editable `TextField` with the\n`PrimaryEditable` anchor and a `SecondaryEditable` trailing icon, as in\n`EditableExposedDropdownMenuSample`). m3 menus guidelines: \"A menu can\ninclude a text field to filter options. This pattern is also known as\nautocomplete.\"\n\nThe field is the `TextField` anatomy with a real text `<input>`; typing\nfilters the listbox, which is the one `Select` uses (top layer, field\nwidth, the m3 select / autocomplete menu tokens — B52). Options that\nstay ease into their new position as the list is filtered (DefaultSpatial;\nnone under reduced motion).\n\nAccessibility follows the WAI-ARIA APG editable combobox with list\nautocomplete: the input is `role=\"combobox\"` with `aria-autocomplete=\"list\"`\nand keeps focus while the listbox is open; the active option is exposed\nthrough `aria-activedescendant`. ArrowDown / ArrowUp open and move (wrapping),\nAlt+ArrowDown opens without moving, Enter picks the active option (or\ncommits the text with `freeSolo`), Escape closes the listbox (consumed, so an\nenclosing Dialog stays open) and, when it is already closed, clears the field\nwith `clearOnEscape` — else it is left to enclosing handlers. Typing opens the listbox without\nactivating an option. The trailing arrow is a button (`tabindex=\"-1\"`) that\ntoggles the listbox.\n\nA visually hidden native `<input>` carries `name` / `value` for form\nsubmission, `required` validation, and form reset.",
+  "description": "Material Design 3 Autocomplete — the editable exposed dropdown menu\n(Compose `ExposedDropdownMenuBox` + an editable `TextField` with the\n`PrimaryEditable` anchor and a `SecondaryEditable` trailing icon, as in\n`EditableExposedDropdownMenuSample`). m3 menus guidelines: \"A menu can\ninclude a text field to filter options. This pattern is also known as\nautocomplete.\"\n\nThe field is the `TextField` anatomy with a real text `<input>`; typing\nfilters the listbox, which is the one `Select` uses (top layer, field\nwidth, the m3 select / autocomplete menu tokens — B52). Options that\nstay ease into their new position as the list is filtered (DefaultSpatial;\nnone under reduced motion).\n\nAccessibility follows the WAI-ARIA APG editable combobox with list\nautocomplete: the input is `role=\"combobox\"` with `aria-autocomplete=\"list\"`\nand keeps focus while the listbox is open; the active option is exposed\nthrough `aria-activedescendant`. ArrowDown / ArrowUp open and move (wrapping),\nAlt+ArrowDown opens without moving, Enter picks the active option (or\ncommits the text with `freeSolo`; with none active and no `freeSolo` it\nsettles the text back to the selected label and never submits a form while\nthe listbox is open, B55), Escape closes the listbox (consumed, so an\nenclosing Dialog stays open) and, when it is already closed, clears the field\nwith `clearOnEscape` — else it is left to enclosing handlers. Typing opens the listbox without\nactivating an option. The trailing arrow is a button (`tabindex=\"-1\"`) that\ntoggles the listbox.\n\nA visually hidden native `<input>` carries `name` / `value` for form\nsubmission, `required` validation, and form reset.",
   "props": [
+   {
+    "name": "aria-required",
+    "type": "boolean | \"true\" | \"false\"",
+    "required": false,
+    "defaultValue": null,
+    "description": "Marks the field required for assistive technology (and shows the `*`) without native validation (B55)."
+   },
    {
     "name": "autoFocus",
     "type": "boolean",
@@ -151,6 +158,13 @@
     "required": false,
     "defaultValue": "''",
     "description": "Uncontrolled initial value."
+   },
+   {
+    "name": "disableClearable",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Keep the selection while the text is edited: emptying the input no longer\nclears the value, and leaving the field, Enter with no active option, or\nEscape with the listbox closed return the text to the selected option's\nlabel — the value changes only by picking an option (B55, MUI\n`disableClearable`). No effect with `freeSolo`."
    },
    {
     "name": "disabled",
@@ -259,10 +273,10 @@
    },
    {
     "name": "onInputChange",
-    "type": "((event: SyntheticEvent<Element, Event>, inputValue: string) => void)",
+    "type": "((event: SyntheticEvent<Element, Event>, inputValue: string, reason: AutocompleteInputChangeReason) => void)",
     "required": false,
     "defaultValue": null,
-    "description": "Fires on every change of the input text: typing, picking an option, clearing, and the reset on blur."
+    "description": "Fires on every change of the input text: typing, picking an option,\nclearing, and the return to the selected label on blur / Enter. The\nthird argument tells which (`AutocompleteInputChangeReason`, B55) — e.g.\nskip `'selectOption'` to clear the field after a pick."
    },
    {
     "name": "onOpenChange",
@@ -304,7 +318,7 @@
     "type": "boolean",
     "required": false,
     "defaultValue": "false",
-    "description": "Requires a value for form submission (native constraint validation) and appends `*` to the label."
+    "description": "Requires a value for form submission (native constraint validation on the\nhidden input, `aria-required` on the combobox) and appends `*` to the\nlabel. For `aria-required` and the `*` without the native constraint — an\napp that validates by itself — pass `aria-required` instead of `required`\n(B55); `<form noValidate>` also keeps the browser's bubble away."
    },
    {
     "name": "shrinkLabel",
@@ -3246,11 +3260,25 @@
     "description": "Floating label (a `<label>` for the `<select>`). Rendered with a trailing\n`*` when `required`. Floats while focused or while the selected value is\nnot empty."
    },
    {
+    "name": "labelPlacement",
+    "type": "\"floating\" | \"above\"",
+    "required": false,
+    "defaultValue": "floating",
+    "description": "Where the label sits, as Select / TextField `labelPlacement` (B37 /\nB52 / B53 addendum): `'floating'` inside the container (the outlined\nvariant notches the border), `'above'` minimized above the container."
+   },
+   {
     "name": "onChange",
     "type": "((event: ChangeEvent<HTMLSelectElement, Element>, value: string) => void)",
     "required": false,
     "defaultValue": null,
     "description": "Fires on the native `change` event — with that event (so\n`event.target.value` works, as in MUI) and the new value (A2). Not fired\non form reset."
+   },
+   {
+    "name": "shrinkLabel",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Keep the floating label minimized even while the selected value is empty\n(as TextField `shrinkLabel`). No effect without a `label` or with\n`labelPlacement=\"above\"`."
    },
    {
     "name": "startIcon",
@@ -3356,6 +3384,13 @@
     "description": "Floating label (a `<label>` for the `<select>`). Rendered with a trailing\n`*` when `required`. Floats while focused or while the selected value is\nnot empty."
    },
    {
+    "name": "labelPlacement",
+    "type": "\"floating\" | \"above\"",
+    "required": false,
+    "defaultValue": "floating",
+    "description": "Where the label sits, as Select / TextField `labelPlacement` (B37 /\nB52 / B53 addendum): `'floating'` inside the container (the outlined\nvariant notches the border), `'above'` minimized above the container."
+   },
+   {
     "name": "native",
     "type": "true",
     "required": true,
@@ -3368,6 +3403,13 @@
     "required": false,
     "defaultValue": null,
     "description": "Fires on the native `change` event — with that event (so\n`event.target.value` works, as in MUI) and the new value (A2). Not fired\non form reset."
+   },
+   {
+    "name": "shrinkLabel",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": "false",
+    "description": "Keep the floating label minimized even while the selected value is empty\n(as TextField `shrinkLabel`). No effect without a `label` or with\n`labelPlacement=\"above\"`."
    },
    {
     "name": "startIcon",
