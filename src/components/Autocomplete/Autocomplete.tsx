@@ -67,6 +67,15 @@ export interface AutocompleteOptionItem {
   disabled: boolean
 }
 
+/**
+ * Why `onInputChange` fired (B55): `'input'` typing, `'selectOption'` an
+ * option was picked (its label), `'clear'` Escape cleared the field
+ * (`clearOnEscape`), `'blur'` the text returned to the selected option's
+ * label on leaving the field, `'reset'` it returned to that label otherwise
+ * (Enter with no active option, a scripted / autofilled hidden input).
+ */
+export type AutocompleteInputChangeReason = 'input' | 'selectOption' | 'clear' | 'blur' | 'reset'
+
 /** The second argument of `filterOptions`. */
 export interface AutocompleteFilterState {
   /** The text to filter by: `''` while the input still shows the committed value. */
@@ -123,8 +132,17 @@ export interface AutocompleteProps extends Omit<
    * `defaultValue` (or `defaultValue` itself with `freeSolo`).
    */
   defaultInputValue?: string
-  /** Fires on every change of the input text: typing, picking an option, clearing, and the reset on blur. */
-  onInputChange?: (event: SyntheticEvent, inputValue: string) => void
+  /**
+   * Fires on every change of the input text: typing, picking an option,
+   * clearing, and the return to the selected label on blur / Enter. The
+   * third argument tells which (`AutocompleteInputChangeReason`, B55) — e.g.
+   * skip `'selectOption'` to clear the field after a pick.
+   */
+  onInputChange?: (
+    event: SyntheticEvent,
+    inputValue: string,
+    reason: AutocompleteInputChangeReason,
+  ) => void
   /** Controlled open state of the listbox. */
   open?: boolean
   /** Uncontrolled initial open state. @default false */
@@ -153,6 +171,14 @@ export interface AutocompleteProps extends Omit<
    */
   clearOnEscape?: boolean
   /**
+   * Keep the selection while the text is edited: emptying the input no longer
+   * clears the value, and leaving the field, Enter with no active option, or
+   * Escape with the listbox closed return the text to the selected option's
+   * label — the value changes only by picking an option (B55, MUI
+   * `disableClearable`). No effect with `freeSolo`. @default false
+   */
+  disableClearable?: boolean
+  /**
    * Custom filtering. Receives every option and `{ inputValue }`; returns the
    * options to show, in order. The default keeps the options whose label
    * contains the text, ignoring case and accents.
@@ -177,8 +203,17 @@ export interface AutocompleteProps extends Omit<
   form?: string
   /** Disables the field (and leaves the value out of form submission). @default false */
   disabled?: boolean
-  /** Requires a value for form submission (native constraint validation) and appends `*` to the label. @default false */
+  /**
+   * Requires a value for form submission (native constraint validation on the
+   * hidden input, `aria-required` on the combobox) and appends `*` to the
+   * label. For `aria-required` and the `*` without the native constraint — an
+   * app that validates by itself — pass `aria-required` instead of `required`
+   * (B55); `<form noValidate>` also keeps the browser's bubble away.
+   * @default false
+   */
   required?: boolean
+  /** Marks the field required for assistive technology (and shows the `*`) without native validation (B55). */
+  'aria-required'?: boolean | 'true' | 'false'
   /** Error state — error colors, `aria-invalid`, and `errorText`. Ignored while `disabled`. @default false */
   error?: boolean
   /**
@@ -272,7 +307,9 @@ function fromOptionsProp(options: readonly AutocompleteOption[]): OptionData[] {
  * and keeps focus while the listbox is open; the active option is exposed
  * through `aria-activedescendant`. ArrowDown / ArrowUp open and move (wrapping),
  * Alt+ArrowDown opens without moving, Enter picks the active option (or
- * commits the text with `freeSolo`), Escape closes the listbox (consumed, so an
+ * commits the text with `freeSolo`; with none active and no `freeSolo` it
+ * settles the text back to the selected label and never submits a form while
+ * the listbox is open, B55), Escape closes the listbox (consumed, so an
  * enclosing Dialog stays open) and, when it is already closed, clears the field
  * with `clearOnEscape` — else it is left to enclosing handlers. Typing opens the listbox without
  * activating an option. The trailing arrow is a button (`tabindex="-1"`) that
@@ -304,6 +341,7 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
     openOnFocus = false,
     freeSolo = false,
     clearOnEscape = false,
+    disableClearable = false,
     filterOptions = defaultFilterOptions,
     noOptionsText,
     toggleLabel = 'Toggle dropdown menu',
@@ -324,8 +362,12 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledBy,
     'aria-describedby': ariaDescribedBy,
+    'aria-required': ariaRequired,
     ...rest
   } = useLocaleProps('Autocomplete', inProps)
+  // Required for assistive technology (and the `*`): `required`, or
+  // `aria-required` alone when the app validates by itself (B55, #535).
+  const requiredForAt = required || ariaRequired === true || ariaRequired === 'true'
   const autoId = useId()
   const inputId = providedId ?? `${autoId}-input`
   const labelId = `${autoId}-label`
@@ -393,10 +435,14 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
     latest.current.onOpenChange?.(next)
   }
 
-  const changeInput = (event: SyntheticEvent, next: string) => {
+  const changeInput = (
+    event: SyntheticEvent,
+    next: string,
+    reason: AutocompleteInputChangeReason,
+  ) => {
     if (next === inputValue) return
     setInputValue(next)
-    onInputChange?.(event, next)
+    onInputChange?.(event, next, reason)
   }
 
   const changeValue = (event: SyntheticEvent, next: string) => {
@@ -421,13 +467,16 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
     const option = filtered[index]
     if (!option || option.disabled) return
     changeValue(event, option.value)
-    changeInput(event, option.label)
+    changeInput(event, option.label, 'selectOption')
     setDirty(false)
     close()
   }
 
-  /** Leaves the field with the text in a consistent state (blur / Tab). */
-  const commitText = (event: SyntheticEvent) => {
+  /**
+   * Settles typed text: on leaving the field (`'blur'`) or on Enter with no
+   * active option (`'reset'`, B55).
+   */
+  const commitText = (event: SyntheticEvent, reason: 'blur' | 'reset') => {
     if (!dirty) return
     setDirty(false)
     if (freeSolo) {
@@ -436,7 +485,7 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
       changeValue(event, inputValue)
     } else {
       // Not an option: the text returns to the selected option's label.
-      changeInput(event, labelOf(value))
+      changeInput(event, labelOf(value), reason)
     }
   }
 
@@ -583,7 +632,18 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
           select(active, event)
           return
         }
-        if (freeSolo) commitText(event)
+        if (freeSolo) {
+          // Typed text becomes the value; the key keeps its default action,
+          // so a search form submits it (MUI).
+          commitText(event, 'reset')
+          if (open) close()
+          return
+        }
+        // No active option: the combobox still owns Enter while its popup is
+        // open (APG), and typed text that is not an option never submits —
+        // it returns to the selected label, as on blur (B55, #531).
+        if (popupVisible || dirty) event.preventDefault()
+        commitText(event, 'reset')
         if (open) close()
         return
       case 'Escape':
@@ -595,10 +655,17 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
         }
         // APG: Escape on a closed listbox "optionally clears" the textbox —
         // opt-in (MUI `clearOnEscape`), so by default the key propagates and
-        // an enclosing modal closes (B42 addendum, #517).
-        if (clearOnEscape && (inputValue !== '' || value !== '')) {
+        // an enclosing modal closes (B42 addendum, #517). With
+        // `disableClearable` the selection stays: edited text returns to its
+        // label instead (consumed only when there was something to revert).
+        if (disableClearable && !freeSolo) {
+          if (dirty && inputValue !== labelOf(value)) {
+            event.preventDefault()
+            commitText(event, 'reset')
+          }
+        } else if (clearOnEscape && (inputValue !== '' || value !== '')) {
           event.preventDefault()
-          changeInput(event, '')
+          changeInput(event, '', 'clear')
           changeValue(event, '')
           setDirty(false)
         }
@@ -616,12 +683,13 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const next = event.target.value
-    changeInput(event, next)
+    changeInput(event, next, 'input')
     setDirty(true)
     setActiveIndex(-1)
     setKeyboardActive(false)
-    // Clearing the text clears the selection (MUI).
-    if (next === '' && !freeSolo) changeValue(event, '')
+    // Clearing the text clears the selection (MUI) — unless the selection is
+    // kept until a pick (`disableClearable`, B55).
+    if (next === '' && !freeSolo && !disableClearable) changeValue(event, '')
     setOpen(true)
   }
 
@@ -656,7 +724,7 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
 
   const handleBlur = (event: FocusEvent<HTMLInputElement>) => {
     setFocused(false)
-    commitText(event)
+    commitText(event, 'blur')
     close()
   }
 
@@ -676,7 +744,7 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
   const labelText = label ? (
     <>
       {label}
-      {required && <span aria-hidden="true">*</span>}
+      {requiredForAt && <span aria-hidden="true">*</span>}
     </>
   ) : undefined
 
@@ -777,7 +845,7 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
               aria-label={ariaLabel}
               aria-labelledby={labelledBy}
               aria-describedby={describedBy}
-              aria-required={required || undefined}
+              aria-required={requiredForAt || undefined}
               aria-invalid={showError || undefined}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
@@ -828,7 +896,7 @@ export const Autocomplete = forwardRef<HTMLDivElement, AutocompleteProps>(functi
           const option = options.find((o) => o.value === next && !o.disabled)
           if (option || freeSolo) {
             changeValue(event, next)
-            changeInput(event, option ? option.label : next)
+            changeInput(event, option ? option.label : next, 'reset')
           }
         }}
         required={required}

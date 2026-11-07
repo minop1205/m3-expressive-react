@@ -176,3 +176,17 @@ Issue: NR1 → #176、NR2 → #177、NR3/NR4 → #178(どちらも expanded の�
 - memory にあった rail デモ動画(`2026-07-04_10h47_41.mp4`)は既に削除済みで、実測値(menu アイコンの回転・ラベルの
   出入りのタイミング)は実装とストーリーのコメントに残っている。今回は動画を使わず、Compose の式(alpha 4(p − 0.5)²)と
   比較した
+
+## 修正メモ: collapsed の rail が横にはみ出す(2026-11-07・#538)
+
+バグ修正(新規裁定なし)。collapsed(96dp)の間も各 item の expanded 用ラベル(`.labelExpanded`)は
+透明なままレイアウトに残り、rail の端(96dp)を越えて置かれる(開始端 68px + ラベル幅)。既定の `overflow: visible`
+では見えないが、短いウィンドウ向けに rail へ `overflow-y: auto` を付けると、CSS の規則で `overflow-x` も `auto` に
+なり、見えないラベルのために横スクロールバーが出る(実測 clientWidth 96 / scrollWidth 128–130)。
+m3 の collapsed rail は 96dp 幅でアイコン + その下のラベルだけを表示し、Compose も collapsed ではアイコン下の
+ラベルしか描かないので、横方向にはみ出す内容は仕様上存在しない。
+
+- `.rail` に `overflow-x: clip` を追加。`hidden` と違いスクロールコンテナにならないので、利用側の
+  `overflow-y: auto` はそのまま使え、block 方向は `visible` のまま。morph 中にラベルが補間中の rail 幅より
+  広くなる場面でも端で切れる
+- item のフォーカスリングは pill に沿って rail の内側に描かれるため切れない(実ブラウザで確認)

@@ -163,6 +163,40 @@ option is picked, and typeahead matches only the label.
 </Select>
 ```
 
+## Density
+
+m3 defines one option height (48dp) and body-small supporting text. Denser
+lists — a web adaptation — are set with CSS custom properties on the Select /
+Autocomplete root (`style` / `className`) or any ancestor; the listbox
+inherits them:
+
+| Custom property | Default |
+| --- | --- |
+| `--md-listbox-option-height` | `48px` |
+| `--md-listbox-option-supporting-text-size` | body-small size (`12px`) |
+| `--md-listbox-option-supporting-text-line-height` | body-small line height (`16px`) |
+
+<Demo>
+  <Select
+    label="Country"
+    defaultValue="jp"
+    style={{ '--md-listbox-option-height': '40px', '--md-listbox-option-supporting-text-size': '14px', '--md-listbox-option-supporting-text-line-height': '20px' }}
+  >
+    <Option value="jp" supportingText="Asia">Japan</Option>
+    <Option value="fr" supportingText="Europe">France</Option>
+    <Option value="br" supportingText="South America">Brazil</Option>
+  </Select>
+</Demo>
+
+```tsx
+<Select
+  label="Country"
+  style={{ '--md-listbox-option-height': '40px' } as React.CSSProperties}
+>
+  …
+</Select>
+```
+
 ## Label placement
 
 `labelPlacement` and `shrinkLabel` work as they do on
@@ -241,6 +275,9 @@ submitted with its `<form>` (or with the form that `form="id"` points to).
 uncontrolled Select back to its `defaultValue`. A `disabled` Select is not
 submitted. `inputRef` gives you that native input.
 
+To announce the field as required (with the `*`) without native validation,
+pass `aria-required` instead of `required`.
+
 export function FormDemo() {
   const [submitted, setSubmitted] = useState('—')
   return (
@@ -298,7 +335,10 @@ handy for plain forms and on mobile.
 - **The label** floats while the selected value is not empty (or while
   focused). An empty-value option, such as `<option value="" />`, counts as
   "nothing selected": the label rests in the field, and that option's text
-  shows like a placeholder only while focused.
+  shows like a placeholder only while focused. `labelPlacement="above"` and
+  `shrinkLabel` work as on the listbox Select, so a form can place every
+  label the same way (with `shrinkLabel` the empty option's text shows as
+  the placeholder).
 - There is no listbox, no `Option` icons, no `open` / `placeholder` props, and
   no `multiple`. The arrow does not rotate, because the page cannot tell when
   the OS picker is open.
@@ -317,6 +357,11 @@ handy for plain forms and on mobile.
     <option value="free">Free</option>
     <option value="pro">Pro</option>
     <option value="team">Team</option>
+  </Select>
+  <Select native label="Size" labelPlacement="above" name="size">
+    <option value="" />
+    <option value="s">Small</option>
+    <option value="m">Medium</option>
   </Select>
 </Demo>
 

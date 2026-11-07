@@ -78,6 +78,8 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B47 | #497 | Slider の操作終了イベント | **`onChangeCommitted(event, value)`(MUI 名)を追加。Compose `onValueChangeFinished` と同じ時機 — ポインタを離したとき(ドラッグ終了・タップ、1 回の操作で 1 回)、値を動かすキー(矢印・Home / End・PageUp / PageDown)の keyup ごと、支援技術による直接の値変更は即時(値が変わらなければ出さない)。single / range 共通、`onChange` は従来どおり連続** | なし(追加) | 決定(2026-10-15) |
 | B51 | #496 #501 #502 | フォーカス可能な無効ボタン・Menu `onAction`・Tooltip の表示遅延 | **いずれも実装しない(仕様に根拠なし)。代替手段をドキュメント化** | なし | 決定(2026-10-15) |
 | B54 | — | スクロール可能な Tabs のマウス操作 | **縦ホイールで横スクロール(m3 Foundations › Inputs)。横成分のあるホイールは変換せず、行が端に達したらページへ渡す。マウスのドラッグスクロールは採らない** | なし(追加) | 決定(2026-10-16) |
+| B55 | #530 #531 #532 #535 | Autocomplete の確定の意味論と `required` の扱い | **`onInputChange` に第 3 引数 `reason`(MUI と同じ語彙)、Enter はアクティブ option がなくても listbox が開いている間・未確定の文字がある間はフォームを送信せずラベルへ戻す、`disableClearable`(MUI 同名)で文字を消しても選択を保つ、`aria-required` 単独でネイティブ検証なしの必須表示** | なし(追加。Enter の送信抑止は不具合修正) | 決定(2026-11-07) |
+| B56 | #533 | Select / Autocomplete の listbox の密度 | **公開カスタムプロパティ `--md-listbox-option-height`(既定 48px)・`--md-listbox-option-supporting-text-size` / `-line-height`(既定 body-small)。m3 の値は既定のまま、密度は Web 適応の opt-in** | なし(追加) | 決定(2026-11-07) |
 | B52 | #518 | Select / Autocomplete の listbox の見た目・`openOnFocus`・ラベル位置・option の supporting text・`freeSolo` の完全一致 | **listbox を m3 の select / autocomplete トークン(baseline menu: surface-container・4dp・48dp・label-large・選択は surface-container-highest の container のみ、チェックなし)に切替(SE1 / AC1 を置換)、`openOnFocus`(既定 false、Select / Autocomplete)、`labelPlacement` / `shrinkLabel`(B37 と同じ)、`Option supportingText`(body-small・on-surface-variant・`aria-describedby`、折り返し、幅はフィールドのまま)、`freeSolo` は打った文字列のまま(完全一致でも option を選ばない)** | 見た目(listbox)・`freeSolo` の完全一致の挙動 | 決定(2026-10-16) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
@@ -1483,6 +1485,12 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 **影響**: 非破壊(`native` prop の追加。既定の Select は DOM・挙動・見た目とも不変)。VRT: Select に `Native` ストーリーを
 1 件追加。docs/specs/select.md に「Native mode」節を追加。
 
+**補遺(2026-11-07・#534)**: `<Select native>` にも listbox Select / Autocomplete と同じ **`labelPlacement`
+(`'floating' | 'above'`)/ `shrinkLabel`** を足す(B37 / B52 §3 の対応をそのまま広げる。m3 / Compose にネイティブ
+select はないので新たな仕様根拠はなく、同じフォーム内のフィールドのラベル位置を揃えるための Web 適応)。`above` は
+`<label htmlFor>` でコンテナの上に置き、コンテナはラベルなしのフィールドとして並ぶ。`shrinkLabel` ではラベルを縮小位置に
+固定し、空の option(`<option value="" />`)の文字を placeholder として見せる。
+
 ### B42: Autocomplete(exposed dropdown menu・編集可)
 
 - **Issue**: #434(フェーズ 2。フェーズ 1 の Select = B31 と listbox / option を共有)
@@ -2559,6 +2567,84 @@ full-screen / SideSheet / BottomSheet のデモ)は不要になったので外�
   - 行がその方向の端に達しているときは変換せず、ページの縦スクロールへ渡す
   - Ctrl+ホイール(ズーム)は対象外。RTL では向きを反転する
   - ホイール操作は「利用者のスクロール」として扱い、フォント読み込み後の再センタリング(#526)を止める
+
+### B55: Autocomplete の確定の意味論と `required` の扱い
+
+- **Issue**: #530 #531 #532 #535(下流アプリ dd_redesign の 1.6.0 での報告 §7 #27–#29・#32)
+- **状態**: 決定(2026-11-07)
+- **背景**: 4 点の要望。(1) `onInputChange` が option を選んだときにも発火し、理由が分からないので「選んで消す」
+  フィールドが作れない。(2) listbox が開いていてアクティブな option がないとき Enter がフォームを送信し、打ちかけの
+  文字が送られる。(3) `freeSolo` なしで文字を全部消すと即 `onChange('')` になり、blur / Escape で元の選択に戻せない。
+  (4) `required` がネイティブ検証を伴うので、自前で検証するアプリは `aria-required` だけを付けたい
+- **m3(優先 1)**: menus guidelines の autocomplete は「As someone types, the list of menu options filters」とあるだけで、
+  Enter・blur・消去・確定の時機は **指定なし**(B52 §5 と同じ)。text field の required は「The accessibility label must
+  include the required state」(B52 と同じ)
+- **Compose(優先 2)**: `ExposedDropdownMenuBox` + editable `TextField` は item のクリックでしか選ばず、文字の確定や
+  Enter・フォームの概念がない(B52 §5)。`required` に当たる API はない
+- **Web 規範**: WAI-ARIA APG combobox — textbox の Enter は「If the combobox is editable and an autocomplete
+  suggestion is selected in the popup, accepts the suggestion」、アクティブな候補がない場合の規定は **なし**。
+  「users can … press escape, which closes the popup or menu without changing previous input」。MUI `Autocomplete` —
+  `onInputChange(event, value, reason)` の `reason` は `"input" | "reset" | "clear" | "blur" | "selectOption" |
+  "removeOption"`、`disableClearable`「If true, the input can't be cleared」、`clearOnBlur`(既定 `!freeSolo`)
+  「the input's text is cleared on blur if no value is selected」。React Aria `ComboBox` は listbox が開いている間の Enter
+  を常に消費し(フォーム送信の防止)、`allowsCustomValue` なしでは blur / Escape で選択中の item の文字へ戻す
+
+**1. `onInputChange` の `reason`(#530)**
+
+- **決定**: 第 3 引数 `reason: AutocompleteInputChangeReason = 'input' | 'selectOption' | 'clear' | 'blur' | 'reset'`
+  を足す(MUI の語彙の部分集合。`removeOption` は複数選択がないので不要)。`'input'` = 入力、`'selectOption'` = option を
+  選んでラベルが入った、`'clear'` = `clearOnEscape` の Escape、`'blur'` = フィールドを離れて選択中のラベルへ戻った、
+  `'reset'` = それ以外でラベルへ戻った(アクティブ option なしの Enter、hidden input の autofill / スクリプト変更)。
+  引数の追加だけなので互換。「選んで消す」フィールドは `reason !== 'selectOption'` のときだけ `inputValue` に反映すればよい
+
+**2. アクティブな option がないときの Enter(#531・不具合修正)**
+
+- APG は規定しないが、「listbox が開いている間の Enter は combobox が扱う」(React Aria、ネイティブ `<select>` も開いている
+  間の Enter は送信しない)に従う
+- **決定**(`freeSolo` なし): アクティブな option がないときの Enter は、**listbox が開いているか、未確定の文字がある間は
+  `preventDefault`**(フォームを送信しない)し、文字を選択中の option のラベルへ戻して(blur と同じ、`reason: 'reset'`)
+  listbox を閉じる。文字が確定済みのラベルのままで listbox も閉じているときは Enter はそのまま(通常どおり送信される)。
+  option が 1 件も一致せず listbox が隠れている(`noOptionsText` なし)ときも、打ちかけの文字は送信しない
+- `freeSolo` は従来どおり: Enter は打った文字を値として確定し、キーの既定動作は止めない(検索フォームの Enter 送信、
+  MUI の単一 `freeSolo` と同じ)
+
+**3. 文字を消しても選択を保つ(#532)**
+
+- 既定(文字を全部消すと値も `''` になる)は MUI の既定(`disableClearable` なし)と同じなので **既定は変えない**
+- **決定**: **`disableClearable?: boolean`(既定 `false`、MUI と同名)**を足す。有効な間、値が変わるのは option を選んだとき
+  だけ: 文字を空にしても `onChange` は発火せず、blur / アクティブ option なしの Enter / listbox が閉じているときの Escape
+  で文字を選択中のラベルへ戻す(React Aria の `ComboBox` の挙動)。Escape は戻す文字があるときだけ消費し(それ以外は
+  B42 補遺どおり伝播して Dialog が閉じる)、`clearOnEscape` を併用しても値は消さない。`freeSolo` では効果なし
+  (打った文字がそのまま値になる)
+
+**4. ネイティブ検証なしの必須(#535)**
+
+- HTML の規範的な回答は `<form noValidate>`(検証バブルを止め、`:invalid` / `aria-required` は残る)だが、同じフォームの
+  ほかの項目でネイティブ検証を使いたい場合もある
+- **決定**: Autocomplete と Select(listbox)で **`aria-required` prop を受け取り、`role="combobox"` の要素に付けて
+  ラベル末尾の `*` も出す**。hidden input の `required` は付けないのでネイティブ検証は走らない。`required` は従来どおり
+  両方(ネイティブ検証 + `aria-required` + `*`)。`<Select native>` は `<select>` 自体が `aria-required` を受け取るので対象外
+  (`*` はラベルに出ない — 必要なら後続)。TextField は `required` のみのまま(要望があれば同じ形で広げる)
+
+**影響**: 追加 prop / 引数のみ。#531 は挙動の変更だが不具合修正(打ちかけの文字でフォームが送信されていた)。VRT: 変化なし
+
+### B56: Select / Autocomplete の listbox の密度(公開カスタムプロパティ)
+
+- **Issue**: #533(下流アプリ dd_redesign の 1.6.0 での報告 §7 #30)
+- **状態**: 決定(2026-11-07)
+- **背景**: 密度の高いアプリ(リストの行 40px・文字 14px 以上という規則)が option の高さを私的変数
+  `--_option-container-height` で上書きし、supporting text(body-small 12px)は自前で描いている
+- **m3**: select / autocomplete のトークンセットは `menu.list-item.container.height` = 48dp の 1 値のみで、density の
+  段階はない。menu の supporting text は body-small(B52 §4)
+- **Compose**: `DropdownMenuItem` の高さは `MenuListItemContainerHeight` 48dp 固定、density 対応なし
+- **決定**: m3 の値を **既定のまま**にし、Dialog の `--md-dialog-container-*`・SearchBar の `--md-search-bar-*` と同じ形で
+  **公開カスタムプロパティ**を置く(private の `--_*` を上書きさせない)。Select / Autocomplete のルートか祖先に置けば
+  top layer の listbox にも継承される
+  - `--md-listbox-option-height`(既定 `48px`)→ `--_option-container-height`
+  - `--md-listbox-option-supporting-text-size` / `--md-listbox-option-supporting-text-line-height`(既定 body-small の
+    size / line-height)→ supporting text の `font-size` / `line-height`(weight / tracking は body-small のまま)
+  - option のラベルは label-large(14px)で要望の下限を満たすので対象外。Menu は別コンポーネントで対象外(要望があれば同名規則で)
+- **影響**: 追加のみ。既定値は不変なので VRT は変化なし(docs の Density デモが増えるだけ)
 
 ## 本書で扱わなかった判断候補(次回以降)
 
