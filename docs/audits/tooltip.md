@@ -206,3 +206,22 @@ prevented な Escape を無視する)や Menu が次の Escape で閉じなか�
   (従来どおり、enclosing modal より先に tooltip だけを閉じる)
 - 消え残り中の tooltip は Escape で閉じてよいが、イベントは止めない — 外側 / 新たに開いた Dialog・Menu にも届く
 - テスト: Tab で trigger → Tab で別ボタン → Enter で Dialog を開き、1.5 秒以内の Escape で Dialog が閉じる
+
+## 修正メモ: モーダルとの関係(2026-11-07・#536 #537)
+
+バグ修正 + 1.4.1 の約束の実装(新規裁定なし)。
+
+- **#536 — モーダルが上に開いても消え残る**: focus が離れて 1.5 秒の猶予中にモーダル(Dialog など)が開くと、tooltip は
+  スクリムの下で暗く見えたまま猶予が切れるまで残っていた。m3 tooltips/guidelines の「(persistent tooltips) only
+  disappear once a person interacts with another UI element」・「Triggering a new tooltip immediately closes any other
+  open tooltip」のとおり、別の UI(モーダル)を開く操作は tooltip を即時に閉じる。実装: `useModal` がモーダルの
+  push を購読者に知らせ(`onModalOpen`)、開いている tooltip は自分の trigger を含まないモーダルが開いたら即 `close()`
+  (transient / persistent とも)
+- **#537 — Dialog を Escape で閉じると tooltip が開く**: 1.4.1 の CHANGELOG は「プログラムによるフォーカス移動
+  (Dialog が閉じて戻るフォーカス)では開かない」と書いたが、Chrome はキーボード操作のあとに復帰したフォーカスを
+  `:focus-visible` と判定するので、Escape で閉じた直後の復帰で tooltip が開いていた。意図した挙動ではない(ヒントを
+  求めた操作ではなく、Escape で消した tooltip が戻らないのと同じ扱い)。実装: `useModal` の focus 復帰の間だけ
+  `isRestoringModalFocus()` を true にし、Tooltip の focus ハンドラはそれを無視する。ライブラリのモーダル以外
+  (アプリ自前の focus 復帰)は `:focus-visible` の判定どおり
+- テスト: 猶予中にモーダルが開くと即閉じる(#514 のテストの期待値も更新)、Escape で Dialog を閉じて trigger に
+  focus が戻っても開かない、その後の Tab 操作では開く

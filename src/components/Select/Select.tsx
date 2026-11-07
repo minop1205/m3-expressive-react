@@ -111,8 +111,15 @@ export interface SelectProps
   form?: string
   /** Disables the field (and leaves the value out of form submission). @default false */
   disabled?: boolean
-  /** Requires a value for form submission (native constraint validation) and appends `*` to the label. @default false */
+  /**
+   * Requires a value for form submission (native constraint validation on the
+   * hidden input, `aria-required` on the combobox) and appends `*` to the
+   * label. For `aria-required` and the `*` without the native constraint,
+   * pass `aria-required` instead (B55). @default false
+   */
   required?: boolean
+  /** Marks the field required for assistive technology (and shows the `*`) without native validation (B55). */
+  'aria-required'?: boolean | 'true' | 'false'
   /** Error state — error colors, `aria-invalid`, and `errorText`. Ignored while `disabled`. @default false */
   error?: boolean
   /**
@@ -221,12 +228,16 @@ const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
     'aria-label': ariaLabel,
     'aria-labelledby': ariaLabelledBy,
     'aria-describedby': ariaDescribedBy,
+    'aria-required': ariaRequired,
     ...rest
   },
   forwardedRef,
 ) {
   const autoId = useId()
   const comboboxId = providedId ?? `${autoId}-combobox`
+  // Required for assistive technology (and the `*`): `required`, or
+  // `aria-required` alone when the app validates by itself (B55, #535).
+  const requiredForAt = required || ariaRequired === true || ariaRequired === 'true'
   const labelId = `${autoId}-label`
   const listboxId = `${autoId}-listbox`
   const supportingId = `${autoId}-supporting`
@@ -482,7 +493,7 @@ const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
   const labelText = label ? (
     <>
       {label}
-      {required && <span aria-hidden="true">*</span>}
+      {requiredForAt && <span aria-hidden="true">*</span>}
     </>
   ) : undefined
 
@@ -583,7 +594,7 @@ const ListboxSelect = forwardRef<HTMLDivElement, SelectProps>(function Select(
               aria-label={ariaLabel}
               aria-labelledby={labelledBy}
               aria-describedby={describedBy}
-              aria-required={required || undefined}
+              aria-required={requiredForAt || undefined}
               aria-invalid={showError || undefined}
               aria-disabled={disabled || undefined}
               className={clsx(fieldStyles.input, styles.combobox)}
