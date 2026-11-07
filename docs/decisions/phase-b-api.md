@@ -1483,6 +1483,12 @@ m3 の読み上げになり、上書きで i18n でき、読まれない live re
 **影響**: 非破壊(`native` prop の追加。既定の Select は DOM・挙動・見た目とも不変)。VRT: Select に `Native` ストーリーを
 1 件追加。docs/specs/select.md に「Native mode」節を追加。
 
+**補遺(2026-11-07・#534)**: `<Select native>` にも listbox Select / Autocomplete と同じ **`labelPlacement`
+(`'floating' | 'above'`)/ `shrinkLabel`** を足す(B37 / B52 §3 の対応をそのまま広げる。m3 / Compose にネイティブ
+select はないので新たな仕様根拠はなく、同じフォーム内のフィールドのラベル位置を揃えるための Web 適応)。`above` は
+`<label htmlFor>` でコンテナの上に置き、コンテナはラベルなしのフィールドとして並ぶ。`shrinkLabel` ではラベルを縮小位置に
+固定し、空の option(`<option value="" />`)の文字を placeholder として見せる。
+
 ### B42: Autocomplete(exposed dropdown menu・編集可)
 
 - **Issue**: #434(フェーズ 2。フェーズ 1 の Select = B31 と listbox / option を共有)

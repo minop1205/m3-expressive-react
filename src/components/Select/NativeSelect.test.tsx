@@ -262,3 +262,31 @@ describe('Select native (B53)', () => {
     })
   })
 })
+
+describe('Select native label placement (B53 addendum, #534)', () => {
+  it('labelPlacement="above" puts a <label> above the container and keeps the name', async () => {
+    const { container } = render(<Fruit labelPlacement="above" supportingText="Pick one" />)
+    const label = screen.getByText('Fruit')
+    expect(label.tagName).toBe('LABEL')
+    expect(label).toHaveAttribute('for', select().id)
+    expect(select()).toHaveAccessibleName('Fruit')
+    // The container lays out like a label-less field: the label precedes it.
+    expect(label.nextElementSibling).toContainElement(select())
+    expect(root()).not.toHaveAttribute('data-has-label')
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('shrinkLabel keeps the label minimized and shows the empty option as the placeholder', () => {
+    render(<Fruit shrinkLabel />)
+    expect(root()).toHaveAttribute('data-shrink-label')
+    expect(root()).toHaveAttribute('data-has-label')
+    expect(isEmpty()).toBe(true)
+  })
+
+  it('shrinkLabel has no effect with labelPlacement="above" or without a label', () => {
+    const { rerender } = render(<Fruit shrinkLabel labelPlacement="above" />)
+    expect(root()).not.toHaveAttribute('data-shrink-label')
+    rerender(<Fruit shrinkLabel label={undefined} />)
+    expect(root()).not.toHaveAttribute('data-shrink-label')
+  })
+})
