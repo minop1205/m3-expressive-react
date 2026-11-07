@@ -4,6 +4,12 @@
 
 ### Added
 
+- **Select / Autocomplete** listbox density: public custom properties
+  `--md-listbox-option-height` (default `48px`),
+  `--md-listbox-option-supporting-text-size` and
+  `--md-listbox-option-supporting-text-line-height` (default body-small), set
+  on the field or an ancestor, reach the top-layer listbox. m3's values stay
+  the defaults; denser lists are an opt-in web adaptation (B56, #533).
 - **Autocomplete** `onInputChange(event, inputValue, reason)`: a third
   argument tells why the text changed — `'input'`, `'selectOption'`,
   `'clear'`, `'blur'` or `'reset'` (MUI's vocabulary) — so a "pick then
