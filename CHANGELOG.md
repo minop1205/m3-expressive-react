@@ -10,6 +10,15 @@
   invisible content. The rail now clips its inline axis (`overflow-x: clip`,
   which is not a scroll container, so vertical scrolling still works) (#538).
 
+- **Tooltip**: closes at once when a modal (Dialog, BottomSheet, …) opens
+  above it, instead of lingering dimmed under the scrim for the 1.5 s hide
+  delay (#536). The focus a closing modal returns to the trigger no longer
+  opens the tooltip — browsers report that focus as `:focus-visible` after a
+  keyboard interaction, so the library's modals now flag it; this is what the
+  1.4.1 note already promised (#537).
+- **Modals** (`useModal`): new internal hooks `onModalOpen` and
+  `isRestoringModalFocus` for the above.
+
 ## 1.6.0 (2026-10-16)
 
 Select / Autocomplete follow-ups from the downstream report, decided

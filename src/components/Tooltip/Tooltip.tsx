@@ -26,6 +26,7 @@ import {
 } from '../../internal/triggerSlot'
 import { useControllableState } from '../../internal/useControllableState'
 import styles from './Tooltip.module.css'
+import { isRestoringModalFocus, onModalOpen } from '../../internal/useModal'
 
 export type TooltipVariant = 'plain' | 'rich'
 /**
@@ -288,9 +289,20 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
       if (wrapperRef.current?.contains(event.target as Node)) return
       close()
     }
+    // A modal opening above the tooltip counts as interacting with another
+    // UI element (m3: tooltips "only disappear once a person interacts with
+    // another UI element"): close at once instead of lingering, dimmed, under
+    // the scrim for the hide delay (#536). A modal that contains the tooltip
+    // (its trigger is inside the opening surface) leaves it alone.
+    const unsubscribe = onModalOpen((root) => {
+      const wrapper = wrapperRef.current
+      if (wrapper && root.contains(wrapper)) return
+      close()
+    })
     document.addEventListener('keydown', onKeyDown)
     document.addEventListener('pointerdown', onPointerDown)
     return () => {
+      unsubscribe()
       document.removeEventListener('keydown', onKeyDown)
       document.removeEventListener('pointerdown', onPointerDown)
     }
@@ -443,6 +455,10 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     // The focus a touch tap gives the trigger neither opens the tooltip (touch
     // opens on long-press only) nor cancels the long-press hide delay.
     if (Date.now() - lastTouchAt.current < TOUCH_FOCUS_WINDOW_MS) return
+    // Focus a closing modal returns to its trigger is not the user asking for
+    // a hint — browsers report it as :focus-visible after a keyboard
+    // interaction, so the library's modals flag it (#537).
+    if (isRestoringModalFocus()) return
     cancelHide()
     const target = event.target as Element
     // Focus moving into a popup the trigger opened (a Menu nested in the
@@ -462,8 +478,8 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     const triggerEl = triggerElement()
     // Keyboard focus on the trigger opens a transient tooltip, unless it was
     // just dismissed with Escape (focus returning to the trigger mustn't
-    // reopen it). Programmatic focus — e.g. a closing Dialog returning focus
-    // to its opener — isn't :focus-visible and doesn't open it.
+    // reopen it). Other programmatic focus isn't :focus-visible and doesn't
+    // open it either.
     if (
       !persistent &&
       event.target === triggerEl &&

@@ -761,8 +761,10 @@ describe('Tooltip Escape while lingering (#514)', () => {
     await user.tab()
     expect(screen.getByRole('button', { name: 'Open dialog' })).toHaveFocus()
     await user.keyboard('{Enter}')
-    expect(isShown(trigger)).toBe(true)
     expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument()
+    // The opening modal closes the lingering tooltip at once (#536); Escape
+    // must still reach the dialog.
+    expect(isShown(trigger)).toBe(false)
     advance(HIDE_DELAY / 3)
     await user.keyboard('{Escape}')
     expect(screen.queryByRole('dialog', { name: 'Settings' })).not.toBeInTheDocument()
@@ -807,5 +809,61 @@ describe('Tooltip Escape while lingering (#514)', () => {
     } finally {
       window.removeEventListener('keydown', onKey)
     }
+  })
+})
+
+describe('Tooltip and modals (#536 #537)', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  function Page({ triggerOpens = false }: { triggerOpens?: boolean }) {
+    const [open, setOpen] = useState(false)
+    return (
+      <>
+        <Tooltip text="Hint">
+          <button onClick={triggerOpens ? () => setOpen(true) : undefined}>Trigger</button>
+        </Tooltip>
+        <button onClick={() => setOpen(true)}>Open dialog</button>
+        <Dialog open={open} onClose={() => setOpen(false)} title="Settings">
+          <button>Save</button>
+        </Dialog>
+      </>
+    )
+  }
+
+  it('hides at once when a modal opens above it, instead of lingering under the scrim', async () => {
+    const user = setupFake()
+    render(<Page />)
+    const trigger = screen.getByRole('button', { name: 'Trigger' })
+    await user.tab()
+    expect(isShown(trigger)).toBe(true)
+    await user.tab() // focus leaves: the tooltip lingers for 1.5 s
+    expect(isShown(trigger)).toBe(true)
+    await user.keyboard('{Enter}')
+    expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument()
+    expect(isShown(trigger)).toBe(false) // no advance: closed immediately
+  })
+
+  it('does not reopen when the closing dialog returns focus to its trigger', async () => {
+    const user = setupFake()
+    render(<Page triggerOpens />)
+    const trigger = screen.getByRole('button', { name: 'Trigger' })
+    await user.tab()
+    expect(isShown(trigger)).toBe(true)
+    await user.keyboard('{Enter}')
+    expect(screen.getByRole('dialog', { name: 'Settings' })).toBeInTheDocument()
+    expect(isShown(trigger)).toBe(false)
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog', { name: 'Settings' })).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus() // focus came back (jsdom reports it :focus-visible via the stub)
+    expect(isShown(trigger)).toBe(false)
+    advance(HIDE_DELAY)
+    expect(isShown(trigger)).toBe(false)
+    // Real keyboard focus still opens it.
+    await user.tab()
+    await user.tab({ shift: true })
+    expect(trigger).toHaveFocus()
+    expect(isShown(trigger)).toBe(true)
   })
 })
