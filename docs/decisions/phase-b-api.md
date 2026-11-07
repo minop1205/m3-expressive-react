@@ -79,6 +79,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B51 | #496 #501 #502 | フォーカス可能な無効ボタン・Menu `onAction`・Tooltip の表示遅延 | **いずれも実装しない(仕様に根拠なし)。代替手段をドキュメント化** | なし | 決定(2026-10-15) |
 | B54 | — | スクロール可能な Tabs のマウス操作 | **縦ホイールで横スクロール(m3 Foundations › Inputs)。横成分のあるホイールは変換せず、行が端に達したらページへ渡す。マウスのドラッグスクロールは採らない** | なし(追加) | 決定(2026-10-16) |
 | B55 | #530 #531 #532 #535 | Autocomplete の確定の意味論と `required` の扱い | **`onInputChange` に第 3 引数 `reason`(MUI と同じ語彙)、Enter はアクティブ option がなくても listbox が開いている間・未確定の文字がある間はフォームを送信せずラベルへ戻す、`disableClearable`(MUI 同名)で文字を消しても選択を保つ、`aria-required` 単独でネイティブ検証なしの必須表示** | なし(追加。Enter の送信抑止は不具合修正) | 決定(2026-11-07) |
+| B56 | #533 | Select / Autocomplete の listbox の密度 | **公開カスタムプロパティ `--md-listbox-option-height`(既定 48px)・`--md-listbox-option-supporting-text-size` / `-line-height`(既定 body-small)。m3 の値は既定のまま、密度は Web 適応の opt-in** | なし(追加) | 決定(2026-11-07) |
 | B52 | #518 | Select / Autocomplete の listbox の見た目・`openOnFocus`・ラベル位置・option の supporting text・`freeSolo` の完全一致 | **listbox を m3 の select / autocomplete トークン(baseline menu: surface-container・4dp・48dp・label-large・選択は surface-container-highest の container のみ、チェックなし)に切替(SE1 / AC1 を置換)、`openOnFocus`(既定 false、Select / Autocomplete)、`labelPlacement` / `shrinkLabel`(B37 と同じ)、`Option supportingText`(body-small・on-surface-variant・`aria-describedby`、折り返し、幅はフィールドのまま)、`freeSolo` は打った文字列のまま(完全一致でも option を選ばない)** | 見た目(listbox)・`freeSolo` の完全一致の挙動 | 決定(2026-10-16) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
@@ -2626,6 +2627,24 @@ full-screen / SideSheet / BottomSheet のデモ)は不要になったので外�
   (`*` はラベルに出ない — 必要なら後続)。TextField は `required` のみのまま(要望があれば同じ形で広げる)
 
 **影響**: 追加 prop / 引数のみ。#531 は挙動の変更だが不具合修正(打ちかけの文字でフォームが送信されていた)。VRT: 変化なし
+
+### B56: Select / Autocomplete の listbox の密度(公開カスタムプロパティ)
+
+- **Issue**: #533(下流アプリ dd_redesign の 1.6.0 での報告 §7 #30)
+- **状態**: 決定(2026-11-07)
+- **背景**: 密度の高いアプリ(リストの行 40px・文字 14px 以上という規則)が option の高さを私的変数
+  `--_option-container-height` で上書きし、supporting text(body-small 12px)は自前で描いている
+- **m3**: select / autocomplete のトークンセットは `menu.list-item.container.height` = 48dp の 1 値のみで、density の
+  段階はない。menu の supporting text は body-small(B52 §4)
+- **Compose**: `DropdownMenuItem` の高さは `MenuListItemContainerHeight` 48dp 固定、density 対応なし
+- **決定**: m3 の値を **既定のまま**にし、Dialog の `--md-dialog-container-*`・SearchBar の `--md-search-bar-*` と同じ形で
+  **公開カスタムプロパティ**を置く(private の `--_*` を上書きさせない)。Select / Autocomplete のルートか祖先に置けば
+  top layer の listbox にも継承される
+  - `--md-listbox-option-height`(既定 `48px`)→ `--_option-container-height`
+  - `--md-listbox-option-supporting-text-size` / `--md-listbox-option-supporting-text-line-height`(既定 body-small の
+    size / line-height)→ supporting text の `font-size` / `line-height`(weight / tracking は body-small のまま)
+  - option のラベルは label-large(14px)で要望の下限を満たすので対象外。Menu は別コンポーネントで対象外(要望があれば同名規則で)
+- **影響**: 追加のみ。既定値は不変なので VRT は変化なし(docs の Density デモが増えるだけ)
 
 ## 本書で扱わなかった判断候補(次回以降)
 

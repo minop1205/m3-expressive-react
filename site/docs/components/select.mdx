@@ -163,6 +163,40 @@ option is picked, and typeahead matches only the label.
 </Select>
 ```
 
+## Density
+
+m3 defines one option height (48dp) and body-small supporting text. Denser
+lists — a web adaptation — are set with CSS custom properties on the Select /
+Autocomplete root (`style` / `className`) or any ancestor; the listbox
+inherits them:
+
+| Custom property | Default |
+| --- | --- |
+| `--md-listbox-option-height` | `48px` |
+| `--md-listbox-option-supporting-text-size` | body-small size (`12px`) |
+| `--md-listbox-option-supporting-text-line-height` | body-small line height (`16px`) |
+
+<Demo>
+  <Select
+    label="Country"
+    defaultValue="jp"
+    style={{ '--md-listbox-option-height': '40px', '--md-listbox-option-supporting-text-size': '14px', '--md-listbox-option-supporting-text-line-height': '20px' }}
+  >
+    <Option value="jp" supportingText="Asia">Japan</Option>
+    <Option value="fr" supportingText="Europe">France</Option>
+    <Option value="br" supportingText="South America">Brazil</Option>
+  </Select>
+</Demo>
+
+```tsx
+<Select
+  label="Country"
+  style={{ '--md-listbox-option-height': '40px' } as React.CSSProperties}
+>
+  …
+</Select>
+```
+
 ## Label placement
 
 `labelPlacement` and `shrinkLabel` work as they do on
