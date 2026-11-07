@@ -7,6 +7,7 @@ export {
   type AutocompleteOption,
   type AutocompleteOptionItem,
   type AutocompleteFilterState,
+  type AutocompleteInputChangeReason,
   type OptionProps,
 } from './Autocomplete'
 

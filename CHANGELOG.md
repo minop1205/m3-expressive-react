@@ -2,8 +2,27 @@
 
 ## Unreleased
 
+### Added
+
+- **Autocomplete** `onInputChange(event, inputValue, reason)`: a third
+  argument tells why the text changed — `'input'`, `'selectOption'`,
+  `'clear'`, `'blur'` or `'reset'` (MUI's vocabulary) — so a "pick then
+  clear" field can skip the pick (B55, #530).
+- **Autocomplete** `disableClearable`: the value changes only by picking an
+  option — emptying the text keeps the selection, and leaving the field,
+  Enter with no active option, or Escape with the list closed put the picked
+  label back (B55, #532).
+- **Autocomplete / Select** `aria-required`: marks the field required for
+  assistive technology (and shows the `*`) without the native constraint, for
+  apps that validate by themselves (B55, #535).
+
 ### Fixed
 
+- **Autocomplete**: Enter with the list open and no active option no longer
+  submits the enclosing form with half-typed text — the field handles Enter
+  while its list is open or its text is not an option yet (the text returns
+  to the picked label, as on blur). `freeSolo` still commits and submits
+  (B55, #531).
 - **NavigationRail**: a collapsed rail no longer overflows horizontally — the
   faded-out expanded labels used to extend past the 96dp edge, so a rail with
   `overflow-y: auto` (short windows) showed a horizontal scrollbar for
@@ -246,7 +265,7 @@ before you upgrade are listed first.
   **NavigationDrawer** `variant="dismissible"` (#444, B41).
 - **Overlays**: `onClose(event, reason)` on Dialog, BottomSheet, SideSheet,
   NavigationDrawer and the modal NavigationRail (`'escapeKeyDown' |
-  'backdropClick' | 'closeButton' | 'drag'`) (#407).
+'backdropClick' | 'closeButton' | 'drag'`) (#407).
 - **NavigationDrawer** `defaultValue`; **ButtonGroup** / **ChipSet**
   group-level `disabled`; **DatePickerField** `inputRef` / `inputProps` /
   `name`; **DatePicker** / **DatePickerField** `referenceDate` for
@@ -254,7 +273,7 @@ before you upgrade are listed first.
 - **Next.js App Router**: interactive modules ship a `'use client'` directive,
   so the library can be imported from Server Components (#409).
 - **Design tokens**: overlay stacking tokens `--md-sys-z-tooltip | search |
-  popup | modal | snackbar` (#424).
+popup | modal | snackbar` (#424).
 
 ### Fixed
 

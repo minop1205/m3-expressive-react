@@ -241,6 +241,9 @@ submitted with its `<form>` (or with the form that `form="id"` points to).
 uncontrolled Select back to its `defaultValue`. A `disabled` Select is not
 submitted. `inputRef` gives you that native input.
 
+To announce the field as required (with the `*`) without native validation,
+pass `aria-required` instead of `required`.
+
 export function FormDemo() {
   const [submitted, setSubmitted] = useState('—')
   return (

@@ -58,12 +58,36 @@ An Autocomplete has two pieces of state, each controlled or uncontrolled:
 - `value` / `defaultValue` / `onChange(event, value)`: the picked option's
   value (`''` = nothing picked). `onChange` fires when an option is picked or
   the text is cleared.
-- `inputValue` / `defaultInputValue` / `onInputChange(event, inputValue)`: the
-  text in the field. It fires on every keystroke and when picking an option
-  puts its label in the field.
+- `inputValue` / `defaultInputValue` / `onInputChange(event, inputValue, reason)`:
+  the text in the field. It fires on every keystroke and when picking an
+  option puts its label in the field; `reason` tells which — `'input'`,
+  `'selectOption'`, `'clear'` (Escape with `clearOnEscape`), `'blur'` (the
+  text went back to the picked label on leaving) or `'reset'` (it went back
+  otherwise, e.g. <kbd>Enter</kbd> with no active option).
 
-If the text no longer matches an option when you leave the field, it goes
-back to the picked option's label.
+If the text no longer matches an option when you leave the field — or you
+press <kbd>Enter</kbd> with no option active — it goes back to the picked
+option's label. Clearing the text clears the value, as in MUI; see
+[Keep the selection](#keep-the-selection) to change that.
+
+A "pick then clear" field (adding to a list) ignores the `'selectOption'`
+change:
+
+```tsx
+<Autocomplete
+  label="Add fruit"
+  options={fruits}
+  value=""
+  inputValue={text}
+  onChange={(event, picked) => {
+    add(picked)
+    setText('')
+  }}
+  onInputChange={(event, next, reason) => {
+    if (reason !== 'selectOption') setText(next)
+  }}
+/>
+```
 
 export function ControlledDemo() {
   const [value, setValue] = useState('')
@@ -138,6 +162,22 @@ export function FreeSoloDemo() {
 
 ```tsx
 <Autocomplete freeSolo label="Favorite fruit" options={fruits} onChange={(event, value) => save(value)} />
+```
+
+## Keep the selection
+
+By default, emptying the text clears the value right away. With
+`disableClearable` the value changes only by picking an option: emptying or
+editing the text keeps the selection, and leaving the field, <kbd>Enter</kbd>
+with no active option, or <kbd>Escape</kbd> with the list closed put the
+picked label back. (No effect with `freeSolo`.)
+
+<Demo>
+  <Autocomplete disableClearable label="Fruit" options={fruits} defaultValue="Apple" />
+</Demo>
+
+```tsx
+<Autocomplete disableClearable label="Fruit" options={fruits} defaultValue="Apple" />
 ```
 
 ## Clear on Escape
@@ -304,6 +344,20 @@ With `name` it is submitted with its form. `required` takes part in native
 validation, and a form reset puts an uncontrolled Autocomplete back to its
 default value and text. `inputRef` points at the text input you type in.
 
+<kbd>Enter</kbd> submits the form only when the field is settled: while the
+list is open, or while the text is not an option yet, Enter is handled by the
+field (the text goes back to the picked label) and nothing is submitted.
+With `freeSolo`, Enter commits the typed text and the form submits it.
+
+If your app validates by itself, pass `aria-required` instead of `required`:
+the field is announced as required and shows the `*`, but no native
+constraint blocks submission (alternatively, `noValidate` on the form keeps
+the browser's bubble away for every field).
+
+```tsx
+<Autocomplete label="Fruit" name="fruit" aria-required options={fruits} error={!valid} errorText="Pick a fruit" />
+```
+
 export function FormDemo() {
   const [submitted, setSubmitted] = useState('—')
   return (
@@ -357,8 +411,9 @@ pattern:
 - Typing opens the list without activating an option. <kbd>↓</kbd> /
   <kbd>↑</kbd> open it and move through the options, wrapping at the ends.
   <kbd>Alt</kbd>+<kbd>↓</kbd> opens it without moving.
-- <kbd>Enter</kbd> picks the active option. <kbd>Escape</kbd> closes the
-  list (an enclosing Dialog stays open). When the list is already closed,
+- <kbd>Enter</kbd> picks the active option; with none active it closes the
+  list and settles the text (no form submission while the list is open).
+  <kbd>Escape</kbd> closes the list (an enclosing Dialog stays open). When the list is already closed,
   Escape is left alone — an enclosing Dialog closes — unless you set
   `clearOnEscape`: then it clears the field.
 - The arrow at the end is a button that is not in the Tab order. It toggles
