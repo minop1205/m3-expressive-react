@@ -81,6 +81,31 @@ interface ModalEntry {
 
 /** Open modals, bottom → top. Only the top entry is interactive. */
 const stack: ModalEntry[] = []
+
+/** Told the root of every modal that opens (Tooltip closes under a new modal, #536). */
+const openListeners = new Set<(root: HTMLElement) => void>()
+
+/**
+ * Subscribe to modals opening; the listener gets the new modal's root.
+ * Returns the unsubscribe function.
+ */
+export function onModalOpen(listener: (root: HTMLElement) => void): () => void {
+  openListeners.add(listener)
+  return () => {
+    openListeners.delete(listener)
+  }
+}
+
+// True while a closing modal moves focus back to its trigger, so focus
+// handlers can tell that restore from the user's own keyboard focus (a
+// Tooltip must not open on it, #537) — browsers report focus restored after
+// a keyboard interaction as :focus-visible.
+let restoringFocus = false
+
+/** Whether the focus event being dispatched comes from a closing modal's focus return. */
+export function isRestoringModalFocus(): boolean {
+  return restoringFocus
+}
 /** Elements this module set `inert` on (so it only ever removes its own). */
 const applied = new Set<Element>()
 
@@ -222,6 +247,15 @@ function canFocus(el: HTMLElement | null): el is HTMLElement {
 
 /** Return focus for a closed top entry, with fallbacks for a removed trigger. */
 function restoreFocus(entry: ModalEntry) {
+  restoringFocus = true
+  try {
+    restoreFocusTarget(entry)
+  } finally {
+    restoringFocus = false
+  }
+}
+
+function restoreFocusTarget(entry: ModalEntry) {
   if (canFocus(entry.restoreFocusTo)) {
     entry.restoreFocusTo.focus()
     return
@@ -254,6 +288,7 @@ function push(entry: ModalEntry) {
   if (stack.length === 0) attachListeners()
   stack.push(entry)
   syncInert()
+  openListeners.forEach((listener) => listener(entry.root))
 }
 
 function remove(entry: ModalEntry) {

@@ -233,7 +233,10 @@ const [open, setOpen] = useState(false)
   the pointer or focus is on the trigger or on the tooltip itself. It closes
   1.5 s after they leave, on <kbd>Escape</kbd> (wherever focus is), or on a
   press elsewhere — hoverable, dismissible and persistent per WCAG 1.4.13.
-  Only one tooltip is open at a time.
+  Only one tooltip is open at a time. A modal opening above it (Dialog,
+  BottomSheet, …) closes it at once, and the focus a closing modal returns
+  to the trigger does not reopen it — only the user's own keyboard focus
+  does.
 - While open, the trigger gets `aria-describedby` pointing at the popup,
   which has `role="tooltip"`.
 - A rich tooltip with an `action` becomes a non-modal `role="dialog"`
