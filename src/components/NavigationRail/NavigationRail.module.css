@@ -16,6 +16,12 @@
   width: calc(96px + (var(--_expanded-w, 220px) - 96px) * var(--_t, 0));
   padding-block: 44px 8px;
   background-color: var(--md-sys-color-surface);
+  /* The expanded labels stay in layout while collapsed (faded out, beside the
+     icon, past the 96dp edge), so the content is wider than the rail. Clip the
+     inline axis: unlike `hidden`, `clip` is not a scroll container, so a rail
+     given `overflow-y: auto` (short windows) gets no horizontal scrollbar for
+     invisible labels, and the block axis stays visible (#538). */
+  overflow-x: clip;
 }
 
 /* Header (menu button / FAB) pinned to the top. Start-aligned with a constant
