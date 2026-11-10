@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **NavigationRail** `footer`: content pinned at the bottom of the rail for
+  low-priority actions (theme toggle, settings, account). Inside the `<nav>`,
+  so it is part of the modal rail's dialog and scrolls with the rail;
+  `arrangement` places the destinations between header and footer. A web
+  adaptation — m3's anatomy and Compose's `WideNavigationRail` have no
+  footer, and the menu button / FAB stay in the header (B57, #546).
+- **NavigationRailAction**: a destination-like action (icon, label, badge,
+  `onClick`) for the rail's `header` / `footer` that morphs with the rail
+  but is never selected (B57, #546).
+- **NavigationRail** publishes its morph value as the public custom property
+  `--md-navigation-rail-expansion` (0 collapsed → 1 expanded) for header /
+  footer content that follows the expand motion (B57, #546).
+
 ## 1.7.0 (2026-11-07)
 
 ### Added

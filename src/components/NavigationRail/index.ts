@@ -1,8 +1,10 @@
 export {
   NavigationRail,
   NavigationRailItem,
+  NavigationRailAction,
   type NavigationRailProps,
   type NavigationRailItemProps,
+  type NavigationRailActionProps,
   type NavigationRailVariant,
   type NavigationRailArrangement,
   type NavigationRailCloseReason,

@@ -11,10 +11,14 @@ import Favorite from '@material-symbols/svg-400/outlined/favorite.svg?react'
 import FavoriteFill from '@material-symbols/svg-400/outlined/favorite-fill.svg?react'
 import Delete from '@material-symbols/svg-400/outlined/delete.svg?react'
 import DeleteFill from '@material-symbols/svg-400/outlined/delete-fill.svg?react'
+import DarkMode from '@material-symbols/svg-400/outlined/dark_mode.svg?react'
+import Settings from '@material-symbols/svg-400/outlined/settings.svg?react'
+import Login from '@material-symbols/svg-400/outlined/login.svg?react'
 import { Fab } from '../Fab'
 import { IconButton } from '../IconButton'
 import {
   NavigationRail,
+  NavigationRailAction,
   NavigationRailItem,
   type NavigationRailVariant,
 } from './NavigationRail'
@@ -170,6 +174,51 @@ export const ExpandedLongLabels: Story = {
 }
 
 /** In right-to-left layouts the rail sits on the right and its items mirror. */
+/**
+ * Footer (ruling B57): low-priority actions pinned to the bottom —
+ * `NavigationRailAction`s morph exactly like destinations (icon over label →
+ * icon beside label, badge beside the label) but are never selected.
+ */
+function Footer() {
+  return (
+    <>
+      <NavigationRailAction icon={<Settings />} label="Settings" />
+      <NavigationRailAction icon={<DarkMode />} label="Dark mode" />
+      <NavigationRailAction icon={<Login />} label="Sign in" badge="2" />
+    </>
+  )
+}
+
+function FooterRail({ initial }: { initial: NavigationRailVariant }) {
+  const [value, setValue] = useState('inbox')
+  const [variant, setVariant] = useState<NavigationRailVariant>(initial)
+  const expanded = variant === 'expanded'
+  return (
+    <div style={{ height: 760, display: 'flex' }}>
+      <NavigationRail
+        aria-label="Mail"
+        value={value}
+        onChange={(_event, v) => setValue(v)}
+        variant={variant}
+        header={
+          <Header expanded={expanded} onMenuClick={() => setVariant(expanded ? 'collapsed' : 'expanded')} />
+        }
+        footer={<Footer />}
+      >
+        <Items />
+      </NavigationRail>
+    </div>
+  )
+}
+
+export const FooterCollapsed: Story = {
+  render: () => <FooterRail initial="collapsed" />,
+}
+
+export const FooterExpanded: Story = {
+  render: () => <FooterRail initial="expanded" />,
+}
+
 export const RightToLeft: Story = {
   render: () => {
     const [value, setValue] = useState('inbox')

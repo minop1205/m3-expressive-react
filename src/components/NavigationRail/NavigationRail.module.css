@@ -46,6 +46,29 @@
   width: 100%;
 }
 
+/* Footer (ruling B57): low-priority actions pinned to the block end, inside
+   the rail's 8dp bottom padding. Same constant 20dp start inset as the header
+   (a 56dp child is centered in the collapsed rail; nothing jumps mid-morph). */
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-block-start: auto;
+  padding-block-start: 8px;
+  padding-inline-start: 20px;
+}
+
+/* A NavigationRailItem / NavigationRailAction placed in a slot spans the rail
+   like a destination (its own pill sits at the 20dp inset), so undo the slot's
+   inset for it. */
+.header > [data-rail-entry],
+.footer > [data-rail-entry] {
+  align-self: stretch;
+  width: auto;
+  margin-inline-start: -20px;
+}
+
 /* Arrangement of destinations below the header. */
 .rail[data-arrangement='center'] .items {
   flex: 1;
@@ -172,6 +195,7 @@
    hidden once the slide-out has finished. */
 .rail[data-hide-on-collapse] {
   --_t: 1;
+  --md-navigation-rail-expansion: 1;
   /* min() lives in its own property: postcss-calc (cssnano) can't parse a
      min() nested in calc(), and warns / skips the whole declaration. */
   --_reveal-offset: min(0%, calc((var(--_reveal, 0) - 1) * 100%));
