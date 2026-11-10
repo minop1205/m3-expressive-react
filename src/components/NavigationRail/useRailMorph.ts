@@ -23,7 +23,12 @@ import { prefersReducedMotion, readSpring, stepSpring, type SpringState } from '
  * expanded). `fromCollapsedOnMount` starts a mount that is already expanded
  * from 0, so it plays the same expand motion as expanding later — the modal
  * rail mounted open (#516); an in-flow rail keeps its resting value.
+ *
+ * The `--_t` value is also published as `--md-navigation-rail-expansion`
+ * (ruling B57): the public contract for header / footer content that follows
+ * the morph (0 = collapsed, 1 = expanded), inherited like `--_t`.
  */
+const PUBLIC_EXPANSION = '--md-navigation-rail-expansion'
 export function useRailMorph(
   expanded: boolean,
   ref: RefObject<HTMLElement | null>,
@@ -34,11 +39,19 @@ export function useRailMorph(
   const t = useRef<SpringState>({ value: expanded && !fromCollapsedOnMount ? 1 : 0, vel: 0 })
   const raf = useRef(0)
 
+  const write = (value: number) => {
+    const el = ref.current
+    if (!el) return
+    el.style.setProperty(property, String(value))
+    if (property === '--_t') el.style.setProperty(PUBLIC_EXPANSION, String(value))
+  }
+
   // Resting value + direction flag on first paint.
   useEffect(() => {
     if (!enabled) return
-    ref.current?.style.setProperty(property, String(t.current.value))
+    write(t.current.value)
     ref.current?.style.setProperty('--_slide', expanded ? '1' : '0')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ref, expanded, enabled, property])
 
   useEffect(() => {
@@ -49,7 +62,7 @@ export function useRailMorph(
 
     if (prefersReducedMotion()) {
       t.current = { value: target, vel: 0 }
-      ref.current?.style.setProperty(property, String(target))
+      write(target)
       return
     }
 
@@ -60,11 +73,12 @@ export function useRailMorph(
       const dt = Math.min(0.032, (now - prev) / 1000)
       prev = now
       const done = stepSpring(t.current, target, spec, dt)
-      ref.current?.style.setProperty(property, String(t.current.value))
+      write(t.current.value)
       if (done) return
       raf.current = requestAnimationFrame(tick)
     }
     raf.current = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf.current)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expanded, ref, enabled, property])
 }

@@ -5,7 +5,7 @@ title: NavigationRail
 import { useState } from 'react'
 import Demo from '@site/src/components/Demo'
 import PropsTable from '@site/src/components/PropsTable'
-import { NavigationRail, NavigationRailItem, IconButton, Fab } from 'm3-expressive-react'
+import { NavigationRail, NavigationRailItem, NavigationRailAction, IconButton, Fab } from 'm3-expressive-react'
 import MenuIcon from '@material-symbols/svg-400/outlined/menu.svg'
 import MenuOpenIcon from '@material-symbols/svg-400/outlined/menu_open.svg'
 import EditIcon from '@material-symbols/svg-400/outlined/edit.svg'
@@ -17,6 +17,9 @@ import FavoriteIcon from '@material-symbols/svg-400/outlined/favorite.svg'
 import FavoriteFillIcon from '@material-symbols/svg-400/outlined/favorite-fill.svg'
 import DeleteIcon from '@material-symbols/svg-400/outlined/delete.svg'
 import DeleteFillIcon from '@material-symbols/svg-400/outlined/delete-fill.svg'
+import SettingsIcon from '@material-symbols/svg-400/outlined/settings.svg'
+import DarkModeIcon from '@material-symbols/svg-400/outlined/dark_mode.svg'
+import LoginIcon from '@material-symbols/svg-400/outlined/login.svg'
 
 # NavigationRail
 
@@ -75,7 +78,7 @@ export function Page({ text }) {
   return <div style={{ flex: 1, padding: 24, minWidth: 0 }}>{text}</div>
 }
 
-export function RailDemo({ modal, hideOnCollapse, arrangement, initial = 'collapsed' }) {
+export function RailDemo({ modal, hideOnCollapse, arrangement, footer, initial = 'collapsed' }) {
   const [value, setValue] = useState('inbox')
   const [variant, setVariant] = useState(initial)
   const expanded = variant === 'expanded'
@@ -95,6 +98,7 @@ export function RailDemo({ modal, hideOnCollapse, arrangement, initial = 'collap
         hideOnCollapse={hideOnCollapse}
         onClose={() => setVariant('collapsed')}
         header={<Header expanded={expanded} onMenuClick={toggle} />}
+        footer={footer}
       >
         {items}
       </NavigationRail>
@@ -162,6 +166,63 @@ the announced text.
   <RailDemo arrangement="center" />
 </Demo>
 
+## Footer
+
+`footer` pins content to the bottom of the rail — the place for low-priority
+actions such as a theme toggle, settings or sign-in (m3: "secondary
+destinations or actions that have lower priority than the main navigation
+items"). It renders inside the `<nav>`, after the destinations, so it is part
+of the modal rail's dialog and scrolls with the rail; `arrangement` places
+the destinations between header and footer.
+
+`NavigationRailAction` is a destination-like action for the header or
+footer: icon, label and badge laid out and morphing exactly like a
+`NavigationRailItem`, but never selected (no `aria-current`, no active pill,
+it does not change the rail's `value`) — handle it with `onClick`.
+
+<Demo>
+  <RailDemo
+    footer={
+      <>
+        <NavigationRailAction icon={<SettingsIcon />} label="Settings" />
+        <NavigationRailAction icon={<DarkModeIcon />} label="Dark mode" />
+        <NavigationRailAction icon={<LoginIcon />} label="Sign in" badge="2" />
+      </>
+    }
+  />
+</Demo>
+
+```tsx
+<NavigationRail
+  header={…}
+  footer={
+    <>
+      <NavigationRailAction icon={<SettingsIcon />} label="Settings" onClick={openSettings} />
+      <NavigationRailAction icon={<DarkModeIcon />} label="Dark mode" onClick={toggleTheme} />
+    </>
+  }
+>
+  …destinations
+</NavigationRail>
+```
+
+Other header / footer content can follow the expand motion through the
+public custom property **`--md-navigation-rail-expansion`** (0 = collapsed →
+1 = expanded, inherited from the rail; `<Fab followContainer>` uses the same
+value), e.g. a logotype beside the logo:
+
+```css
+.logotype {
+  opacity: calc((var(--md-navigation-rail-expansion, 0) - 0.77) * 5.5);
+}
+```
+
+Spec note: this is a web adaptation. m3's anatomy has only a menu button and a
+FAB besides the destinations, and Compose's `WideNavigationRail` has only a
+`header` slot. m3 keeps the menu button and the FAB top-aligned ("Avoid
+placing the FAB below navigation items") — put those in `header`, not in
+`footer`. Ruling B57.
+
 ## Modal
 
 With `modal`, the expanded rail overlaps the page instead of pushing it: a
@@ -206,7 +267,8 @@ slides it in from the leading edge — open it from a button in the page.
 
 - Renders a `<nav>` landmark — give it an `aria-label`. Items are native
   `<button>`s; the active one carries `aria-current="page"`.
-- Tab order: header (menu button, FAB) first, then the destinations.
+- Tab order: header (menu button, FAB) first, then the destinations, then the
+  footer. `NavigationRailAction`s are plain buttons without `aria-current`.
 - Badges are announced after the label (`badgeLabel` to customize). An item
   without a `label` needs an `aria-label`.
 - The open modal rail is a `dialog` (`aria-modal`) named by `modalLabel`
@@ -231,3 +293,7 @@ slides it in from the leading edge — open it from a button in the page.
 own `selected` / `expanded` props.
 
 <PropsTable component="NavigationRailItem" />
+
+### NavigationRailAction
+
+<PropsTable component="NavigationRailAction" />

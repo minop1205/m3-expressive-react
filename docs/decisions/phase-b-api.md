@@ -80,6 +80,7 @@ Issue 30 件(#301 を含む)と、監査の軽微欄で「横断判断」とし�
 | B54 | — | スクロール可能な Tabs のマウス操作 | **縦ホイールで横スクロール(m3 Foundations › Inputs)。横成分のあるホイールは変換せず、行が端に達したらページへ渡す。マウスのドラッグスクロールは採らない** | なし(追加) | 決定(2026-10-16) |
 | B55 | #530 #531 #532 #535 | Autocomplete の確定の意味論と `required` の扱い | **`onInputChange` に第 3 引数 `reason`(MUI と同じ語彙)、Enter はアクティブ option がなくても listbox が開いている間・未確定の文字がある間はフォームを送信せずラベルへ戻す、`disableClearable`(MUI 同名)で文字を消しても選択を保つ、`aria-required` 単独でネイティブ検証なしの必須表示** | なし(追加。Enter の送信抑止は不具合修正) | 決定(2026-11-07) |
 | B56 | #533 | Select / Autocomplete の listbox の密度 | **公開カスタムプロパティ `--md-listbox-option-height`(既定 48px)・`--md-listbox-option-supporting-text-size` / `-line-height`(既定 body-small)。m3 の値は既定のまま、密度は Web 適応の opt-in** | なし(追加) | 決定(2026-11-07) |
+| B57 | #546 | NavigationRail の `footer` とスロット内容のラベル表示 | **`footer` スロット(下端固定・優先度の低いアクション用、FAB / メニューは置かない)、公開カスタムプロパティ `--md-navigation-rail-expansion`(0〜1)、非 destination の `NavigationRailAction`(item と同じ見た目・モーション、選択状態なし)。m3 / Compose にない Web 適応** | なし(追加) | 決定(2026-11-10・オーナー承認) |
 | B52 | #518 | Select / Autocomplete の listbox の見た目・`openOnFocus`・ラベル位置・option の supporting text・`freeSolo` の完全一致 | **listbox を m3 の select / autocomplete トークン(baseline menu: surface-container・4dp・48dp・label-large・選択は surface-container-highest の container のみ、チェックなし)に切替(SE1 / AC1 を置換)、`openOnFocus`(既定 false、Select / Autocomplete)、`labelPlacement` / `shrinkLabel`(B37 と同じ)、`Option supportingText`(body-small・on-surface-variant・`aria-describedby`、折り返し、幅はフィールドのまま)、`freeSolo` は打った文字列のまま(完全一致でも option を選ばない)** | 見た目(listbox)・`freeSolo` の完全一致の挙動 | 決定(2026-10-16) |
 
 「破壊的変更」は公開型・既定値・DOM・見た目のいずれかが既存利用者に見える形で変わるか。VRT への影響は各項目の「影響」に書く。
@@ -2645,6 +2646,37 @@ full-screen / SideSheet / BottomSheet のデモ)は不要になったので外�
     size / line-height)→ supporting text の `font-size` / `line-height`(weight / tracking は body-small のまま)
   - option のラベルは label-large(14px)で要望の下限を満たすので対象外。Menu は別コンポーネントで対象外(要望があれば同名規則で)
 - **影響**: 追加のみ。既定値は不変なので VRT は変化なし(docs の Density デモが増えるだけ)
+
+### B57: NavigationRail の `footer` スロットとスロット内容のラベル表示
+
+- **Issue**: #546(下流アプリ polyfake からの要望)
+- **状態**: 決定(2026-11-10・オーナーが「footer + 案 A + 案 B」を承認)
+- **背景**: rail には上端固定の `header` しかなく、下端に優先度の低いアクション(テーマ切替・設定・アカウント)を置けない。
+  また header / footer の中身が rail の morph に合わせてラベルを出すための契約がない(`--_t` は私的変数)
+- **m3(優先 1・navigation-rail/guidelines を取得)**: anatomy の任意要素は「Menu (optional)」「Floating action button (FAB)
+  (optional)」のみで **footer はない**。「The menu icon and FAB should always be top-aligned」「Avoid placing the FAB below
+  navigation items」「The top of the rail can also be used for a logo」と上端の規定はあるが、下端にアクションを置くことを
+  禁じる記述はない。「Use a standard expanded rail when there are secondary destinations or actions that have lower priority
+  than the main navigation items」と、優先度の低いアクションを rail に置くことは認めている。m3.material.io 自身の rail は
+  下端にトグル 2 つ(アニメーション停止・ダークモード)を固定している
+- **Compose(優先 2・`WideNavigationRail.kt`)**: スロットは `header` と `content` のみ(「optional header that may hold a
+  FloatingActionButton or a logo」「The header will always be at the top」)。footer に相当するものはない。`arrangement`
+  (`Arrangement.Vertical`)は header の下の残り領域に items を配置(Center だけはコンテナ全体が基準)
+- **決定**: いずれも仕様にない **Web 適応**として追加し、docs に「m3 / Compose にはない拡張。FAB・メニューボタンは header に」と明記
+  1. **`footer?: ReactNode`** — `<nav>` の中、items の後ろに描画(modal rail の dialog / フォーカストラップに含まれ、
+     `overflow-y: auto` にしたときも一緒にスクロール)。`margin-block-start: auto` で下端へ、rail の 8dp 下パディングの内側。
+     header と同じ 20dp の開始端インセット・gap 4px(56dp の子が折りたたみ時に中央に来て、morph 中に位置が跳ねない)。
+     `arrangement` は `top` = header → items → 余白 → footer、`center` = header と footer の間で items を中央、`bottom` =
+     items を footer の直上まで寄せる(既存の `.items` の flex 指定のまま成立)
+  2. **公開カスタムプロパティ `--md-navigation-rail-expansion`**(0 = collapsed、1 = expanded)— `useRailMorph` が `--_t` と
+     並べて書く。hide-on-collapse(レイアウトは常に expanded)では 1。`Fab followContainer` とストーリーの `MenuMorphIcon` が
+     読んでいた `--_t` の公開版で、ロゴタイプの出し入れなど自由な用途に使える(`--_t` は私的のまま)
+  3. **`NavigationRailAction`** — `icon` / `label` / `badge` / `badgeLabel` / `onClick` を持つ **非 destination のボタン**。
+     `NavigationRailItem` と行の実装(`RailEntry`)を共有するので、見た目・ラベルの出方・pill の形は item と同じ。ただし
+     `value` がなく、`aria-current` も選択状態(active pill)も付かず、rail の `value` を変えない。ラベル幅は item と同じく
+     rail に報告し、rail の expanded 幅に含める。header / footer の 20dp インセットは `[data-rail-entry]` の子だけ打ち消し、
+     行が rail 全幅に広がるようにする(pill は行の中で 20dp の位置)
+- **影響**: 追加のみ(`footer` prop、`NavigationRailAction`、公開カスタムプロパティ)。既存の VRT は不変、Footer ストーリーを追加
 
 ## 本書で扱わなかった判断候補(次回以降)
 
