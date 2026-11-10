@@ -25,7 +25,12 @@ import styles from './NavigationRail.module.css'
 import { useLocaleProps } from '../../internal/locale'
 
 export type { NavigationRailVariant, NavigationRailArrangement } from './NavigationRailContext'
-export { NavigationRailItem, type NavigationRailItemProps } from './NavigationRailItem'
+export {
+  NavigationRailItem,
+  NavigationRailAction,
+  type NavigationRailItemProps,
+  type NavigationRailActionProps,
+} from './NavigationRailItem'
 
 /**
  * Pin the top-layer rail surface (`position: fixed` via CSS) to the root's
@@ -62,6 +67,18 @@ export interface NavigationRailProps
   arrangement?: NavigationRailArrangement
   /** Optional header content (e.g. a menu button and/or FAB) pinned at the top. */
   header?: ReactNode
+  /**
+   * Optional content pinned at the bottom of the rail — low-priority actions
+   * such as a theme toggle, settings or an account button (m3: "secondary
+   * destinations or actions that have lower priority than the main
+   * navigation items"), as `NavigationRailAction`s or icon buttons. A web
+   * adaptation (ruling B57): neither m3's anatomy nor Compose's
+   * `WideNavigationRail` has a footer, and m3 keeps the menu button and the
+   * FAB at the top ("Avoid placing the FAB below navigation items") — put
+   * those in `header`. Rendered inside the `<nav>` after the destinations, so
+   * it is inside the modal rail's dialog and scrolls with the rail.
+   */
+  footer?: ReactNode
   /**
    * Modal expanded layout: while `variant="expanded"` the rail overlaps the
    * page instead of pushing it — surface-container, 16dp trailing corners,
@@ -102,7 +119,8 @@ export interface NavigationRailProps
  * pill, with badges beside the label.
  * The whole transition (width, item spacing, and every item's icon/label/pill)
  * is interpolated from a single spring value. An optional `header` (menu button,
- * FAB) is pinned at the top.
+ * FAB) is pinned at the top and an optional `footer` (low-priority actions) at
+ * the bottom; both inherit the morph value as `--md-navigation-rail-expansion`.
  */
 export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
   function NavigationRail(inProps, ref) {
@@ -113,6 +131,7 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
       variant = 'collapsed',
       arrangement = 'top',
       header,
+      footer,
       modal = false,
       hideOnCollapse = false,
       onClose,
@@ -231,6 +250,7 @@ export const NavigationRail = forwardRef<HTMLElement, NavigationRailProps>(
       >
         {header != null && <div className={styles.header}>{header}</div>}
         <div className={styles.items}>{children}</div>
+        {footer != null && <div className={styles.footer}>{footer}</div>}
       </nav>
     )
 

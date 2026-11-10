@@ -53,6 +53,7 @@ import {
   NavigationDrawerItem,
   NavigationRail,
   NavigationRailItem,
+  NavigationRailAction,
   PullToRefresh,
   Radio,
   RadioGroup,
@@ -222,6 +223,7 @@ const cases: Record<string, ReactElement> = {
     </NavigationRail>
   ),
   NavigationRailItem: <NavigationRailItem value="a" icon={icon} label="A" />,
+  NavigationRailAction: <NavigationRailAction icon={icon} label="A" />,
   NavigationDrawer: (
     <NavigationDrawer open variant="modal" value="a">
       <NavigationDrawerItem value="a" label="A" />

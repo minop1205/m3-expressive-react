@@ -3,7 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { axe } from 'vitest-axe'
-import { NavigationRail, NavigationRailItem } from './NavigationRail'
+import { NavigationRail, NavigationRailAction, NavigationRailItem } from './NavigationRail'
 
 const Icon = <svg viewBox="0 0 24 24" aria-hidden="true" />
 
@@ -353,5 +353,77 @@ describe('NavigationRail modal onClose reason (#407)', () => {
       expect.objectContaining({ type: 'click' }),
       'backdropClick',
     )
+  })
+})
+
+describe('NavigationRail footer and NavigationRailAction (B57, #546)', () => {
+  it('renders the footer inside the nav after the destinations', () => {
+    render(
+      <NavigationRail aria-label="Rail" value="a" header={<span>H</span>} footer={<span>F</span>}>
+        <NavigationRailItem value="a" icon={Icon} label="Alpha" />
+      </NavigationRail>,
+    )
+    const nav = screen.getByRole('navigation', { name: 'Rail' })
+    const footer = screen.getByText('F').parentElement!
+    expect(nav).toContainElement(footer)
+    expect(nav.lastElementChild).toBe(footer)
+    expect(screen.getByRole('button', { name: 'Alpha' }).compareDocumentPosition(footer)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    )
+  })
+
+  it('an action is a plain button: no aria-current, no selection, its own onClick', async () => {
+    const user = userEvent.setup()
+    const onChange = vi.fn()
+    const onAction = vi.fn()
+    render(
+      <NavigationRail
+        aria-label="Rail"
+        value="a"
+        onChange={onChange}
+        footer={<NavigationRailAction icon={Icon} label="Theme" badge="2" onClick={onAction} />}
+      >
+        <NavigationRailItem value="a" icon={Icon} label="Alpha" />
+      </NavigationRail>,
+    )
+    const action = screen.getByRole('button', { name: /Theme/ })
+    expect(action).not.toHaveAttribute('aria-current')
+    expect(action).not.toHaveAttribute('data-selected')
+    expect(action).toHaveAttribute('data-rail-entry')
+    expect(action).toHaveAccessibleName('Theme 2 new notifications')
+    await user.click(action)
+    expect(onAction).toHaveBeenCalledTimes(1)
+    expect(onChange).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Alpha' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('publishes the morph value as --md-navigation-rail-expansion on the rail', () => {
+    const { rerender } = render(
+      <NavigationRail aria-label="Rail" value="a">
+        <NavigationRailItem value="a" icon={Icon} label="Alpha" />
+      </NavigationRail>,
+    )
+    const nav = screen.getByRole('navigation', { name: 'Rail' })
+    expect(nav.style.getPropertyValue('--md-navigation-rail-expansion')).toBe('0')
+    expect(nav.style.getPropertyValue('--_t')).toBe('0')
+    rerender(
+      <NavigationRail aria-label="Rail" value="a" variant="expanded">
+        <NavigationRailItem value="a" icon={Icon} label="Alpha" />
+      </NavigationRail>,
+    )
+    // jsdom has no rAF-driven spring: under the test's reduced-motion default
+    // the value jumps to the target, keeping both properties in step.
+    expect(nav.style.getPropertyValue('--md-navigation-rail-expansion')).toBe(
+      nav.style.getPropertyValue('--_t'),
+    )
+  })
+
+  it('has no axe violations with a footer action', async () => {
+    const { container } = render(
+      <NavigationRail aria-label="Rail" value="a" footer={<NavigationRailAction icon={Icon} label="Settings" />}>
+        <NavigationRailItem value="a" icon={Icon} label="Alpha" />
+      </NavigationRail>,
+    )
+    expect(await axe(container)).toHaveNoViolations()
   })
 })

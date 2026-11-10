@@ -2551,7 +2551,7 @@
   ]
  },
  "NavigationRailItem": {
-  "description": "A destination inside a `NavigationRail`.\n\nThe whole row is the (full-width) click target; the active indicator is a\npill that hugs its content — a 56×32 pill around the icon when collapsed,\ngrowing to wrap icon + label when expanded. Layout is a single stable DOM\nwhose pill, icon and label are absolutely positioned and interpolated from\nthe inherited `--_t` morph value (0 = collapsed, 1 = expanded), so the tween\ndriving `--_t` produces a continuous morph with no reflow. The label's\nnatural width is measured into `--_label-w` so the pill can hug it.",
+  "description": "A destination inside a `NavigationRail`: the shared row (see `RailEntry`)\nwhose selected state comes from the rail's `value`, and whose click selects\nit (`onChange`). Standalone, `selected` / `expanded` drive it instead.",
   "props": [
    {
     "name": "badge",
@@ -2611,8 +2611,48 @@
    }
   ]
  },
+ "NavigationRailAction": {
+  "description": "A low-priority action in a `NavigationRail` `header` / `footer` — a theme\ntoggle, settings, sign-in — laid out and morphing exactly like a\ndestination (icon over label collapsed, icon beside label expanded, badge\nbeside the label), but never selected: no `aria-current`, no active pill,\nand it does not change the rail's `value`. Handle it with `onClick`. A web\nadaptation (ruling B57); m3 keeps the menu button and FAB in the header.",
+  "props": [
+   {
+    "name": "badge",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Badge on the icon: content (e.g. `\"3\"`) for a large badge, `true` for a small dot."
+   },
+   {
+    "name": "badgeLabel",
+    "type": "string",
+    "required": false,
+    "defaultValue": null,
+    "description": "Accessible text for the badge, announced after the label. Defaults to\n`\"{badge} new notifications\"` for a counting badge and `\"New notification\"`\nfor a dot."
+   },
+   {
+    "name": "expanded",
+    "type": "boolean",
+    "required": false,
+    "defaultValue": null,
+    "description": "Layout when used standalone (outside a `NavigationRail`): `false` =\ncollapsed (icon over label), `true` = expanded (icon beside label in a\npill). Toggling runs the same spring morph the rail uses. Inside a\n`NavigationRail` this is ignored — the rail's `variant` governs."
+   },
+   {
+    "name": "icon",
+    "type": "ReactNode",
+    "required": true,
+    "defaultValue": null,
+    "description": "The item icon (outlined, per m3.material.io, when `selectedIcon` is given)."
+   },
+   {
+    "name": "label",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "The item label. Without a label, give the item an `aria-label` (which then\nalso replaces the announced badge text)."
+   }
+  ]
+ },
  "NavigationRail": {
-  "description": "Material Design 3 (Expressive) Navigation rail — the Compose\n`WideNavigationRail` with `collapsed` / `expanded` variants that morph on a\nspring. Collapsed is a 96dp Surface column of icon-over-label destinations\nwith a 56×32 SecondaryContainer pill on the active item; expanded grows to\nfit its widest destination (min 220dp, max 360dp — Compose\n`WideNavigationRail`) and lays each destination out as icon + label in a\npill, with badges beside the label.\nThe whole transition (width, item spacing, and every item's icon/label/pill)\nis interpolated from a single spring value. An optional `header` (menu button,\nFAB) is pinned at the top.",
+  "description": "Material Design 3 (Expressive) Navigation rail — the Compose\n`WideNavigationRail` with `collapsed` / `expanded` variants that morph on a\nspring. Collapsed is a 96dp Surface column of icon-over-label destinations\nwith a 56×32 SecondaryContainer pill on the active item; expanded grows to\nfit its widest destination (min 220dp, max 360dp — Compose\n`WideNavigationRail`) and lays each destination out as icon + label in a\npill, with badges beside the label.\nThe whole transition (width, item spacing, and every item's icon/label/pill)\nis interpolated from a single spring value. An optional `header` (menu button,\nFAB) is pinned at the top and an optional `footer` (low-priority actions) at\nthe bottom; both inherit the morph value as `--md-navigation-rail-expansion`.",
   "props": [
    {
     "name": "arrangement",
@@ -2627,6 +2667,13 @@
     "required": false,
     "defaultValue": null,
     "description": "Uncontrolled initial destination value."
+   },
+   {
+    "name": "footer",
+    "type": "ReactNode",
+    "required": false,
+    "defaultValue": null,
+    "description": "Optional content pinned at the bottom of the rail — low-priority actions\nsuch as a theme toggle, settings or an account button (m3: \"secondary\ndestinations or actions that have lower priority than the main\nnavigation items\"), as `NavigationRailAction`s or icon buttons. A web\nadaptation (ruling B57): neither m3's anatomy nor Compose's\n`WideNavigationRail` has a footer, and m3 keeps the menu button and the\nFAB at the top (\"Avoid placing the FAB below navigation items\") — put\nthose in `header`. Rendered inside the `<nav>` after the destinations, so\nit is inside the modal rail's dialog and scrolls with the rail."
    },
    {
     "name": "header",
