@@ -190,3 +190,22 @@ m3 の collapsed rail は 96dp 幅でアイコン + その下のラベルだけ�
   `overflow-y: auto` はそのまま使え、block 方向は `visible` のまま。morph 中にラベルが補間中の rail 幅より
   広くなる場面でも端で切れる
 - item のフォーカスリングは pill に沿って rail の内側に描かれるため切れない(実ブラウザで確認)
+
+## 修正メモ: Tooltip で包んだ entry のレイアウト(2026-11-15・#551)
+
+バグ修正(新規裁定なし)。`header` / `footer` の slot は 20dp の開始インセットを持ち、直下の
+`[data-rail-entry]` だけを全幅に戻していた(`align-self: stretch` + 負マージン)。`Tooltip` は trigger を
+`<span>` で包むので、包まれた `NavigationRailAction` / `NavigationRailItem` は直下の子でなくなり、wrapper が幅 0 に
+縮んでアイコンがずれ、ヒット領域も外れていた(1.8.0 実測: wrapper 0×52、x=20)。
+
+- entry を直接の子に持つ wrapper(`.header > :has(> [data-rail-entry])`、footer も同様)にも同じ stretch + 負マージンを
+  適用。entry は `width: 100%` で伸びた wrapper を満たす。`:has()` は Baseline 2023(ライブラリが既に使う Popover API /
+  `@starting-style` より対応が広い)
+- 専用の `tooltip` prop は**追加しない**(owner 判断)。collapsed rail は m3 どおりアイコン下にラベルを表示し、m3
+  tooltips は「Plain tooltips aren't needed when the UI element already has label text」。ラベル付き entry に tooltip は
+  不要で、ラベルなし(アイコンのみ)なら collapsed / expanded の両方で必要 — 「collapsed のときだけ表示」の根拠がない。
+  出し分けたいアプリは Tooltip の `open` 制御で対応できる
+- 検証: Footer ストーリーの 1 つの action を Tooltip で包み、実ブラウザで兄弟と同じ x / 幅 / アイコン位置 / 端の
+  ヒット判定(collapsed 96dp・expanded 220dp)、hover で tooltip が開くことを確認。VRT の既存ベースライン
+  (FooterCollapsed / FooterExpanded)が変わらないことが回帰テストになる
+
