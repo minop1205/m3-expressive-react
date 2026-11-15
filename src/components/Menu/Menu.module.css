@@ -241,6 +241,13 @@
   border-radius: var(--md-sys-shape-corner-small);
   background-color: var(--_group-container-color);
   box-shadow: var(--md-sys-elevation-shadow-level2);
+  /* Compose draws the group as a `Surface`, which clips its content to the
+     group shape: an item's container / state layer never leaves the rounded
+     corners — e.g. a standalone 4dp item in a 16dp-cornered group, whose
+     corner would otherwise show past the arc (#556). `clip` follows the
+     morphing radius, is not a scroll container, and leaves the group's own
+     shadow and the (fixed, top-layer) submenus and tooltips alone. */
+  overflow: clip;
   transition: border-radius var(--md-sys-motion-spring-fast-spatial-duration)
     var(--md-sys-motion-spring-fast-spatial-easing);
 }
@@ -358,8 +365,13 @@
       var(--md-sys-motion-spring-fast-spatial-easing);
 }
 
-/* Positional item shapes inside a group (MenuDefaults.itemShape): first item
-   12/4dp, middle 4dp, last 4/12dp, standalone 4dp (= middle). */
+/* Positional item shapes inside a group (m3 "Menu item first child shape" /
+   "last child shape" = Medium, inner corners ExtraSmall; Compose
+   MenuDefaults.itemShape): first item 12/4dp, middle 4dp, last 4/12dp. The
+   only item of a group is both its first and its last child, so it takes the
+   12dp outer corners on both ends and stays concentric with the group's
+   corners (#556). Compose's 4dp `standaloneItemShape` relies on the group
+   Surface clipping it — see docs/audits/menu.md. */
 .menu[data-variant='vertical'] .group .item:first-of-type {
   border-radius: var(--md-sys-shape-corner-medium) var(--md-sys-shape-corner-medium)
     var(--md-sys-shape-corner-extra-small) var(--md-sys-shape-corner-extra-small);
@@ -372,7 +384,7 @@
 }
 
 .menu[data-variant='vertical'] .group .item:only-of-type {
-  border-radius: var(--md-sys-shape-corner-extra-small);
+  border-radius: var(--md-sys-shape-corner-medium);
 }
 
 /* Selected item (StandardMenuTokens.ItemSelected*): tertiary-container /
