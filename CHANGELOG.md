@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.8.2 (2026-11-15)
+
+### Fixed
+
+- **Menu** (`variant="vertical"`): an item's container and hover / pressed
+  highlight no longer show past the rounded corners of its `MenuGroup`. The
+  group clips its content to its shape, as Compose's group surface does, and
+  the only item of a group now takes the 12dp outer corners at both ends
+  (m3 first-child / last-child item shape) instead of 4dp, so it stays
+  concentric with the group's corners (#556).
+
 ## 1.8.1 (2026-11-15)
 
 ### Fixed
