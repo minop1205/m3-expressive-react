@@ -230,7 +230,8 @@ const [open, setOpen] = useState(false)
 ## Accessibility
 
 - Opens on hover, keyboard focus, or touch long-press, and stays open while
-  the pointer or focus is on the trigger or on the tooltip itself. It closes
+  the pointer or keyboard focus is on the trigger or on the tooltip itself
+  (the focus a mouse click leaves on the trigger does not hold it). It closes
   1.5 s after they leave, on <kbd>Escape</kbd> (wherever focus is), or on a
   press elsewhere — hoverable, dismissible and persistent per WCAG 1.4.13.
   Only one tooltip is open at a time. A modal opening above it (Dialog,

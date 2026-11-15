@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **Tooltip**: a tooltip opened by hover now closes 1.5 s after the pointer
+  leaves even when its trigger was clicked with the mouse. Only keyboard
+  focus (`:focus-visible`) on the trigger, or focus inside the tooltip's own
+  actions, keeps it open — the same rule that decides whether focus opens it
+  (#550).
+
 ## 1.8.0 (2026-11-10)
 
 ### Added
