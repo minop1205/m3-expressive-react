@@ -136,6 +136,43 @@ describe('Tooltip', () => {
       expect(isShown(trigger)).toBe(false)
     })
 
+    it('closes after the pointer leaves a trigger that was clicked with the mouse (#550)', async () => {
+      const user = setupFake()
+      render(
+        <Tooltip text="Hint">
+          <button>Trigger</button>
+        </Tooltip>,
+      )
+      const trigger = screen.getByRole('button')
+      // Focus from a pointer click is not :focus-visible.
+      vi.restoreAllMocks()
+      stubFocusVisible(false)
+      await user.hover(trigger)
+      await user.click(trigger)
+      expect(trigger).toHaveFocus()
+      expect(isShown(trigger)).toBe(true)
+      advance(HIDE_DELAY * 2)
+      expect(isShown(trigger)).toBe(true) // still hovered
+      await user.unhover(trigger)
+      advance(HIDE_DELAY)
+      expect(isShown(trigger)).toBe(false)
+    })
+
+    it('keeps a hovered tooltip open after the pointer leaves while the trigger has keyboard focus', async () => {
+      const user = setupFake()
+      render(
+        <Tooltip text="Hint">
+          <button>Trigger</button>
+        </Tooltip>,
+      )
+      const trigger = screen.getByRole('button')
+      await user.tab()
+      await user.hover(trigger)
+      await user.unhover(trigger)
+      advance(HIDE_DELAY * 2)
+      expect(isShown(trigger)).toBe(true)
+    })
+
     it('does not auto-dismiss a tooltip while its trigger keeps focus', async () => {
       const user = setupFake()
       render(

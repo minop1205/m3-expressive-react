@@ -132,7 +132,7 @@ function assignRef<T>(ref: Ref<T> | undefined, value: T) {
  *
  * Behavior (m3 + WCAG 1.4.13): opens on hover, keyboard focus, or touch
  * long-press; stays open while the pointer is over the trigger or the tooltip
- * and while focus is inside either; closes 1.5 s after the pointer / focus
+ * and while keyboard focus is inside either; closes 1.5 s after the pointer / focus
  * leaves, on Escape (wherever focus is), or on a press elsewhere. Only one
  * tooltip is open at a time. `persistent` rich tooltips toggle on click
  * instead. The trigger gets `aria-describedby` while open; the popup is
@@ -231,9 +231,19 @@ export const Tooltip = forwardRef<HTMLSpanElement, TooltipProps>(function Toolti
     cancelHide()
     hideTimer.current = setTimeout(close, HIDE_DELAY_MS)
   }
+  // Focus keeps a transient tooltip open only when it is keyboard focus on
+  // the trigger (`:focus-visible`) or sits in the tooltip's own actions. The
+  // focus a mouse click leaves on the trigger did not open the tooltip and
+  // must not hold it once the pointer leaves (#550).
+  const focusHolds = () => {
+    if (!focusWithin.current) return false
+    const active = document.activeElement
+    if (!active) return false
+    return (popupRef.current?.contains(active) ?? false) || isFocusVisible(active)
+  }
   const maybeScheduleHide = () => {
     if (persistentRef.current || !openRef.current) return
-    if (!hovered.current && !focusWithin.current) scheduleHide()
+    if (!hovered.current && !focusHolds()) scheduleHide()
   }
   // While a popup the trigger opens is expanded (an enclosing Menu forwards
   // `aria-expanded`), the transient tooltip stays hidden so it doesn't cover

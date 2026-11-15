@@ -225,3 +225,19 @@ prevented な Escape を無視する)や Menu が次の Escape で閉じなか�
   (アプリ自前の focus 復帰)は `:focus-visible` の判定どおり
 - テスト: 猶予中にモーダルが開くと即閉じる(#514 のテストの期待値も更新)、Escape で Dialog を閉じて trigger に
   focus が戻っても開かない、その後の Tab 操作では開く
+
+## 修正メモ: クリック後に消えない(2026-11-15・#550)
+
+バグ修正(新規裁定なし)。hover で開いた plain tooltip の trigger をマウスでクリックすると、pointer が離れても
+tooltip が消えなかった(focus が他へ移るまで残る)。focus ハンドラが種類を問わず「focus 中」と記録し、hide の
+判定がそれだけを見ていたため。開く側は #503 / #537 で keyboard focus(`:focus-visible`)に限定済みで、閉じる側だけ
+基準がずれていた。
+
+- m3 tooltips/guidelines: 「Both plain and rich tooltips disappear 1.5 seconds after navigating away from the
+  target region」。Compose `TooltipBox` も trigger は「long press, mouse hover, and keyboard focus」
+- focus が transient tooltip を保持するのは、trigger の focus が `:focus-visible` のとき、または focus が tooltip
+  自身(rich の action)の中にあるときだけ。判定は pointer / focus が離れた時点で行う(クリック後にキーボード操作へ
+  移って `:focus-visible` になった場合は保持する)。WCAG 1.4.13 の keyboard 利用者向けの保持は変わらない
+- Escape の消費条件(#514)と persistent tooltip は変更なし
+- テスト: hover → クリック → unhover で 1.5 秒後に閉じる、keyboard focus 中は hover が外れても閉じない
+
