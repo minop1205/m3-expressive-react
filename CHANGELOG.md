@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.8.1 (2026-11-15)
+
+### Fixed
+
+- **Tooltip**: a tooltip opened by hover now closes 1.5 s after the pointer
+  leaves even when its trigger was clicked with the mouse. Only keyboard
+  focus (`:focus-visible`) on the trigger, or focus inside the tooltip's own
+  actions, keeps it open — the same rule that decides whether focus opens it
+  (#550).
+- **NavigationRail**: a `NavigationRailAction` / `NavigationRailItem` wrapped
+  in a `Tooltip` (or another wrapper element) in the `header` / `footer`
+  keeps its full-width row. The wrapper used to shrink to 0 width, shifting
+  the icon and missing pointer hits (#551).
+
 ## 1.8.0 (2026-11-10)
 
 ### Added

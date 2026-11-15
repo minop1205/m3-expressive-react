@@ -206,6 +206,11 @@ it does not change the rail's `value`) — handle it with `onClick`.
 </NavigationRail>
 ```
 
+An entry in the `header` / `footer` can be wrapped in a
+[`Tooltip`](./tooltip) and keeps its full-width row. m3 asks for a plain
+tooltip only where the element has no visible label, so this fits an
+icon-only action (no `label`, an `aria-label` instead).
+
 Other header / footer content can follow the expand motion through the
 public custom property **`--md-navigation-rail-expansion`** (0 = collapsed →
 1 = expanded, inherited from the rail; `<Fab followContainer>` uses the same

@@ -69,6 +69,16 @@
   margin-inline-start: -20px;
 }
 
+/* The same for an entry inside a wrapper element — a `Tooltip` renders a
+   `<span>` around its trigger — which would otherwise shrink to 0 width at
+   the inset (the entry's `width: 100%` has nothing to resolve against in a
+   start-aligned slot). The entry then fills the stretched wrapper (#551). */
+.header > :has(> [data-rail-entry]),
+.footer > :has(> [data-rail-entry]) {
+  align-self: stretch;
+  margin-inline-start: -20px;
+}
+
 /* Arrangement of destinations below the header. */
 .rail[data-arrangement='center'] .items {
   flex: 1;

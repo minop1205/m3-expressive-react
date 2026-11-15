@@ -16,6 +16,7 @@ import Settings from '@material-symbols/svg-400/outlined/settings.svg?react'
 import Login from '@material-symbols/svg-400/outlined/login.svg?react'
 import { Fab } from '../Fab'
 import { IconButton } from '../IconButton'
+import { Tooltip } from '../Tooltip'
 import {
   NavigationRail,
   NavigationRailAction,
@@ -183,7 +184,10 @@ function Footer() {
   return (
     <>
       <NavigationRailAction icon={<Settings />} label="Settings" />
-      <NavigationRailAction icon={<DarkMode />} label="Dark mode" />
+      {/* Wrapped in a Tooltip: lays out exactly like its siblings (#551). */}
+      <Tooltip text="Switch to dark mode">
+        <NavigationRailAction icon={<DarkMode />} label="Dark mode" />
+      </Tooltip>
       <NavigationRailAction icon={<Login />} label="Sign in" badge="2" />
     </>
   )
