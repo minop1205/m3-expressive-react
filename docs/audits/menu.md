@@ -112,3 +112,29 @@ Web 適応(MUI の挙動に寄せる):
   touch は後から来る互換 mouse イベントのため click 後にも再判定)。FabMenu(toggle に戻す)にも適用、SplitButton は
   Menu を使うので同じ挙動。Select / Autocomplete は `aria-activedescendant` 型で focus が field から動かないため、
   外側 press の blur はネイティブ input と同じ通常の挙動であり対象外
+
+## 修正メモ: group の角からはみ出す item のハイライト(2026-11-15・#556)
+
+vertical menu で、端の group(16dp 角)に item が 1 つだけあると、その item の container / state layer(4dp 角、
+左右 4dp・上下 2dp のインセット)の角が group の 16dp の弧の外に出ていた(実ブラウザで再現: 押下時の state layer が
+角から約 1px はみ出す)。2 点を修正。
+
+- **group は内容を自身の形でクリップする**(`.group { overflow: clip }`)。Compose `DropdownMenuGroup` は
+  `Surface(shape = groupShape)` で描かれ、Surface は内容を shape でクリップする — item のハイライトが group の外に
+  出ることは構造上ない。`clip` は morph 中の radius に追従し、スクロールコンテナにならず、group 自身の影は切らない。
+  submenu / tooltip は `position: fixed` + top layer なので影響なし(VerticalSubmenu で確認)。item の focus ring は
+  offset -3dp で item の内側に描かれるので切れない
+- **group 内の唯一の item は外側の角を上下とも 12dp にする**(裁定: m3 を採用、Compose の値と異なる)
+  - m3.material.io menus/specs のトークン: 「Menu item first child shape」「Menu item last child shape」(= Medium 12dp、
+    inner corner は ExtraSmall 4dp)と「Menu item shape」(4dp)。「唯一の子」用のトークンはない — 唯一の item は
+    first child であり last child でもあるので、上端・下端とも外側の角(12dp)になる
+  - Compose `MenuDefaults.itemShape(index, count)` は `count == 1` で `standaloneItemShape`(= `ItemShape` 4dp)を返す。
+    4dp のままでも Surface のクリップで角は group の弧に沿って切られるが、ハイライトと focus ring が group の縁に
+    接して見える(クリップのみの版を実ブラウザで確認)
+  - 12dp なら group の 16dp 角(インセット 4 / 2dp)とも 8dp 角とも同心に収まり、first / last item の既存の見た目と
+    揃う。Spec Priority(m3 > Compose)に従い m3 のトークンの読みを採用。CSS のコメント「standalone 4dp (= middle)」は
+    この裁定で置き換え
+  - 選択時の形(ItemSelectedShape 12dp)と同じになるため、唯一の item は選択しても形は変わらず色だけが変わる
+- テスト: group の `overflow: clip`、唯一の item の radius が Medium(修正なしで失敗することを確認)。実ブラウザで
+  修正前 / クリップのみ / 修正後の角を 6 倍で撮影して比較
+

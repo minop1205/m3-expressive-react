@@ -226,6 +226,31 @@ describe('Menu (vertical variant)', () => {
     expect(menu).toHaveAttribute('data-color', 'vibrant')
   })
 
+  it('keeps item highlights inside the group shape (#556)', async () => {
+    const user = userEvent.setup()
+    render(
+      <Menu variant="vertical" trigger={<button>Open</button>} aria-label="More">
+        <MenuGroup>
+          <MenuItem>Copy</MenuItem>
+          <MenuItem>Download</MenuItem>
+        </MenuGroup>
+        <MenuGroup>
+          <MenuItem>Minimap</MenuItem>
+        </MenuGroup>
+      </Menu>,
+    )
+    await user.click(screen.getByRole('button', { name: 'Open' }))
+    // The group clips its content, as Compose's group Surface does.
+    for (const group of screen.getAllByRole('group')) {
+      expect(getComputedStyle(group).overflow).toBe('clip')
+    }
+    // The only item of a group takes the first- and last-child outer corners.
+    const radius = (name: string) =>
+      getComputedStyle(screen.getByRole('menuitem', { name })).borderRadius
+    expect(radius('Minimap')).toBe('var(--md-sys-shape-corner-medium)')
+    expect(radius('Copy')).not.toBe(radius('Minimap'))
+  })
+
   it('defaults to the standard variant and color', async () => {
     const user = userEvent.setup()
     render(<Example />)
